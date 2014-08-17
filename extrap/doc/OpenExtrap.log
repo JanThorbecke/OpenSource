@@ -1,0 +1,443 @@
+This is TeX, Version 3.14159 (Web2C 7.4.5) (format=latex 2008.2.27)  2 SEP 2008 13:37
+**OpenExtrap.tex
+(./OpenExtrap.tex
+LaTeX2e <2001/06/01>
+Babel <v3.7h> and hyphenation patterns for american, french, german, ngerman, n
+ohyphenation, loaded.
+(/usr/share/texmf/tex/latex/base/article.cls
+Document Class: article 2001/04/21 v1.4e Standard LaTeX document class
+(/usr/share/texmf/tex/latex/base/size11.clo
+File: size11.clo 2001/04/21 v1.4e Standard LaTeX file (size option)
+)
+\c@part=\count79
+\c@section=\count80
+\c@subsection=\count81
+\c@subsubsection=\count82
+\c@paragraph=\count83
+\c@subparagraph=\count84
+\c@figure=\count85
+\c@table=\count86
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\bibindent=\dimen102
+)
+(/usr/share/texmf/tex/latex/html/html.sty
+Package: html 1999/07/19 v1.38 hypertext commands for latex2html (nd, hws, rrm)
+
+\c@lpart=\count87
+\c@lchapter=\count88
+\c@chapter=\count89
+\c@lsection=\count90
+\c@lsubsection=\count91
+\c@lsubsubsection=\count92
+\c@lparagraph=\count93
+\c@lsubparagraph=\count94
+\c@lsubsubparagraph=\count95
+\ptrfile=\write3
+)
+(/usr/share/texmf/tex/latex/tools/longtable.sty
+Package: longtable 2000/10/22 v4.10 Multi-page Table package (DPC)
+\LTleft=\skip43
+\LTright=\skip44
+\LTpre=\skip45
+\LTpost=\skip46
+\LTchunksize=\count96
+\LTcapwidth=\dimen103
+\LT@head=\box26
+\LT@firsthead=\box27
+\LT@foot=\box28
+\LT@lastfoot=\box29
+\LT@cols=\count97
+\LT@rows=\count98
+\c@LT@tables=\count99
+\c@LT@chunks=\count100
+\LT@p@ftn=\toks14
+)
+(/usr/share/texmf/tex/latex/graphics/epsfig.sty
+Package: epsfig 1999/02/16 v1.7a (e)psfig emulation (SPQR)
+
+(/usr/share/texmf/tex/latex/graphics/graphicx.sty
+Package: graphicx 1999/02/16 v1.0f Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texmf/tex/latex/graphics/keyval.sty
+Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
+\KV@toks@=\toks15
+)
+(/usr/share/texmf/tex/latex/graphics/graphics.sty
+Package: graphics 2001/07/07 v1.0n Standard LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texmf/tex/latex/graphics/trig.sty
+Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
+)
+(/usr/share/texmf/tex/latex/config/graphics.cfg
+File: graphics.cfg 2001/08/31 v1.1 graphics configuration of teTeX/TeXLive
+)
+Package graphics Info: Driver file: dvips.def on input line 80.
+
+(/usr/share/texmf/tex/latex/graphics/dvips.def
+File: dvips.def 1999/02/16 v3.0i Driver-dependant file (DPC,SPQR)
+))
+\Gin@req@height=\dimen104
+\Gin@req@width=\dimen105
+)
+\epsfxsize=\dimen106
+\epsfysize=\dimen107
+)
+(/usr/share/texmf/tex/latex/pstricks/pstricks.sty
+Package: pstricks 1997/03/25 package wrapper for PSTricks pstricks.tex
+
+(/usr/share/texmf/tex/generic/pstricks/pstricks.tex
+`PSTricks' v97 patch 14  <1999/12/23> (tvz)
+\pst@dima=\dimen108
+\pst@dimb=\dimen109
+\pst@dimc=\dimen110
+\pst@dimd=\dimen111
+\pst@dimg=\dimen112
+\pst@dimh=\dimen113
+\pst@hbox=\box30
+\pst@boxg=\box31
+\pst@cnta=\count101
+\pst@cntb=\count102
+\pst@cntc=\count103
+\pst@cntd=\count104
+\pst@cntg=\count105
+\pst@cnth=\count106
+\pst@toks=\toks16
+(/usr/share/texmf/tex/generic/pstricks/pstricks.con)
+\psunit=\dimen114
+\psxunit=\dimen115
+\psyunit=\dimen116
+\pslinewidth=\dimen117
+\pst@customdefs=\toks17
+\pslinearc=\dimen118
+\everypsbox=\toks18
+\psframesep=\dimen119
+\pslabelsep=\dimen120
+\theoverlaybox=\box32
+))
+(/usr/share/texmf/tex/latex/hyperref/hyperref.sty
+Package: hyperref 2003/01/22 v6.73n Hypertext links for LaTeX
+\@linkdim=\dimen121
+\Hy@linkcounter=\count107
+\Hy@pagecounter=\count108
+
+(/usr/share/texmf/tex/latex/hyperref/pd1enc.def
+File: pd1enc.def 2003/01/22 v6.73n Hyperref: PDFDocEncoding definition (HO)
+)
+(/usr/share/texmf/tex/latex/config/hyperref.cfg
+File: hyperref.cfg 2002/06/06 v1.2 hyperref configuration of TeXLive and teTeX
+)
+Package hyperref Info: Hyper figures OFF on input line 1792.
+Package hyperref Info: Link nesting OFF on input line 1797.
+Package hyperref Info: Hyper index ON on input line 1800.
+Package hyperref Info: Plain pages ON on input line 1805.
+Package hyperref Info: Backreferencing OFF on input line 1812.
+
+Implicit mode ON; LaTeX internals redefined
+Package hyperref Info: Bookmarks ON on input line 1916.
+(/usr/share/texmf/tex/latex/html/url.sty
+Package: url 1999/03/02  ver 1.4  Verb mode for urls, email addresses, and file
+ names
+)
+LaTeX Info: Redefining \url on input line 2055.
+LaTeX Info: Redefining \hyperref on input line 2066.
+\Fld@menulength=\count109
+\Field@Width=\dimen122
+\Fld@charsize=\dimen123
+\Choice@toks=\toks19
+\Field@toks=\toks20
+Package hyperref Info: Hyper figures OFF on input line 2513.
+Package hyperref Info: Link nesting OFF on input line 2518.
+Package hyperref Info: Hyper index ON on input line 2521.
+Package hyperref Info: backreferencing OFF on input line 2528.
+Package hyperref Info: Link coloring OFF on input line 2533.
+\c@Item=\count110
+\c@Hfootnote=\count111
+)
+*hyperref using default driver hdvips*
+(/usr/share/texmf/tex/latex/hyperref/hdvips.def
+File: hdvips.def 2003/01/22 v6.73n Hyperref driver for dvips
+
+(/usr/share/texmf/tex/latex/hyperref/pdfmark.def
+File: pdfmark.def 2003/01/22 v6.73n Hyperref definitions for pdfmark specials
+\pdf@docset=\toks21
+\pdf@box=\box33
+\pdf@toks=\toks22
+\pdf@defaulttoks=\toks23
+\Fld@listcount=\count112
+\@outlinefile=\write4
+))
+(/usr/share/texmf/tex/latex/misc/geometry.sty
+Package: geometry 2002/07/08 v3.2 Page Geometry
+\Gm@cnth=\count113
+\Gm@cntv=\count114
+\c@Gm@tempcnt=\count115
+\Gm@bindingoffset=\dimen124
+\Gm@wd@mp=\dimen125
+\Gm@odd@mp=\dimen126
+\Gm@even@mp=\dimen127
+\Gm@dimlist=\toks24
+
+(/usr/share/texmf/tex/latex/config/geometry.cfg
+File: geometry.cfg 2001/06/05 v1.0 teTeX (uncustomised setup)
+)) (./OpenExtrap.aux
+(./Introduction.aux) (./migr.aux) (./extrap.aux) (./cfpmod.aux) (./onewvsp.aux)
+(./opercalc.aux))
+\openout1 = `OpenExtrap.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 22.
+LaTeX Font Info:    ... okay on input line 22.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 22.
+LaTeX Font Info:    ... okay on input line 22.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 22.
+LaTeX Font Info:    ... okay on input line 22.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 22.
+LaTeX Font Info:    ... okay on input line 22.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 22.
+LaTeX Font Info:    ... okay on input line 22.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 22.
+LaTeX Font Info:    ... okay on input line 22.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 22.
+LaTeX Font Info:    ... okay on input line 22.
+Package hyperref Info: Link coloring OFF on input line 22.
+ (/usr/share/texmf/tex/latex/hyperref/nameref.sty
+Package: nameref 2001/01/27 v2.19 Cross-referencing by name of section
+\c@section@level=\count116
+)
+LaTeX Info: Redefining \ref on input line 22.
+LaTeX Info: Redefining \pageref on input line 22.
+
+(./OpenExtrap.out) (./OpenExtrap.out)
+\openout4 = `OpenExtrap.out'.
+
+-------------------- Geometry parameters
+paper: class default
+landscape: --
+twocolumn: --
+twoside: --
+asymmetric: --
+h-parts: 79.52545pt, 455.24408pt, 79.52547pt
+v-parts: 56.05193pt, 682.86613pt, 56.05193pt
+hmarginratio: 1:1
+vmarginratio: 1:1
+lines: --
+heightrounded: --
+bindingoffset: 0.0pt
+truedimen: --
+includehead: --
+includefoot: --
+includemp: --
+driver: 
+-------------------- Page layout dimensions and switches
+\paperwidth  614.295pt
+\paperheight 794.96999pt
+\textwidth  455.24408pt
+\textheight 682.86613pt
+\oddsidemargin  7.25546pt
+\evensidemargin 7.25546pt
+\topmargin  -53.21806pt
+\headheight 12.0pt
+\headsep    25.0pt
+\footskip   30.0pt
+\marginparwidth 0.0pt
+\marginparsep   10.0pt
+\columnsep  10.0pt
+\skip\footins  10.0pt plus 4.0pt minus 2.0pt
+\hoffset 0.0pt
+\voffset 0.0pt
+\mag 1000
+
+(1in=72.27pt, 1cm=28.45pt)
+-----------------------
+\mybaselineskip=\dimen128
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <12> on input line 35.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <8> on input line 35.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <6> on input line 35.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <10.95> on input line 37.
+ [1
+
+] (./OpenExtrap.toc)
+\tf@toc=\write5
+\openout5 = `OpenExtrap.toc'.
+
+ [2]
+\openout2 = `Introduction.aux'.
+
+
+(./Introduction.tex
+
+LaTeX Font Warning: Command \boldmath invalid in math mode on input line 12.
+
+
+LaTeX Font Warning: Command \mathversion invalid in math mode on input line 12.
+
+
+
+LaTeX Font Warning: Command \boldmath invalid in math mode on input line 12.
+
+
+LaTeX Font Warning: Command \mathversion invalid in math mode on input line 12.
+
+
+
+LaTeX Font Warning: Command \boldmath invalid in math mode on input line 12.
+
+
+LaTeX Font Warning: Command \mathversion invalid in math mode on input line 12.
+
+
+
+LaTeX Font Warning: Command \boldmath invalid in math mode on input line 12.
+
+
+LaTeX Font Warning: Command \mathversion invalid in math mode on input line 12.
+
+
+
+LaTeX Font Warning: Command \boldmath invalid in math mode on input line 12.
+
+
+LaTeX Font Warning: Command \mathversion invalid in math mode on input line 12.
+
+
+
+LaTeX Font Warning: Command \boldmath invalid in math mode on input line 12.
+
+
+LaTeX Font Warning: Command \mathversion invalid in math mode on input line 12.
+
+
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 29.
+(/usr/share/texmf/tex/latex/base/omscmr.fd
+File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10.95> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 29.
+
+Underfull \hbox (badness 1137) in paragraph at lines 45--46
+[]\OT1/cmr/m/n/10.95 GaussWindow, Kaiser-Win-dow, for-wExtr, in-vExtr,
+ []
+
+
+Overfull \hbox (0.7159pt too wide) in paragraph at lines 47--47
+[]\OT1/cmr/bx/n/10.95 convolution| 
+ []
+
+
+Underfull \hbox (badness 1867) in paragraph at lines 47--47
+[]\OT1/cmr/m/n/10.95 xwMigrOpl, xw-Beam, xwCFP, xwExtr, xwS-nap,
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 44--54
+
+ []
+
+[3
+
+]
+File: EPS/model.eps Graphic file (type eps)
+ <EPS/model.eps>
+File: EPS/wave.eps Graphic file (type eps)
+ <EPS/wave.eps>
+File: EPS/wavefreq.eps Graphic file (type eps)
+ <EPS/wavefreq.eps>) [4]
+\openout2 = `migr.aux'.
+
+ (./migr.tex [5
+
+
+]
+[6]
+Overfull \hbox (64.49988pt too wide) in paragraph at lines 123--123
+[]\OT1/cmtt/m/n/9 migr file_shot=ricker_shift.su file_vel=syncline_cp.su zomigr
+=1 file_image=migr8.su verbose=1 ixa=301 select=8[] 
+ []
+
+
+Overfull \hbox (73.94977pt too wide) in paragraph at lines 123--123
+[]\OT1/cmtt/m/n/9 migr file_shot=ricker_shift.su file_vel=syncline_cp.su zomigr
+=1 file_image=migr10.su verbose=1 ixa=301 select=10[] 
+ []
+
+File: EPS/migr_puls8.eps Graphic file (type eps)
+<EPS/migr_puls8.eps>
+File: EPS/migr_puls10.eps Graphic file (type eps)
+ <EPS/migr_puls10.eps>) [7]
+\openout2 = `extrap.aux'.
+
+ (./extrap.tex [8
+
+
+] [9]
+Overfull \hbox (3.07559pt too wide) in paragraph at lines 122--122
+[]\OT1/cmtt/m/n/9 cfpmod file_vel=syncline_cp.su xsrc1=1500 zsrc1=1200 ntap=30 
+file_src=ricker.su file_out=green.su[] 
+ []
+
+File: EPS/extrap_beam.eps Graphic file (type eps)
+<EPS/extrap_beam.eps>
+File: EPS/extrap_snap.eps Graphic file (type eps)
+ <EPS/extrap_snap.eps>
+Overfull \hbox (31.42526pt too wide) in paragraph at lines 151--151
+[]\OT1/cmtt/m/n/9 cfpmod file_vel=syncline_cp.su xsrc1=1500 zsrc1=0 zrcv=1200 n
+tap=30 file_src=ricker.su file_out=deep.su[] 
+ []
+
+
+Overfull \hbox (83.39966pt too wide) in paragraph at lines 151--151
+[]\OT1/cmtt/m/n/9 extrap file_in=deep.su file_vel=syncline_cp.su verbose=1 zrcv
+=0 zstart=1200 reverse=1 mode=-1 verbose=1 | suximage[] 
+ []
+
+File: EPS/extrap_z1200.eps Graphic file (type eps)
+<EPS/extrap_z1200.eps>
+File: EPS/extrap_z0.eps Graphic file (type eps)
+ <EPS/extrap_z0.eps> [10]) [11]
+\openout2 = `cfpmod.aux'.
+
+ (./cfpmod.tex [12
+
+
+]
+[13]
+File: EPS/cfpmod_x1000_z500.eps Graphic file (type eps)
+ <EPS/cfpmod_x1000_z500.eps>
+File: EPS/cfpmod_plane.eps Graphic file (type eps)
+ <EPS/cfpmod_plane.eps>
+File: EPS/cfpmod_add.eps Graphic file (type eps)
+ <EPS/cfpmod_add.eps>)
+[14] [15]
+\openout2 = `onewvsp.aux'.
+
+ (./onewvsp.tex [16
+
+
+] [17]) [18]
+\openout2 = `opercalc.aux'.
+
+ (./opercalc.tex [19
+
+
+]
+File: EPS/opercalc_x.eps Graphic file (type eps)
+
+<EPS/opercalc_x.eps>
+File: EPS/opercalc_kx.eps Graphic file (type eps)
+ <EPS/opercalc_kx.eps>) [20] [21] (./OpenExtrap.aux
+(./Introduction.aux) (./migr.aux) (./extrap.aux) (./cfpmod.aux) (./onewvsp.aux)
+(./opercalc.aux)) ) 
+Here is how much of TeX's memory you used:
+ 3792 strings out of 95847
+ 48733 string characters out of 1195948
+ 122766 words of memory out of 1000001
+ 6660 multiletter control sequences out of 10000+50000
+ 10096 words of font info for 36 fonts, out of 500000 for 1000
+ 14 hyphenation exceptions out of 1000
+ 32i,9n,38p,1061b,385s stack positions out of 1500i,500n,5000p,200000b,5000s
+
+Output written on OpenExtrap.dvi (21 pages, 97220 bytes).

@@ -1,0 +1,31 @@
+#master makefile for OpenExtrap
+
+
+all: mkdirs 
+	cd FFTlib		; $(MAKE)
+	cd fdelmodc		; $(MAKE) install
+	cd utils		; $(MAKE) install
+	cd extrap		; $(MAKE)
+	cd extrap3d		; $(MAKE) 
+
+mkdirs:
+	-mkdir lib
+	-mkdir include
+	-mkdir bin
+
+clean:
+	cd FFTlib 		; $(MAKE) $@
+	cd fdelmodc		; $(MAKE) $@
+	cd utils		; $(MAKE) $@
+	cd extrap		; $(MAKE) $@
+	cd extrap3d		; $(MAKE) $@
+
+realclean:
+	cd FFTlib 		; $(MAKE) $@
+	cd fdelmodc		; $(MAKE) $@
+	cd utils		; $(MAKE) $@
+	cd extrap		; $(MAKE) $@
+	cd extrap3d		; $(MAKE) $@
+	rm -f lib/*
+	rm -f include/*
+	rm -f bin/*

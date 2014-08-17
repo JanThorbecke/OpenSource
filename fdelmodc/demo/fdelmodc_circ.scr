@@ -1,0 +1,74 @@
+#!/bin/bash
+#PBS -N fdelmod
+#PBS -q verylong
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+
+# receivers are placed on a circle 
+
+export PATH=../../utils:$PATH:
+
+makewave file_out=wavelet.su dt=0.0020 nt=1024 fp=13 shift=1 w=g2 verbose=1
+
+file_rcv=circle.su
+makemod file_base=model.su \
+	cp0=2500 ro0=1000 sizex=7000 sizez=7000 dx=10 dz=10 orig=-3500,-3500 \
+	intt=elipse var=50,50 x=0 z=0 cp=1955 ro=500 verbose=1
+
+
+#makemod file_base=model.su \
+#	cp0=1500 ro0=1000 sizex=5000 sizez=5000 dx=2 dz=2 orig=0,0 \
+#	intt=def x=2490,2494,2498,2502,2506,2510 z=2500,2498,2494,2498,2492,2500 cp=400 ro=20 \
+#	intt=def x=2490,2492,2496,2500,2504,2510 z=2500,2506,2504,2508,2502,2500 cp=1500 ro=1000 \
+#	verbose=1
+
+	   
+export filecp=model_cp.su
+export filero=model_ro.su
+
+export OMP_NUM_THREADS=1
+
+../fdelmodc \
+	file_cp=$filecp file_den=$filero \
+	ischeme=1 \
+	file_src=wavelet.su verbose=4 \
+	file_rcv=$file_rcv \
+	file_snap=snap.su \
+	rrcv=1200 oxrcv=0 ozrcv=0 \
+	rec_type_vx=1 rec_type_p=1 rec_int_vx=3 \
+	dtrcv=0.004 \
+	xsrc=-1600 zsrc=0 nshot=1 nsrc=1 \
+	src_type=1 tmod=3.0 \
+	ntaper=190 \
+	left=4 right=4 bottom=4 top=4
+
+#for exptype in circle square doodle ;
+for exptype in circle ;
+do
+for rectype in rvx rvz rp ;
+do
+   file_rcv=${exptype}_$rectype.su
+   echo $file_rcv
+   supsimage < ${exptype}_$rectype.su hbox=4 wbox=3 titlesize=-1 labelsize=10 titlesize=-1 \
+   perc=99 label1="time [s]" f2=0 d2=2 label2="rotation in degrees" > ${exptype}_$rectype.eps
+
+done
+done
+
+supsimage < model_cp.su \
+	wbox=4 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
+	d2=3 f2=0 wrgb=1.0,0,0 grgb=0,1.0,0 brgb=0,0,1.0 bps=24 \
+	label1="depth [m]" label2="lateral position [m]" > model_plane.eps
+
+supsimage < SrcRecPositions.su \
+	wbox=4 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
+	d2=3 f2=0 wclip=-1 bclip=1 \
+	gabel1="depth [m]" label2="lateral position [m]" > SrcRecCircle.eps
+
+suop2 model_cp.su  SrcRecPositions.su w1=1 w2=2000 op=sum | \
+	supsimage  wclip=1400 bclip=2000 \
+	wbox=4 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
+	d2=3 f2=0 wrgb=1.0,0,0 grgb=0,1.0,0 brgb=0,0,1.0 bps=24 \
+	label1="depth [m]" label2="lateral position [m]" > model_plane_src.eps
+

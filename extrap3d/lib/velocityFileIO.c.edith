@@ -1,0 +1,223 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <assert.h>
+#include <time.h>
+#include <math.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/mman.h>
+#include "par.h"
+#include "segyhdr.h"
+#include "Area.h"
+
+static int binary_file;
+static int fastz;
+static int stnzv;
+
+int openVelocityFile(char *file_vel, FILE **vel_file, Area *vel_area, int verbose)
+{
+	FILE *fp;
+	segyhdr *hdr;
+	int nxv, nyv, nzv, iymin, iymax, ntraces;
+	float xvmin, yvmin, zvmin, dxv, dyv, dzv;
+	float scl;
+	size_t  nread, bytes, size, trace_sz;
+
+/* determine what kind of file is read in; binary or SU format */
+
+	binary_file = (strstr(file_vel, ".su")==NULL);
+
+/* Open velocity file and determine the size of the file */
+
+	fp = fopen( file_vel, "r" ); 
+	assert( fp );
+
+	if ( binary_file ) {
+		if (verbose) {
+			fprintf(stderr,"\n    VELOCITY INFORMATION\n");
+			fprintf(stderr," reading binary file; with the data \n");
+			fprintf(stderr," stored per depth slice: 1:x, 2:y, 3:z.\n");
+		}
+		if(!getparint("nxv", &nxv)) nxv = 1; assert( nxv > 0 );
+		if(!getparint("nyv", &nyv)) nyv = 1; assert( nyv > 0 );
+		if(!getparfloat("dxv", &dxv)) dxv = 1; assert( dxv != 0 );
+		if(!getparfloat("dyv", &dyv)) dyv = 1; assert( dyv != 0 );
+		if(!getparfloat("dzv", &dzv)) dzv = 1; assert( dzv != 0 );
+		if(!getparfloat("xvmin", &xvmin)) xvmin = 0; 
+		if(!getparfloat("yvmin", &yvmin)) yvmin = 0; 
+		if(!getparfloat("zvmin", &zvmin)) zvmin = 0; 
+		if(!getparint("nzv", &nzv)) {
+			fseek(fp, 0, SEEK_END);
+			bytes    = ftell(fp); 
+			assert ( !(bytes % sizeof(float)) );
+			size     = bytes/sizeof(float);
+			nzv      = (int) (size/(size_t)(nxv*nyv));
+			assert (size%(nxv*nyv) == 0);
+			fseek(fp, 0, SEEK_SET);
+		}
+	}
+	else { /* SU-file */
+
+		if(!getparint("fastz", &fastz)) fastz = 0;
+		if (verbose) {
+			fprintf(stderr,"\n    VELOCITY INFORMATION\n");
+			fprintf(stderr," reading SU file; assuming that the data is\n");
+			if (fastz) fprintf(stderr," stored per y slice: 1:z, 2:x, 3:y.\n");
+			else  fprintf(stderr," stored per depth slice: 1:x, 2:y, 3:z.\n");
+		}
+		hdr = (segyhdr *)malloc(TRCBYTES);
+		nread = fread( hdr, 1, TRCBYTES, fp );
+		assert (nread == TRCBYTES);
+		fseek ( fp, 0, SEEK_END );
+		bytes = ftell(fp); 
+		trace_sz = sizeof(float)*hdr[0].ns+TRCBYTES;
+		ntraces  = (int) (bytes/trace_sz);
+
+		if (hdr[0].scalco < 0) scl = 1.0/fabs(hdr[0].scalco);
+		else if (hdr[0].scalco == 0) scl = 1.0;
+		else scl = hdr[0].scalco;
+
+		if(!getparfloat("xvmin", &xvmin)) xvmin = hdr[0].gx*scl; 
+		if(!getparfloat("yvmin", &yvmin)) yvmin = hdr[0].gy*scl; 
+		if(!getparfloat("zvmin", &zvmin)) zvmin = 0; 
+		if (fastz) {
+			if(!getparint("nzv", &nzv)) nzv = hdr[0].ns; assert (nzv > 0);
+			if(!getparint("nxv", &nxv)) nxv = hdr[0].trwf; assert( nxv > 0 );
+			if(!getparfloat("dzv", &dzv)) dzv = hdr[0].d1; assert( dzv != 0 );
+			if(!getparint("nyv", &nyv)) {
+				/* read in geometry of velocity file */
+
+				nyv = ntraces/nxv;
+				assert(ntraces % nxv == 0);
+
+				iymin = hdr[0].gy;
+				fseek ( fp, (long)(bytes-trace_sz), SEEK_SET );
+				nread = fread( hdr, 1, TRCBYTES, fp );
+				assert (nread == TRCBYTES);
+				iymax = hdr[0].gy;
+
+				if(!getparfloat("dyv", &dyv)) dyv = scl*(iymax-iymin)/(nyv-1); 
+				assert( dyv != 0 );
+				if(!getparfloat("dxv", &dxv)) dxv = dyv;
+			}
+			else {
+				if(!getparfloat("dxv", &dxv)) {
+					fprintf(stderr,"dxv should be given\n"); 
+					exit(1);
+				}
+				assert( dxv != 0 );
+				if(!getparfloat("dyv", &dyv)) dyv = dxv; 
+			}
+			stnzv = nzv;
+		}
+		else {
+			if(!getparint("nxv", &nxv)) nxv = hdr[0].ns; assert( nxv > 0 );
+			if(!getparint("nyv", &nyv)) nyv = hdr[0].trwf; assert( nyv > 0 );
+			if(!getparfloat("dxv", &dxv)) dxv = hdr[0].d1; assert( dxv != 0 );
+			if(!getparint("nzv", &nzv)) {
+				/* read in geometry of velocity file */
+	
+				nzv      = ntraces/nyv;
+				assert (ntraces % nyv == 0);
+	
+				iymin = hdr[0].gy;
+				fseek ( fp, (long)(bytes-trace_sz), SEEK_SET );
+				nread = fread( hdr, 1, TRCBYTES, fp );
+				assert (nread == TRCBYTES);
+				iymax = hdr[0].gy;
+	
+				if(!getparfloat("dzv", &dzv)) 
+				assert( dzv != 0 );
+				if(!getparfloat("dyv", &dyv)) dyv = scl*(iymax-iymin)/(nyv-1); 
+				assert( dyv != 0 );
+			}
+			else {
+				if(!getparfloat("dzv", &dzv)) {
+					fprintf(stderr,"dzv should be given\n"); 
+					exit(1);
+				}
+				assert( dzv != 0 );
+				if(!getparfloat("dyv", &dyv)) dyv = dxv; 
+			}
+		}
+		fseek ( fp, 0, SEEK_SET );
+		free(hdr);
+	}
+
+	*vel_file = fp;
+	vel_area->xmin = xvmin;
+	vel_area->ymin = yvmin;
+	vel_area->zmin = zvmin;
+	vel_area->ixmin = 0;
+	vel_area->ixmax = nxv-1;
+	vel_area->iymin = 0;
+	vel_area->iymax = nyv-1;
+	vel_area->nx    = nxv;
+	vel_area->ny    = nyv;
+	vel_area->nz    = nzv;
+	vel_area->dx    = dxv;
+	vel_area->dy    = dyv;
+	vel_area->dz    = dzv;
+	vel_area->sxy   = nxv*nyv;
+
+
+	if (verbose) {
+		fprintf(stderr," xvmin = %.2f nxv = %d dxv = %.2f xvmax = %.2f\n", 
+			xvmin, nxv, dxv, xvmin + (nxv-1)*dxv );
+		fprintf(stderr," yvmin = %.2f nyv = %d dyv = %.2f yvmax = %.2f\n", 
+			yvmin, nyv, dyv, yvmin + (nyv-1)*dyv );
+		fprintf(stderr," zvmin = %.2f nzv = %d dzv = %.2f zvmax = %.2f\n", 
+			zvmin, nzv, dzv, zvmin + (nzv-1)*dzv );
+	}
+
+	return 0;
+}
+
+
+void readVelocitySlice(FILE *fp, float *velocity, int iz, int nyv, int nxv)
+{
+	size_t offset, nread, pos;
+	int nxy, j, i;
+	segyhdr *hdr;
+
+	nxy = nxv*nyv;
+
+	/* Read depth slices */
+	if ( binary_file ) {
+		offset = iz*nxy*sizeof(float);
+		fseek(fp, offset, SEEK_SET);
+		nread = fread( velocity, sizeof(float), nxy, fp );
+		assert (nread == nxy);
+	}
+	else {
+		if (fastz) {
+			for (j=0; j<nyv; j++) {
+				for (i=0; i<nxv; i++) {
+					pos = (j*nxv+i)*(stnzv*sizeof(float) + TRCBYTES);
+					offset = pos+(iz*sizeof(float) + TRCBYTES);
+					fseek(fp, offset, SEEK_SET);
+					nread = fread( &velocity[j*nxv+i], sizeof(float),
+						1, fp );
+					assert (nread == 1);
+				}
+			}
+		}
+		else {
+			hdr = (segyhdr *)malloc(TRCBYTES);
+			offset = iz*nyv*(nxv*sizeof(float) + TRCBYTES);
+			fseek(fp, offset, SEEK_SET);
+			while (j<nyv) {
+				nread = fread( hdr, 1, TRCBYTES, fp );
+				if (nread == 0) break;
+				nread = fread( &velocity[j*nxv], sizeof(float),
+					nxv, fp );
+				assert (nread == nxv);
+				j++;
+			}
+			free(hdr);
+		}
+	}
+	return;
+}

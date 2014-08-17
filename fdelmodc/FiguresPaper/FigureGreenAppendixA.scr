@@ -1,0 +1,147 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=2
+#PBS -N InterfModeling
+#PBS -V
+#
+# source construction shown in Figure A2-A3-A4, 150 s.
+
+cp=2000
+rho=1000
+dx=2.5
+dt=0.0001
+halfdt=`perl -e "print 0.5*$dt;"`
+
+export PATH=../../bin:$PATH
+
+makemod sizex=2000 sizez=2000 dx=$dx dz=$dx cp0=$cp ro0=$rho orig=-1000,0 file_base=simple.su
+makewave fp=15 dt=$dt file_out=wave.su nt=4096 t0=0.1
+
+######### MONOPOLE #######
+
+../fdelmodc \
+    file_cp=simple_cp.su ischeme=1 iorder=4 \
+    file_den=simple_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_fd.su \
+    src_type=1 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.0005 \
+    verbose=2 \
+    tmod=0.5115 \
+    dxrcv=5.0 \
+    xrcv1=-500 xrcv2=500 \
+    zrcv1=500 zrcv2=500 \
+    xsrc=0 zsrc=1000 \
+    ntaper=80 \
+    left=4 right=4 top=4 bottom=4 
+
+makewave fp=15 dt=0.0005 file_out=wave.su nt=4096 t0=0.1
+
+green c=$cp rho=$rho file_src=wave.su zsrc1=500 xrcv=-500,500 dxrcv=5 nt=4096 dip=0 | suwind nt=1024 > shot_green_rp.su  
+green c=$cp rho=$rho file_src=wave.su zsrc1=500 xrcv=-500,500 dxrcv=5 nt=4096 dip=0 p_vz=1 | suwind nt=1024 > shot_green_rvz.su
+
+# rp
+(suwind key=tracl min=101 max=101 < shot_fd_rp.su | basop choice=shift shift=$halfdt ; suwind key=tracl min=101 max=101 < shot_green_rp.su ) | basop choice=shift shift=-0.1 | supsgraph style=normal  labelsize=10 wbox=4 hbox=2 label1='time in seconds' label2="Amplitude" linewidth=0.1 d2num=0.04 x2end=0.080 f2num=-0.4 > mon_rp.eps
+
+(suwind key=tracl min=101 max=101 < shot_fd_rp.su | basop choice=shift shift=$halfdt; suwind key=tracl min=101 max=101 < shot_green_rp.su;) | basop choice=shift shift=-0.1 | supsgraph style=normal labelsize=10 wbox=2 hbox=2 label1='time in seconds' label2="Amplitude" linewidth=0.1 linecolor=red,green x1beg=0.255 x1end=0.258 x2beg=0.0785 x2end=0.0797 d2num=0.0002 f2num=0.0786 > mon_zoom_rp.eps
+
+suwind key=tracl min=101 max=101 < shot_fd_rp.su | basop choice=shift shift=$halfdt > trace_fd.su
+suwind key=tracl min=101 max=101 < shot_green_rp.su > trace_green.su
+
+sumax < trace_green.su outpar=nep
+Mmax=`cat nep | awk '{print $1}'`
+a=`perl -e "print 100.0/$Mmax;"`
+echo $a
+
+sudiff trace_green.su trace_fd.su | basop choice=shift shift=-0.1 | sugain scale=$a | suop op=abs | supsgraph style=normal labelsize=12 wbox=4 hbox=2 label1='time in seconds' label2="Relative error in percentage of peak" linewidth=0.1 linecolor=red x2beg=0.0 x2end=1.0 f2num=0.0 d2num=0.5  > mon_diff_dx${dx}_rp.eps
+
+(suwind key=tracl min=101 max=101 < shot_fd_rp.su | basop choice=shift shift=$halfdt; suwind key=tracl min=101 max=101 < shot_green_rp.su ) | basop choice=shift shift=-0.1 | suxgraph 
+
+
+# rvz
+
+(suwind key=tracl min=101 max=101 < shot_fd_rvz.su ; suwind key=tracl min=101 max=101 < shot_green_rvz.su ) | basop choice=shift shift=-0.1 | supsgraph style=normal labelsize=10 wbox=4 hbox=2 label1='time in seconds' label2="Amplitude" linewidth=0.1 d2num=2e-8 f2num=-4e-8 x2end=4e-8 x2beg=-2.7e-8 > mon_rvz.eps
+
+(suwind key=tracl min=101 max=101 < shot_fd_rvz.su ; suwind key=tracl min=101 max=101 < shot_green_rvz.su ) | basop choice=shift shift=-0.1 | supsgraph style=normal labelsize=10 wbox=2 hbox=2 label1='time in seconds' label2="Amplitude" linewidth=0.1 linecolor=red,green d2num=2e-10 f2num=3.86e-8 x2end=3.96e-8 x2beg=3.86e-8 x1beg=0.255 x1end=0.258 > mon_zoom_rvz.eps
+
+suwind key=tracl min=101 max=101 < shot_fd_rvz.su > trace_fd.su
+suwind key=tracl min=101 max=101 < shot_green_rvz.su > trace_green.su
+
+sumax < trace_green.su outpar=nep
+Mmax=`cat nep | awk '{print $1}'`
+a=`perl -e "print 100.0/$Mmax;"`
+echo $a
+
+sudiff trace_green.su trace_fd.su | basop choice=shift shift=-0.1 | sugain scale=$a | suop op=abs | supsgraph style=normal labelsize=12 wbox=4 hbox=2 label1='time in seconds' label2="Relative error in percentage of peak" linewidth=0.1 linecolor=red  x2beg=0.0 x2end=1.0 f2num=0.0 d2num=0.5   > mon_diff_dx${dx}_rvz.eps
+
+(suwind key=tracl min=101 max=101 < shot_fd_rvz.su ; suwind key=tracl min=101 max=101 < shot_green_rvz.su) | basop choice=shift shift=-0.1 | suxgraph
+
+
+######### DIPOLE #######
+
+makewave fp=15 dt=$dt file_out=wave.su nt=4096 t0=0.1
+
+fdelmodc \
+    file_cp=simple_cp.su ischeme=1 iorder=4 \
+    file_den=simple_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_fd_dip.su \
+    src_type=1 \
+    src_orient=2 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.0005 \
+    verbose=2 \
+    tmod=0.5115 \
+    dxrcv=5.0 \
+    xrcv1=-500 xrcv2=500 \
+    zrcv1=500 zrcv2=500 \
+    xsrc=0 zsrc=1000 \
+    ntaper=80 \
+    left=4 right=4 top=4 bottom=4 
+
+makewave fp=15 dt=0.0005 file_out=wave.su nt=4096 t0=0.1
+
+green c=$cp rho=$rho file_src=wave.su zsrc1=500 xrcv=-500,500 dxrcv=5 nt=4096 dip=1 | suwind nt=1024 > shot_green_dip_rp.su  
+green c=$cp rho=$rho file_src=wave.su zsrc1=500 xrcv=-500,500 dxrcv=5 nt=4096 p_vz=1 dip=1 | suwind nt=1024 > shot_green_dip_rvz.su 
+
+shift=`perl -e "print 0.5*$dx/$cp;"`
+
+# rp
+(suwind key=tracl min=101 max=101 < shot_fd_dip_rp.su | basop choice=shift shift=-$shift; suwind key=tracl min=101 max=101 < shot_green_dip_rp.su ) | basop choice=shift shift=-0.1 | supsgraph style=normal titlesize=-1 labelsize=10 wbox=4 hbox=2 label1='time in seconds' label2="Amplitude" linewidth=0.1 linecolor=red,green d2num=0.001 x2end=0.004001 f2num=-0.03 > dip_rp.eps
+
+(suwind key=tracl min=101 max=101 < shot_fd_dip_rp.su | basop choice=shift shift=-$shift; suwind key=tracl min=101 max=101 < shot_green_dip_rp.su ) | basop choice=shift shift=-0.1 | supsgraph style=normal labelsize=10 wbox=2 hbox=2 label1='time in seconds' label2="Amplitude" linewidth=0.1 linecolor=red,green  x2beg=0.00379 x2end=0.00388 d2num=0.00002 f2num=0.00380 x1beg=0.2430 x1end=0.24601 f1num=0.243 d1num=0.002 > dip_zoom_rp.eps
+
+suwind key=tracl min=101 max=101 < shot_fd_dip_rp.su | basop choice=shift shift=-$shift > trace_fd.su
+suwind key=tracl min=101 max=101 < shot_green_dip_rp.su  > trace_green.su
+
+sumax < trace_green.su outpar=nep
+Mmax=`cat nep | awk '{print $1}'`
+a=`perl -e "print 100.0/$Mmax;"`
+echo $a
+
+sudiff trace_green.su trace_fd.su | basop choice=shift shift=-0.1 | sugain scale=$a | suop op=abs | supsgraph style=normal labelsize=12 wbox=4 hbox=2 label1='time in seconds' label2="Relative error in percentage of peak" linewidth=0.1 linecolor=red  x2beg=0.0 x2end=1.0 f2num=0.0 d2num=0.5 > dip_diff_dx${dx}_rp.eps
+
+(suwind key=tracl min=101 max=101 < shot_fd_dip_rp.su | basop choice=shift shift=-$shift ; suwind key=tracl min=101 max=101 < shot_green_dip_rp.su ) |  basop choice=shift shift=-0.1 | suxgraph
+
+
+# rvz
+
+(suwind key=tracl min=101 max=101 < shot_fd_dip_rvz.su | basop choice=shift shift=-$shift; suwind key=tracl min=101 max=101 < shot_green_dip_rvz.su ) | basop choice=shift shift=-0.1 | supsgraph style=normal labelsize=10 wbox=4 hbox=2 label1='time in seconds' label2="Amplitude" linewidth=0.1 linecolor=red,green d2num=6e-10 f2num=-1.2e-9 x2end=2e-9 x2beg=-1.3e-9 > dip_rvz.eps
+
+(suwind key=tracl min=101 max=101 < shot_fd_dip_rvz.su | basop choice=shift shift=-$shift; suwind key=tracl min=101 max=101 < shot_green_dip_rvz.su ) | basop choice=shift shift=-0.1 | supsgraph style=normal labelsize=10 wbox=2 hbox=2 label1='time in seconds' label2="Amplitude" linewidth=0.1 linecolor=red,green d2num=2e-11 f2num=1.85e-9 x2end=1.944e-9 x2beg=1.85e-9 x1beg=0.2430 x1end=0.24601 f1num=0.243 d1num=0.002 > dip_zoom_rvz.eps
+
+suwind key=tracl min=101 max=101 < shot_fd_dip_rvz.su | basop choice=shift shift=-$shift > trace_fd.su
+suwind key=tracl min=101 max=101 < shot_green_dip_rvz.su > trace_green.su
+
+sumax < trace_green.su outpar=nep
+Mmax=`cat nep | awk '{print $1}'`
+a=`perl -e "print 100.0/$Mmax;"`
+echo $a
+
+sudiff trace_green.su trace_fd.su | basop choice=shift shift=-0.1 | sugain scale=$a | suop op=abs | supsgraph style=normal labelsize=12 wbox=4 hbox=2 label1='time in seconds' label2="Relative error in percentage of peak" linewidth=0.1 linecolor=red  x2beg=0.0 x2end=1.0 f2num=0.0 d2num=0.5  > dip_diff_dx${dx}_rvz.eps
+
+(suwind key=tracl min=101 max=101 < shot_fd_dip_rvz.su | basop choice=shift shift=-$shift; suwind key=tracl min=101 max=101 < shot_green_dip_rvz.su ) | basop choice=shift shift=-0.1 | suxgraph
+
+

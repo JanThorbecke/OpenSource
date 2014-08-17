@@ -1,0 +1,105 @@
+#!/bin/bash
+#PBS -N fdelmod
+#PBS -q verylong
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+#
+# wave propagation in visco-elastic medium
+
+export PATH=.:/home/thorbcke/bin:$PATH
+
+makewave file_out=wavelet.su dt=0.001 nt=1024 fp=13 shift=1 w=g2 verbose=1
+
+makemod file_base=model.su \
+        cp0=1500 ro0=1000 cs0=600 sizex=2700 sizez=2700 orig=0,-300\
+        dx=3 dz=3 \
+        intt=def poly=0 cp=1550 ro=2000 cs=1200 \
+        x=0,2700 z=500,500 \
+        intt=def poly=0 cp=1700 ro=2500 cs=1500 \
+        x=1100,1500 z=900,900 \
+		verbose=1
+
+#viscoelastic Q-values
+makemod file_base=relax.su \
+        cp0=20 cs0=17 ro0=1 sizex=2700 sizez=2700 orig=0,-300 \
+        dx=3 dz=3 \
+        intt=def poly=0 cp=18 cs=21 ro=1 \
+        x=0,2700 z=500,500 \
+        intt=def poly=0 cp=15 cs=16 ro=1 \
+        x=1100,1500 z=900,900 \
+		verbose=1
+
+export filecp=model_cp.su
+export filecs=model_cs.su
+export filero=model_ro.su
+
+export fileqp=relax_cp.su
+export fileqs=relax_cs.su
+
+
+../fdelmodc \
+	file_cp=$filecp file_cs=$filecs file_den=$filero \
+	ischeme=4 \
+	file_qp=$fileqp file_qs=$fileqs \
+	file_src=wavelet.su verbose=1 \
+	file_rcv=rec.su \
+	fmax=40 \
+	xrcv1=600 xrcv2=2100 dxrcv=15 \
+	rec_type_vx=1 rec_type_vz=1 rec_type_ss=1 rec_type_pp=1 rec_int_vx=0 \
+	zrcv1=300 zrcv2=300 \
+	dtrcv=0.004 xsrc=1000 zsrc=300 nshot=1 \
+	src_type=1 \
+	ntaper=200 \
+	left=4 right=4 bottom=4 top=4 \
+	tmod=1.5 nzmax=300 nxmax=300 dt=0.001 
+
+#model direct field to subtract from total field
+makemod file_base=model.su \
+        cp0=1500 ro0=1000 cs0=600 sizex=2700 sizez=2700 orig=0,-300\
+        dx=3 dz=3 \
+		verbose=1
+
+#viscoelastic Q-values
+makemod file_base=relax.su \
+        cp0=20 cs0=17 ro0=1 sizex=2700 sizez=2700 orig=0,-300\
+        dx=3 dz=3 \
+		verbose=1
+
+export filecp=model_cp.su
+export filecs=model_cs.su
+export filero=model_ro.su
+
+export fileqp=relax_cp.su
+export fileqs=relax_cs.su
+
+
+../fdelmodc \
+	file_cp=$filecp file_cs=$filecs file_den=$filero \
+	ischeme=4 \
+	file_qp=$fileqp file_qs=$fileqs \
+	file_src=wavelet.su verbose=1 \
+	file_rcv=drec.su \
+	fmax=40 \
+	xrcv1=600 xrcv2=2100 dxrcv=15 \
+	rec_type_vx=1 rec_type_vz=1 rec_type_ss=1 rec_type_pp=1 rec_int_vx=0 \
+	zrcv1=300 zrcv2=300 \
+	dtrcv=0.004 xsrc=1000 zsrc=300 nshot=1 ntaper=100 \
+	src_type=1 \
+	left=4 right=4 bottom=4 top=4 \
+	tmod=1.5 nzmax=300 nxmax=300 dt=0.001 
+
+# substract mean and plot in eps
+for rectype in rvx rvz rpp rss ;
+do
+   file_rcv=rec_$rectype.su
+
+   sudiff $file_rcv d$file_rcv > nep.su
+
+   supsimage < nep.su hbox=4 wbox=3 titlesize=-1 labelsize=10 titlesize=-1 \
+   perc=99 label1="time [s]" f2=300 d2=15 label2="receiver position in m" > viscodemo_$rectype.eps
+
+done
+
+exit;
+

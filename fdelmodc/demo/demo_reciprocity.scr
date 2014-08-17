@@ -1,0 +1,244 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=2
+#PBS -N InterfModeling
+#PBS -V
+#
+# source construction shown in Figure A2-A3-A4, 150 s.
+
+cp=2000
+rho=1000
+dx=2.5
+dt=0.00025
+
+export OMP_NUM_THREADS=1
+
+makemod sizex=3000 sizez=3000 dx=$dx dz=$dx cp0=$cp ro0=$rho orig=-1500,-1500 file_base=layers.su \
+		intt=def poly=0 x=-1500,1500 z=250,250 cp=2000 ro=3000
+
+makewave fp=15 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=0 scfft=1
+sumax < wave.su
+
+######### MONOPOLE #######
+
+../fdelmodc \
+    file_cp=layers_cp.su ischeme=1 \
+    file_den=layers_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_monZ600.su \
+    src_type=1 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.001 \
+    verbose=2 \
+	rec_delay=0.1 \
+    tmod=0.5 \
+    dxrcv=10.0 \
+    xrcv1=-1000 xrcv2=1000 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=600 \
+    ntaper=100 \
+	left=4 right=4 bottom=4 top=4
+
+../fdelmodc \
+    file_cp=layers_cp.su ischeme=1 \
+    file_den=layers_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_monZ0.su \
+    src_type=1 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.001 \
+    verbose=2 \
+	rec_delay=0.1 \
+    tmod=0.5 \
+    dxrcv=10.0 \
+    xrcv1=-1000 xrcv2=1000 \
+    zrcv1=600 zrcv2=600 \
+    xsrc=0 zsrc=0 \
+    ntaper=100 \
+	left=4 right=4 bottom=4 top=4
+
+
+######### DIPOLE #######
+
+../fdelmodc \
+    file_cp=layers_cp.su ischeme=1 \
+    file_den=layers_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_dipZ600.su \
+    src_type=7 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.001 \
+    verbose=2 \
+	rec_delay=0.1 \
+    tmod=0.5 \
+    dxrcv=10.0 \
+    xrcv1=-1000 xrcv2=1000 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=600 \
+    ntaper=100 \
+	left=4 right=4 bottom=4 top=4
+
+../fdelmodc \
+    file_cp=layers_cp.su ischeme=1 \
+    file_den=layers_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_dipZ0.su \
+    src_type=7 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.001 \
+    verbose=2 \
+	rec_delay=0.1 \
+    tmod=0.5 \
+    dxrcv=10.0 \
+    xrcv1=-1000 xrcv2=1000 \
+    zrcv1=600 zrcv2=600 \
+    xsrc=0 zsrc=0 \
+    ntaper=100 \
+	left=4 right=4 bottom=4 top=4
+
+susum shot_monZ0_rvz.su shot_dipZ600_rp.su > nep.su 
+suximage < shot_monZ0_rvz.su title="shot_monZ0_rvz.su" clip=0.01
+suximage < nep.su clip=0.01 title="difference"
+sumax < shot_monZ0_rvz.su; sumax < shot_dipZ600_rp.su
+susum shot_dipZ0_rp.su shot_monZ600_rvz.su > nep.su
+suximage < shot_dipZ0_rp.su title="shot_dipZ0_rp.su" clip=0.02
+suximage < nep.su clip=0.02 title="difference"
+sumax < shot_dipZ0_rp.su; sumax < shot_monZ600_rvz.su
+
+
+# use different dx and dt to test independence of sampling on the amplitudes
+#########################
+cp=2000
+rho=1000
+dx=5
+dt=0.001
+
+export OMP_NUM_THREADS=1
+
+makemod sizex=3000 sizez=3000 dx=$dx dz=$dx cp0=$cp ro0=$rho orig=-1500,-1500 file_base=layers.su \
+		intt=def poly=0 x=-1500,1500 z=250,250 cp=2000 ro=3000
+
+makewave fp=15 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=0 scfft=1
+sumax < wave.su
+
+######### MONOPOLE #######
+
+../fdelmodc \
+    file_cp=layers_cp.su ischeme=1 \
+    file_den=layers_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_dxtmonZ600.su \
+    src_type=1 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.001 \
+    verbose=2 \
+	rec_delay=0.1 \
+    tmod=0.5 \
+    dxrcv=10.0 \
+    xrcv1=-1000 xrcv2=1000 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=600 \
+    ntaper=100 \
+	left=4 right=4 bottom=4 top=4
+
+../fdelmodc \
+    file_cp=layers_cp.su ischeme=1 \
+    file_den=layers_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_dxtmonZ0.su \
+    src_type=1 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.001 \
+    verbose=2 \
+	rec_delay=0.1 \
+    tmod=0.5 \
+    dxrcv=10.0 \
+    xrcv1=-1000 xrcv2=1000 \
+    zrcv1=600 zrcv2=600 \
+    xsrc=0 zsrc=0 \
+    ntaper=100 \
+	left=4 right=4 bottom=4 top=4
+
+
+######### DIPOLE #######
+
+../fdelmodc \
+    file_cp=layers_cp.su ischeme=1 \
+    file_den=layers_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_dxtdipZ600.su \
+    src_type=7 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.001 \
+    verbose=2 \
+	rec_delay=0.1 \
+    tmod=0.5 \
+    dxrcv=10.0 \
+    xrcv1=-1000 xrcv2=1000 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=600 \
+    ntaper=100 \
+	left=4 right=4 bottom=4 top=4
+
+../fdelmodc \
+    file_cp=layers_cp.su ischeme=1 \
+    file_den=layers_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_dxtdipZ0.su \
+    src_type=7 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.001 \
+    verbose=2 \
+	rec_delay=0.1 \
+    tmod=0.5 \
+    dxrcv=10.0 \
+    xrcv1=-1000 xrcv2=1000 \
+    zrcv1=600 zrcv2=600 \
+    xsrc=0 zsrc=0 \
+    ntaper=100 \
+	left=4 right=4 bottom=4 top=4
+
+set -x
+dx=5
+dt=0.001
+echo "maximum with dx=$dx dt=$dt"
+sumax < shot_dxtmonZ0_rvz.su; sumax < shot_dxtdipZ600_rp.su
+dx=2.5
+dt=0.00025
+echo "maximum with dx=$dx dt=$dt"
+sumax < shot_monZ0_rvz.su; sumax < shot_dipZ600_rp.su
+
+dx=5
+dt=0.001
+echo "maximum with dx=$dx dt=$dt"
+sumax < shot_dxtdipZ0_rp.su; sumax < shot_dxtmonZ600_rvz.su
+dx=2.5
+dt=0.00025
+echo "maximum with dx=$dx dt=$dt"
+sumax < shot_dipZ0_rp.su; sumax < shot_monZ600_rvz.su
+
+exit;
+

@@ -1,0 +1,148 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=2
+#PBS -N InterfModeling
+#PBS -V
+#
+# difference with analytical result, used in Figure 21
+
+# computes difference of FD result with analytical result
+# for three different grid spacings
+cp=2000
+rho=1000
+dx=2.5
+dt=0.0001
+halfdt=`perl -e "print 0.5*$dt;"`
+
+export PATH=../../bin:$PATH
+
+for dx in 5 2.5 1.0
+
+do
+
+makemod sizex=2000 sizez=2000 dx=$dx dz=$dx cp0=$cp ro0=$rho orig=-1000,0 file_base=simple.su
+
+makewave fp=15 dt=$dt file_out=wave.su nt=4096 t0=0.1
+
+######### MONOPOLE #######
+
+fdelmodc \
+    file_cp=simple_cp.su ischeme=1 iorder=4 \
+    file_den=simple_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_fd.su \
+    src_type=1 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.0005 \
+    verbose=2 \
+    tmod=0.5115 \
+    dxrcv=5.0 \
+    xrcv1=-500 xrcv2=500 \
+    zrcv1=500 zrcv2=500 \
+    xsrc=0 zsrc=1000 \
+    ntaper=80 \
+    left=4 right=4 top=4 bottom=4 
+
+makewave fp=15 dt=0.0005 file_out=wave.su nt=4096 t0=0.1
+
+# rp
+green c=$cp rho=$rho file_src=wave.su zsrc1=500 xrcv=-500,500 dxrcv=5 nt=4096 dip=0 | suwind nt=1024 > shot_green_rp.su  
+green c=$cp rho=$rho file_src=wave.su zsrc1=500 xrcv=-500,500 dxrcv=5 nt=4096 dip=0 p_vz=1 | suwind nt=1024 > shot_green_rvz.su
+
+suwind key=tracl min=101 max=101 < shot_fd_rp.su > shot_fd_rp101.su
+basop file_in=shot_fd_rp101.su ntmax=10000 dx=1 choice=shift shift=$halfdt > trace_fd.su
+suwind key=tracl min=101 max=101 < shot_green_rp.su  > trace_green.su
+
+sumax < trace_green.su outpar=nep
+Mmax=`cat nep | awk '{print $1}'`
+a=`perl -e "print 100.0/$Mmax;"`
+echo $a
+
+sudiff trace_green.su trace_fd.su > nep.su
+basop file_in=nep.su dx=1 choice=shift shift=-0.1 | sugain scale=$a | suop op=abs > mon_diff_dx${dx}_rp.su
+
+supsgraph < mon_diff_dx${dx}_rp.su style=normal labelsize=12 wbox=4 hbox=2 label1='time in seconds' label2="Relative error in percentage of peak" linewidth=0.1 linecolor=red x2beg=0.0 x2end=1.0 f2num=0.0 d2num=0.5  > mon_diff_dx${dx}_rp.eps
+
+
+# rvz
+
+suwind key=tracl min=101 max=101 < shot_fd_rvz.su > trace_fd.su
+suwind key=tracl min=101 max=101 < shot_green_rvz.su > trace_green.su
+
+sumax < trace_green.su outpar=nep
+Mmax=`cat nep | awk '{print $1}'`
+a=`perl -e "print 100.0/$Mmax;"`
+echo $a
+
+sudiff trace_green.su trace_fd.su > nep.su 
+basop file_in=nep.su dx=1 choice=shift shift=-0.1 | sugain scale=$a | suop op=abs >mon_diff_dx${dx}_rvz.su
+
+supsgraph < mon_diff_dx${dx}_rvz.su style=normal labelsize=12 wbox=4 hbox=2 label1='time in seconds' label2="Relative error in percentage of peak" linewidth=0.1 linecolor=red  x2beg=0.0 x2end=1.0 f2num=0.0 d2num=0.5   > mon_diff_dx${dx}_rvz.eps
+
+
+######### DIPOLE #######
+
+makewave fp=15 dt=$dt file_out=wave.su nt=4096 t0=0.1
+
+fdelmodc \
+    file_cp=simple_cp.su ischeme=1 iorder=4 \
+    file_den=simple_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_fd_dip.su \
+    src_type=1 \
+    src_orient=2 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.0005 \
+    verbose=2 \
+    tmod=0.5115 \
+    dxrcv=5.0 \
+    xrcv1=-500 xrcv2=500 \
+    zrcv1=500 zrcv2=500 \
+    xsrc=0 zsrc=1000 \
+    ntaper=80 \
+    left=4 right=4 top=4 bottom=4 
+
+makewave fp=15 dt=0.0005 file_out=wave.su nt=4096 t0=0.1
+
+green c=$cp rho=$rho file_src=wave.su zsrc1=500 xrcv=-500,500 dxrcv=5 nt=4096 dip=1 | suwind nt=1024 > shot_green_dip_rp.su  
+green c=$cp rho=$rho file_src=wave.su zsrc1=500 xrcv=-500,500 dxrcv=5 nt=4096 p_vz=1 dip=1 | suwind nt=1024 > shot_green_dip_rvz.su 
+
+shift=`perl -e "print 0.5*$dx/$cp;"`
+
+# rp
+
+suwind key=tracl min=101 max=101 < shot_fd_dip_rp.su > shot_fd_dip_rp101.su
+basop file_in=shot_fd_dip_rp101.su dx=1 choice=shift shift=-$shift > trace_fd.su
+suwind key=tracl min=101 max=101 < shot_green_dip_rp.su  > trace_green.su
+
+sumax < trace_green.su outpar=nep
+Mmax=`cat nep | awk '{print $1}'`
+a=`perl -e "print 100.0/$Mmax;"`
+echo $a
+
+sudiff trace_green.su trace_fd.su > nep.su
+basop file_in=nep.su dx=1 choice=shift shift=-0.1 | sugain scale=$a | suop op=abs >dip_diff_dx${dx}_rp.su
+
+supsgraph < dip_diff_dx${dx}_rp.su style=normal labelsize=12 wbox=4 hbox=2 label1='time in seconds' label2="Relative error in percentage of peak" linewidth=0.1 linecolor=red  x2beg=0.0 x2end=1.0 f2num=0.0 d2num=0.5 > dip_diff_dx${dx}_rp.eps
+
+
+
+# rvz
+
+suwind key=tracl min=101 max=101 < shot_fd_dip_rvz.su > shot_fd_dip_rvz101.su
+basop file_in=shot_fd_dip_rvz101.su dx=1 choice=shift shift=-$shift > trace_fd.su
+suwind key=tracl min=101 max=101 < shot_green_dip_rvz.su > trace_green.su
+
+sumax < trace_green.su outpar=nep
+Mmax=`cat nep | awk '{print $1}'`
+a=`perl -e "print 100.0/$Mmax;"`
+echo $a
+
+sudiff trace_green.su trace_fd.su > nep.su
+basop file_in=nep.su dx=1 choice=shift shift=-0.1 | sugain scale=$a | suop op=abs > dip_diff_dx${dx}_rvz.su
+
+supsgraph < dip_diff_dx${dx}_rvz.su style=normal labelsize=12 wbox=4 hbox=2 label1='time in seconds' label2="Relative error in percentage of peak" linewidth=0.1 linecolor=red  x2beg=0.0 x2end=1.0 f2num=0.0 d2num=0.5  > dip_diff_dx${dx}_rvz.eps
+
+done
+

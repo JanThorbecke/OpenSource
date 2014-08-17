@@ -1,0 +1,213 @@
+#!/bin/bash
+#PBS -l nodes=1
+#PBS -N InterfModeling
+#PBS -q fourweeks
+#PBS -V
+#
+# demo for generation of random source signature at random positions
+#export PATH=../../bin:$PATH
+
+#========================================================================================
+#                               My COMMENTS
+#========================================================================================
+
+
+#define the parameters
+#------------------------------------------------------------------------------------
+# the wavelet paremeters
+t0=0.1
+nt=10000
+db=-40
+fp=60
+dt=0.0001
+file_src=wavelet.su
+verbose=4
+ntap=400
+
+# the model parameters
+dx=1
+dz=1
+sizex=2000
+sizez=1200
+modelname=model
+
+# plot parameters
+perc=96
+WIDTH=800
+HEIGHT=600
+WIDTHOFF1=80
+HEIGHTOFF1=60
+labelsize=10
+titlesize=12
+label11="time [s]"
+label12="amplitude"
+label13="frequency [hz]"
+label21="depth [m]"
+label22="lateral position [m]"
+label31="time [s]"
+label32="lateral position [m]"
+blockinterp=1
+legend=1
+units1="m/s"
+units2="kg/m3"
+scale=3200
+clip=1e-10
+wclip=0
+bclip=${scale}
+loop=1
+n1=1201
+n2=2001
+n3=10
+f1=0.0
+f2=0.0
+
+#make the wavelet
+#--------------------------------------------------------------------------------------------
+makewave w=g2 fp=$fp t0=$t0 dt=$dt nt=$nt db=$db file_out=${file_src} verbose=${verbose} \
+
+# plot the source wavelet and it's amplitude
+supsgraph < wavelet.su style=normal \
+	labelsize=${labelsize} label2="${label12}" label1="${label11}" \
+	titlesize=${titlesize} d1num=0.05 x1end=0.2 > wavelet.eps
+
+sufft < wavelet.su | suamp | supsgraph style=normal \
+	labelsize=${labelsize} label2="${label12}" label1="${label13}" \
+	titlesize=${titlesize} d2num=20 x2end=100 d1num=10 x1end=200 > wavelet_ampl.eps
+
+
+#make the velocity and desity model
+#--------------------------------------------------------------------------------------------
+makemod file_base=$modelname.su verbose=${verbose} \
+        cp0=2500 ro0=1900 cs0=1700 sizex=$sizex sizez=$sizez \
+        dx=$dx dz=$dz orig=0,0 \
+        intt=def poly=0 cp=2900 ro=2400 cs=2000 \
+        x=0,2000 z=600,600 gradcp=0 gradcs=0 grad=0 \
+
+
+# extend model for absorbing boundaries
+extendModel file_in=${modelname}_ro.su nafter=$ntap nbefore=$ntap nbelow=$ntap > ${modelname}_edge_ro.su
+extendModel file_in=${modelname}_cp.su nafter=$ntap nbefore=$ntap nbelow=$ntap > ${modelname}_edge_cp.su
+extendModel file_in=${modelname}_cs.su nafter=$ntap nbefore=$ntap nbelow=$ntap > ${modelname}_edge_cs.su
+
+# plot the velocity and desity model
+supsimage < ${modelname}_cp.su \
+	labelsize=${labelsize} titlesize=${titlesize} verbose=${verbose} \
+	label1="${label21}" label2="${label22}" blockinterp=${blockinterp} legend=${legend} units="${units1}" \
+	> ${modelname}_cp.eps
+
+supsimage < ${modelname}_ro.su \
+	labelsize=${labelsize} titlesize=${titlesize} verbose=${verbose}  \
+	label1="${label21}" label2="${label22}" blockinterp=${blockinterp} legend=${legend} units="${units2}" \
+	> ${modelname}_ro.eps
+
+supsimage < ${modelname}_cs.su \
+	labelsize=${labelsize} titlesize=${titlesize} verbose=${verbose} \
+        label1="${label21}" label2="${label22}" blockinterp=${blockinterp} legend=${legend} units="${units1}" \
+	> ${modelname}_cs.eps
+
+
+
+#---------------------------------------------------------------------------------------------------
+# Do the forword modeling
+fdelmodc \
+    ischeme=3 \
+    file_cp=model_edge_cp.su \
+    file_cs=model_edge_cs.su \
+    file_den=model_edge_ro.su \
+    file_rcv=recv.su \
+    file_snap=snap.su \
+    file_src=wavelet.su \
+    src_type=1 \
+    src_orient=1 \
+    xsrc=1000 \
+    zsrc=0 \
+    nshot=1 \
+    dxshot=40 \
+    wav_random=0 \
+    xrcv1=0 \
+    xrcv2=2000 \
+    dxrcv=20 \
+    zrcv1=0 \
+    zrcv2=0 \
+    dzrcv=0 \
+    dtrcv=0.002 \
+    rec_type_tzz=1 \
+    rec_type_vz=1 \
+    rec_type_vx=1 \
+    rec_int_vz=2 \
+    rec_int_vx=2 \
+    tsnap1=0.1 \
+    tsnap2=1.0 \
+    dtsnap=0.1 \
+    xsnap1=0\
+    xsnap2=2000 \
+    zsnap1=0 \
+    zsnap2=1200 \
+    sna_type_tzz=1 \
+    sna_type_vz=1 \
+    sna_type_vx=1 \
+    tmod=1 \
+    cfree=1 \
+    boundary=2 \
+    ntaper=400 \
+    taptop=0 \
+    tapleft=1 \
+    tapright=1 \
+    tapbottom=1 \
+    verbose=${verbose}
+
+
+exit
+
+
+# Plot the src_rec positions, seismograms and snapshots
+#--------------------------------------------------------------------------------------------
+# Seismograms of P/Tzz, vz, vx.
+supsimage < recv_rtzz.su perc=${perc} \
+        labelsize=${labelsize} titlesize=${titlesize} verbose=${verbose} \
+        label1="${label31}" label2="${label32}" > recv_rtzz.eps
+
+supsimage < recv_rvz.su perc=${perc} \
+        labelsize=${labelsize} titlesize=${titlesize} verbose=${verbose} \
+        label1="${label31}" label2="${label32}" > recv_rvz.eps
+
+supsimage < recv_rvx.su perc=${perc} \
+        labelsize=${labelsize} titlesize=${titlesize} verbose=${verbose} \
+        label1="${label31}" label2="${label32}" > recv_rvx.eps
+
+# Make the image of snapshots of P/Tzz, vz, vx
+supsmovie < snap_stzz.su perc=${perc} labelsize=${labelsize} titlesize=${titlesize} verbose=${verbose} \
+      title="Wavefield of P (dt=${dtsnap} s; source at x=${xsrc} m, z=${zsrc} m)" \
+      label1="${label21}" label2="${label22}" title2="Frame" \
+      n1=${n1} n2=${n2} n3=${n3} f1=${f1} f2=${f2} \
+      > snap_stzz.eps
+#ps2pdf snap_sp.ps
+
+supsmovie < snap_svz.su perc=${perc} labelsize=${labelsize} titlesize=${titlesize} verbose=${verbose} \
+      title="Wavefield of Svz (dt=${dtsnap} s; source at x=${xsrc} m, z=${zsrc} m)" \
+      label1="${label21}" label2="${label22}" title2="Frame" \
+      n1=${n1} n2=${n2} n3=${n3} f1=${f1} f2=${f2} \
+      > snap_svz.eps
+#ps2pdf snap_svz.ps
+
+supsmovie < snap_svx.su perc=${perc} labelsize=${labelsize} titlesize=${titlesize} verbose=${verbose} \
+      title="Wavefield of Svx (dt=${dtsnap} s; source at x=${xsrc} m, z=${zsrc} m)" \
+      label1="${label21}" label2="${label22}" title2="Frame" \
+      n1=${n1} n2=${n2} n3=${n3} f1=${f1} f2=${f2} \
+      > snap_svx.eps
+#ps2pdf snap_svx.ps
+
+# Shift the record wavefield by wavelet delay "-${t0}"
+basop file_in=recv_rtzz.su choice=shift shift=-${t0} nxmax=${nxmax} ntmax=${ntmax} dx=${dxrcv} > recv_rtzzs.su
+basop file_in=recv_rvx.su choice=shift shift=-${t0} nxmax=${nxmax} ntmax=${ntmax} dx=${dxrcv} > recv_rvxs.su
+basop file_in=recv_rvz.su choice=shift shift=-${t0} nxmax=${nxmax} ntmax=${ntmax} dx=${dxrcv} > recv_rvzs.su
+
+# To show a movie of the P snapshots 
+suxmovie < snap_stzz.su clip=${clip} loop=${loop} \
+         -geometry ${WIDTH}x${HEIGHT}+${WIDTHOFF1}+${HEIGHTOFF1}
+     
+
+exit
+
+
+

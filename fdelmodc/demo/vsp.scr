@@ -1,0 +1,54 @@
+#!/bin/bash
+#PBS -N fdelmod
+#PBS -q verylong
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+
+which makewave
+which makemod
+
+cd /Users/jan/src/OpenSource/fdelmodc/demo
+
+#makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
+#makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3
+
+cp=2000
+rho=1000
+dx=5
+dt=0.0005
+
+makemod sizex=6000 sizez=4000 dx=$dx dz=$dx cp0=$cp cs0=$cs ro0=$rho \
+	orig=-3000,-1000 file_base=syncl.su \
+	intt=def x=-3000,0,3000 z=250,250,250 poly=0 cp=2300 ro=5000 \
+	intt=def x=-3000,-2000,-1000,-800,0,800,3000 z=650,650,700,750,900,750,600 poly=2 cp=2600 ro=1000 \
+	intt=def x=-3000,0,3000 z=1390,1390,1390 poly=0 cp=2000 ro=5000 
+
+makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
+
+
+../fdelmodc \
+    file_cp=syncl_cp.su ischeme=1 \
+    file_den=syncl_ro.su \
+    file_src=wave.su \
+    file_rcv=shot.su \
+    src_type=1 \
+	src_orient=1 \
+	src_injectionrate=1 \
+    rec_type_vx=1 \
+    rec_type_vz=1 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.0040 \
+	rec_delay=0.1 \
+    verbose=2 \
+    tmod=3.10 \
+    dxrcv=0.0 \
+    dzrcv=5.0 \
+    xrcv1=0 xrcv2=0 \
+    zrcv1=0 zrcv2=2000 \
+    xsrc=150 zsrc=10 \
+    ntaper=200 \
+    left=4 right=4 top=4 bottom=4
+
+

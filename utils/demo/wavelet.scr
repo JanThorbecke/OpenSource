@@ -1,0 +1,70 @@
+#!/bin/bash
+
+dt=0.001
+#dt=0.0005
+../makewave w=fw fmin=0 flef=0 frig=80 fmax=100 dt=$dt file_out=wavefwdt.su nt=4096 t0=0.0 scale=0
+../makewave fp=20 dt=$dt file_out=wavedt.su nt=4096 t0=0.0 scale=1
+echo "max for wavefwdt.su"= 
+sumax < wavefwdt.su
+echo "max for wavedt.su"= 
+sumax < wavedt.su
+../fconv file_in2=wavefwdt.su file_in1=wavedt.su file_out=convwaves.su verbose=1 ntmax=4096
+echo "max for convolved waves"= 
+sumax < convwaves.su
+
+../makewave fp=20 dt=$dt file_out=G2.su nt=4096 t0=0.0  t0=0.1
+supsgraph < G2.su hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='time' \
+	titlesize=-1 d1num=1 d1num=0.05 x1end=0.2 > g2_time.eps
+sufft < G2.su | suamp | supsgraph hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='frequency' x1end=100 \
+	titlesize=-1 x2end=25 d1num=10 > g2_ampl.eps
+
+../makewave fp=20 dt=$dt file_out=G1.su nt=4096 t0=0.0  w=g1 t0=0.1
+supsgraph < G1.su hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='time' \
+	titlesize=-1 d1num=1 d1num=0.05 x1end=0.2 > g1_time.eps
+sufft < G1.su | suamp | supsgraph hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='frequency' x1end=100 \
+	titlesize=-1 x2end=25 d1num=10 > g1_ampl.eps
+
+../makewave fp=20 dt=$dt file_out=G0.su nt=4096 t0=0.0  w=g0 t0=0.1
+supsgraph < G0.su hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='time' \
+	titlesize=-1 d1num=1 d1num=0.05 x1end=0.2 > g0_time.eps
+sufft < G0.su | suamp | supsgraph hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='frequency' x1end=100 \
+	titlesize=-1 x2end=25 d1num=10 > g0_ampl.eps
+
+../makewave fp=20 dt=$dt file_out=sG2.su nt=4096 t0=0.0  w=sqrtg2 t0=0.1
+supsgraph < sG2.su hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='time' \
+	titlesize=-1 d1num=1 d1num=0.05 x1end=0.2 > sg2_time.eps
+sufft < sG2.su | suamp | supsgraph hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='frequency' x1end=100 \
+	titlesize=-1 x2end=25 d1num=10 > sg2_ampl.eps
+
+../makewave w=fw fmin=0 flef=0 frig=80 fmax=100 dt=$dt file_out=fw.su nt=4096 t0=0.0 scale=0  t0=0.1 
+supsgraph < fw.su hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='time' \
+	titlesize=-1 d1num=1 d1num=0.05 x1end=0.2 > fw_time.eps
+sufft < fw.su | suamp | supsgraph hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='frequency' x1end=100 \
+	titlesize=-1 x2end=1.1 d1num=10 > fw_ampl.eps
+
+../makewave w=mon fp=20 dt=$dt file_out=mon.su nt=4096 t0=0.0 scale=0  t0=0.1 
+supsgraph < mon.su hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='time' \
+	titlesize=-1 d1num=1 d1num=0.05 x1end=0.2 > mon_time.eps
+ftr1d < mon.su | suamp | supsgraph hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='frequency' x1end=100 \
+	titlesize=-1 x2end=600 d1num=10 > mon_ampl.eps
+
+../makewave w=cs cm=190 dt=$dt file_out=cs.su nt=4096 t0=0.0 scale=1 t0=0.0245 shift=0 verbose=1 
+supsgraph < cs.su hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='time' \
+	titlesize=-1 d1num=1 d1num=0.05 x1end=0.2 > cs_time.eps
+sufft < cs.su | suamp | supsgraph hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='frequency' x1end=100 \
+	titlesize=-1 x2end=18 d1num=10 > cs_ampl.eps
+

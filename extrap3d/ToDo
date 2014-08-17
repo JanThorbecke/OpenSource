@@ -1,0 +1,30 @@
+
+when ntap is used make model larger and do not taper into the model as is done now.
+check wallclocktimings on all programs
+write program transpose3D
+
+
+Extrap3d 
+--
+- snap=1 inbouwen
+- receiver beams
+- 3D VSP inbouwen
+
+
+Migr3d
+--
+- write matrix image file in original coordinates of the velocity model.
+  ox,oy,oz=vx,vy,vz
+- Transmission effects
+- last depth step correct???: maybe not written to file
+- zomigr=1 then neglect fldr (or any other key) and read in all traces
+- explain stackmigr in selfdoc
+
+cfpmod3d
+--
+- zrcv option inbouwen 
+- read dstep depth slices
+- beam with angular position
+
+
+

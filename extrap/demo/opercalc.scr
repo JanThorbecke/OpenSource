@@ -1,0 +1,21 @@
+#!/bin/bash
+
+export PATH=../../bin:$PATH:
+
+opercalc on_su_pipe=2 file_out=nep.su | suamp | suxgraph style=normal
+
+opercalc on_su_pipe=1 file_out=nep.su | suamp | suxgraph style=normal
+
+
+rm nep_*.su
+
+exit;
+# to generate the figures shown in the documentation:
+
+opercalc on_su_pipe=1 file_out=nep.su | suamp | supsgraph style=normal \
+	linecolor=red,green,blue,yellow,gray,orange,emerald,seagreen,limegreen,brown,lavender\
+	 hbox=3 wbox=5 > ../doc/EPS/opercalc_x.eps
+
+opercalc on_su_pipe=2 file_out=nep.su | suamp | supsgraph style=normal \
+	linecolor=red,green,blue,yellow,gray,orange,emerald,seagreen,limegreen,brown,lavender\
+	hbox=3 wbox=5 > ../doc/EPS/opercalc_kx.eps

@@ -1,0 +1,159 @@
+\newpage
+\section{onewvsp} \label{onewvsp}
+
+\subsection{General}
+
+{\bf onewvsp} is based on the same algorithm as used in \htmlref{{\bf extrap}}{extrap}. {\bf onewvsp} can be used to generate pseudo VSP
+data from seismic surface data. For the extrapolation of the data
+one-way extrapolation operators (these operators can be calculated
+with \htmlref{{\bf opercalc}}{opercalc}) are used.
+
+\subsection{Parameters}
+
+Via the command-line or in a parameter file: {\tt par=$<$parameter\_file$>$}.
+{\footnotesize
+\begin{verbatim}
+ onewvsp - One-way VSP generation
+ 
+ onewvsp file_in= file_vel= [optional parameters]
+ 
+ Required parameters:
+ 
+   file_in= ................. Input file
+   file_vel= ................ gridded velocity file 
+ 
+ Optional parameters:
+ 
+   file_vsp= ................ Output file of calculated VSP
+   file_ex= ................. Output file with the extrapolated result
+   file_over= ............... writes model file with vsp positions
+   nxmax=512 ................ maximum number of traces in input file
+   ntmax=1024 ............... maximum number of samples/trace in input file
+   file_init= ............... filename for ProMax IO initialization
+   line=1  .................. 1: black lines; 0: white lines in overlay
+   verbose=0 ................ silent option; >0 display info
+ RECEIVER POSITIONS 
+   xrcv=0 ................... x-position's of receivers (array)
+   zrcv=0,nz*dz ............. z-position of the receivers (array)
+   dxrcv=dx ................. step in receiver x-direction
+   dzrcv=dz ................. step in receiver z-direction
+   lint=1 ................... linear interpolate between the rcv points
+   dxspr=0 .................. step of receiver spread in x-direction
+   nvsp=1 ................... number of VSP positions
+ EXTRAPOLATION 
+   mode=-1 .................. type of extrapolation (1=forward, -1=inverse)
+   fmin=0 ................... minimum frequency
+   fmax=70 .................. maximum frequency
+   ntap=0 ................... number of taper points at boundaries
+ EXTRAPOLATION OPERATOR DEFINITION 
+   select=4 ................. type of x-w operator
+   opl=25 ................... length of the convolution operator (odd)
+   alpha=65 ................. maximum angle of interest
+   perc=0.15 ................ smoothness of filter edge
+   weight=5e-5 .............. weight factor in WLSQ operator calculation
+   fine=10 .................. fine sampling in operator table
+   filter=1 ................. apply kx-w filter to desired operator
+   limit=1.0002.............. maximum amplitude in best operators
+   opl_min=15 ............... minimum length of convolution operator
+  
+   Options for select:
+         - 0 = Truncated operator
+         - 1 = Gaussian tapered operator
+         - 2 = Kaiser tapered operator
+         - 3 = Smoothed Phase operator
+         - 4 = Weighted Least Squares operator
+         - 5 = Remez exchange operator
+         - 8 = Smooth Weighted Least Squares operator
+         - 9 = Optimum Smooth Weighted Least Squares operator
+         - 10= Optimum Weighted Least Squares operator
+ 
+   The weighting factor is used in the convolution operator calculation.
+   This calculation is done in an optimized way.
+   The default weight factor is for most cases correct. For a more stable
+   operator chooce a weight factor closer to 1, if 1 is chosen no 
+   optimization is carried out and the convolution operator is the 
+   truncated Inverse Fourier Transform of the Kx-w operator.
+   The non-optimized operator is the truncated IFFT of a smooth Kx-w 
+   operator. This operator is designed by Gerrit Blacquiere.
+ 
+   Note that all coordinates are related to the velocity model.
+ 
+  Copyright 1997, 2008 Jan Thorbecke, (janth@xs4all.nl) 
+ 
+      initial version   : 14-12-1993 (j.w.thorbecke@tudelft.nl)
+          version 1.0   : 11-10-1995 (release version)
+          version 2.0   : 23-06-2008 (janth@xs4all.nl) 2008
+\end{verbatim}}
+
+\noindent
+
+\subsection{General parameter description}
+
+The input files are the same as for the program \htmlref{{\bf
+    extrap}}{extrap}. The data to be extrapolated ({\tt file\_in}) and
+the gridded subsurface ({\tt file\_vel}) should at least have the same
+number of traces. If the number of traces of the subsurface is smaller
+an error message is the result. If the number of traces is bigger then
+the user should position the first receiver of the data in the
+subsurface grid. In no correct hdrs ({\tt gx} and {\tt sx}) are
+available this can be done with the parameter {\tt rpos}, which
+indicates the tracenumber (an integer) in the subsurface grid where
+the first receiver is positioned. The distance between the traces in
+both gathers should be equal. The extrapolation direction is
+controlled with {\tt mode=}. For inverse extrapolation the complex
+conjugate of the forward extrapolation operator is taken.
+
+To avoid reflections at the edges of the model the parameter {\tt
+  ntap} can be set. {\tt ntap} indicates the number of points at the
+edges for which a spatial taper is designed according to:
+$\exp{(-(0.4*(ntap-ix)/ntap)^2)}$. Choosing {\tt ntap} equal to half
+of the operator length is an optimimum value.
+
+The output file {\tt file\_vsp} contains the pseudo VSP records for
+the different VSP positions. If {\tt file\_over} is defined the VSP
+positions are overlayed on the gridded velocity model. Displaying the
+{\tt file\_over} file gives an overview of the chosen VSP positions.
+{\tt file\_ex} (if defined) contains the extrapolated data which is
+extrapolated upto the deepest receiver in the VSP array.
+
+The receiver positions of the VSP array are defined with the
+parameters {\tt xrcv}, {\tt zrcv}, {\tt dxrcv}, {\tt dzrcv}, and {\tt
+  lint}. If {\tt xrcv} and {\tt zrcv} are not defined the default
+receiver array is calculated. This receiver array is positioned at x=0
+for all depth positions in the gridded subsurface model. If {\tt xrcv}
+is defined with only one value (e.g. {\tt xrcv=1500}) then the VSP is
+positioned at x=xrcv for all defined depth positions. Note that {\tt
+  dzrcv} defines at which depth postions receivers should be placed.
+Choosing an array for {\tt zrcv} (e.g. {\tt zrcv=0,2000}) gives only
+positions inbetween the defined depth array. For a deviated VSP
+configuration both {\tt xrcv} and {\tt zrcv} should be defined as
+arrays (e.g. {\tt xrcv=1000,1000,1500 zrcv=0,2000,3000}). The
+parameter {\tt lint} set to 1 calculates (with {\tt dxrcv} and {\tt
+  dzrcv} defined) inbetween the given positions the receiver array
+(use the {\tt file\_over} option to see how the receivers are
+positioned). If {\tt lint} is set to 0 then only the receiver postions
+at every pair of {\tt xrcv} and {\tt zrcv} are chosen (in the previous
+example only three postions).
+
+The parameters {\tt nvsp} and {\tt dxspr} give the posibility to
+define more than one receiver arrays, {\tt nvsp} defines the number of
+arrays and {\tt dxspr} gives the distance between the receiver arrays.
+The first receiver array is defined with {\tt xrcv}, {\tt zrcv}, {\tt
+  dxrcv}, {\tt dzrcv}, and {\tt lint} (see above). The other receiver
+arrays have the same structure but are calculated at x-positions which
+are dxspr moved (use the \\ {\tt file\_over} option to see how the
+receivers are positioned).
+
+For a more detailed discussion on the different parameters which are
+related to the operator optimization the reader is referred to the
+description of the program \htmlref{{\bf opercalc}}{opercalc}.
+
+\subsection{Examples}
+
+{\footnotesize
+\begin{verbatim}onewvsp file_vel= file_vsp= file_over= 
+\end{verbatim}}
+
+\subsection{To do}
+Nothing really.
+

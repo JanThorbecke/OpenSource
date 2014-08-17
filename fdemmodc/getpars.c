@@ -1,0 +1,1 @@
+../fdelmodc/getpars.c

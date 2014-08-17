@@ -1,0 +1,1 @@
+../fdelmodc/getWaveletInfo.c

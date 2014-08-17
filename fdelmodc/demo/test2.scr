@@ -1,0 +1,49 @@
+#!/bin/bash
+
+#-----------------------------------------------------------------------------
+# Modeling of acoustic response of multiple source acquisition
+# Horizontal model 
+# 
+# Author: Abdulmohsen AlAli, Delft University of Technology
+# Date  : March 2014
+#-----------------------------------------------------------------------------
+dx=4 #max(dx,dz)<v_min/(5*f_max)
+dt=0.0005 #dt<(0.606*min(dx,dz))/v_max
+tmod=1.5
+nt=1024
+script=5
+w_z=wave_${script}.su
+file_in_ro=model_3lay_base_${script}_ro.su
+file_in_cp=model_3lay_base_${script}_cp.su
+#-----------------------------------------------------------------------------
+# Making a wavelet
+#-----------------------------------------------------------------------------
+makewave w=g2 t0=0.05 fp=20 dt=$dt nt=$nt file_out=$w_z
+### end of making of wavelet ###
+#-----------------------------------------------------------------------------
+# Making a model
+#-----------------------------------------------------------------------------
+makemod file_base=model_3lay_base_${script}.su sizex=8000 sizez=2000 \
+dx=$dx dz=$dx cp0=1850 ro0=2000 \
+intt=def poly=0 x=0,8000 z=1000,1000 cp=2800 ro=2200 \
+intt=def poly=0 x=0,8000 z=1600,1600 cp=3600 ro=2600 \
+### end of making of model ###
+#-----------------------------------------------------------------------------
+# fdelmodc a model
+#-----------------------------------------------------------------------------
+### the fdacmod loop for creating the transmission panels ###
+    xsrc=4000
+    file_out=5_refl_3lay_base_active_multSRC_${xsrc}.su
+    echo $xsrc
+    ../fdelmodc file_cp=$file_in_cp file_den=$file_in_ro file_src=$w_z \
+    ischeme=1 tmod=$tmod ntaper=200 left=4 right=4 \
+    bottom=4 top=1 src_type=7 xsrc=$xsrc zsrc=0 \
+    xrcv1=3232 xrcv2=4756 dxrcv=12 zrcv1=90 zrcv2=90 rec_type_p=1 \
+    rec_type_vz=1 file_rcv=$file_out dtrcv=0.004 verbose=4 \
+	src_injectionrate=0
+
+    #tsnap1=0.1 tsnap2=1.1 dtsnap=0.25 sna_type_vz=0 verbose=1
+
+exit
+
+

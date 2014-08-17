@@ -1,0 +1,13 @@
+#!/bin/bash
+export PATH=../../utils:$PATH:
+
+dx=2.5 
+dt=0.0005
+
+makemod file_base=model.su \
+	cp0=1500 ro0=1000 sizex=6000 sizez=2000 dx=$dx dz=$dx orig=-3000,0 \
+	intt=def x=-3000,-1200,-1000,-800,-500,-200,0,3000 z=850,850,650,600,620,700,850,850 poly=0 cp=2000 ro=1500 \
+	intt=def x=-3000,-1200,-1000,-800,-500,-200,0,3000 z=850,850,950,1000,1020,980,850,850 poly=0 cp=1500 ro=1000 \
+	verbose=4
+
+

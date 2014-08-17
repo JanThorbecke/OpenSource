@@ -1,0 +1,25 @@
+#!/bin/bash
+
+../bin/migr file_shot=ricker_shift.su file_vel=syncline_cp.su zomigr=1 file_image=migr8.su verbose=1 ixa=301 select=8
+suximage < migr8.su 
+../bin/migr file_shot=ricker_shift.su file_vel=syncline_cp.su zomigr=1 file_image=migr10.su verbose=1 ixa=301 select=10
+suximage < migr10.su
+ 
+rm migr*.su
+
+exit;
+# to generate the figures shown in the documentation:
+
+supsimage < migr8.su hbox=2 wbox=3 labelsize=9 titlesize=-1 \
+	label1="depth [m]" label2="lateral position [m]" \
+    f2=0 d2num=500 d1num=300 > ../doc/EPS/migr_puls8.eps
+
+supsimage < migr10.su hbox=2 wbox=3 labelsize=9 titlesize=-1 \
+	label1="depth [m]" label2="lateral position [m]" \
+    f2=0 d2num=500 d1num=300 > ../doc/EPS/migr_puls10.eps
+
+../bin/extrap file_in=green.su file_vel=syncline_cp.su verbose=1 mode=-1 zrcv=1200 | \
+	supsimage hbox=4 wbox=3 labelsize=9 titlesize=-1 \
+	label1="time [s]" label2="lateral position [m]" \
+	f2=0 d2num=500 > ../doc/EPS/extrap_z1200.eps
+
