@@ -1,0 +1,95 @@
+#!/bin/bash
+#PBS -N fdelmodc
+#PBS -k eo
+#PBS -j eo
+#
+# Models plane wave at depth to receivers at the surface, including snapshots
+export PATH=../../utils:$PATH:
+
+makewave file_out=wavelet.su dt=0.001 nt=1024 fp=13 shift=1 w=g2 verbose=1
+
+makemod file_base=model.su \
+       cp0=1500 ro0=1000 cs0=600 sizex=2100 sizez=2100 \
+        dx=3 dz=3 orig=0,0 \
+        intt=def poly=0 cp=1650 ro=2000 cs=1000 \
+        x=0,2100 z=500,500 gradcp=0.5 grad=100 \
+        intt=def poly=1 cp=1800 ro=2500 cs=1200 \
+        x=0,800,1200,2100 z=900,1400,1400,1200 gradcp=0 grad=0 \
+		verbose=4
+
+export filecp=model_cp.su
+export filecs=model_cs.su
+export filero=model_ro.su
+
+export OMP_NUM_THREADS=1
+
+time ../fdelmodc \
+	file_cp=$filecp file_cs=$filecs file_den=$filero \
+	ischeme=3 \
+	file_src=wavelet.su verbose=4 \
+	file_rcv=rec.su \
+	file_snap=snap.su \
+	xrcv1=0 xrcv2=2100 dxrcv=15 \
+	zrcv1=400 zrcv2=400 \
+	rec_type_vx=1 rec_type_pp=1 rec_type_ss=1 rec_int_vx=1 \
+	dtrcv=0.004 \
+	xsrc=1000 zsrc=1700 nshot=1 plane_wave=1 nsrc=301 \
+	src_type=1 tmod=3.0 src_velo=1800 src_angle=5  \
+	ntaper=21 \
+	left=4 right=4 bottom=4 top=4 \
+	tsnap1=0.1 tsnap2=3.0 dtsnap=0.1 \
+	sna_type_ss=1 sna_type_pp=1
+
+exit;
+
+# to show a movie of the snapshots 
+#suxmovie < snap_svz.su perc=99 loop=1
+
+# to reproduce the images in the manual use:
+supsimage < model_cp.su \
+	wbox=4 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
+	d2=3 f2=0 wrgb=1.0,0,0 grgb=0,1.0,0 brgb=0,0,1.0 bps=24 \
+	label1="depth [m]" label2="lateral position [m]" > model_plane.eps
+
+supsimage < SrcRecPositions.su \
+	wbox=4 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
+	d2=3 f2=0 wclip=-1 bclip=1 \
+	gabel1="depth [m]" label2="lateral position [m]" > SrcRecPositions.eps
+
+suop2 model_cp.su  SrcRecPositions.su w1=1 w2=2000 op=sum | \
+	supsimage  wclip=1400 bclip=2000 \
+	wbox=4 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
+	d2=3 f2=0 wrgb=1.0,0,0 grgb=0,1.0,0 brgb=0,0,1.0 bps=24 \
+	label1="depth [m]" label2="lateral position [m]" > model_plane_src.eps
+
+supsimage < rec_rvz.su \
+	wbox=3 hbox=4 titlesize=-1 labelsize=10 clip=1e-10 verbose=1 \
+	label1="time [s]" label2="lateral position [m]" > rec_plane_rvz.eps
+
+supsimage < rec_rpp.su \
+	wbox=3 hbox=4 titlesize=-1 labelsize=10 clip=1e-11 verbose=1 \
+	label1="time [s]" label2="lateral position [m]" > rec_plane_rpp.eps
+
+supsimage < rec_rss.su \
+	wbox=3 hbox=4 titlesize=-1 labelsize=10 clip=1e-11 verbose=1 \
+	label1="time [s]" label2="lateral position [m]" > rec_plane_rss.eps
+
+#snapshots
+for file in snap_svz snap_spp snap_sss; do
+
+suwind < $file.su key=fldr min=$ifldr max=$ifldr > nep1.su 
+while (( ifldr < 12 )) 
+do
+(( ifldr += 4 ))
+echo $ifldr
+suwind < $file.su key=fldr min=$ifldr max=$ifldr > nep2.su 
+susum nep2.su nep1.su > snaps.su
+mv snaps.su nep1.su
+done
+
+supsimage < nep1.su \
+	wbox=4 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
+	d2=3 f2=0 perc=99 \
+	label1="depth [m]" label2="lateral position [m]" > ${file}_snap.eps
+done
+

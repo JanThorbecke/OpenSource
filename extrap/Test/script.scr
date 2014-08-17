@@ -1,0 +1,78 @@
+#!/bin/bash
+
+cd /home/thorbcke/src/OpenSource/extrap/Test
+pwd=/home/thorbcke/src/OpenSource/extrap/Test
+
+export filwav=${pwd}/wav.su
+export fmax=70
+export nt=1024 
+export fmin=0
+export dx=5
+ 
+#receiver
+xrcv=0
+
+#Point 2
+export xsrc=1500
+export zsrc=2000
+ 
+makemod file_base=${pwd}/model_hom2000.su cp0=2000 sizex=3000 sizez=3000 dx=$dx dz=$dx 
+
+export filext=${pwd}/migr_VSP.su
+export modPvel=${pwd}/model_hom2000_cp.su
+ 
+makewave file_out=$filwav \
+dt=0.004 \
+nt=$nt \
+fmax=$fmax db=-40
+ 
+#../../bin/cfpmod \
+file_vel=$modPvel \
+file_src=$filwav \
+alpha=60 \
+xsrc1=$xsrc \
+zsrc1=$zsrc \
+xrcv=$xrcv \
+ntap=50 \
+fmax=$fmax \
+fmin=$fmin \
+nt=$nt \
+verbose=1 \
+file_out=${pwd}/fwd_source.su
+
+green c=2000 zsrc1=$zsrc xsrc1=$xsrc xrcv=$xrcv,$xrcv verbose=1 \
+	file_src=$filwav nt=$nt > ${pwd}/fwd_source.su
+ 
+#suxgraph < fwd_source.su legend=1
+ 
+#../../bin/cfpmod \
+file_vel=$modPvel \
+alpha=60 \
+xsrc1=$xsrc \
+zsrc1=100 \
+xrcv=500,2500 \
+zrcv=0 \
+ntap=50 \
+fmax=$fmax \
+fmin=$fmin \
+nt=$nt \
+file_out=${pwd}/fwd_receiver.su
+ 
+green c=2000 zsrc1=100 xsrc1=$xsrc xrcv=500,2500 dxrcv=$dx verbose=1 \
+	nt=$nt > ${pwd}/fwd_receiver.su
+
+#suximage < fwd_receiver.su legend=1
+ 
+rm -rf fwd_VSP.su
+
+fconv file_in2=${pwd}/fwd_source.su file_in1=${pwd}/fwd_receiver.su key=fldr verbose=1 ntmax=$nt nxmax=1024 | \
+        sushw key=fldr a=1 | sushw key=gx a=500000 b=5000 | \
+        sushw key=sx a=0 | sushw key=scalco a=-1000 | \
+        sushw key=sdepth,selev,gelev a=0,0,0 > ${pwd}/fwd_VSP.su
+ 
+#suximage < ${pwd}/fwd_VSP.su legend=1
+
+../../bin/migr fmax=$fmax fmin=$fmin file_vel=$modPvel file_shot=${pwd}/fwd_VSP.su file_image=$filext verbose=1 ixa=601 zrcv=1900 depthex=1000 sx_file=sx.su rx_file=rx.su ntap=50 
+
+ 
+

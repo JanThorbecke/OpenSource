@@ -1,0 +1,205 @@
+#!/bin/bash
+#PBS -q medium
+#PBS -N mod_hom
+#PBS -j eo 
+#PBS -m n 
+#PBS -l nodes=1
+#PBS -V
+
+export PATH=:$HOME/src/OpenSource/bin:$HOME/bin64:$PATH:
+
+cd /Users/jan/src/OpenSource/fdelmodc/demo
+
+dx=2.5
+dt=0.0005
+
+#shots3=var=3000,5
+#shots=var=6000,5
+
+makemod sizex=6000 sizez=900 dx=$dx dz=$dx cp0=1900  ro0=1200 \
+        orig=-3000,-50 file_base=hom.su verbose=2 \
+
+
+makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3 scale=0 scfft=1
+
+export OMP_NUM_THREADS=2
+
+makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=1
+
+../fdelmodc \
+    file_cp=hom_cp.su ischeme=1 iorder=4 \
+    file_den=hom_ro.su \
+    file_src=wavefw.su \
+    file_rcv=shot_hom.su \
+    src_type=7 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.004 \
+    rec_delay=0.3 \
+    verbose=3 \
+    tmod=4.394 \
+    dxrcv=10.0 \
+    xrcv1=-3000 xrcv2=3000 \
+    zrcv1=800 zrcv2=800 \
+    xsrc=0 zsrc=0 \
+    ntaper=400 \
+	tsnap1=0.1 tsnap2=4.0 dtsnap=0.5 \
+    left=4 right=4 top=4 bottom=4 
+
+
+ftr2d file_in=shot_hom_rp.su n2=901 key=dt file_out=kxw_rp.su verbose=1
+#sushw key=trid a=111 < kxw_rp.su | sugain scale=1 | suamp > H_kxw.su
+#multiply with dx*dt of receivers
+sushw key=trid a=111 < kxw_rp.su | sugain scale=0.04 | suamp > H_kxw.su
+
+suwind key=tracl s=10 j=25 itmax=227 < H_kxw.su | \
+    supsgraph d1=1 f1=1 x1beg=1 linecolor=red label1="wave number" \
+    wbox=6 hbox=4 style=normal labelsize=10 n2tic=2 > Hkxw_traces.eps
+
+exit
+
+makemod sizex=6000 sizez=2000 dx=$dx dz=$dx cp0=1900  ro0=1200 \
+        orig=-3000,-1000 file_base=hom.su 
+
+#~/bin64/fdelmodc \
+    file_cp=hom_cp.su ischeme=1 iorder=4 \
+    file_den=hom_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_hom_fd.su \
+    src_type=1 \
+        src_orient=1 \
+        src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.0010 \
+        rec_delay=0.1 \
+    verbose=2 \
+    tmod=4.195 \
+    dxrcv=10.0 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=0 \
+    ntaper=400 \
+    left=4 right=4 top=4 bottom=4 
+
+sudiff shot_fd_rp.su shot_hom_fd_rp.su > shot_rp.su
+
+migr file_shot=shot_rp.su file_vel=scatter_migr_cp.su imc=0 file_image=image.su verbose=1
+
+exit
+
+makemod sizex=6000 sizez=4000 dx=$dx dz=$dx cp0=$cp cs0=$cs ro0=$rho \
+        orig=-3000,-1000 file_base=synclTop.su \
+        intt=def x=-3000,0,3000 z=200,200,200 poly=0 cp=1800 ro=5000 \
+    intt=def x=-3000,-2000,-1000,-400,0,200,900,1800,3000 z=520,520,560,670,950,790,600,520,500 poly=2 cp=2300 ro=1800 \
+
+~/bin64/fdelmodc \
+    file_cp=synclTop_cp.su ischeme=1 iorder=4 \
+    file_den=synclTop_ro.su \
+    file_src=wave.su \
+    file_rcv=p0.su \
+    src_type=7 \
+        src_orient=1 \
+        src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.0010 \
+        rec_delay=0.1 \
+    verbose=2 \
+    tmod=2.100 \
+    dxrcv=10.0 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=1100 \
+    ntaper=300 \
+    left=4 right=4 top=4 bottom=4 &
+
+~/bin64/fdelmodc \
+    file_cp=synclTop_cp.su ischeme=1 iorder=4 \
+    file_den=synclTop_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_top.su \
+    src_type=7 \
+        src_orient=1 \
+        src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.0010 \
+        rec_delay=0.1 \
+    verbose=2 \
+    tmod=4.195 \
+    dxrcv=10.0 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=0 \
+    ntaper=300 \
+    left=4 right=4 top=4 bottom=4 &
+
+makemod sizex=6000 sizez=4000 dx=$dx dz=$dx cp0=2300 ro0=1800 \
+        orig=-3000,-1000 file_base=synclBot.su \
+    intt=def x=-3000,0,3000 z=1310,1310,1310 poly=0 cp=2450 ro=1950 \
+    intt=def x=-3000,3000 z=1380,1380 poly=0 cp=2460 ro=1820 \
+    intt=def x=-3000,0,3000 z=1490,1490,1570 poly=0 cp=2470 ro=2100 \
+    intt=def x=-3000,3000 z=1580,1580 poly=0 cp=2480 ro=2000 \
+    intt=def x=-3000,3000 z=1680,1680 poly=0 cp=2490 ro=1850
+
+~/bin64/fdelmodc \
+    file_cp=synclBot_cp.su ischeme=1 iorder=4 \
+    file_den=synclBot_ro.su \
+    file_src=wave.su \
+    file_rcv=pRef.su \
+    src_type=7 \
+        src_orient=1 \
+        src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.0010 \
+        rec_delay=0.1 \
+    verbose=2 \
+    tmod=2.100 \
+    dxrcv=10.0 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=1100 zrcv2=1100 \
+    xsrc=0 zsrc=1100 \
+    ntaper=300 \
+    left=4 right=4 top=4 bottom=4 &
+
+makemod sizex=6000 sizez=4000 dx=$dx dz=$dx cp0=2300 ro0=1800 \
+        orig=-3000,-1000 file_base=synclBotHom.su 
+
+~/bin64/fdelmodc \
+    file_cp=synclBotHom_cp.su ischeme=1 iorder=4 \
+    file_den=synclBotHom_ro.su \
+    file_src=wave.su \
+    file_rcv=pRefHom.su \
+    src_type=7 \
+        src_orient=1 \
+        src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.0010 \
+        rec_delay=0.1 \
+    verbose=2 \
+    tmod=2.100 \
+    dxrcv=10.0 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=1100 zrcv2=1100 \
+    xsrc=0 zsrc=1100 \
+    ntaper=300 \
+    left=4 right=4 top=4 bottom=4 &
+
+wait
+
+
+sudiff shot_fd_rp.su shot_hom_fd_rp.su > shot_rp.su
+sudiff shot_top_rp.su shot_hom_fd_rp.su > shotTop_rp.su
+sudiff pRef_rp.su pRefHom_rp.su > pref_rp.su
+

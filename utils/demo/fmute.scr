@@ -1,0 +1,18 @@
+#!/bin/bash
+
+makewave nt=512 w=g2 file_out=wave.su w=g2 dt=0.004 
+
+green c=2000 nt=512 dt=0.004 zsrc1=500 xsrc1=0 file_src=wave.su  file_out=green.su
+suplane nt=512 ntr=201 | suzero value=1 itmax=512 > ones.su
+
+fmute file_shot=ones.su file_mute=green.su file_out=mutes.su above=-1 shift=-40 verbose=1 check=1 hw=4 smooth=15
+suximage < mutes.su title="above=-1 shift=-40 smooth=15"
+fmute file_shot=ones.su file_mute=green.su file_out=mutes.su above=-1 shift=40 verbose=1 check=1 hw=4 smooth=15
+suximage < mutes.su title="above=-1 shift=40 smooth=15"
+
+fmute file_shot=ones.su file_mute=green.su file_out=mutes.su above=1 shift=-40 verbose=1 check=1 hw=4 smooth=15
+suximage < mutes.su title="above=1 shift=-40 smooth=15"
+
+fmute file_shot=ones.su file_mute=green.su file_out=mutes.su above=0 shift=0 verbose=1 check=1 hw=4 smooth=
+suximage < mutes.su title="above=0 shift=-40 smooth=0"
+

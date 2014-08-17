@@ -1,0 +1,51 @@
+#!/bin/bash
+
+../bin/cfpmod file_vel=syncline_cp.su xsrc1=1000 zsrc1=500 ntap=30 file_src=ricker.su | suximage
+
+../bin/cfpmod file_vel=syncline_cp.su xsrc1=1500 zsrc1=1200 ntap=30  \
+    file_src=ricker.su Na=5 amin=-20 verbose=1 | suximage
+
+../bin/cfpmod file_vel=syncline_cp.su xsrc1=1000 xsrc2=2000 \
+	zsrc1=1200 zsrc2=1200 dxsrc=300 file_src=ricker.su \
+	ntap=30 verbose=1 | suximage
+
+../bin/cfpmod file_vel=syncline_cp.su xsrc1=300 xsrc2=2700 \
+	zsrc1=1200 zsrc2=1200 dxsrc=300 file_src=ricker.su \
+	ntap=30 add=1 verbose=1 | suximage
+
+exit;
+
+# to generate the figures shown in the documentation:
+
+rotate < ricker.su | \
+	supsgraph hbox=2 wbox=1 labelsize=9 titlesize=-1 \
+    label1="time [s]" label2="Amplitude [.]" \
+    d1num=0.2 f1num=-0.4 > ../doc/EPS/wave.eps
+
+ftr1d < ricker.su | suamp | \
+	supsgraph hbox=2 wbox=1 labelsize=9 titlesize=-1 \
+    label1="frequency [1/s]" label2="Amplitude [.]" \
+    d1num=20 > ../doc/EPS/wavefreq.eps
+
+supsimage < syncline_cp.su hbox=2 wbox=3 labelsize=9 titlesize=-1 \
+	label1="depth [m]" label2="lateral position [m]" \
+    f2=0 d2num=500 d1num=300 > ../doc/EPS/model.eps
+
+../bin/cfpmod file_vel=syncline_cp.su xsrc1=1000 zsrc1=500 ntap=30 file_src=ricker.su | \
+	supsimage hbox=4 wbox=3 labelsize=9 titlesize=-1 \
+	label1="time [s]" label2="lateral position [m]" \
+	f2=0 d2num=500 > ../doc/EPS/cfpmod_x1000_z500.eps
+	
+../bin/cfpmod file_vel=syncline_cp.su xsrc1=1500 zsrc1=1200 ntap=30  \
+    file_src=ricker.su Na=5 amin=-20 verbose=1 | \
+	supsimage hbox=4 wbox=10 labelsize=9 titlesize=-1 \
+	label1="time [s]" label2="plane wave [.]" \
+	f2=-0.5  d2=0.005 d2num=1 n2tic=2 > ../doc/EPS/cfpmod_plane.eps
+	
+../bin/cfpmod file_vel=syncline_cp.su xsrc1=300 xsrc2=2700 \
+	zsrc1=1200 zsrc2=1200 dxsrc=300 file_src=ricker.su \
+	ntap=30 verbose=1 add=1 | \
+	supsimage hbox=4 wbox=3 labelsize=9 titlesize=-1 \
+	label1="time [s]" label2="lateral position [m]" \
+	f2=0 d2num=500 > ../doc/EPS/cfpmod_add.eps
+	

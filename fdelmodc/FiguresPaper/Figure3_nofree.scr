@@ -1,0 +1,58 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=2
+#PBS -N InterfModeling
+#PBS -V
+#
+# direct modeled reference result Figure 3d, 500 s. 
+
+export PATH=../../bin:$PATH
+
+makewave w=g1 fmax=45 t0=0.15 dt=0.0005 nt=4096 db=-40 file_out=G1.su verbose=1
+cp G1.su G1_c.su
+
+fconv file_in1=G1.su file_in2=G1_c.su mode=cor1 verbose=1 > corrw.su
+	basop choice=shift shift=0.2 dx=1 file_in=corrw.su > G1corr.su
+
+makemod sizex=10000 sizez=5000 dx=5 dz=5 cp0=1500 ro0=1000 file_base=simple.su \
+   intt=def poly=0 x=0,10000 z=1300,1300 cp=2000 ro=1400 \
+   intt=def poly=2 x=0,2000,3000,5000,7000,8000,10000 \
+   z=2000,2000,2000,2500,2000,2000,2000 cp=4000 ro=2000 \
+   intt=def poly=0 x=0,10000 z=3000,3000 cp=3000 ro=1500 \
+   intt=def poly=0 x=0,10000 z=3500,3500 cp=5500 ro=2200 
+
+sushw key=f1 a=-900 < simple_cp.su > vel_cp.su
+sushw key=f1 a=-900 < simple_ro.su > vel_ro.su
+
+xsrc=5000
+
+file_shot=shotRefNoFree_x${xsrc}.su
+
+../fdelmodc \
+    file_cp=vel_cp.su ischeme=1 \
+    file_den=vel_ro.su \
+    file_src=G1corr.su \
+    fmax=45 \
+    file_rcv=$file_shot \
+    rec_type_p=0 \
+    dtrcv=0.008 \
+    verbose=4 \
+    rec_delay=0.2 \
+    tmod=4.2 \
+    dxrcv=50.0 \
+	zrcv1=0  \
+	zrcv2=0  \
+	xrcv1=0 xrcv2=10000 \
+    plane_wave=0 \
+    amplitude=0 \
+    xsrc=${xsrc} zsrc=0 \
+    ntaper=45 \
+    left=4 right=4 top=4 bottom=4 
+
+
+suwind s=1 j=1 tmax=4.008 f1=0.0 < shotRefNofree_x${xsrc}_rvz.su | \
+    sushw key=f1,delrt,d2 a=0.0,0.0,50 | \
+	sugain scale=-1 | \
+    supsimage f1=0 f2=-5000 hbox=4 wbox=3 x1end=4.0 \
+    labelsize=10 f2num=-5000 d2num=2500 verbose=1 clip=2e-7 \
+    label1='time (s)' label2='lateral position (m)' > shotRefNofree_5000_0.eps
+

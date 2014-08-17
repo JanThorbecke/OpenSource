@@ -1,0 +1,117 @@
+#!/bin/bash
+
+# create beam for forward upward extrapolation from 
+# a point diffractor to the surface, using cfpmod3d.
+
+# Directories
+
+export datadir=/home/thorbcke/src/OpenSource/extrap3d/test
+export PATH=/home/thorbcke/src/OpenSource/bin:$PATH
+
+cd $datadir
+
+# Taper
+export ntap=20
+export tap_opt=1
+
+# Time and frequency
+export nt=256
+export dt=.008
+export srcfile=$datadir/wavelet_fmax29.su
+export fmin=5
+export fmax=35
+
+# Velocity model. 
+export velfile=$datadir/saltvel_zxy.bin 
+export vmax=4850	
+export vmin=1500
+
+# Spatial sampling in velocity model
+export dx=20
+export dy=20
+export dz=20
+
+# Number of samples in velocity model
+export nz=230
+export nx=301
+export ny=301
+
+# Source position(s). 
+export xsrc1=3000
+export ysrc1=3000
+export zsrc1=3840
+
+# Extrapolation parameters
+export a=60
+# xy-omega extrapolation
+export method=1
+export oplx=25
+export oply=25
+export weight=5e-4
+export fine=3
+
+export tablefile=$datadir/tableSalt3D.su 
+
+################################################
+
+# Make wavelet
+makewave dt=$dt nt=$nt fmax=$fmax  file_out=$srcfile verbose=1
+
+#tablecalc3d file_out=$tablefile \
+	file_vel=$velfile  \
+	dxv=$dx dyv=$dy dzv=$dz \
+	nxv=$nx nyv=$ny nzv=$nz \
+	vz=1 vx=2 vy=3 \
+	method=$method oplx=$oplx oply=$oply \
+	weight=$weight mode=-1 alpha=$a \
+	fine=$fine \
+	vmin=$vmin vmax=$vmax \
+	fmin=$fmin fmax=$fmax
+
+
+
+# Output files
+export outfile=$datadir/cfp_xyt.su
+export beamfile=$datadir/forward_beam.su
+
+# Do extrapolation
+
+#cfpmod3d \
+	file_vel=$velfile file_src=$srcfile file_beam=$beamfile \
+	file_table=$tablefile \
+ 	dxv=$dx dyv=$dy dzv=$dz \
+    nxv=$nx nyv=$ny nzv=$nz \
+	vz=1 vx=2 vy=3 \
+	method=$method oplx=$oplx oply=$oply \
+  	weight=$weight mode=-1 alpha=$a \
+	fine=$fine \
+	vmin=$vmin vmax=$vmax \
+	ntap=$ntap tap_opt=$tap_opt \
+	fmin=$fmin fmax=$fmax \
+	xsrc1=$xsrc1 ysrc1=$ysrc1 zsrc1=$zsrc1 \
+	file_out=$outfile beam=1 verbose=2
+
+# Output files
+export beamfile=$datadir/back_beam.su
+export infile=$outfile
+export outfile=$datadir/cfp_xyt_back.su
+
+echo $method
+ set -x
+
+extrap3d \
+	file_vel=$velfile file_in=$infile file_out=$outfile \
+	file_beam=$beamfile \
+	file_table=$tablefile \
+	dxv=$dx dyv=$dy dzv=$dz \
+    nxv=$nx nyv=$ny nzv=$nz \
+	method=$method oplx=$oplx oply=$oply \
+	vz=1 vx=2 vy=3 dstep=8 \
+	weight=$weight mode=-1 alpha=$a \
+	fine=$fine \
+	vmin=$vmin vmax=$vmax \
+	ntap=$ntap tap_opt=$tap_opt \
+	fmin=$fmin fmax=$fmax \
+	beam=1 verbose=2 
+
+

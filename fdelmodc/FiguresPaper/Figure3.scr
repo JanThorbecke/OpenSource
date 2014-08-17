@@ -1,0 +1,106 @@
+#!/bin/bash
+#
+#Forward model all source positions one by one (this takes a very long time)
+# 
+# calls Simple_model_base, and Simple_model_sides.scr, 122 hours!
+
+export PATH=../../bin:$PATH
+
+./Simple_model_base.scr
+./Simple_model_sides.scr
+
+# Correlation horizontal layer 
+export dxsrc=10
+export xsrc1=1000
+export xsrc2=9000
+export xrcv1=0
+export xrcv2=10000
+export file_out=/tmp/corr.su
+export file_in=T_simple_dxrcv50_dx10.su
+export dxrcv=50
+
+(( nshots = ($xsrc2-$xsrc1)/$dxsrc + 1 ))
+(( nrecv  = ($xrcv2-$xrcv1)/$dxrcv + 1 ))
+(( middle = $xsrc1 + (($nshots-1)/2)*$dxsrc ))
+(( xa = ($nrecv+1)/2 ))
+(( xsrc_sim = $xrcv1 + ($xa-1)*$dxrcv ))
+
+echo xsrc_sim=$xsrc_sim
+echo nshot=$nshots
+echo nrec=$nrecv
+echo xa=$xa
+echo middle=$middle
+
+# first do the correlation with the middle trace of each shot
+
+rm -rf $file_out
+for (( xsrc = $xsrc1; xsrc<=$xsrc2; xsrc+=$dxsrc )) do
+  echo $xsrc $middle;
+  sxkey=${xsrc}000
+  suwind key=sx min=$sxkey  max=$sxkey < $file_in > shot.su
+  suwind key=tracl min=$xa max=$xa < shot.su | \
+  fconv mode=cor2 file_in1=shot.su shift=1 >> $file_out
+done;
+
+#then sort on constant gx values and stack all traces belonging to the same gx (=sum over sx)
+
+(( f2 = -($middle-$xrcv1) ))
+susort < $file_out gx > /tmp/corr_sort.su
+sustack key=gx < /tmp/corr_sort.su | sushw key=f2 a=$f2 > corr_stack${dxrcv}_${xsrc_sim}_${dxsrc}.su
+
+
+
+#Correlation sides 
+export file_in=T_simple_sides_dxrcv50_dx10.su
+
+nshots=720
+export fldr1=902
+export fldr2=1621
+echo $xsrc_sim
+echo $nshots
+echo $nrecv
+echo $xa
+echo $middle
+
+rm -rf $file_out
+for (( fldr = $fldr1; fldr<=$fldr2; fldr+=1 )) do
+  echo $fldr;
+  suwind key=fldr min=$fldr  max=$fldr < $file_in > shot.su
+  suwind key=tracl min=$xa max=$xa < shot.su | \
+  fconv mode=cor2 file_in1=shot.su shift=1 >> $file_out
+done;
+
+(( f2 = -($middle-$xrcv1) ))
+susort < $file_out gx > corr_sort.su
+sustack key=gx < corr_sort.su | sushw key=f2 a=$f2 >  corr_stack${dxrcv}_sides_$xsrc_sim.su
+
+
+rm $file_out /tmp/corr_sort.su shot.su
+
+
+# sources at left and right sides of the model receivers on top gray scales dxrc
+
+cat corr_stack50_sides_5000.su | \
+    suwind tmax=4 tmin=0 f1=-8.008 | \
+    sushw key=f1,delrt a=0.0,0.0 | \
+    sufilter amps=0,0.5,1,1,0 f=0,2,3,50,60 | \
+    supsimage clip=2e-15 f1=0 f2=-5000 hbox=4 wbox=3 \
+    labelsize=10 f2num=-5000 d2num=2500 \
+    label1='time (s)' label2='lateral position (m)' > SimCorr50_sides_sx5000_simple.eps
+
+cat corr_stack50_5000_10.su | \
+    suwind tmax=4 tmin=0 f1=-8.008 | \
+    sushw key=f1,delrt a=0.0,0.0 | \
+    sufilter amps=0,0.5,1,1,0 f=0,2,3,50,60 | \
+    supsimage clip=2e-15 f1=0 f2=-5000 hbox=4 wbox=3 \
+    labelsize=10 f2num=-5000 d2num=2500 \
+    label1='time (s)' label2='lateral position (m)'> SimCorr50_sx5000_simple.eps
+
+susum corr_stack50_5000_10.su corr_stack50_sides_5000.su | \
+    suwind tmax=4 tmin=0 f1=-8.008 | \
+    sushw key=f1,delrt a=0.0,0.0 | \
+    sufilter amps=0,0.5,1,1,0 f=0,2,3,50,60 | \
+    supsimage clip=2e-15 f1=0 f2=-5000 hbox=4 wbox=3 \
+    labelsize=10 f2num=-5000 d2num=2500 \
+    label1='time (s)' label2='lateral position (m)'> SimCorr50_add_sides_sx5000_simple.eps
+

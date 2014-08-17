@@ -1,0 +1,36 @@
+#!/bin/bash
+
+cp=2000
+rho=1000
+dx=2.5
+dt=0.0005
+
+makemod sizex=6000 sizez=2000 dx=$dx dz=$dx cp0=$cp cs0=$cs ro0=$rho \
+	orig=-3000,0 file_base=syncl.su \
+	intt=def x=-3000,0,3000 z=400,400,400 poly=0 cp=2050 ro=1500 \
+	intt=def x=-3000,-2000,-1000,-800,0,800,3000 z=650,650,700,750,900,750,600 poly=2 cp=2100 ro=2000 \
+	
+makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
+
+
+../fdelmodc \
+    file_cp=syncl_cp.su ischeme=2 \
+    file_den=syncl_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_fd.su \
+    src_type=7 \
+	src_orient=1 \
+	src_injectionrate=1 \
+    rec_type_vz=1 \
+    rec_type_p=1 \
+    dtrcv=0.0010 \
+	rec_delay=0.1 \
+    verbose=2 \
+    tmod=4.195 \
+    dxrcv=10.0 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=0 \
+    ntaper=200 \
+    left=4 right=4 bottom=4 top=1 
+

@@ -1,0 +1,11 @@
+
+The scripts in this directory reproduce most of the pictures used in the manual. The Figure numbers below refer to the Figures in the manual
+
+All scripts use some commands from Seismic Unix (SU) to plot results or post-process the data. 
+
+==> Please make sure that SU is compiled without XDR (In $CWPROOT/Makefile.config make sure that XDRFLAG is NOT set). The SU output files of fdelmodc are base on local IEEE data. 
+
+
+clean: removes all *.su *.bin *.txt *.eps in the current directory 
+
+em.scr: a sample example how to use the program

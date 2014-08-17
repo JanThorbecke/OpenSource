@@ -1,0 +1,51 @@
+\documentclass[11pt]{article}
+\usepackage{html,longtable,epsfig,pstricks}
+\usepackage{hyperref}
+
+%\setlength{\unitlength}{1mm}
+\setlength{\jot}{18pt}
+\usepackage[text={16cm,24cm},centering]{geometry}
+
+%\setlength{\textwidth}{15cm}
+%\setlength{\textheight}{22cm}
+\setlength{\parindent}{0pt}
+\setlength{\unitlength}{1cm}
+\setlength{\hoffset}{0pt}
+\setlength{\marginparwidth}{0pt}
+
+\def\SEGY{\htmlref{SEG-Y}{SEG-Y}}
+\def\SU{\htmlref{SU}{SU}}
+
+\newcommand{\email}{{\sf janth@xs4all.nl}}
+\newcommand{\wwwhref}{\href{http://www.xs4all.nl/~janth/}{http://www.xs4all.nl/$\sim$janth/}}
+
+\begin{document}
+
+
+% Make a version of the title for latex and html
+\newdimen{\mybaselineskip}
+\mybaselineskip=24pt
+\title{OpenExtrap 1.0}
+
+\author{Jan W. Thorbecke}
+
+% Show e-mail adres for latex and html
+
+\maketitle
+\begin{center}
+E-mail: \href{mailto:janth@xs4all.nl}{\email{}} \\
+\wwwhref \\
+\end{center}
+\newpage
+\setcounter{tocdepth}{2}
+\tableofcontents
+
+\include{Introduction}
+\include{migr}
+\include{extrap}
+\include{cfpmod}
+\include{onewvsp}
+\include{opercalc}
+
+
+\end{document}

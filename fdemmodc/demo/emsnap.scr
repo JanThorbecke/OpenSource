@@ -1,0 +1,48 @@
+#!/bin/bash
+#PBS -N fdelmod
+#PBS -q verylong
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+
+which makewave
+which makemod
+
+cd /Users/jan/src/OpenSource/fdemmodc/demo
+
+
+er=1
+ksigma=0.001
+dx=0.02
+dt=4e-11
+
+makemod sizex=20 sizez=10 dx=$dx dz=$dx cp0=$er ro0=0.0 \
+	orig=0,0 file_base=flat.su \
+	intt=def x=0,20 z=3,3 poly=0 cp=6 ro=0.0002 \
+	intt=def x=0,20 z=6,6 poly=0 cp=3 ro=0.0002 \
+
+makewave fp=250e+6 dt=$dt file_out=wave.su nt=4096 t0=6e-9 verbose=1
+
+
+../fdemmodc \
+    file_er=flat_cp.su ischeme=1 \
+    file_ks=flat_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_xsrc10.su \
+    src_type=7 \
+	src_orient=1 \
+	src_injectionrate=1 \
+    dtrcv=1e-10 \
+	rec_delay=6e-9 \
+    verbose=3 \
+    tmod=2e-7 \
+	dt=$dt \
+    dxrcv=0.02 \
+    xrcv1=0 xrcv2=20 \
+    zrcv1=1 zrcv2=1 \
+    xsrc=10 zsrc=3.1 \
+    ntaper=200 \
+    tsnap1=6e-9 tsnap2=2e-7 dtsnap=4e-9 \
+    left=4 right=4 top=4 bottom=4
+
+

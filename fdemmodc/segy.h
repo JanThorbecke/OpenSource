@@ -1,0 +1,1 @@
+../fdelmodc/segy.h

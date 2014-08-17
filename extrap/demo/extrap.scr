@@ -1,0 +1,39 @@
+#!/bin/bash
+
+../bin/cfpmod file_vel=syncline_cp.su xsrc1=1500 zsrc1=1200 ntap=30 file_src=ricker.su file_out=green.su
+
+../bin/extrap file_in=green.su file_vel=syncline_cp.su verbose=1 beam=1 conjg=1 | suximage 
+
+../bin/extrap file_in=green.su file_vel=syncline_cp.su verbose=1 snap=1 conjg=1 tsnap1=-0.512 dtsnap=0.128 | suximage 
+
+../bin/extrap file_in=green.su file_vel=syncline_cp.su verbose=1 mode=-1 zrcv=1200 | suximage 
+
+../bin/cfpmod file_vel=syncline_cp.su xsrc1=1500 zsrc1=0 zrcv=1200 ntap=30 file_src=ricker.su file_out=deep.su
+
+../bin/extrap file_in=deep.su file_vel=syncline_cp.su verbose=1 zrcv=0 zstart=1200 reverse=1 mode=-1 verbose=1 | suximage 
+
+rm green.su deep.su
+
+exit;
+# to generate the figures shown in the documentation:
+
+../bin/extrap file_in=green.su file_vel=syncline_cp.su verbose=1 beam=1 conjg=1 | \
+	supsimage hbox=2 wbox=3 labelsize=9 titlesize=-1 \
+	label1="depth [m]" label2="lateral position [m]" \
+    f2=0 d2num=500 d1num=300 > ../doc/EPS/extrap_beam.eps
+
+../bin/extrap file_in=green.su file_vel=syncline_cp.su verbose=1 snap=1 conjg=1 tsnap1=-0.512 dtsnap=0.128 | \
+	supsimage hbox=2 wbox=3 labelsize=9 titlesize=-1 \
+	label1="depth [m]" label2="lateral position [m]" \
+    f2=0 d2num=500 d1num=300 > ../doc/EPS/extrap_snap.eps
+
+
+../bin/extrap file_in=green.su file_vel=syncline_cp.su verbose=1 mode=-1 zrcv=1200 | \
+	supsimage hbox=4 wbox=3 labelsize=9 titlesize=-1 \
+	label1="time [s]" label2="lateral position [m]" \
+	f2=0 d2num=500 > ../doc/EPS/extrap_z1200.eps
+
+../bin/extrap file_in=deep.su file_vel=syncline_cp.su verbose=1 zrcv=0 zstart=1200 reverse=1 mode=-1 verbose=1 | \ 
+	supsimage hbox=4 wbox=3 labelsize=9 titlesize=-1 \
+	label1="time [s]" label2="lateral position [m]" \
+	f2=0 d2num=500 > ../doc/EPS/extrap_z0.eps

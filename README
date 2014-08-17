@@ -1,0 +1,73 @@
+%%%%%%%
+THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS COMMON PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
+
+A copy of this license can be found in the file 'Common_Public_License.txt' in the directory where you have found this README.
+
+http://www.opensource.org/licenses/cpl1.0.php
+
+Some routines are from Seismic Unix and include the SU LEGAL_STATEMENT in the source code.
+%%%%%%%
+
+
+REFERENCE
+---------
+If this code has helped you in your research please refer to our paper in your publications:
+
+Finite-difference modeling experiments for seismic interferometry
+Jan Thorbecke and Deyan Draganov
+2011, Geophysics, Vol. 76, no 6 (November-December); p H1--H18, doi: 10.1190/GEO2010-0039.1
+
+The paper can be downloaded from:
+
+http://janth.home.xs4all.nl/Publications/Publications.html
+
+
+INSTALLATION
+-------------
+
+1) To compile and link the code you first have to set the ROOT variable in the Make_include file which can be found in the directory where you have found this README.
+
+2) Check the compiler and CFLAGS options in the file Make_include and adapt to the system you are using. The default options are set for a the GNU C compiler on a Linux system. A Fortran or g++ compiler is not needed to compile the code. The Makefile has been tested with GNU make. 
+
+3) If the compiler options are set in the Make_include file you can type 
+
+==> Please make sure that SU is compiled without XDR (in $CWPROOT/Makefile.config make sure that XDRFLAG is NOT set). The SU output files of fdelmodc are all base on local IEEE data.
+
+> make clean
+> make 
+
+and the Makefile will make:
+
+- FFT library 
+- fdelmodc
+- utils
+
+The libraries will be placed in the lib/ directory and the executables in the bin/ directory.
+
+To use the executables don't forget to include the pathname in your PATH:
+
+export PATH='path_to_this_directory'/bin:$PATH:
+setenv PATH 'path_to_this_directory'/bin:$PATH:
+
+If the compilation has finished without errors and produced an executable called fdelmodc you can run one of the demo programs by running
+
+> ./fdelmodc_plane.scr
+
+in the directory fdelmodc/demo/ 
+
+The demo directory contains scripts which demonstrate the different possibilities of the modeling program. 
+
+To reproduce the Figures shown in the GEOPHYICS manuscript "Finite-difference modeling experiments for seismic interferometry" the scripts in FiguresPaper directory can be used. Please read the README in the FiguresPaper directory for more instructions and guidelines. 
+
+Other make commands which can be useful:
+
+make clean : removes all object files, but leaves libraries and executables
+make realclean: removes also object files, libraries and executables.
+
+The latest version of the source code and manual can be found at:
+
+http://www.xs4all.nl/~janth/Software/Software.html
+
+the code is used by many different people and when they request a new option for the code (for example place receivers in a circle) then I will try to implement, test and make it available. 
+
+

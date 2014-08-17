@@ -1,0 +1,48 @@
+#!/bin/bash
+
+
+# attempt to make movie from FigurePres.scr snapshots
+# the free program imageJ (http://rsbweb.nih.gov/ij/) is better to make movies.
+
+#ls snap_sP* >& Pfiles
+#sed s/".su"/".eps"/ Pfiles 
+
+sbeg=0
+send=150
+file_snap=snap_sp.su 
+fileshot=shot_T12_S100_Dt12_F30_rvz.su
+rm ${fileshot}_snaps.su
+
+for (( s=$sbeg; s <= $send; s+=1 )) do
+	time=$(echo "scale=4; $s*0.08"| bc -l)
+	trot=$(echo "scale=4; 12.0-$time"| bc -l)
+    timestr=$(printf %5.3f $time)
+	nump=`printf "%03d" $s`
+    echo s = $s time = $timestr
+
+	suwind < $fileshot tmax=$time | \
+	suwind itmax=1500 | rotate trot=$trot | \
+	sushw key=fldr a=$s >> ${fileshot}_snaps.su 
+done
+
+exit;
+
+#	supsimage labelsize=12 titlesize=14 title="time = ${timestr}" \
+#    hbox=4.1 wbox=10 d1=5 d2=5 d1num=1000 d2num=2000 clip=12 > snap$nump.eps
+
+/usr/bin/convert -delay 20 PSsum*.eps PSsummovie.gif
+/usr/bin/convert -delay 20 PSsnap*.eps PSsnapmovie.gif
+/usr/bin/convert -delay 20 Psnap*.eps Psnapmovie.gif
+/usr/bin/convert -delay 20 Ssnap*.eps Ssnapmovie.gif
+
+
+basop < rcv_s_rpp.su choice=4 > rpp.su
+basop < rcv_s_rss.su choice=4 | scale a=-1 > rss.su
+
+susum rpp.su rss.su > rsspp.su 
+supsimage < rpp.su brgb=0.0,0.0,1.0 grgb=1.0,1.0,1.0 wrgb=1.0,1.0,1.0 perc=99 > rpp.eps
+supsimage < rss.su brgb=1.0,1.0,1.0 grgb=1.0,1.0,1.0 wrgb=1.0,0.0,0.0 perc=99 > rss.eps
+
+supsimage < rsspp.su brgb=0.0,0.0,1.0 grgb=1.0,1.0,1.0 wrgb=1.0,0.0,0.0 perc=99 clip=3e-14 > rs
+spp.eps
+
