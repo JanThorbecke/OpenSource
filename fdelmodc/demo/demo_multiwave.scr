@@ -4,6 +4,7 @@
 #PBS -V
 #
 
+#demo for sources with different wavelets for each source postions
 cp=2000
 rho=1000
 dx=2.5
