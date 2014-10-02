@@ -49,3 +49,24 @@ makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
     left=4 right=4 top=4 bottom=4
 
 
+supsgraph < anglerp.su hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='energy' label1='angle in degrees' \
+	titlesize=-1 f1=0 d1=1 d1num=10.0 x1beg=1 > anglerp.eps
+	
+
+supsimage < shot_fd_Fz_zsrc1150_rvz.su \
+    wbox=2 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
+    label1="time [s]" label2="lateral position [m]" > shot_fd_Fz_zsrc1150_rvz.eps
+
+supsimage < shot_fd_Fz_zsrc1150_rp.su \
+    wbox=2 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
+    label1="time [s]" label2="lateral position [m]" > shot_fd_Fz_zsrc1150_rp.eps
+
+supsimage < shot_fd_Fz_zsrc1150_ru.su \
+    wbox=2 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
+    label1="time [s]" label2="lateral position [m]" > shot_fd_Fz_zsrc1150_ru.eps
+
+supsimage < shot_fd_Fz_zsrc1150_rd.su \
+    wbox=2 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
+    label1="time [s]" label2="lateral position [m]" > shot_fd_Fz_zsrc1150_rd.eps
+

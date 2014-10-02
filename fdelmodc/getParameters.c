@@ -1110,10 +1110,10 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		rec->type.pp=0;
 		rec->type.ss=0;
     	if (rec->type.ud) {rec->type.vz=1; rec->type.p=1; rec->int_vz=2;}
+		/* for up and downgoing waves store all x-positons for P and Vz into an array */
 	}
 
 	/* receivers are on a circle, use default interpolation to receiver position */
-	
 	if (getparfloat("rrcv", &rrcv)) { 
 		if (!rec->type.vx) rec->int_vx=3;
 		if (!rec->type.vz) rec->int_vz=3;

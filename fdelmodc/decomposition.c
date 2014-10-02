@@ -18,6 +18,7 @@
 
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
+#define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
 #ifndef COMPLEX
 typedef struct _complexStruct { /* complex number */
@@ -32,27 +33,29 @@ complex firoot(float x, float stab);
 complex ciroot(complex x, float stab);
 complex cwp_csqrt(complex z);
 
-void decud(float om, float rho, float cp, float dx, int nkx, float alpha, float eps, complex *pu);
+void decud(float om, float rho, float cp, float dx, int nkx, float fangle, float alpha, float eps, complex *pu);
+int writesufile(char *filename, float *data, int n1, int n2, float f1, float f2, float d1, float d2);
 
 void kxwfilter(complex *data, float k, float dx, int nkx, 
 			   float alfa1, float alfa2, float perc);
 
 void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
                int nkx, float dx, int nt, float dt, float fmin, float fmax,
-               float cp, float rho)
+               float cp, float rho, int verbose)
 {
-	int      iom, iomin, iomax, ikx, nfreq;
-	float    omin, omax, deltom, om, kp, df;
-	float    alpha, eps;
+	int      iom, iomin, iomax, ikx, nfreq, a, av;
+	float    omin, omax, deltom, om, kp, df, dkx;
+	float    alpha, eps, *angle, *mav, avrp, avrvz, maxrp, maxrvz, fangle;
 	complex  *pu, w;
 	complex  ax, az;
 	
 	df     = 1.0/((float)nt*dt);
+	dkx    = 2.0*M_PI/(nkx*dx);
 	deltom = 2.*M_PI*df;
 	omin   = 2.*M_PI*fmin;
 	omax   = 2.*M_PI*fmax;
 	nfreq  = nt/2+1;
-	eps    = 0.001;
+	eps    = 0.01;
     alpha  = 0.1;
 	
 	iomin  = (int)MIN((omin/deltom), (nfreq-1));
@@ -60,17 +63,65 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 	iomax  = MIN((int)(omax/deltom), (nfreq-1));
 
 	pu     = (complex *)malloc(nkx*sizeof(complex));
+	angle  = (float *)calloc(2*90,sizeof(float));
+	mav  = (float *)calloc(2*90,sizeof(float));
+
+	/* estimate maximum propagation angle in wavefields P and Vz */
+	for (a=1; a<90; a++) {
+		for (iom = iomin; iom <= iomax; iom++) {
+			om  = iom*deltom;
+			ikx = MIN(NINT( ((om/cp)*sin(a*M_PI/180.0))/dkx ), nkx/2);
+			if (ikx < nkx/2 && ikx != 0) {
+				ax.r = rp[iom*nkx+ikx].r + rp[iom*nkx+nkx-1-ikx].r;
+				ax.i = rp[iom*nkx+ikx].i + rp[iom*nkx+nkx-1-ikx].i;
+				angle[a] += sqrt(ax.r*ax.r + ax.i*ax.i);
+				ax.r = rvz[iom*nkx+ikx].r + rvz[iom*nkx+nkx-1-ikx].r;
+				ax.i = rvz[iom*nkx+ikx].i + rvz[iom*nkx+nkx-1-ikx].i;
+				angle[90+a] += sqrt(ax.r*ax.r + ax.i*ax.i);
+			}
+		}
+	}
+
+	avrp  =0.0;
+	avrvz =0.0;
+	maxrp =0.0;
+	maxrvz=0.0;
+	for (a=1; a<90; a++) {
+		avrp += angle[a];
+		maxrp = MAX(angle[a], maxrp);
+		avrvz += angle[90+a];
+		maxrvz = MAX(angle[90+a], maxrvz);
+	}
+	avrp  = avrp/89.0;
+	avrvz = avrvz/89.0;
+	if (verbose>=5)  {
+		writesufile("anglerp.su", angle, 90, 1, 0, 0, 1, 1);
+		writesufile("anglervz.su", &angle[90], 90, 1, 0, 0, 1, 1);
+	}
+	for (av=0; av<90; av++) {
+		 if (angle[av] < avrp) angle[av] = 0.0;
+		 if (angle[90+av] < avrvz) angle[90+av] = 0.0;
+	}
+	if (verbose>=5)  {
+		writesufile("anglerp0.su", angle, 90, 1, 0, 0, 1, 1);
+		writesufile("anglervz0.su", &angle[90], 90, 1, 0, 0, 1, 1);
+	}
+	av=89;
+	while (angle[av] == 0.0 && av > 0 ) av--;
+	fangle = 1.0*av;
+	if (verbose>=2) vmess("Up-down going: P max=%e average=%e => angle at average %f", maxrp, avrp, fangle);
+//	av=179;
+//	while (angle[av] == 0.0 && av > 91) av--;
+//	fprintf(stderr,"vz max=%e average=%e => angle at average %f \n", maxrvz, avrvz, 1.0*(av-90));
 
 	for (iom = iomin; iom <= iomax; iom++) {
 		om  = iom*deltom;
 
-		decud(om, rho, cp, dx, nkx, alpha, eps, pu);
-
+		decud(om, rho, cp, dx, nkx, fangle, alpha, eps, pu);
 /*
 		kxwfilter(dpux, kp, dx, nkx, alfa1, alfa2, perc); 
 		kxwfilter(dpuz, kp, dx, nkx, alfa1, alfa2, perc); 
 */
-
 		for (ikx = 0; ikx < nkx; ikx++) {
 			ax.r = 0.5*rp[iom*nkx+ikx].r;
 			ax.i = 0.5*rp[iom*nkx+ikx].i;
@@ -90,12 +141,12 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 	return;
 }
 
-void decud(float om, float rho, float cp, float dx, int nkx, float alpha, float eps, complex *pu)
+void decud(float om, float rho, float cp, float dx, int nkx, float fangle, float alpha, float eps, complex *pu)
 {
 	int 	 ikx, ikxmax1, ikxmax2, filterpoints, filterppos;
 	float 	 mu, kp, kp2, ks, ks2, ksk;
 	float 	 kx, kx2, kzp2, kzs2, dkx, stab;
-	float 	kxfmax, kxnyq, kpos, kneg, alfa, kfilt, perc, band, *filter;
+	float 	kxfmax, kxnyq, kpos, kneg, kfilt, perc, band, *filter;
 	complex kzp, kzs, cste, ckp, ckp2, ckzp2;
 	
 /* with complex frequency
@@ -109,17 +160,15 @@ void decud(float om, float rho, float cp, float dx, int nkx, float alpha, float 
  	stab  = eps*eps*(ckp.r*ckp.r+ckp.i*ckp.i);
 */
 
-
 	kp  = om/cp;
 	kp2 = kp*kp;
 	dkx = 2.0*M_PI/(nkx*dx);
  	stab  = eps*eps*kp*kp;
 
 	/* make kw filter at maximum angle alfa */
-	alfa = 70.0;
 	perc = 0.10; /* percentage of band to use for smooth filter */
 	filter = (float *)malloc(nkx*sizeof(float));
-	kpos = kp*sin(M_PI*alfa/180.0);
+	kpos = kp*sin(M_PI*fangle/180.0);
 	kneg = -kpos;
 	kxnyq  = M_PI/dx;
 	if (kpos > kxnyq)  kpos = kxnyq;

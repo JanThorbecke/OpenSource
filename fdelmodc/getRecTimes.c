@@ -16,7 +16,7 @@
 *           The Netherlands 
 **/
 
-int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, float *rec_p, float *rec_pp, float *rec_ss, int verbose)
+int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, int verbose)
 {
 	int n1, ibndx, ibndz;
 	int irec, ix, iz, ix2, iz2, ix1, iz1;
@@ -205,6 +205,16 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 		}
 
 	} /* end of irec loop */
+
+	/* store all x-values on z-level for P Vz for up-down decomposition */
+	if (rec.type.ud) {
+		iz = rec.z[0]+ibndz;
+		iz2 = iz+1;
+		for (ix=0; ix<mod.nax; ix++) {
+			rec_udvz[ix*rec.nt+isam] = 0.5*(vz[ix*n1+iz2]+vz[ix*n1+iz]);
+			rec_udp[ix*rec.nt+isam]  = tzz[ix*n1+iz];
+		}
+	}
 
 	return 0;
 }
