@@ -53,7 +53,6 @@ supsgraph < anglerp.su hbox=2 wbox=4 style=normal \
 	labelsize=10 label2='energy' label1='angle in degrees' \
 	titlesize=-1 f1=0 d1=1 d1num=10.0 x1beg=1 > anglerp.eps
 	
-
 supsimage < shot_fd_Fz_zsrc1150_rvz.su \
     wbox=2 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
     label1="time [s]" label2="lateral position [m]" > shot_fd_Fz_zsrc1150_rvz.eps

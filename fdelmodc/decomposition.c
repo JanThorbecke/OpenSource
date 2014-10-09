@@ -94,7 +94,7 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 	}
 	avrp  = avrp/89.0;
 	avrvz = avrvz/89.0;
-	if (verbose>=5)  {
+	if (verbose>=4)  {
 		writesufile("anglerp.su", angle, 90, 1, 0, 0, 1, 1);
 		writesufile("anglervz.su", &angle[90], 90, 1, 0, 0, 1, 1);
 	}
@@ -102,7 +102,7 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 		 if (angle[av] < avrp) angle[av] = 0.0;
 		 if (angle[90+av] < avrvz) angle[90+av] = 0.0;
 	}
-	if (verbose>=5)  {
+	if (verbose>=4)  {
 		writesufile("anglerp0.su", angle, 90, 1, 0, 0, 1, 1);
 		writesufile("anglervz0.su", &angle[90], 90, 1, 0, 0, 1, 1);
 	}
@@ -166,7 +166,7 @@ void decud(float om, float rho, float cp, float dx, int nkx, float fangle, float
  	stab  = eps*eps*kp*kp;
 
 	/* make kw filter at maximum angle alfa */
-	perc = 0.10; /* percentage of band to use for smooth filter */
+	perc = 0.15; /* percentage of band to use for smooth filter */
 	filter = (float *)malloc(nkx*sizeof(float));
 	kpos = kp*sin(M_PI*fangle/180.0);
 	kneg = -kpos;

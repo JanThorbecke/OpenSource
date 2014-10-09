@@ -21,6 +21,7 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 	int n1, ibndx, ibndz;
 	int irec, ix, iz, ix2, iz2, ix1, iz1;
 	float rdz, rdx, C00, C10, C01, C11;
+	float *vz_t, c1, c2, roz;
 
     ibndx = mod.ioPx;
     ibndz = mod.ioPz;
@@ -38,6 +39,8 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 * vx velocities have one sample less in x-direction
 * vz velocities have one sample less in z-direction
 * txz stresses have one sample less in z-direction and x-direction
+*
+* Note, in the acoustic scheme P is stored in the Tzz array.
 ***********************************************************************/
 
 	for (irec=0; irec<rec.n; irec++) {
@@ -210,10 +213,26 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 	if (rec.type.ud) {
 		iz = rec.z[0]+ibndz;
 		iz2 = iz+1;
+		vz_t = (float *)calloc(2*mod.nax,sizeof(float));
+		/* P and Vz are staggered in time and need to correct for this */
+		/* -1- compute Vz at next time step and average with current time step */
+		c1 = 9.0/8.0;
+		c2 = -1.0/24.0;
+		roz = mod.dt/(mod.dx*rec.rho);
+    	for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
+           	vz_t[ix] = vz[ix*n1+iz] - roz*(
+                       	c1*(tzz[ix*n1+iz]   - tzz[ix*n1+iz-1]) +
+                       	c2*(tzz[ix*n1+iz+1] - tzz[ix*n1+iz-2]));
+           	vz_t[mod.nax+ix] = vz[ix*n1+iz2] - roz*(
+                       	c1*(tzz[ix*n1+iz2]   - tzz[ix*n1+iz2-1]) +
+                       	c2*(tzz[ix*n1+iz2+1] - tzz[ix*n1+iz2-2]));
+       	}
 		for (ix=0; ix<mod.nax; ix++) {
-			rec_udvz[ix*rec.nt+isam] = 0.5*(vz[ix*n1+iz2]+vz[ix*n1+iz]);
+			/* -2- compute average in time and depth to get Vz at same depth and time as P */
+			rec_udvz[ix*rec.nt+isam] = 0.25*(vz[ix*n1+iz2]+vz[ix*n1+iz]+vz_t[mod.nax+ix]+vz_t[ix]);
 			rec_udp[ix*rec.nt+isam]  = tzz[ix*n1+iz];
 		}
+		free(vz_t);
 	}
 
 	return 0;

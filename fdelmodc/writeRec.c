@@ -110,7 +110,7 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, int ixsrc, int izsrc, int nsam,
     	if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
 		cp  = rec.cp;
 		rho = rec.rho;
-		fprintf(stderr,"Decomposition array with cp=%f rho=%f\n", cp, rho);
+		if (verbose) vmess("Decomposition array at z=%.2f with cp=%.2f rho=%.2f", rec.zr[0]+mod.z0, cp, rho);
 		rec_up  = (float *)calloc(ntfft*nkx,sizeof(float));
 		rec_down= (float *)calloc(ntfft*nkx,sizeof(float));
 		crec_vz = (complex *)malloc(nfreq*nkx*sizeof(complex));
