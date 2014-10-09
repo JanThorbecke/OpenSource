@@ -90,7 +90,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	
 	getModelInfo(mod->file_cp, &nz, &nx, &dz, &dx, &sub_z0, &sub_x0, &cp_min, &cp_max, &axis, 1, verbose);
 	getModelInfo(mod->file_ro, &n1, &n2, &d1, &d2, &zstart, &xstart, &ro_min, &ro_max, &axis, 0, verbose);
-	assert(ro_min != 0.0);
+	assert( (ro_min != 0.0) );
 	if (NINT(100*(dx/d2)) != 100) 
 		vwarn("dx differs for file_cp and file_den!");
 	if (NINT(100*(dz/d1)) != 100) 
@@ -1146,14 +1146,14 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			vmess("izmin   = %d izmax   = %d ", rec->z[0], rec->z[rec->n-1]);
 			vmess("ixmin   = %d ixmax   = %d ", rec->x[0], rec->x[rec->n-1]);
 			if (rec->type.vx) {
-				fprintf(stderr,"    %s: Receiver interpolation for Vx:",xargv[0]);
+				fprintf(stderr,"    %s: Receiver interpolation for Vx: ",xargv[0]);
 				if(rec->int_vx==0) fprintf(stderr,"vx->vx\n");
 				if(rec->int_vx==1) fprintf(stderr,"vx->vz\n");
 				if(rec->int_vx==2) fprintf(stderr,"vx->txx/tzz\n");
 				if(rec->int_vx==3) fprintf(stderr,"interpolate to postion of receiver\n");
 			}
 			if (rec->type.vz) {
-				fprintf(stderr,"    %s: Receiver interpolation for Vz:",xargv[0]);
+				fprintf(stderr,"    %s: Receiver interpolation for Vz: ",xargv[0]);
 				if(rec->int_vz==0) fprintf(stderr,"vz->vz\n");
 				if(rec->int_vz==1) fprintf(stderr,"vz->vx\n");
 				if(rec->int_vz==2) fprintf(stderr,"vz->txx/tzz\n");
