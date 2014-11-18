@@ -33,7 +33,7 @@ makemod file_base=model.su \
 	intt=def poly=0 cp=$cp2,$cp2 ro=$ro2,$ro2 cs=$cs2,$cs2 x=0,2000 z=$z2,$z2 \
 	verbose=1
 
-#FD Elastic modeling, recording at Ocean bottom
+#FD Acoustic modeling, recording at Ocean bottom
 
 ../fdelmodc \
 	file_cp=model_cp.su file_den=model_ro.su file_cs=model_cs.su file_src=wav.su \

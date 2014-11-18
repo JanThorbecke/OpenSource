@@ -538,33 +538,6 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		if (shot->z[is] > nz-1) shot->n = is-1;
 	}
 
-	/* check if shots are defined in tapered areas */
-/*
-	if (taptop) {
-		for (is=0; is<shot->n; is++) {
-			if ( shot->z[is] < ntaper ) 
-				verr("Source z-position Z[%d]=%.3f in tapered area !",is,sub_z0+dz*shot->z[is]);
-		}
-	}
-	if (tapbottom) {
-		for (is=0; is<shot->n; is++) {
-			if ( shot->z[is] > nz-ntaper )
-				verr("Source z-position Z[%d]=%.3f in tapered area !",is,sub_z0+dz*shot->z[is]);
-		}
-	}
-	if (tapleft) {
-		for (is=0; is<shot->n; is++) {
-			if ( shot->x[is] < ntaper )
-				verr("Source x-position X[%d]=%.3f in tapered area !",is,sub_x0+dx*shot->x[is]);
-		}
-	}
-	if (tapright) {
-		for (is=0; is<shot->n; is++) {
-			if ( shot->x[is] > nx-ntaper )
-				verr("Source x-position X[%d]=%.3f in tapered area !",is,sub_x0+dx*shot->x[is]);
-		}
-	}
-*/
 	/* check if source array is defined */
 	
 	nxsrc = countparval("xsrca");
@@ -1061,33 +1034,6 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	
 	recvPar(rec, sub_x0, sub_z0, dx, dz, nx, nz);
 
-	/* check if receivers are defined in tapered areas */
-/*
-	if (taptop) {
-		for (ir=0; ir<rec->n; ir++) {
-			if ( rec->z[ir] < ntaper ) 
-				vwarn("Receiver z-position Z[%d]=%.3f in tapered area !",ir,sub_z0+dz*rec->z[ir]);
-		}
-	}
-	if (tapbottom) {
-		for (ir=0; ir<rec->n; ir++) {
-			if ( rec->z[ir] > nz-ntaper )
-				vwarn("Receiver z-position Z[%d]=%.3f in tapered area !",ir,sub_z0+dz*rec->z[ir]);
-		}
-	}
-	if (tapleft) {
-		for (ir=0; ir<rec->n; ir++) {
-			if ( rec->x[ir] < ntaper )
-				vwarn("Receiver x-position X[%d]=%.3f in tapered area !",ir,sub_x0+dx*rec->x[ir]);
-		}
-	}
-	if (tapright) {
-		for (ir=0; ir<rec->n; ir++) {
-			if ( rec->x[ir] > nx-ntaper )
-				vwarn("Receiver x-position X[%d]=%.3f in tapered area !",ir,sub_x0+dx*rec->x[ir]);
-		}
-	}
-*/
 	if (!getparint("rec_type_vz", &rec->type.vz)) rec->type.vz=1;
 	if (!getparint("rec_type_vx", &rec->type.vx)) rec->type.vx=0;
 	if (!getparint("rec_type_ud", &rec->type.ud)) rec->type.ud=0;
@@ -1101,6 +1047,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		if (!getparint("rec_type_txz", &rec->type.txz)) rec->type.txz=0;
 		if (!getparint("rec_type_pp", &rec->type.pp)) rec->type.pp=0;
 		if (!getparint("rec_type_ss", &rec->type.ss)) rec->type.ss=0;
+		/* for up and downgoing waves store all x-positons for Vz, Vx, Txz, Tzz into an array */
+    	if (rec->type.ud) {rec->type.vz=1; rec->type.p=1; rec->type.tzz=1; rec->type.txz=1; rec->int_vz=2;}
 	}
 	else {
 		if (!getparint("rec_type_p", &rec->type.p)) rec->type.p=1;
@@ -1109,8 +1057,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		rec->type.txz=0;
 		rec->type.pp=0;
 		rec->type.ss=0;
-    	if (rec->type.ud) {rec->type.vz=1; rec->type.p=1; rec->int_vz=2;}
 		/* for up and downgoing waves store all x-positons for P and Vz into an array */
+    	if (rec->type.ud) {rec->type.vz=1; rec->type.p=1; rec->int_vz=2;}
 	}
 
 	/* receivers are on a circle, use default interpolation to receiver position */
