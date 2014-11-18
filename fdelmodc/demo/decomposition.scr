@@ -33,6 +33,7 @@ makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
     file_den=syncl_ro.su \
     file_src=wave.su \
     file_rcv=shot_fd_Fz_zsrc1150.su \
+	nshot=2 dxshot=500 \
     src_type=7 \
 	src_orient=1 \
 	src_injectionrate=1 \

@@ -341,7 +341,6 @@ int main (int argc, char **argv)
 			if (verbose) vmess("end of file_in1 data reached");
 			if (!autoco && repeat != 1) fclose(fp_in2);
 			if (fp_out!=stdout) {
-				fclose(fp_out);
 				fflush(fp_out);
 			}
 			break;
@@ -411,7 +410,7 @@ int main (int argc, char **argv)
 		k++;
 	}
 	t1 = wallclock_time();
-	if (fp_out!=stdout) {
+	if ((fp_out!=stdout) && (fp_out!=NULL)) {
 		fflush(fp_out);
 		fclose(fp_out);
 	}

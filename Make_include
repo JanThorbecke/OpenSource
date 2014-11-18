@@ -45,12 +45,12 @@ OPTC = -O3 -ffast-math
 #OPTC = -O3 -mssse3 -no-prec-div -vec-report2 -fno-builtin-__sprintf_chk 
 
 #PGI 
-CC = pgcc
-FC = pgf90
-OPTC = -fast  -Minfo=vect -Mvect=simd:256 -Msafeptr
+#CC = pgcc
+#FC = pgf90
+#OPTC = -fast  -Minfo=vect -Mvect=simd:256 -Msafeptr
 #OPTC = -fast  -Minfo=vect -Mvect=simd:256 -Msafeptr -Mprof=lines
-OPTF = -fast
-LDFLAGS = -fast -Minfo=vect -Mvect=simd:256 -Msafeptr 
+#OPTF = -fast
+#LDFLAGS = -fast -Minfo=vect -Mvect=simd:256 -Msafeptr 
 
 #Pathscale 
 #CC = cc
@@ -59,9 +59,9 @@ LDFLAGS = -fast -Minfo=vect -Mvect=simd:256 -Msafeptr
 #OPTF = -Ofast -OPT:Ofast -fno-math-errno
 
 #Apple OSX clang/gcc (10.9) llvm
-#CC = clang
-#OPTC = -Ofast
-#LDFLAGS = -Ofast
+CC = clang
+OPTC = -Ofast
+LDFLAGS = -Ofast
 
 #AMD Open64
 #CC = opencc
