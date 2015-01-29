@@ -1,0 +1,9 @@
+#!/bin/bash
+
+dx=1.0
+
+../makemod sizex=1000 sizez=500 dx=$dx dz=$dx cp0=1225  ro0=1000 \
+        orig=-500,-50 file_base=scatter.su verbose=2 \
+        intt=randdf x=-240,240 z=80,320 cp=0 ro=1000 var=73,15 \
+        verbose=4
+

@@ -1,35 +1,54 @@
 #!/bin/bash
-export PATH=../../utils:$PATH:
+export PATH=../utils:$PATH:
 
 dx=2.5 
 dt=0.0005
 
-makemod file_base=model.su \
+../makemod file_base=model.su \
 	cp0=1500 ro0=1000 sizex=6000 sizez=2000 dx=$dx dz=$dx orig=-3000,0 \
 	intt=random x=-3000,0,3000 z=250,150,250 poly=1 cp=2400 ro=3500 var=500 \
 	intt=def x=-3000,0,3000 z=850,850,850 poly=1 cp=1500 ro=1000 \
-	intt=diffr var=5 x=-1000,0,1000 z=1000,1000,1000 cp=2500,2500,2500 ro=3500,3500,3500 \
+	intt=diffr var=5,2 x=-1000,0,1000 z=1000,1000,1000 cp=2500,2500,2500 ro=3500,3500,3500 \
 	verbose=4
 
-makemod file_base=model.su \
+../makemod file_base=model.su \
 	cp0=1900 ro0=1200 sizex=6000 sizez=2000 dx=$dx dz=$dx orig=-3000,0 \
 	intt=randdf x=-3000 z=200 cp=2700 ro=4700 var=4000,5 \
-	intt=def x=-3000,0,3000 z=700,700,700 cp=1900 ro=1200 \
+	intt=def nt poly=0 x=-3000,0,3000 z=700,700,700 cp=1900 ro=1200 \
 	intt=diffr x=-90,0,90 z=1000,1000,1000 cp=2300,2300,2300 ro=2800,2800,2800 var=5 \
 	verbose=4
 
+# different types of point diffractors
+../makemod file_base=diffr.su \
+	cp0=1900 ro0=1200 sizex=500 sizez=500 dx=$dx dz=$dx orig=-250,0 \
+	intt=diffr x=-200 z=250 cp=2300 ro=2800 var=8,0 \
+	intt=diffr x=0 z=250 cp=2300 ro=2800 var=8,1 \
+	intt=diffr x=200 z=250 cp=2300 ro=2800 var=8,2 \
+	verbose=4
+
 #model with reverse fault
-makemod file_base=reverse.su \
+../makemod file_base=reverse.su \
 	cp0=1900 ro0=1200 sizex=6000 sizez=2000 dx=$dx dz=$dx orig=-3000,0 \
 	intt=def x=-3000,3000 z=200,200 cp=2900 ro=2200 above=0 \
 	intt=def x=-3000,3000 z=700,700 cp=1900 ro=1200 above=0 \
 	intt=def x=-200,200 z=900,700 cp=2900 ro=2200 above=0 \
 	intt=def x=200,3000 z=700,700 cp=2900 ro=2200 above=0 \
 	intt=def x=-200,3000 z=900,900 cp=1900 ro=1200 above=0 \
-
-
-exit
-
 	verbose=4
 
+../makemod file_base=mfptest1_model.su \
+         cp0=3700 ro0=2700 sizex=1000 sizez=1000 \
+         dx=1 dz=1 orig=0,0 \
+         intt=randdf poly=0 x=0,1000 z=0,390  cp=3000 ro=2400 var=99,10\
+         intt=def poly=0 x=0,1000 z=400,400 cp=4000 ro=3000\
+         intt=elipse poly=0 x=300 z=800  cp=3400 ro=1500 var=250,170\
+         verbose=4
+
+../makemod file_base=mfptest2_model.su \
+       cp0=3700 ro0=2700 sizex=5000 sizez=1000 \
+       dx=1 dz=1 orig=0,0 \
+       intt=randdf poly=0 x=0,5000 z=0,390 cp=3000 ro=2400 var=200,10\
+       intt=def poly=0 x=0,5000 z=400,400 cp=4000 ro=3000\
+       intt=elipse poly=0 x=1000 z=800 cp=3400 ro=1500 var=250,170\
+       verbose=4
 

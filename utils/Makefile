@@ -2,7 +2,7 @@
 
 include ../Make_include
 
-LIBS    += -L$L -lgenfft -lm
+LIBS    += -L$L -lgenfft -lm $(LIBSM)
 #OPTC += -openmp 
 #OPTC += -g -O0
 
@@ -12,6 +12,7 @@ SRCM	= \
 		makemod.c  \
 		wallclock_time.c  \
 		diffraction.c \
+		randdf.c \
 		elipse.c \
 		fractint.c \
 		grid.c \

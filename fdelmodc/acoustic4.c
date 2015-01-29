@@ -4,6 +4,8 @@
 #include<assert.h>
 #include"fdelmodc.h"
 
+#define MIN(x,y) ((x) < (y) ? (x) : (y))
+
 int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float **src_nwav, int verbose);
 
 int storeSourceOnSurface(modPar mod, srcPar src, bndPar bnd, int ixsrc, int izsrc, float *vx, float *vz, float *tzz, float *txx, float *txz, int verbose);
@@ -67,7 +69,6 @@ int acoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 	int   nx, nz, n1;
 	int   is0, isrc, ioXx, ioXz, ioZz, ioZx, ioPx, ioPz;
 
-
 	c1 = 9.0/8.0; 
 	c2 = -1.0/24.0;
 	nx  = mod.nx;
@@ -87,8 +88,8 @@ int acoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 #pragma ivdep
 		for (iz=mod.ioXz; iz<mod.ieXz; iz++) {
 			vx[ix*n1+iz] -= rox[ix*n1+iz]*(
-						c1*(p[ix*n1+iz]     - p[(ix-1)*n1+iz]) +
-						c2*(p[(ix+1)*n1+iz] - p[(ix-2)*n1+iz]));
+				c1*(p[ix*n1+iz]     - p[(ix-1)*n1+iz]) +
+				c2*(p[(ix+1)*n1+iz] - p[(ix-2)*n1+iz]));
 		}
 	}
 
@@ -110,7 +111,6 @@ int acoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 
 	/* boundary condition clears velocities on boundaries */
 	boundariesP(mod, bnd, vx, vz, p, NULL, NULL, rox, roz, l2m, NULL, NULL, verbose);
-
 
 	/* calculate p/tzz for all grid points except on the virtual boundary */
 #pragma omp	for private (ix, iz)

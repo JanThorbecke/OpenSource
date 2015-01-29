@@ -145,7 +145,6 @@ float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float
 		 applySource(mod, src, wav, bnd, itime, ixsrc, izsrc, vx, vz, tzz, txx, txz, rox, roz, l2m, src_nwav, verbose);
 	}
     
-
 	/* check if there are sources placed on the boundaries */
     storeSourceOnSurface(mod, src, bnd, ixsrc, izsrc, vx, vz, tzz, txx, txz, verbose);
     

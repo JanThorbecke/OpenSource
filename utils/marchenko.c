@@ -65,16 +65,18 @@ char *sdoc[] = {
 "   niter=10 ................. number of iterations",
 " MUTE WINDOW ",
 "   above=0 .................. mute above(1), around(0) or below(-1) the maximum times of file_mute",
-"   shift=12 .................. number of points above(positive) / below(negative) maximum time for mute",
-"   hw=8 .................... window in time samples to look for maximum in next trace",
-"   smooth=5 ................ number of points to smooth mute with cosine window",
-"   w=1 ..................... weight factor for summation of muted field with Tinv",
+"   shift=12 ................. number of points above(positive) / below(negative) maximum time for mute",
+"   hw=8 ..................... window in time samples to look for maximum in next trace",
+"   smooth=5 ................. number of points to smooth mute with cosine window",
+"   weight=1 ................. weight factor for summation of muted field with Tinv",
 " OUTPUT DEFINITION ",
-"   file_green= .............. output file with full Green functions after all iterations",
-"   file_gmin= ............... output file with Gmin ",
-"   file_gplus= .............. output file with Gplus ",
-"   file_f1plus= ............. output file with f1plus after niter iterations ",
-"   file_f1min= .............. output file with f1min  after niter iterations ",
+"   file_green= .............. output file with full Green function(s)",
+"   file_gplus= .............. output file with G+ ",
+"   file_gmin= ............... output file with G- ",
+"   file_f1plus= ............. output file with f1+ ",
+"   file_f1min= .............. output file with f1- ",
+"   file_pplus= .............. output file with p+ ",
+"   file_pmin= ............... output file with p- ",
 "   verbose=0 ................ silent option; >0 displays info",
 " ",
 " ",
@@ -89,7 +91,8 @@ NULL};
 
 int main (int argc, char **argv)
 {
-    FILE	*fp_syn, *fp_shot, *fp_out, *fp_f1plus, *fp_f1min, *fp_gmin, *fp_gplus;
+    FILE	*fp_syn, *fp_shot, *fp_out, *fp_f1plus, *fp_f1min;
+	FILE	*fp_gmin, *fp_gplus, *fp_pplus, *fp_pmin;
 	int		i, j, k, l, ret, nshots, Nsyn, nt, nx, nts, nxs, more, ngath;
 	int		size, n1, n2, ntap, tap, di, ixrcv, ixsrc, off, optn, ntraces;
     int     nf, nw, nw_low, nw_high, nfreq, *xnx;
@@ -101,10 +104,10 @@ int main (int argc, char **argv)
 	float	*shotdata, d1, d2, f1, f2, fts, fxs, ft, fx, *etap, *xsyn, dxsrc;
 	float   *green, *pplus, *pmin, *tinv, *mute, dt, dx, dts, dxs, scl, alpha, mem;
 	float   *f1plus, *f1min, *Nk, *Nk_1, *trace, *Gmin, *Gplus;
-	float   max, scel, xmin, xmax, w;
+	float   max, scel, xmin, xmax, weight;
     complex *cshots, *cpplus, *ctrace;
 	char	*file_tinv, *file_shot, *file_green;
-	char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus;
+	char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_pplus, *file_pmin;
 	segy	*hdrs, *hdrs_in, *hdrs_out;
 
 	initargs(argc, argv);
@@ -117,18 +120,16 @@ int main (int argc, char **argv)
 	if (!getparstring("file_tinv", &file_tinv)) file_tinv = NULL;
 	if (!getparstring("file_f1plus", &file_f1plus)) file_f1plus = NULL;
 	if (!getparstring("file_f1min", &file_f1min)) file_f1min = NULL;
+	if (!getparstring("file_gplus", &file_gplus)) file_gplus = NULL;
+	if (!getparstring("file_gmin", &file_gmin)) file_gmin = NULL;
+	if (!getparstring("file_pplus", &file_pplus)) file_pplus = NULL;
+	if (!getparstring("file_pmin", &file_pmin)) file_pmin = NULL;
 	if (!getparint("verbose", &verbose)) verbose = 0;
 	if (file_tinv == NULL && file_shot == NULL) 
 		verr("file_tinv and file_shot cannot be both input pipe");
 	if (!getparstring("file_green", &file_green)) {
 		if (verbose) vwarn("parameter file_green not found, assume pipe");
 		file_green = NULL;
-	}
-	if (!getparstring("file_gplus", &file_gplus)) {
-		file_gplus = NULL;
-	}
-	if (!getparstring("file_gmin", &file_gmin)) {
-		file_gmin = NULL;
 	}
 	if (!getparint("nshots", &nshots)) verr("nshots should be given");
 	if (!getparfloat("fmin", &fmin)) fmin = 0.0;
@@ -138,7 +139,7 @@ int main (int argc, char **argv)
 	if (!getparint("reci", &reci)) reci = 0;
 	if (!getparint("off", &off)) off = 0;
 	if (!getparfloat("alpha", &alpha)) alpha = 0.0;
-	if (!getparfloat("w", &w)) w = 1.0;
+	if (!getparfloat("weight", &weight)) weight = 1.0;
 	if (!getparint("tap", &tap)) tap = 0;
 	if (!getparint("ntap", &ntap)) ntap = 0;
 
@@ -307,8 +308,12 @@ int main (int argc, char **argv)
 		vmess("direction of increasing traces = %d", di);
 		vmess("number of time samples(fft)  s = %d %d", nt, optn);
 		vmess("time sampling                  = %e ", dt);
-		vmess("Gmin output file               = %s ", file_gmin);
-		vmess("Gplus output file              = %s ", file_gplus);
+		if (file_gmin != NULL) vmess("Gmin output file               = %s ", file_gmin);
+		if (file_gplus != NULL) vmess("Gplus output file              = %s ", file_gplus);
+		if (file_pmin != NULL) vmess("Pmin output file               = %s ", file_pmin);
+		if (file_pplus != NULL) vmess("Pplus output file              = %s ", file_pplus);
+		if (file_f1min != NULL) vmess("f1min output file              = %s ", file_f1min);
+		if (file_f1plus != NULL) vmess("f1plus output file             = %s ", file_f1plus);
 	}
 	t1    = wallclock_time();
 	tread = t1-t0;
@@ -357,9 +362,9 @@ int main (int argc, char **argv)
 			for (l = 0; l < Nsyn; l++) {
 				for (i = 0; i < nxs; i++) {
 					j = 0;
-					Nk_1[l*nxs*nts+i*nts+j] = -w*Nk[l*nxs*nts+i*nts+j];
+					Nk_1[l*nxs*nts+i*nts+j] = -weight*Nk[l*nxs*nts+i*nts+j];
 					for (j = 1; j < nts; j++) {
-						Nk_1[l*nxs*nts+i*nts+j] = -w*Nk[l*nxs*nts+i*nts+nts-j];
+						Nk_1[l*nxs*nts+i*nts+j] = -weight*Nk[l*nxs*nts+i*nts+nts-j];
 					}
 				}
 			}
@@ -413,9 +418,9 @@ int main (int argc, char **argv)
 			for (l = 0; l < Nsyn; l++) {
 				for (i = 0; i < nxs; i++) {
 					j = 0;
-					Nk_1[l*nxs*nts+i*nts+j] = -w*Nk[l*nxs*nts+i*nts+j];
+					Nk_1[l*nxs*nts+i*nts+j] = -weight*Nk[l*nxs*nts+i*nts+j];
 					for (j = 1; j < nts; j++) {
-						Nk_1[l*nxs*nts+i*nts+j] = -w*Nk[l*nxs*nts+i*nts+nts-j];
+						Nk_1[l*nxs*nts+i*nts+j] = -weight*Nk[l*nxs*nts+i*nts+nts-j];
 					}
 				}
 			}
@@ -466,9 +471,9 @@ int main (int argc, char **argv)
 			for (l = 0; l < Nsyn; l++) {
 				for (i = 0; i < nxs; i++) {
 					j = 0;
-					Nk_1[l*nxs*nts+i*nts+j] = -w*Nk[l*nxs*nts+i*nts+j];
+					Nk_1[l*nxs*nts+i*nts+j] = -weight*Nk[l*nxs*nts+i*nts+j];
 					for (j = 1; j < nts; j++) {
-						Nk_1[l*nxs*nts+i*nts+j] = -w*Nk[l*nxs*nts+i*nts+nts-j];
+						Nk_1[l*nxs*nts+i*nts+j] = -weight*Nk[l*nxs*nts+i*nts+nts-j];
 					}
 				}
 			}
@@ -563,9 +568,9 @@ int main (int argc, char **argv)
 				for (l = 0; l < Nsyn; l++) {
 					for (i = 0; i < nxs; i++) {
 						j=0;
-						Gmin[l*nxs*nts+i*nts+j] = w*Nk[l*nxs*nts+i*nts+j] - f1min[l*nxs*nts+i*nts+j];
+						Gmin[l*nxs*nts+i*nts+j] = weight*Nk[l*nxs*nts+i*nts+j] - f1min[l*nxs*nts+i*nts+j];
 						for (j = 1; j < nts; j++) {
-							Gmin[l*nxs*nts+i*nts+j] = w*Nk[l*nxs*nts+i*nts+j] - f1min[l*nxs*nts+i*nts+j];
+							Gmin[l*nxs*nts+i*nts+j] = weight*Nk[l*nxs*nts+i*nts+j] - f1min[l*nxs*nts+i*nts+j];
 						}
 					}
 				}
@@ -591,9 +596,9 @@ int main (int argc, char **argv)
 				for (l = 0; l < Nsyn; l++) {
 					for (i = 0; i < nxs; i++) {
 						j=0;
-						Gplus[l*nxs*nts+i*nts+j] = -w*Nk[l*nxs*nts+i*nts+j] + f1plus[l*nxs*nts+i*nts+j];
+						Gplus[l*nxs*nts+i*nts+j] = -weight*Nk[l*nxs*nts+i*nts+j] + f1plus[l*nxs*nts+i*nts+j];
 						for (j = 1; j < nts; j++) {
-							Gplus[l*nxs*nts+i*nts+j] = -w*Nk[l*nxs*nts+i*nts+j] + f1plus[l*nxs*nts+i*nts+nts-j];
+							Gplus[l*nxs*nts+i*nts+j] = -weight*Nk[l*nxs*nts+i*nts+j] + f1plus[l*nxs*nts+i*nts+nts-j];
 						}
 					}
 				}
@@ -650,6 +655,14 @@ int main (int argc, char **argv)
     	fp_gplus = fopen(file_gplus, "w+");
     	if (fp_gplus==NULL) verr("error on creating output file %s", file_gplus);
 	}
+	if (file_pplus!=NULL) {
+        fp_pplus = fopen(file_pplus, "w+");
+    	if (fp_pplus==NULL) verr("error on creating output file %s", file_pplus);
+	}
+	if (file_pmin != NULL) {
+    	fp_pmin = fopen(file_pmin, "w+");
+    	if (fp_pmin==NULL) verr("error on creating output file %s", file_pmin);
+	}
 	if (file_f1plus!=NULL) {
         fp_f1plus = fopen(file_f1plus, "w+");
     	if (fp_f1plus==NULL) verr("error on creating output file %s", file_f1plus);
@@ -694,13 +707,19 @@ int main (int argc, char **argv)
         if (ret < 0 ) verr("error on writing output file.");
 
 		if (fp_gmin != NULL) {
-        	//ret = writeData(fp_gmin, (float *)&Gmin[l*size], hdrs_out, n1, n2);
-        	ret = writeData(fp_gmin, (float *)&pmin[l*size], hdrs_out, n1, n2);
+        	ret = writeData(fp_gmin, (float *)&Gmin[l*size], hdrs_out, n1, n2);
         	if (ret < 0 ) verr("error on writing output file.");
 		}
 		if (fp_gplus != NULL) {
-        	//ret = writeData(fp_gplus, (float *)&Gplus[l*size], hdrs_out, n1, n2);
-        	ret = writeData(fp_gplus, (float *)&pplus[l*size], hdrs_out, n1, n2);
+        	ret = writeData(fp_gplus, (float *)&Gplus[l*size], hdrs_out, n1, n2);
+        	if (ret < 0 ) verr("error on writing output file.");
+		}
+		if (fp_pplus != NULL) {
+        	ret = writeData(fp_pplus, (float *)&pplus[l*size], hdrs_out, n1, n2);
+        	if (ret < 0 ) verr("error on writing output file.");
+		}
+		if (fp_pmin != NULL) {
+        	ret = writeData(fp_pmin, (float *)&pmin[l*size], hdrs_out, n1, n2);
         	if (ret < 0 ) verr("error on writing output file.");
 		}
 		if (fp_f1plus != NULL) {
@@ -737,6 +756,8 @@ int main (int argc, char **argv)
 	ret = fclose(fp_out);
 	if (fp_gplus != NULL) ret += fclose(fp_gplus);
 	if (fp_gmin != NULL) ret += fclose(fp_gmin);
+	if (fp_pplus != NULL) ret += fclose(fp_pplus);
+	if (fp_pmin != NULL) ret += fclose(fp_pmin);
 	if (fp_f1plus != NULL) ret += fclose(fp_f1plus);
 	if (fp_f1min != NULL) ret += fclose(fp_f1min);
 	if (ret < 0) verr("err %d on closing output file",ret);

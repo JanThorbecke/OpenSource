@@ -51,7 +51,7 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 	float *txz, float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
 	float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, int verbose);
 
-int writeRec(recPar rec, modPar mod, bndPar bnd, int ixsrc, int izsrc, int nsam, int ishot, int fileno, 
+int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsrc, int nsam, int ishot, int fileno, 
 			 float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
 			 float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, int verbose);
 
@@ -210,6 +210,7 @@ char *sdoc[] = {
 "   rec_type_pp=0 ..... P (divergence) registration _rP",
 "   rec_type_ss=0 ..... S (curl) registration _rS",
 "   rec_type_ud=0 ..... decomposition in up and downgoing waves _ru, _rd",
+"   kangle= ........... maximum wavenumber angle for decomposition",
 "   rec_int_vx=0  ..... interpolation of Vx receivers",
 "                     - 0=Vx->Vx (no interpolation)",
 "                     - 1=Vx->Vz",
@@ -544,7 +545,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 				/* at the end of modeling a shot, write receiver array to output file(s) */
 				if (writeToFile && (it+rec.skipdt <= it1-1) ) {
 					fileno = ( ((it-rec.delay)/rec.skipdt)+1)/rec.nt;
-					writeRec(rec, mod, bnd, ixsrc, izsrc, isam+1, ishot, fileno,
+					writeRec(rec, mod, bnd, wav, ixsrc, izsrc, isam+1, ishot, fileno,
 						rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
 						rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose);
 				}
@@ -600,7 +601,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 				}
 			}
 		}
-		writeRec(rec, mod, bnd, ixsrc, izsrc, isam+1, ishot, fileno,
+		writeRec(rec, mod, bnd, wav, ixsrc, izsrc, isam+1, ishot, fileno,
 			rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
 			rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose);
 		

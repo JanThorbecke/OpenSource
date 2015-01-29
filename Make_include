@@ -75,7 +75,7 @@ LDFLAGS = -Ofast
 #AMD ACML 4.4.0
 #AMDROOT = /home/thorbcke/amdsdk/v1.0/acml/open64_64
 #OPTC += -DACML440 -I$(AMDROOT)/include
-#LIBS = -L$(AMDROOT)/lib -lacml -lfortran -lffio -lrt
+#LIBSM = -L$(AMDROOT)/lib -lacml -lfortran -lffio -lrt -lm
 
 #############################################################################
 # Some convenient abbreviations

@@ -40,7 +40,9 @@ void fractint(int *zp, int minx, int maxx, float dx, float dz, float *interface,
 
 void elipse(float *x, float *z, int nxp, float dx, float dz, float **gridcp, float **gridcs, float **gridro, float **cp, float **cs, float **ro, float *interface, int *zp, int nz, int nx, float r1, float r2, float gradcp, float gradcs, float gradro);
 
-void diffraction(float *x, float *z, int nxp, float dx, float dz, float **gridcp, float **gridcs, float **gridro, float **cp, float **cs, float **ro, float *interface, int *zp, int nx, int diffrwidth);
+void diffraction(float *x, float *z, int nxp, float dx, float dz, float **gridcp, float **gridcs, float **gridro, float **cp, float **cs, float **ro, float *interface, int *zp, int nx, int diffrwidth, int type);
+
+void randdf(float *x, float *z, int nxp, float dx, float dz, float **gridcp, float **gridcs, float **gridro, float **cp, float **cs, float **ro, float *interface, int *zp, int nx, float sizex, float sizez, int ndiff, int diffrwidth, int type);
 
 /*********************** self documentation **********************/
 char *sdoc[] = {
@@ -81,6 +83,7 @@ char *sdoc[] = {
   "   poly=0 ................... polynominal interpolation through (x,z) points",
   "   x=none ................... x-positions for the interface",
   "   z=none ................... z-positions for the interface",
+  "   dtype=0 .................. diffractor type for diffr and randdf",
   " OUTPUT ",
   "   writeint=0 ............... interfaces as function of x (ext: _int)",
   "   rayfile=0 ................ interfaces as function of x in ASCII file.mod",
@@ -90,25 +93,30 @@ char *sdoc[] = {
   " ",
   "   Options for intt:",
   "         - def       = default interface through the points(Xi, Zi)",
+  "         - sin       = sinus shaped interface",
   "         - rough     = rough interface with beta(smoothness)",
   "         - fract     = cosinus fractal shaped interface",
-  "         - sin       = sinus shaped interface",
-  "         - diffr     = point diffractions",
-  "         - elipse    = define elipse shaped body",
   "         - random    = define random velocities in layer",
+  "         - elipse    = define elipse shaped body",
+  "         - diffr     = point diffractions",
   "         - randdf    = define random diffractors ",
   "   Options for var in case of intt =:",
   "         - sin(2)    = wavelength,amplitude",
   "         - rough(3)  = amplitude,beta,seed",
   "         - fract(6)  = Nsinus,amplitude,dim,k0,freqscale,seed",
-  "         - elipse(2) = r1, r2: vertical and horisontal radius",
   "         - random(1) = min-max variation around cp",
-  "         - diffr(1)  = width of each point",
+  "         - elipse(2) = r1, r2: vertical and horizontal radius",
+  "         - diffr(1)  = width of each point, type(optional)",
   "         - randdf(2) = number of points, width of each point",
   "   Options for poly in default interface:",
   "         - 0         = linear",
   "         - 1         = polynomal",
   "         - 2         = cubic spline",
+  "   Options for dtype value in var=width,dtype for diffr:",
+  "         - -1        = random (0, 1, or 2) diffractor type",
+  "         - 0         = cubic diffractor",
+  "         - 1         = diamond diffractor",
+  "         - 2         = circular diffractor",
   "   Option for gradunit, gradient unit per layer:",
   "         - 0         = gradient unit per layer is m/s per dz (default)",
   "         - 1         = gradient unit per layer is m/s per m",
@@ -130,7 +138,7 @@ int main(int argc, char **argv)
 {
   FILE *fpint, *fpcp, *fpcs, *fpro;
   int   example, verbose, writeint, nb;
-  int	above, diffrwidth;
+  int	above, diffrwidth, dtype;
   int   Ngp, Ngs, Ngr, Np, Ns, Nr, Ng, Ni, Nv, Nvi, No, Noi;
   int   jint, jcount, j, ix, iz, nx, nz, nxp, nzp, *zp, nmaxx, nminx, optgrad, poly, gradt; 
   int	ncp, nro, ncs, nvel, skip, rayfile, store_int;
@@ -207,6 +215,7 @@ int main(int argc, char **argv)
   if(!getparint("skip", &skip)) skip = 5;
   if(!getparint("above", &above)) above=0;
   if(!getparint("verbose", &verbose)) verbose=0;
+  if(!getparint("dtype", &dtype)) dtype = 0;
   
   if ((writeint == 1) || (rayfile == 1)) store_int = 1;
   else store_int = 0;
@@ -233,13 +242,14 @@ int main(int argc, char **argv)
     if (strstr(intt,"fract") != NULL) Nvi++;
     if (strstr(intt,"elipse") != NULL) Nvi++;
 	if (strstr(intt,"random") != NULL) Nvi++;
-	if (strstr(intt,"randdf") != NULL) Nvi++;
-    if (strstr(intt,"diffr") != NULL) {
+//	if (strstr(intt,"randdf") != NULL) Nvi++;
+    if (strstr(intt,"diffr") != NULL || strstr(intt,"randdf") != NULL) {
 	  Nvi++;
-      if (Ng != 0) Ng++; 
-      if (No != 0) No++;
+//      if (Ng != 0) Ng++; 
+//      if (No != 0) No++;
     }
   }
+//  fprintf(stderr,"Nvi=%d ng=%d No=%d np=%d,", Nvi,Ng,No,Np);
   
   if (Np != Nr && ro0 > 0) verr("number of cp and ro not equal.");
   if (Np != Ni) verr("number of cp and interfaces not equal.");
@@ -278,9 +288,9 @@ int main(int argc, char **argv)
   if (No == 0) {
     if (verbose>=2) vmess("All interfaces are linear.");
   }
-  else if (No != Np) {
-    verr("number of poly variables and interfaces are not equal.");
-  }
+//  else if (No != Np) {
+//    verr("number of poly variables and interfaces are not equal.");
+//  }
   
   if (Np > 0) {
     if (countparname("x") != Np)
@@ -521,8 +531,7 @@ int main(int argc, char **argv)
         if (above == 0) Nvi++; else Nvi--;
 	}
 	  
-//    if ((strstr(intt,"diffr") == NULL) && (strstr(intt,"randdf") == NULL)) {
-    if ((strstr(intt,"diffr") == NULL) ) {
+    if ((strstr(intt,"diffr") == NULL) && (strstr(intt,"randdf") == NULL)) {
       interpolation(x, z, nxp, nx, poly, &nminx, &nmaxx, dx, 
 		    cp, cs, ro, nvel, interface);
     }
@@ -531,7 +540,8 @@ int main(int argc, char **argv)
       linearint(zp, nminx, nmaxx, dz, interface);
       if (above == 0) Noi++; else Noi--;
     }
-    else if (strstr(intt,"sin") != NULL) {
+
+    if (strstr(intt,"sin") != NULL) {
       Nv = countnparval(Nvi,"var");
       if (Nv != 2) verr("Sinus interface must have 2 variables.");
       getnparfloat(Nvi,"var", var);
@@ -556,58 +566,58 @@ int main(int argc, char **argv)
       if (above == 0) Noi++; else Noi--;
       if (above == 0) Nvi++; else Nvi--;
     }
-    	else if (strstr(intt,"randdf") != NULL) {
-			float x0, z0;
-			int i;
-      		Nv = countnparval(Nvi, "var");
-      		if (Nv != 2) verr("randdf interface must have 2 variables: number of points, width.");
-      		getnparfloat(Nvi,"var", var);
-			lseed = (long)var[0];
-			srand48(lseed);
-			x0 = x[0]; 
-			z0 = z[0];
-			diffrwidth=(int)var[1];
-			for (i=0; i<var[0]; i++) {
-				nxp=1;
-				x[0] = x0 + diffrwidth*dx+drand48()*(sizex-x0-2*diffrwidth*dx);
-				z[0] = z0 + diffrwidth*dz+drand48()*(sizez-z0-2*diffrwidth*dz);
-      			diffraction(x, z, nxp, dx, dz, gridcp, gridcs, gridro, 
-		  		cp, cs, ro, interface, zp, nx, diffrwidth);
+   	else if (strstr(intt,"randdf") != NULL) {
+		float x0, z0, dsx, dsz;
+		int i;
+		Nv = countnparval(Nvi, "var");
+		if (Nv != 2) verr("randdf interface must have 2 variables: number of points, width.");
+		getnparfloat(Nvi,"var", var);
+        if(!getparint("dtype", &dtype)) dtype = -1;
+        
+        randdf(x, z, nxp, dx, dz, gridcp, gridcs, gridro, cp, cs, ro,
+              interface, zp, nx, sizex, sizez, var[0], (int)var[1], dtype);
+
+		if (above == 0) Noi++; else Noi--;
+		if (above == 0) Nvi++; else Nvi--;
+	}
+	else if (strstr(intt,"elipse") != NULL) {
+		Nv = countnparval(Nvi, "var");
+		if (Nv != 2) verr("Elipse interface must have 2 variables.");
+		getnparfloat(Nvi,"var", var);
+		elipse(x, z, nxp, dx, dz, gridcp, gridcs, gridro, 
+			cp, cs, ro, interface, zp, nz, nx, var[0], var[1], gradcp, gradcs, gradro);
+		if (above == 0) Noi++; else Noi--;
+		if (above == 0) Nvi++; else Nvi--;
+	}
+	else if ((strstr(intt,"diffr") != NULL)) {
+		Nv = countnparval(Nvi, "var");
+        if (Nv == 2 || Nv == 1) {
+            getnparfloat(Nvi,"var", var);
+            diffrwidth=(int)var[0];
+            if (Nv==1) {
+            	if(!getparint("dtype", &dtype)) dtype = 0;
 			}
-      		if (above == 0) Noi++; else Noi--;
-      		if (above == 0) Nvi++; else Nvi--;
-		}
-//    if ((strstr(intt,"elipse") != NULL) || (strstr(intt,"diffr") != NULL) || (strstr(intt,"randdf") != NULL)) {
-    if ((strstr(intt,"elipse") != NULL) || (strstr(intt,"diffr") != NULL) ) {
-        if (strstr(intt,"elipse") != NULL) {
-      		Nv = countnparval(Nvi, "var");
-      		if (Nv != 2) verr("Elipse interface must have 2 variables.");
-      		getnparfloat(Nvi,"var", var);
-      		elipse(x, z, nxp, dx, dz, gridcp, gridcs, gridro, 
-				cp, cs, ro, interface, zp, nz, nx, var[0], var[1], gradcp, gradcs, gradro);
-      		if (above == 0) Noi++; else Noi--;
-      		if (above == 0) Nvi++; else Nvi--;
-		}
-    	if ((strstr(intt,"diffr") != NULL)) {
-      		Nv = countnparval(Nvi, "var");
-      		if (Nv != 1) verr("diffr interface must have 1 variable: width.");
-      		getnparfloat(Nvi,"var", var);
-			diffrwidth=(int)var[0];
-      		diffraction(x, z, nxp, dx, dz, gridcp, gridcs, gridro, 
-				cp, cs, ro, interface, zp, nx, diffrwidth);
-      		if (above == 0) Noi++; else Noi--;
-      		if (above == 0) Nvi++; else Nvi--;
-    	}
+            else dtype=(int)var[1];
+        }
+        else {
+            verr("diffr interface must have 1 or 2 variables: width,type.");
+        }
+        
+		diffraction(x, z, nxp, dx, dz, gridcp, gridcs, gridro,
+			cp, cs, ro, interface, zp, nx, diffrwidth, dtype);
+		if (above == 0) Noi++; else Noi--;
+		if (above == 0) Nvi++; else Nvi--;
 	}
     else {
-      if (above == 0) {
-	grid(gridcp, gridcs, gridro, zp, cp, cs, ro, nminx, nmaxx, 
-	     optgrad, gradlen, gradcp, gradcs, gradro, dx, dz, nz);
-      } else {
-	gridabove(gridcp, gridcs, gridro, zp, cp, cs, ro, nminx, nmaxx, 
-		  optgrad, gradlen, gradcp, gradcs, gradro, dx, dz, nz);
-      }
-    }
+		if (above == 0) {
+			grid(gridcp, gridcs, gridro, zp, cp, cs, ro, nminx, nmaxx, 
+				optgrad, gradlen, gradcp, gradcs, gradro, dx, dz, nz);
+		} 
+		else {
+			gridabove(gridcp, gridcs, gridro, zp, cp, cs, ro, nminx, nmaxx, 
+				optgrad, gradlen, gradcp, gradcs, gradro, dx, dz, nz);
+		}
+	}
     
     if (store_int == 1) {
       for(j = 0; j < nminx; j++) inter[jint-1][j] = 0.0;
