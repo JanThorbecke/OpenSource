@@ -41,13 +41,13 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
-int writeRec(recPar rec, modPar mod, bndPar bnd, int ixsrc, int izsrc, int nsam, int ishot, int fileno, 
+int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsrc, int nsam, int ishot, int fileno, 
 			 float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
 			 float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, int verbose)
 {
     FILE    *fpvx, *fpvz, *fptxx, *fptzz, *fptxz, *fpp, *fppp, *fpss, *fpup, *fpdown;
 	float *rec_up, *rec_down, *trace, *rec_vze, *rec_pe;
-	float dx, dt, cp, rho;
+	float dx, dt, cp, rho, fmin, fmax;
 	complex *crec_vz, *crec_p, *crec_up, *crec_dw;
     int irec, ntfft, nfreq, nkx, xorig, ix, iz, it, ibndx;
 	int append;
@@ -105,6 +105,8 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, int ixsrc, int izsrc, int nsam,
 		fpdown = fileOpen(filename, "_rd", append);
 		ntfft = optncr(nsam);
 		nfreq = ntfft/2+1;
+		fmin = 0.0;
+		fmax = wav.fmax;
 		nkx = optncc(2*mod.nax);
 		ibndx = mod.ioPx;
     	if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
@@ -133,7 +135,7 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, int ixsrc, int izsrc, int nsam,
 
 		/* apply decomposition operators */
 		kxwdecomp(crec_p, crec_vz, crec_up, crec_dw,
-               nkx, mod.dx, nsam, dt, 0, 100, cp, rho, verbose);
+               nkx, mod.dx, nsam, dt, fmin, fmax, cp, rho, verbose);
 
 		/* transform back to t-x */
 		wkx2xt(crec_up, rec_up, ntfft, nkx, nkx, ntfft, xorig);

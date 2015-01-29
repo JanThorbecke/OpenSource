@@ -21,39 +21,36 @@ which makemod
 cd /Users/jan/src/OpenSource/fdemmodc/demo
 
 er=1
-ksigma=0.001
+ksigma=0.000
 dx=0.02
 dt=4e-11
 
-makemod sizex=20 sizez=10 dx=$dx dz=$dx cp0=$er ro0=$ksigma \
-	orig=0,0 file_base=syncl.su \
-	intt=def x=0,20 z=3,3 poly=0 cp=6 ro=0.002 \
-	intt=def x=0,10,20 z=6,4,4 poly=0 cp=8 ro=0.002 \
-	intt=def x=0,16,20 z=7,4,4 poly=0 cp=4 ro=0.002 \
-	intt=def x=0,20 z=8,8 poly=0 cp=7 ro=0.002
+makemod sizex=10 sizez=4 dx=$dx dz=$dx cp0=$er ro0=$ksigma \
+	orig=-5,-1 file_base=flat.su \
+	intt=def x=-5,5 z=0,0 poly=0 cp=9 ro=0.005 \
+	intt=def x=-5,5 z=1,1 poly=0 cp=15 ro=0.005 
 
 makewave fp=250e+6 dt=$dt file_out=wave.su nt=4096 t0=6e-9 verbose=1
 
 
 ../fdemmodc \
-    file_er=syncl_cp.su ischeme=1 \
-    file_ks=syncl_ro.su \
+    file_er=flat_cp.su ischeme=1 \
+    file_ks=flat_ro.su \
     file_src=wave.su \
-    file_rcv=shot_zsrc1150.su \
-    src_type=7 \
+    file_rcv=shot_zsrc0.su \
+    src_type=1 \
 	src_orient=1 \
 	src_injectionrate=1 \
-    dtrcv=1e-10 \
+    dtrcv=12e-11 \
 	rec_delay=6e-9 \
     verbose=3 \
-    tmod=2e-7 \
+    tmod=86e-9 \
 	dt=$dt \
     dxrcv=0.02 \
-    xrcv1=0 xrcv2=20 \
-    zrcv1=1 zrcv2=1 \
-    xsrc=10 zsrc=1 \
+    xrcv1=-4 xrcv2=4 \
+    zrcv1=0.5 zrcv2=0.5 \
+    xsrc=0 zsrc=0.0 \
     ntaper=200 \
-    tsnap1=6e-9 tsnap2=2e-7 dtsnap=2e-8 \
     left=4 right=4 top=4 bottom=4
 
 # to display tghe modeled data with SU:

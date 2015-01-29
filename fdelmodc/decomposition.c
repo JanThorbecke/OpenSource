@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <math.h>
 #include <string.h>
+#include "par.h"
 
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
@@ -29,11 +30,12 @@ typedef struct _dcomplexStruct { /* complex number */
 } dcomplex;
 #endif/* complex */
 
+void vmess(char *fmt, ...);
 complex firoot(float x, float stab);
 complex ciroot(complex x, float stab);
 complex cwp_csqrt(complex z);
 
-void decud(float om, float rho, float cp, float dx, int nkx, float fangle, float alpha, float eps, complex *pu);
+void decud(float om, float rho, float cp, float dx, int nkx, float kangle, float alpha, float eps, complex *pu);
 int writesufile(char *filename, float *data, int n1, int n2, float f1, float f2, float d1, float d2);
 
 void kxwfilter(complex *data, float k, float dx, int nkx, 
@@ -45,7 +47,8 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 {
 	int      iom, iomin, iomax, ikx, nfreq, a, av;
 	float    omin, omax, deltom, om, kp, df, dkx;
-	float    alpha, eps, *angle, *mav, avrp, avrvz, maxrp, maxrvz, fangle;
+	float    alpha, eps, *angle, *mav, avrp, avrvz, maxrp, maxrvz;
+	float    fangle, pangle, vangle, kangle;
 	complex  *pu, w;
 	complex  ax, az;
 	
@@ -99,25 +102,36 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 		writesufile("anglervz.su", &angle[90], 90, 1, 0, 0, 1, 1);
 	}
 	for (av=0; av<90; av++) {
-		 if (angle[av] < avrp) angle[av] = 0.0;
-		 if (angle[90+av] < avrvz) angle[90+av] = 0.0;
+		if (angle[89-av] < avrp) angle[89-av] = 0.0;
+		else {
+			pangle=1.0*(90-av);
+			break;
+		}
+	}
+	for (av=0; av<90; av++) {
+		 if (angle[179-av] < avrvz) angle[179-av] = 0.0;
+		else {
+			vangle=1.0*(90-av);
+			break;
+		}
 	}
 	if (verbose>=4)  {
 		writesufile("anglerp0.su", angle, 90, 1, 0, 0, 1, 1);
 		writesufile("anglervz0.su", &angle[90], 90, 1, 0, 0, 1, 1);
 	}
-	av=89;
-	while (angle[av] == 0.0 && av > 0 ) av--;
-	fangle = 1.0*av;
-	if (verbose>=2) vmess("Up-down going: P max=%e average=%e => angle at average %f", maxrp, avrp, fangle);
-//	av=179;
-//	while (angle[av] == 0.0 && av > 91) av--;
-//	fprintf(stderr,"vz max=%e average=%e => angle at average %f \n", maxrvz, avrvz, 1.0*(av-90));
+	fangle=pangle;
+	if (verbose>=2) vmess("Up-down going: P max=%e average=%e => angle at average %f", maxrp, avrp, pangle);
+	if (verbose>=2) vmess("Up-down going: Vz max=%e average=%e => angle at average %f", maxrvz, avrvz, vangle);
+	if (pangle >= 90) { /* use angle in Vz data, P might be placed on free surface */
+		fangle = vangle;
+	}
+	if(!getparfloat("kangle",&kangle)) kangle=fangle;
+	if (verbose>=2) vmess("Up-down going: maximum angle in decomposition= %f", kangle);
 
 	for (iom = iomin; iom <= iomax; iom++) {
 		om  = iom*deltom;
 
-		decud(om, rho, cp, dx, nkx, fangle, alpha, eps, pu);
+		decud(om, rho, cp, dx, nkx, kangle, alpha, eps, pu);
 /*
 		kxwfilter(dpux, kp, dx, nkx, alfa1, alfa2, perc); 
 		kxwfilter(dpuz, kp, dx, nkx, alfa1, alfa2, perc); 
@@ -141,7 +155,7 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 	return;
 }
 
-void decud(float om, float rho, float cp, float dx, int nkx, float fangle, float alpha, float eps, complex *pu)
+void decud(float om, float rho, float cp, float dx, int nkx, float kangle, float alpha, float eps, complex *pu)
 {
 	int 	 ikx, ikxmax1, ikxmax2, filterpoints, filterppos;
 	float 	 mu, kp, kp2, ks, ks2, ksk;
@@ -168,7 +182,7 @@ void decud(float om, float rho, float cp, float dx, int nkx, float fangle, float
 	/* make kw filter at maximum angle alfa */
 	perc = 0.15; /* percentage of band to use for smooth filter */
 	filter = (float *)malloc(nkx*sizeof(float));
-	kpos = kp*sin(M_PI*fangle/180.0);
+	kpos = kp*sin(M_PI*kangle/180.0);
 	kneg = -kpos;
 	kxnyq  = M_PI/dx;
 	if (kpos > kxnyq)  kpos = kxnyq;

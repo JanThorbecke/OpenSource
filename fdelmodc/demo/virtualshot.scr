@@ -26,6 +26,7 @@ makemod sizex=6000 sizez=4000 dx=$dx dz=$dx cp0=$cp cs0=$cs ro0=$rho \
 
 makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
 
+export OMP_NUM_THREADS=1
 
 ../fdelmodc \
     file_cp=syncl_cp.su ischeme=1 \
@@ -41,7 +42,7 @@ makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
     dtrcv=0.0040 \
 	rec_delay=0.1 \
     verbose=2 \
-    tmod=3.10 \
+    tmod=0.30 \
     dxrcv=10.0 \
     xrcv1=-2250 xrcv2=2250 \
     zrcv1=0 zrcv2=0 \

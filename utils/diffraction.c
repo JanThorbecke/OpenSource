@@ -12,8 +12,56 @@
 *           The Netherlands 
 **/
 
+void makesquare(int ix, int iz, int diffrwidth, float **med, float value)
+{
+    int j,k;
+    for (j=-diffrwidth/2; j<diffrwidth/2; j++){
+        for (k=-diffrwidth/2; k<diffrwidth/2; k++){
+            med[ix+j][iz+k] = value;
+        }
+    }
+    return;
+}
 
-void diffraction(float *x, float *z, int nxp, float dx, float dz, float **gridcp, float **gridcs, float **gridro, float **cp, float **cs, float **ro, float *interface, int *zp, int nx, int diffrwidth)
+void makediamond(int ix, int iz, int diffrwidth, float **med, float value)
+{
+    int j, k, id;
+    
+    id=diffrwidth/2;
+    j=-id; k=0;
+    med[ix+j][iz+k] = value;
+    j=+id; k=0;
+    med[ix+j][iz+k] = value;
+    for (j=-id+1; j<=0; j++){
+        for (k=-(j+id); k<=j+id; k++){
+            med[ix+j][iz+k] = value;
+        }
+    }
+    for (j=1; j<=id-1; j++){
+        for (k=j-id; k<=-(j-id); k++){
+            med[ix+j][iz+k] = value;
+        }
+    }
+
+    return;
+}
+    
+void makecircle(int ix, int iz, int diffrwidth, float **med, float value)
+{
+    int j,k, id, ir;
+    
+    id=diffrwidth/2;
+    for (j=-id; j<=id; j++){
+        for (k=-id; k<=id; k++){
+            ir = NINT(sqrt(j*j+k*k));
+            if (ir <= id) med[ix+j][iz+k] = value;
+        }
+    }
+    return;
+}
+
+    
+void diffraction(float *x, float *z, int nxp, float dx, float dz, float **gridcp, float **gridcs, float **gridro, float **cp, float **cs, float **ro, float *interface, int *zp, int nx, int diffrwidth, int type)
 {
 	int i, j, k;
 
@@ -26,37 +74,63 @@ void diffraction(float *x, float *z, int nxp, float dx, float dz, float **gridcp
 		for (i = 0; i < nxp; i++) {
 			interface[NINT(x[i]/dx)] = z[i];
 			zp[NINT(x[i]/dx)] = NINT(z[i]/dz);
-			for (j=-diffrwidth/2; j<diffrwidth/2+1; j++){
-				for (k=-diffrwidth/2; k<diffrwidth/2+1; k++){
-					gridcp[NINT(x[i]/dx)+j][NINT(z[i]/dz)+k] = cp[2][i];
-				}
-			}
+            switch( type )
+            {
+                case 1:
+                    makediamond(NINT(x[i]/dx), NINT(z[i]/dz), diffrwidth,  gridcp, cp[2][i]);
+                    break;
+                case 2:
+                    makecircle(NINT(x[i]/dx), NINT(z[i]/dz), diffrwidth,  gridcp, cp[2][i]);
+                    break;
+                default:
+                    makesquare(NINT(x[i]/dx), NINT(z[i]/dz), diffrwidth,  gridcp, cp[2][i]);
+                    break;
+            }
 		}
 	}
 	else if (gridcs == NULL) {
 		for (i = 0; i < nxp; i++) {
 			interface[NINT(x[i]/dx)] = z[i];
 			zp[NINT(x[i]/dx)] = NINT(z[i]/dz);
-			for (j=-diffrwidth/2; j<diffrwidth/2+1; j++){
-				for (k=-diffrwidth/2; k<diffrwidth/2+1; k++){
-//					fprintf(stderr,"j=%d k=%d point x=%d z=%d\n", j,k,NINT(x[i]/dx)+j, NINT(z[i]/dz)+k);
-					gridcp[NINT(x[i]/dx)+j][NINT(z[i]/dz)+k] = cp[2][i];
-					gridro[NINT(x[i]/dx)+j][NINT(z[i]/dz)+k] = ro[2][i];
-				}
-			}
+            switch( type )
+            {
+                case 1:
+                    makediamond(NINT(x[i]/dx), NINT(z[i]/dz), diffrwidth,  gridcp, cp[2][i]);
+                    makediamond(NINT(x[i]/dx), NINT(z[i]/dz), diffrwidth,  gridro, ro[2][i]);
+                    break;
+                case 2:
+                    makecircle(NINT(x[i]/dx), NINT(z[i]/dz), diffrwidth,  gridcp, cp[2][i]);
+                    makecircle(NINT(x[i]/dx), NINT(z[i]/dz), diffrwidth,  gridro, ro[2][i]);
+                    break;
+                default :
+                    makesquare(NINT(x[i]/dx), NINT(z[i]/dz), diffrwidth,  gridcp, cp[2][i]);
+                    makesquare(NINT(x[i]/dx), NINT(z[i]/dz), diffrwidth,  gridro, ro[2][i]);
+                    break;
+            }
 		}
 	}
 	else {
 		for (i = 0; i < nxp; i++) {
 			interface[NINT(x[i]/dx)] = z[i];
 			zp[NINT(x[i]/dx)] = NINT(z[i]/dz);
-			for (j=-diffrwidth/2; j<diffrwidth/2+1; j++){
-				for (k=-diffrwidth/2; k<diffrwidth/2+1; k++){
-					gridcp[NINT(x[i]/dx)+j][NINT(z[i]/dz)+k] = cp[2][i];
-					gridcs[NINT(x[i]/dx)+j][NINT(z[i]/dz)+k] = cs[2][i];
-					gridro[NINT(x[i]/dx)+j][NINT(z[i]/dz)+k] = ro[2][i];
-				}
-			}
+            switch( type )
+            {
+                case 1:
+                    makediamond(NINT(x[i]/dx), NINT(z[i]/dz), diffrwidth,  gridcp, cp[2][i]);
+                    makediamond(NINT(x[i]/dx), NINT(z[i]/dz), diffrwidth,  gridro, ro[2][i]);
+                    makediamond(NINT(x[i]/dx), NINT(z[i]/dz), diffrwidth,  gridcs, cs[2][i]);
+                    break;
+                case 2:
+                    makecircle(NINT(x[i]/dx), NINT(z[i]/dz), diffrwidth,  gridcp, cp[2][i]);
+                    makecircle(NINT(x[i]/dx), NINT(z[i]/dz), diffrwidth,  gridro, ro[2][i]);
+                    makecircle(NINT(x[i]/dx), NINT(z[i]/dz), diffrwidth,  gridcs, cs[2][i]);
+                    break;
+                default :
+                    makesquare(NINT(x[i]/dx), NINT(z[i]/dz), diffrwidth,  gridcp, cp[2][i]);
+                    makesquare(NINT(x[i]/dx), NINT(z[i]/dz), diffrwidth,  gridro, ro[2][i]);
+                    makesquare(NINT(x[i]/dx), NINT(z[i]/dz), diffrwidth,  gridcs, cs[2][i]);
+                    break;
+            }
 		}
 	}
 

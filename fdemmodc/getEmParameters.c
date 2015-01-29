@@ -129,7 +129,7 @@ int getEmParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *
 		if (getparint("dipsrc",&src->orient)) src->orient=2; // for compatability with DELPHI's fdacmod
 	}
 	if (mod->ischeme<=2) {
-		if (src->type>1 && src->type<7)
+		if (src->type>1 && src->type<6)
 			verr("Invalid src_type for electro-magnetic scheme!");
 	}
 
