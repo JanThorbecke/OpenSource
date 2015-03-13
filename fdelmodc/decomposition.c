@@ -47,7 +47,7 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 {
 	int      iom, iomin, iomax, ikx, nfreq, a, av;
 	float    omin, omax, deltom, om, kp, df, dkx;
-	float    alpha, eps, *angle, *mav, avrp, avrvz, maxrp, maxrvz;
+	float    alpha, eps, *angle, avrp, avrvz, maxrp, maxrvz;
 	float    fangle, pangle, vangle, kangle;
 	complex  *pu, w;
 	complex  ax, az;
@@ -67,7 +67,6 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 
 	pu     = (complex *)malloc(nkx*sizeof(complex));
 	angle  = (float *)calloc(2*90,sizeof(float));
-	mav  = (float *)calloc(2*90,sizeof(float));
 
 	/* estimate maximum propagation angle in wavefields P and Vz */
 	for (a=1; a<90; a++) {
@@ -102,14 +101,14 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 		writesufile("anglervz.su", &angle[90], 90, 1, 0, 0, 1, 1);
 	}
 	for (av=0; av<90; av++) {
-		if (angle[89-av] < avrp) angle[89-av] = 0.0;
+		if (angle[89-av] <= avrp) angle[89-av] = 0.0;
 		else {
 			pangle=1.0*(90-av);
 			break;
 		}
 	}
 	for (av=0; av<90; av++) {
-		 if (angle[179-av] < avrvz) angle[179-av] = 0.0;
+		 if (angle[179-av] <= avrvz) angle[179-av] = 0.0;
 		else {
 			vangle=1.0*(90-av);
 			break;
@@ -151,6 +150,7 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 	}
 
 	free(pu);
+	free(angle);
 
 	return;
 }
@@ -236,8 +236,9 @@ void decud(float om, float rho, float cp, float dx, int nkx, float kangle, float
 	for (ikx = (nkx/2+1); ikx < nkx; ikx++) {
 		pu[ikx] = pu[nkx-ikx];
 	}
+
 	free(filter);
-	
+
 	return;
 }
 

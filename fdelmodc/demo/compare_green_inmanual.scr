@@ -144,6 +144,7 @@ sudiff trace_green.su trace_fd.su | basop choice=shift shift=-0.1 | sugain scale
 
 (suwind key=tracl min=101 max=101 < shot_fd_dip_rvz.su | basop choice=shift shift=-$shift; suwind key=tracl min=101 max=101 < shot_green_dip_rvz.su ) | basop choice=shift shift=-0.1 | suxgraph
 
+exit;
 ######### ELASTIC #######
 
 cp=2000

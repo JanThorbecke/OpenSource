@@ -16,16 +16,15 @@ CC = gcc
 FC = gfortran
 # Linux gcc version 4.x
 OPTC = -O3 -ffast-math
-#OPTF = -O3 -fno-trapping-math -ffast-math -msse3
-# for better performing code try:
-#OPTC = -O3 -fno-trapping-math -ffast-math -funroll-all-loops -msse3 -fomit-frame-pointer -mfpmath=sse -ftree-vectorizer-verbose=1
+#to include parallelisation with OpenMP
+OPTC += -fopenmp
+
+# for better performing code you can try:
+#OPTC = -O3 -fno-trapping-math -ffast-math -funroll-all-loops -mavx -fomit-frame-pointer -mfpmath=sse -ftree-vectorizer-verbose=1
 # Linux gcc version 3.x
 #OPTC = -O3 -ffast-math -funroll-all-loops -mfpmath=sse
-# Apple OSX gcc version 4.x (Snow Leopard)
-#CC = gcc
-#OPTC = -O3 -ffast-math -funroll-all-loops -mssse3 -fomit-frame-pointer -mtune=nocona -mfpmath=sse -fdump-tree-vect -ftree-vectorizer-verbose=3 
 
-#for double precision use  FFTlib and emmod
+#for double precision use FFTlib and emmod
 #OPTC += -DDOUBLE
 #OPTF += -fdefault-double-8 -fdefault-real-8
 
@@ -42,7 +41,7 @@ OPTC = -O3 -ffast-math
 #OPTC = -O3 -no-prec-div
 #OPTF = -O3 -no-prec-div 
 # Apple OSX intel 11.1.076 snow leopard 10.6.2
-#OPTC = -O3 -mssse3 -no-prec-div -vec-report2 -fno-builtin-__sprintf_chk 
+#OPTC = -O3 -msse3 -no-prec-div -vec-report2 -fno-builtin-__sprintf_chk 
 
 #PGI 
 #CC = pgcc

@@ -51,7 +51,7 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 		iz2 = iz+1;
 		ix2 = ix+1;
 		/* interpolation to precise (not necessary on a grid point) position */
-		if ((rec.int_vx==3) || (rec.int_vz==3)) {
+		if ( rec.int_p==3 ) {
 
 			iz = (int)floorf(rec.zr[irec]/mod.dz)+ibndz;
 			ix = (int)floorf(rec.xr[irec]/mod.dx)+ibndx;
@@ -153,6 +153,9 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 			
 		}
 		else { /* read values directly from the grid points */
+			if (verbose>=4 && isam==0) {
+				vmess("Receiver %d read at gridpoint ix=%d iz=%d",irec, ix, iz);
+			}
 			if (rec.type.p)   rec_p[irec*rec.nt+isam] = tzz[ix*n1+iz];
 			if (rec.type.txx) rec_txx[irec*rec.nt+isam] = txx[ix*n1+iz];
 			if (rec.type.tzz) rec_tzz[irec*rec.nt+isam] = tzz[ix*n1+iz];

@@ -25,9 +25,9 @@ int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx,
 	float *xrcv1, *xrcv2, *zrcv1, *zrcv2;
 	int ix0, ix1, iz0, iz1, i, ix, iz, ir, isign, verbose;
 	float dxrcv, dzrcv, *dxr, *dzr, r, rr;
-	float rrcv, dphi, oxrcv, ozrcv;
+	float rrcv, dphi, oxrcv, ozrcv, arcv, circ, h, a, b, e, s, xr, zr, dr, srun;
 	float xrange, zrange;
-	int Nx1, Nx2, Nz1, Nz2, Ndx, Ndz, iarray, nskip, nrec;
+	int Nx1, Nx2, Nz1, Nz2, Ndx, Ndz, iarray, nskip, nrec, nh;
 	int nxrcv, nzrcv, ncrcv, nrcv, max_nrec;
 	float *xrcva, *zrcva;
 
@@ -41,14 +41,58 @@ int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx,
 		if (!getparfloat("dphi",&dphi)) dphi=2.0;
 		if (!getparfloat("oxrcv",&oxrcv)) oxrcv=0.0;
 		if (!getparfloat("ozrcv",&ozrcv)) ozrcv=0.0;
-		ncrcv = NINT(360.0/dphi);
-		
+		if (!getparfloat("arcv",&arcv)) {
+			arcv=rrcv; 
+			ncrcv = NINT(360.0/dphi);
+			for (ix=0; ix<ncrcv; ix++) {
+				rec->xr[ix] = oxrcv-sub_x0+rrcv*cos(((ix*dphi)/360.0)*(2.0*M_PI));
+				rec->zr[ix] = ozrcv-sub_z0+arcv*sin(((ix*dphi)/360.0)*(2.0*M_PI));
+				rec->x[ix] = NINT(rec->xr[ix]/dx);
+				rec->z[ix] = NINT(rec->zr[ix]/dz);
+				//rec->x[ix] = NINT((oxrcv-sub_x0+rrcv*cos(((ix*dphi)/360.0)*(2.0*M_PI)))/dx);
+				//rec->z[ix] = NINT((ozrcv-sub_z0+arcv*sin(((ix*dphi)/360.0)*(2.0*M_PI)))/dz);
+				if (verbose>4) fprintf(stderr,"Receiver Circle: xrcv[%d]=%f zrcv=%f\n", ix, rec->xr[ix]+sub_x0, rec->zr[ix]+sub_z0);
+			}
+		}
+		else { /* an ellipse */
+			/* simple numerical solution to find equidistant points on an ellipse */
+			ncrcv = NINT(360.0/dphi);
+			nh  = ncrcv*1000; /* should be fine enough for most configurations */
+			h = 2.0*M_PI/nh;
+			a = MAX(rrcv, arcv);
+			b = MIN(rrcv, arcv);
+			e = sqrt(a*a-b*b)/a;
+			circ = 0.0;
+			for (ir=0; ir<nh; ir++) {
+				s = sin(ir*h);
+				circ += sqrt(1.0-e*e*s*s);
+			}
+			//circ = a*h*circ;
+			//fprintf(stderr,"circ = %f circle=%f\n", circ, 2.0*M_PI*rrcv);
+			/* define distance between receivers on ellipse */
+			dr = circ/ncrcv;
+			ix = 0;
+			srun = 0.0;
+			for (ir=0; ir<nh; ir++) {
+				s = sin(ir*h);
+				srun += sqrt(1.0-e*e*s*s);
+				if (srun >= ix*dr ) {
+					xr = rrcv*cos(ir*h);
+					zr = arcv*sin(ir*h);
+					rec->xr[ix] = oxrcv-sub_x0+xr;
+					rec->zr[ix] = ozrcv-sub_z0+zr;
+					rec->x[ix] = NINT(rec->xr[ix]/dx);
+					rec->z[ix] = NINT(rec->zr[ix]/dz);
+					if (verbose>4) fprintf(stderr,"Receiver Ellipse: xrcv[%d]=%f zrcv=%f\n", ix, rec->xr[ix]+sub_x0, rec->zr[ix]+sub_z0);
+					ix++;
+				}
+			}
+		}
+
+		/* check if receivers fit into the model otherwise clip to edges */
 		for (ix=0; ix<ncrcv; ix++) {
-			rec->xr[ix] = oxrcv-sub_x0+rrcv*cos(((ix*dphi)/360.0)*(2.0*M_PI));
-			rec->zr[ix] = ozrcv-sub_z0+rrcv*sin(((ix*dphi)/360.0)*(2.0*M_PI));
-			rec->x[ix] = NINT((oxrcv-sub_x0+rrcv*cos(((ix*dphi)/360.0)*(2.0*M_PI)))/dx);
-			rec->z[ix] = NINT((ozrcv-sub_z0+rrcv*sin(((ix*dphi)/360.0)*(2.0*M_PI)))/dz);
-			if (verbose>4) fprintf(stderr,"Receiver Circle: xrcv[%d]=%f zrcv=%f\n", ix, rec->xr[ix]+sub_x0, rec->zr[ix]+sub_z0);
+			rec->x[ix] = MIN(nx-1, MAX(rec->x[ix], 0));
+			rec->z[ix] = MIN(nz-1, MAX(rec->z[ix], 0));
 		}
 		nrec += ncrcv;
 	}

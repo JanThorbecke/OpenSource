@@ -46,7 +46,7 @@ SRCM	= fdemmodc.c \
 OBJM	= $(SRCM:%.c=%.o)
 
 $(PRG): $(OBJM) fdelmodc.h
-	$(CC) $(LDFLAGS) $(OPTM) $(CFLAGS) -o fdemmodc $(OBJM) $(LIBS)
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o fdemmodc $(OBJM) $(LIBS)
 
 install: fdemmodc
 	cp fdemmodc $B

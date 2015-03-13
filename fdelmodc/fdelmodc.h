@@ -25,6 +25,7 @@ typedef struct _receiverPar { /* Receiver Parameters */
 	int *x;
 	float *zr;
 	float *xr;
+	int int_p;
 	int int_vx;
 	int int_vz;
 	int scale;

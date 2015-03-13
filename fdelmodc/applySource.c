@@ -112,8 +112,11 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 		if (src_ampl==0.0) continue;
 		if ( ((ix-ibndx)<0) || ((ix-ibndx)>mod.nx) ) continue; /* source outside grid */
 
-		if (verbose>4) {
-			fprintf(stderr,"Source %d at grid [ix=%d,iz=%d] at itime %d has value %e\n",isrc, ix,iz, itime, src_ampl);
+		if (verbose>=4 && itime==0) {
+			vmess("Source %d positioned at grid ix=%d iz=%d",isrc, ix, iz);
+		}
+		if (verbose>5) {
+			vmess("Source %d at grid [ix=%d,iz=%d] at itime %d has value %e",isrc, ix,iz, itime, src_ampl);
 		}
 
 		/* cosine squared windowing to reduce edge effects on shot arrays */
