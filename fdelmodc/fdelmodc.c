@@ -91,17 +91,16 @@ char *sdoc[] = {
 "   ntaper=0 .......... length of taper at edges of model",
 "   tapfact=0.30 ...... taper strength: larger value gets stronger taper",
 "   For the 4 boundaries the options are:  1=free 2=pml 3=rigid 4=taper",
-"   top=1 ............ type of boundary on top edge of model",
-"   left=4 ........... type of boundary on left edge of model",
-"   right=4 .......... type of boundary on right edge of model",
-"   bottom=4 ......... type of boundary on bottom edge of model",
-
+"   top=1 ............. type of boundary on top edge of model",
+"   left=4 ............ type of boundary on left edge of model",
+"   right=4 ........... type of boundary on right edge of model",
+"   bottom=4 .......... type of boundary on bottom edge of model",
 //"   tapleft=0 ......... =1: taper left edge of model",
 //"   tapright=0 ........ =1: taper right edge of model",
 //"   taptop=0 .......... =1: taper top edge of model",
 //"   tapbottom=0 ....... =1: taper bottom edge of model",
 //"   cfree=0 ........... 1=free surface",
-//"   grid_dir=0 ........ direction of time modeling (1=reverse time)",
+"   grid_dir=0 ........ direction of time modeling (1=reverse time)",
 "   Qp=15 ............. global Q-value for P-waves in visco-elastic (ischeme=2,4)",
 "   file_qp= .......... model file Qp values as function of depth",
 "   Qs=Qp ............. global Q-value for S-waves in visco-elastic (ischeme=4)",
@@ -132,7 +131,6 @@ char *sdoc[] = {
 "   fmax=from_src ..... maximum frequency in wavelet",
 "   src_multiwav=0 .... use traces in file_src as areal source",
 "   src_injectionrate=0 set to 1 to use injection rate source",
-
 "" ,
 " PLANE WAVE SOURCE DEFINITION:",
 "   plane_wave=0 ...... model plane wave with nsrc= sources",
@@ -189,10 +187,11 @@ char *sdoc[] = {
 "   zrcv2=zrcv1 ....... last z-position of linear receiver array(s)",
 "   dzrcv=0.0 ......... z-position increment of receivers in linear array(s)",
 "   dtrcv=.004 ........ desired sampling in receiver data (seconds)",
-"   max_nrec=10000 .... maximum number of receivers",
+"   max_nrec=15000 .... maximum number of receivers",
 "   xrcva= ............ defines receiver array x-positions",
 "   zrcva= ............ defines receiver array z-positions",
 "   rrcv= ............. radius for receivers on a circle ",
+"   arcv= ............. vertical arc-lenght for receivers on a ellipse (rrcv=horizontal)",
 "   oxrcv=0.0 ......... x-center position of circle",
 "   ozrcv=0.0 ......... z-center position of circle",
 "   dphi=2 ............ angle between receivers on circle ",
@@ -636,6 +635,10 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 	if (rec.type.txz) free(rec_txz);
 	if (rec.type.pp)  free(rec_pp);
 	if (rec.type.ss)  free(rec_ss);
+	if (rec.type.ud)  {
+		free(rec_udvz);
+		free(rec_udp);
+	}
 	if(sna.beam) {
 		if (sna.type.vz)  free(beam_vz);
 		if (sna.type.vx)  free(beam_vx);

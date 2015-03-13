@@ -116,13 +116,13 @@ int defineSource(wavPar wav, srcPar src, float **src_nwav, int reverse, int verb
 		if (wav.random) {
 			randomWavelet(wav, src, &src_nwav[i][0], src.tbeg[i], src.tend[i], verbose);
 		}
-		/* Scale source from file with -j/w (=1/(jw)) for volume source injections
-         no scaling is applied for volume source injection rates */
 		else {
 			memset(&ctrace[0].r,0,nfreq*sizeof(complex));
 			memset(&trace[0],0,optn*sizeof(float));
 			memcpy(&trace[0],&src_nwav[i][0],n1*sizeof(float));
 			rc1fft(trace,ctrace,optn,-1);
+			/* Scale source from file with -j/w (=1/(jw)) for volume source injections
+         	   no scaling is applied for volume source injection rates */
             if (src.injectionrate==0) {
                 for (iw=1;iw<iwmax;iw++) {
                     om = 1.0/(deltom*iw);

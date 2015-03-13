@@ -27,7 +27,8 @@ makemod sizex=6000 sizez=4000 dx=$dx dz=$dx cp0=$cp cs0=$cs ro0=$rho \
 makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
 
 
-../fdelmodc \
+#receivers in a vertical line
+#../fdelmodc \
     file_cp=syncl_cp.su ischeme=1 \
     file_den=syncl_ro.su \
     file_src=wave.su \
@@ -50,5 +51,32 @@ makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
     xsrc=150 zsrc=10 \
     ntaper=200 \
     left=4 right=4 top=4 bottom=4
+
+#shots in a vertical line
+../fdelmodc \
+    file_cp=syncl_cp.su ischeme=1 \
+    file_den=syncl_ro.su \
+    file_src=wave.su \
+    file_rcv=shotv.su \
+    src_type=1 \
+	src_orient=1 \
+	src_injectionrate=1 \
+    rec_type_vx=1 \
+    rec_type_vz=1 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.0040 \
+	rec_delay=0.1 \
+    verbose=2 \
+    tmod=1.10 \
+    dxrcv=10.0 \
+    dzrcv=0.0 \
+    xrcv1=-3000 xrcv2=3000 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=0 \
+	dzshot=10 dxshot=0 nshot=10 \
+    ntaper=200 \
+    left=4 right=4 top=4 bottom=4
+
 
 

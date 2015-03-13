@@ -308,9 +308,10 @@ int main (int argc, char **argv)
 		vmess("direction of increasing traces = %d", di);
 		vmess("number of time samples(fft)  s = %d %d", nt, optn);
 		vmess("time sampling                  = %e ", dt);
-		if (file_gmin != NULL) vmess("Gmin output file               = %s ", file_gmin);
+		if (file_greeb != NULL) vmess("Green output file              = %s ", file_gmin);
+		if (file_gmin != NULL)  vmess("Gmin output file               = %s ", file_gmin);
 		if (file_gplus != NULL) vmess("Gplus output file              = %s ", file_gplus);
-		if (file_pmin != NULL) vmess("Pmin output file               = %s ", file_pmin);
+		if (file_pmin != NULL)  vmess("Pmin output file               = %s ", file_pmin);
 		if (file_pplus != NULL) vmess("Pplus output file              = %s ", file_pplus);
 		if (file_f1min != NULL) vmess("f1min output file              = %s ", file_f1min);
 		if (file_f1plus != NULL) vmess("f1plus output file             = %s ", file_f1plus);
@@ -819,7 +820,7 @@ void synthesis(complex *shots, complex *syncdata, float *syndata, int nx, int nt
 /*================ SYNTHESIS ================*/
 
 #pragma omp parallel default(none) \
- shared(syndata, dx, npe, nw, stderr, verbose) \
+ shared(syndata, dx, npe, nw, verbose) \
  shared(shots, Nsyn, reci, xrcv, xsrc, xsyn, fxs, nxs, dxs) \
  shared(nx, ixa, ixb, dxsrc, iox, inx, k, nfreq, nw_low, nw_high) \
  shared(syncdata, size, nts, optn, scl, ixsrc) \

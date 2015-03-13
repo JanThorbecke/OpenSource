@@ -75,6 +75,24 @@ int writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot)
 		}
 		fclose(fp);
 	}
+	else if (src->multiwav) {
+	/* source positions for single shot sources with multiple wavelets */
+		sprintf(tmpname,"SrcPositions%d.txt",shot->n);
+		fp = fopen(tmpname, "w+");
+		for (ish=0; ish<shot->n; ish++) {
+			for (is=0; is<src->n; is++) {
+				ix = src->x[is];
+				iz = src->z[is];
+				dum[ix*nz+iz] = 1.0;
+				dum[(MAX(0,ix-1))*nz+iz] = 1.0;
+				dum[(MIN(nx-1,ix+1))*nz+iz] = 1.0;
+				dum[ix*nz+MAX(0,iz-1)] = 1.0;
+				dum[ix*nz+MIN(nz-1,iz+1)] = 1.0;
+				fprintf(fp, "(%f, %f)\n", ix*dx+sub_x0, iz*dz+sub_z0);
+			}
+		}
+		fclose(fp);
+	}
 	else {
 		sprintf(tmpname,"SrcPositions%d.txt",shot->n);
 		fp = fopen(tmpname, "w+");

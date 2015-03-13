@@ -496,8 +496,6 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 
 	/* define the number and type of shots to model */
 	/* each shot can have multiple sources arranged in different ways */
-
-
     
 	if (!getparfloat("xsrc",&xsrc)) xsrc=sub_x0+((nx-1)*dx)/2.0;
 	if (!getparfloat("zsrc",&zsrc)) zsrc=sub_z0;
@@ -1016,6 +1014,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	dtrcv = mod->dt*rec->skipdt;
 	if (!getparfloat("rec_delay",&rdelay)) rdelay=0.0;
 	if (!getparint("rec_ntsam",&rec->nt)) rec->nt=NINT((mod->tmod-rdelay)/dtrcv)+1;
+	if (!getparint("rec_int_p",&rec->int_p)) rec->int_p=0;
 	if (!getparint("rec_int_vx",&rec->int_vx)) rec->int_vx=0;
 	if (!getparint("rec_int_vz",&rec->int_vz)) rec->int_vz=0;
 	if (!getparint("max_nrec",&max_nrec)) max_nrec=15000;
@@ -1061,14 +1060,15 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
     	if (rec->type.ud) {rec->type.vz=1; rec->type.p=1; rec->int_vz=2;}
 	}
 
-	/* receivers are on a circle, use default interpolation to receiver position */
+	/* receivers are on a circle, use default interpolation to real (not on a grid-point) receiver position */
 	if (getparfloat("rrcv", &rrcv)) { 
-		if (!rec->type.vx) rec->int_vx=3;
-		if (!rec->type.vz) rec->int_vz=3;
+		if (!getparint("rec_int_p",&rec->int_p)) rec->int_p=3;
+		if (!getparint("rec_int_vx",&rec->int_vx)) rec->int_vx=3;
+		if (!getparint("rec_int_vz",&rec->int_vz)) rec->int_vz=3;
 	}
-	else {
-		if (!rec->type.vx) rec->int_vx=0;
-		if (!rec->type.vz) rec->int_vz=0;
+	if (rec->int_p==3) {
+		rec->int_vx=3;
+		rec->int_vz=3;
 	}
 
 	if (verbose) {
@@ -1093,19 +1093,24 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			vmess("which are gridpoints: ");
 			vmess("izmin   = %d izmax   = %d ", rec->z[0], rec->z[rec->n-1]);
 			vmess("ixmin   = %d ixmax   = %d ", rec->x[0], rec->x[rec->n-1]);
+			if (rec->type.p) {
+				fprintf(stderr,"    %s: Receiver interpolation for P: ",xargv[0]);
+				if(rec->int_p==3) fprintf(stderr,"interpolate to actual (no-grid) position of receiver\n");
+				else fprintf(stderr,"use closest grid-point to actual receiver position\n");
+			}
 			if (rec->type.vx) {
 				fprintf(stderr,"    %s: Receiver interpolation for Vx: ",xargv[0]);
 				if(rec->int_vx==0) fprintf(stderr,"vx->vx\n");
 				if(rec->int_vx==1) fprintf(stderr,"vx->vz\n");
 				if(rec->int_vx==2) fprintf(stderr,"vx->txx/tzz\n");
-				if(rec->int_vx==3) fprintf(stderr,"interpolate to postion of receiver\n");
+				if(rec->int_vx==3) fprintf(stderr,"interpolate to real(no-grid) position of receiver\n");
 			}
 			if (rec->type.vz) {
 				fprintf(stderr,"    %s: Receiver interpolation for Vz: ",xargv[0]);
 				if(rec->int_vz==0) fprintf(stderr,"vz->vz\n");
 				if(rec->int_vz==1) fprintf(stderr,"vz->vx\n");
 				if(rec->int_vz==2) fprintf(stderr,"vz->txx/tzz\n");
-				if(rec->int_vz==3) fprintf(stderr,"interpolate to postion of receiver\n");
+				if(rec->int_vz==3) fprintf(stderr,"interpolate to real(no-grid) position of receiver\n");
 			}
             fprintf(stderr,"    %s: Receiver types        : ",xargv[0]);
 			if (rec->type.vz) fprintf(stderr,"Vz ");
