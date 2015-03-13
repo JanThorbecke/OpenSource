@@ -25,7 +25,8 @@ int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx,
 	float *xrcv1, *xrcv2, *zrcv1, *zrcv2;
 	int ix0, ix1, iz0, iz1, i, ix, iz, ir, isign, verbose;
 	float dxrcv, dzrcv, *dxr, *dzr, r, rr;
-	float rrcv, dphi, oxrcv, ozrcv, arcv, circ, h, a, b, e, s, xr, zr, dr, srun;
+	float rrcv, dphi, oxrcv, ozrcv, arcv;
+	double circ, h, a, b, e, s, xr, zr, dr, srun, phase;
 	float xrange, zrange;
 	int Nx1, Nx2, Nz1, Nz2, Ndx, Ndz, iarray, nskip, nrec, nh;
 	int nxrcv, nzrcv, ncrcv, nrcv, max_nrec;
@@ -62,23 +63,26 @@ int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx,
 			a = MAX(rrcv, arcv);
 			b = MIN(rrcv, arcv);
 			e = sqrt(a*a-b*b)/a;
+			//fprintf(stderr,"a=%f b=%f e=%f\n", a, b, e);
 			circ = 0.0;
 			for (ir=0; ir<nh; ir++) {
 				s = sin(ir*h);
 				circ += sqrt(1.0-e*e*s*s);
 			}
-			//circ = a*h*circ;
+			circ = a*h*circ;
 			//fprintf(stderr,"circ = %f circle=%f\n", circ, 2.0*M_PI*rrcv);
 			/* define distance between receivers on ellipse */
 			dr = circ/ncrcv;
 			ix = 0;
 			srun = 0.0;
+			if (arcv >= rrcv) phase=0.0;
+			else phase=0.5*M_PI;
 			for (ir=0; ir<nh; ir++) {
 				s = sin(ir*h);
 				srun += sqrt(1.0-e*e*s*s);
-				if (srun >= ix*dr ) {
-					xr = rrcv*cos(ir*h);
-					zr = arcv*sin(ir*h);
+				if (a*h*srun >= ix*dr ) {
+					xr = rrcv*cos(ir*h+phase);
+					zr = arcv*sin(ir*h+phase);
 					rec->xr[ix] = oxrcv-sub_x0+xr;
 					rec->zr[ix] = ozrcv-sub_z0+zr;
 					rec->x[ix] = NINT(rec->xr[ix]/dx);
