@@ -29,22 +29,23 @@ int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx,
 	double circ, h, a, b, e, s, xr, zr, dr, srun, phase;
 	float xrange, zrange;
 	int Nx1, Nx2, Nz1, Nz2, Ndx, Ndz, iarray, nskip, nrec, nh;
-	int nxrcv, nzrcv, ncrcv, nrcv, max_nrec;
+	int nxrcv, nzrcv, ncrcv, nrcv;
 	float *xrcva, *zrcva;
 
 	if(!getparint("verbose", &verbose)) verbose = 0;
-	if (!getparint("max_nrec",&max_nrec)) max_nrec=15000;
-
 
 	nrec=0;
 	/* check if receiver positions on a circle are defined */
 	if (getparfloat("rrcv", &rrcv)) {
 		if (!getparfloat("dphi",&dphi)) dphi=2.0;
+		ncrcv = NINT(360.0/dphi);
+		if (ncrcv >= rec->max_nrec) {
+			verr("Number of receivers is larger than max: increase parameter max_nrec= %d to %d",rec->max_nrec, ncrcv);
+		}
 		if (!getparfloat("oxrcv",&oxrcv)) oxrcv=0.0;
 		if (!getparfloat("ozrcv",&ozrcv)) ozrcv=0.0;
 		if (!getparfloat("arcv",&arcv)) {
 			arcv=rrcv; 
-			ncrcv = NINT(360.0/dphi);
 			for (ix=0; ix<ncrcv; ix++) {
 				rec->xr[ix] = oxrcv-sub_x0+rrcv*cos(((ix*dphi)/360.0)*(2.0*M_PI));
 				rec->zr[ix] = ozrcv-sub_z0+arcv*sin(((ix*dphi)/360.0)*(2.0*M_PI));
@@ -57,7 +58,6 @@ int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx,
 		}
 		else { /* an ellipse */
 			/* simple numerical solution to find equidistant points on an ellipse */
-			ncrcv = NINT(360.0/dphi);
 			nh  = ncrcv*1000; /* should be fine enough for most configurations */
 			h = 2.0*M_PI/nh;
 			a = MAX(rrcv, arcv);
@@ -108,6 +108,9 @@ int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx,
 		verr("Number of receivers in array xrcva (%d), zrcva(%d) are not equal",nxrcv, nzrcv);
 	}       
 	
+	if ((nrec+nxrcv) >= rec->max_nrec) {
+		verr("Number of receivers is larger than max: increase parameter max_nrec= %d to %d",rec->max_nrec, nrec+nxrcv);
+	}
 	if (nxrcv != 0) {
 		/* receiver array is defined */
 		xrcva = (float *)malloc(nxrcv*sizeof(float));
@@ -140,6 +143,7 @@ int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx,
 		Nx1=1;
 	}
 	
+
 	if (Nx1!=0) {
 		xrcv1 = (float *)malloc(Nx1*sizeof(float));
 		xrcv2 = (float *)malloc(Nx1*sizeof(float));
@@ -206,7 +210,7 @@ int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx,
 			xrange = (xrcv2[iarray]-xrcv1[iarray]); 
 			zrange = (zrcv2[iarray]-zrcv1[iarray]); 
 			if (dxr[iarray] != 0.0) {
-				nrcv = NINT(abs(xrange/dxr[iarray]))+1;
+				nrcv = NINT(fabs(xrange/dxr[iarray]))+1;
 				dxrcv=dxr[iarray];
 				dzrcv = zrange/(nrcv-1);
 				if (dzrcv != dzr[iarray]) {
@@ -218,7 +222,7 @@ int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx,
 				if (dzr[iarray] == 0) {
 					verr("For receiver array %d: receiver distance dzrcv is not given", iarray);
 				}
-				nrcv=NINT(abs(zrange/dzr[iarray]))+1;
+				nrcv=NINT(fabs(zrange/dzr[iarray]))+1;
 				dxrcv = xrange/(nrcv-1);
 				dzrcv = dzr[iarray];
 				if (dxrcv != dxr[iarray]) {
@@ -235,9 +239,9 @@ int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx,
 				rec->x[nrec]=NINT((rec->xr[nrec])/dx);
 				rec->z[nrec]=NINT((rec->zr[nrec])/dz);
 				nrec++;
-			}
-			if (nrec >= max_nrec) {
-				verr("Number of receivers in arrays xrcv1,xrcv2,zrcv1,zrcv2 are larger than max: increas max_nrec %d",max_nrec);
+				if (nrec > rec->max_nrec) {
+					verr("Number of receivers is larger than max: increase parameter max_nrec=%d to %d",rec->max_nrec, nrec+nxrcv);
+				}
 			}
 		}
 	

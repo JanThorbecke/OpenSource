@@ -187,7 +187,7 @@ void decud(float om, float rho, float cp, float dx, int nkx, float kangle, float
 	kxnyq  = M_PI/dx;
 	if (kpos > kxnyq)  kpos = kxnyq;
 	band = kpos;
-	filterpoints = (int)fabs((int)(perc*band/dkx));
+	filterpoints = (int)abs((int)(perc*band/dkx));
 	kfilt = fabs(dkx*filterpoints);
 	if (kpos+kfilt < kxnyq) {
 		kxfmax = kpos+kfilt;
