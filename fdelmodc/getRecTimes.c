@@ -3,6 +3,7 @@
 #include<math.h>
 #include<assert.h>
 #include"fdelmodc.h"
+#include"par.h"
 
 /**
 *  Stores the wavefield at the receiver positions.

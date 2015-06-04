@@ -53,7 +53,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	float *xsrca, *zsrca, rrcv;
 	float rsrc, oxsrc, ozsrc, dphisrc, ncsrc;
 	size_t nsamp;
-	int i, j, max_nrec;
+	int i, j;
 	int boundary, ibnd, cfree;
 	int ntaper,tapleft,tapright,taptop,tapbottom;
 	int nxsrc, nzsrc;
@@ -1017,17 +1017,18 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparint("rec_int_p",&rec->int_p)) rec->int_p=0;
 	if (!getparint("rec_int_vx",&rec->int_vx)) rec->int_vx=0;
 	if (!getparint("rec_int_vz",&rec->int_vz)) rec->int_vz=0;
-	if (!getparint("max_nrec",&max_nrec)) max_nrec=15000;
+	if (!getparint("max_nrec",&rec->max_nrec)) rec->max_nrec=15000;
 	if (!getparint("scale",&rec->scale)) rec->scale=0;
 	if (!getparfloat("dxspread",&dxspread)) dxspread=0;
 	if (!getparfloat("dzspread",&dzspread)) dzspread=0;
 	rec->nt=MIN(rec->nt, NINT((mod->tmod-rdelay)/dtrcv)+1);
 	rec->delay=NINT(rdelay/mod->dt);
 
-	rec->x = (int *)malloc(max_nrec*sizeof(int));
-	rec->z = (int *)malloc(max_nrec*sizeof(int));
-	rec->xr = (float *)malloc(max_nrec*sizeof(float));
-	rec->zr = (float *)malloc(max_nrec*sizeof(float));
+	rec->max_nrec += rec->max_nrec+1;
+	rec->x = (int *)malloc(rec->max_nrec*sizeof(int));
+	rec->z = (int *)malloc(rec->max_nrec*sizeof(int));
+	rec->xr = (float *)malloc(rec->max_nrec*sizeof(float));
+	rec->zr = (float *)malloc(rec->max_nrec*sizeof(float));
 	
 	/* calculates the receiver coordinates */
 	

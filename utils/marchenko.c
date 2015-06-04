@@ -131,7 +131,7 @@ int main (int argc, char **argv)
 		if (verbose) vwarn("parameter file_green not found, assume pipe");
 		file_green = NULL;
 	}
-	if (!getparint("nshots", &nshots)) verr("nshots should be given");
+	//if (!getparint("nshots", &nshots)) verr("nshots should be given");
 	if (!getparfloat("fmin", &fmin)) fmin = 0.0;
 	if (!getparfloat("fmax", &fmax)) fmax = 70.0;
 	if (!getparint("ixa", &ixa)) ixa = 0;
@@ -308,7 +308,7 @@ int main (int argc, char **argv)
 		vmess("direction of increasing traces = %d", di);
 		vmess("number of time samples(fft)  s = %d %d", nt, optn);
 		vmess("time sampling                  = %e ", dt);
-		if (file_greeb != NULL) vmess("Green output file              = %s ", file_gmin);
+		if (file_green != NULL) vmess("Green output file              = %s ", file_green);
 		if (file_gmin != NULL)  vmess("Gmin output file               = %s ", file_gmin);
 		if (file_gplus != NULL) vmess("Gplus output file              = %s ", file_gplus);
 		if (file_pmin != NULL)  vmess("Pmin output file               = %s ", file_pmin);
@@ -656,7 +656,7 @@ int main (int argc, char **argv)
     	fp_gplus = fopen(file_gplus, "w+");
     	if (fp_gplus==NULL) verr("error on creating output file %s", file_gplus);
 	}
-	if (file_pplus!=NULL) {
+	if (file_pplus != NULL) {
         fp_pplus = fopen(file_pplus, "w+");
     	if (fp_pplus==NULL) verr("error on creating output file %s", file_pplus);
 	}
@@ -664,11 +664,11 @@ int main (int argc, char **argv)
     	fp_pmin = fopen(file_pmin, "w+");
     	if (fp_pmin==NULL) verr("error on creating output file %s", file_pmin);
 	}
-	if (file_f1plus!=NULL) {
+	if (file_f1plus != NULL) {
         fp_f1plus = fopen(file_f1plus, "w+");
     	if (fp_f1plus==NULL) verr("error on creating output file %s", file_f1plus);
 	}
-	if (file_f1min!=NULL) {
+	if (file_f1min != NULL) {
         fp_f1min = fopen(file_f1min, "w+");
     	if (fp_f1min==NULL) verr("error on creating output file %s", file_f1min);
 	}
@@ -707,23 +707,23 @@ int main (int argc, char **argv)
         ret = writeData(fp_out, (float *)&green[l*size], hdrs_out, n1, n2);
         if (ret < 0 ) verr("error on writing output file.");
 
-		if (fp_gmin != NULL) {
+		if (file_gmin != NULL) {
         	ret = writeData(fp_gmin, (float *)&Gmin[l*size], hdrs_out, n1, n2);
         	if (ret < 0 ) verr("error on writing output file.");
 		}
-		if (fp_gplus != NULL) {
+		if (file_gplus != NULL) {
         	ret = writeData(fp_gplus, (float *)&Gplus[l*size], hdrs_out, n1, n2);
         	if (ret < 0 ) verr("error on writing output file.");
 		}
-		if (fp_pplus != NULL) {
+		if (file_pplus != NULL) {
         	ret = writeData(fp_pplus, (float *)&pplus[l*size], hdrs_out, n1, n2);
         	if (ret < 0 ) verr("error on writing output file.");
 		}
-		if (fp_pmin != NULL) {
+		if (file_pmin != NULL) {
         	ret = writeData(fp_pmin, (float *)&pmin[l*size], hdrs_out, n1, n2);
         	if (ret < 0 ) verr("error on writing output file.");
 		}
-		if (fp_f1plus != NULL) {
+		if (file_f1plus != NULL) {
 			/* rotate to get t=0 in the middle */
 			for (i = 0; i < n2; i++) {
             	hdrs_out[i].f1     = -n1*0.5*dt;
@@ -738,7 +738,7 @@ int main (int argc, char **argv)
         	ret = writeData(fp_f1plus, (float *)&f1plus[l*size], hdrs_out, n1, n2);
         	if (ret < 0 ) verr("error on writing output file.");
 		}
-		if (fp_f1min != NULL) {
+		if (file_f1min != NULL) {
 			/* rotate to get t=0 in the middle */
 			for (i = 0; i < n2; i++) {
             	hdrs_out[i].f1     = -n1*0.5*dt;
@@ -755,12 +755,12 @@ int main (int argc, char **argv)
 		}
 	}
 	ret = fclose(fp_out);
-	if (fp_gplus != NULL) ret += fclose(fp_gplus);
-	if (fp_gmin != NULL) ret += fclose(fp_gmin);
-	if (fp_pplus != NULL) ret += fclose(fp_pplus);
-	if (fp_pmin != NULL) ret += fclose(fp_pmin);
-	if (fp_f1plus != NULL) ret += fclose(fp_f1plus);
-	if (fp_f1min != NULL) ret += fclose(fp_f1min);
+	if (file_gplus != NULL) {ret += fclose(fp_gplus);}
+	if (file_gmin != NULL) {ret += fclose(fp_gmin);}
+	if (file_pplus != NULL) {ret += fclose(fp_pplus);}
+	if (file_pmin != NULL) {ret += fclose(fp_pmin);}
+	if (file_f1plus != NULL) {ret += fclose(fp_f1plus);}
+	if (file_f1min != NULL) {ret += fclose(fp_f1min);}
 	if (ret < 0) verr("err %d on closing output file",ret);
 
 	if (verbose) {
@@ -814,7 +814,7 @@ void synthesis(complex *shots, complex *syncdata, float *syndata, int nx, int nt
 	
 		ixsrc = NINT((xsrc[k] - fxs)/dxs);
 
-		if (abs(xrcv[k*nx+0]-xsrc[k]) > 0.5*nx*dx) { iox = 0; inx = nx-off; }
+		if (fabs(xrcv[k*nx+0]-xsrc[k]) > 0.5*nx*dx) { iox = 0; inx = nx-off; }
 		else { iox = off; inx = nx; }
 
 /*================ SYNTHESIS ================*/

@@ -21,6 +21,7 @@ typedef struct _receiverPar { /* Receiver Parameters */
 	int nt;
 	int delay;
 	int skipdt;
+	int max_nrec;
 	int *z;
 	int *x;
 	float *zr;

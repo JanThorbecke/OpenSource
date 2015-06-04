@@ -36,6 +36,11 @@ int writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot)
 	sub_x0 = mod->x0;
 	sub_z0 = mod->z0;
 
+//    ibndx = mod.ioPx;
+//    ibndz = mod.ioPz;
+//    if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
+//    if (bnd.top==4 || bnd.top==2) ibndz += bnd.ntap;
+
 	/* write velocity field with positions of the sources */
 	dum = (float *)calloc(nx*nz, sizeof(float));
 	vmess("Positions: shot=%d src=%d rec=%d", shot->n, src->n, rec->n);
@@ -119,6 +124,8 @@ int writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot)
 		dum[(MIN(nx-1,rec->x[is]+1))*nz+rec->z[is]] = -1.0;
 		dum[rec->x[is]*nz+MAX(0,rec->z[is]-1)] = -1.0;
 		dum[rec->x[is]*nz+MIN(nz-1,rec->z[is]+1)] = -1.0;
+
+//		vmess("receiver position %d at grid[ix=%d, iz=%d] = (x=%f z=%f)", ir, ix+ioPx, rec.z[ir]+ioPz, rec.xr[ir]+mod.x0, rec.zr[ir]+mod.z0);
 		if (rec->int_vx==3) {
 			fprintf(fp, "(%f, %f)\n", rec->xr[is]*dx+sub_x0, rec->zr[is]*dz+sub_z0);
 		}
