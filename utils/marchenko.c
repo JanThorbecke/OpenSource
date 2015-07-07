@@ -218,6 +218,17 @@ int main (int argc, char **argv)
 	else {
 		for (j = 0; j < nxs; j++) tapersy[j] = 1.0;
 	}
+	if (tap == 1 || tap == 3) {
+		if (verbose) vmess("Taper for operator applied ntap=%d", ntap);
+		for (l = 0; l < Nsyn; l++) {
+			for (j = 1; j < nw; j++) {
+				for (i = 0; i < nxs; i++) {
+					cpplus[l*nxs*nw+j*nxs+i].r *= tapersy[i];
+					cpplus[l*nxs*nw+j*nxs+i].i *= tapersy[i];
+				}   
+			}   
+		}   
+	}
 
 	if (xrcvsyn[0] != 0 || xrcvsyn[1] != 0 ) fxs = xrcvsyn[0];
 	fxs2 = fxs + (float)(nxs-1)*dxs;
@@ -340,18 +351,6 @@ int main (int argc, char **argv)
 		t2    = wallclock_time();
 	
 /*================ construction of Nk(-t) = - \int R(x,t) cpplus(t)  ================*/
-
-		if (tap == 1 || tap == 3) {
-			if (verbose) vmess("Taper for operator applied ntap=%d", ntap);
-			for (l = 0; l < Nsyn; l++) {
-				for (j = 1; j < nw; j++) {
-					for (i = 0; i < nxs; i++) {
-						cpplus[l*nxs*nw+j*nxs+i].r *= tapersy[i];
-						cpplus[l*nxs*nw+j*nxs+i].i *= tapersy[i];
-					}   
-				}   
-			}   
-		}
 
 		synthesis(cshots, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
 			xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, optn, nw, nw_low, nw_high, 
@@ -546,77 +545,80 @@ int main (int argc, char **argv)
 
 		/* compute up and downgoing Green's function G^+,- G^+,+ */
 		/* f1 based scheme */
-			if (iter == niter-1) {
-				/* transform f1+ to frequency domain */
-				for (l = 0; l < Nsyn; l++) {
-					for (i = 0; i < nxs; i++) {
-						for (j = 0; j < nts; j++) {
-							trace[j] = f1plus[l*nxs*nts+i*nts+j];
-						}
-        				rc1fft(&trace[0],ctrace,ntfft,-1);
-        				for (iw=0; iw<nw; iw++) {
-        					cpplus[l*nx*nw+iw*nx+i].r = ctrace[nw_low+iw].r;
-        					cpplus[l*nx*nw+iw*nx+i].i = ctrace[nw_low+iw].i;
-        				}
-					}
-				}
-
-				synthesis(cshots, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
-					xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, optn, nw, nw_low, nw_high, 
-					reci, off, nshots, verbose);
-
-				/* compute upgoing Green's G^-,+ */
-				for (l = 0; l < Nsyn; l++) {
-					for (i = 0; i < nxs; i++) {
-						j=0;
-						Gmin[l*nxs*nts+i*nts+j] = weight*Nk[l*nxs*nts+i*nts+j] - f1min[l*nxs*nts+i*nts+j];
-						for (j = 1; j < nts; j++) {
-							Gmin[l*nxs*nts+i*nts+j] = weight*Nk[l*nxs*nts+i*nts+j] - f1min[l*nxs*nts+i*nts+j];
-						}
-					}
-				}
-				/* transform f1- to frequency domain */
-				for (l = 0; l < Nsyn; l++) {
-					for (i = 0; i < nxs; i++) {
-						for (j = 0; j < nts; j++) {
-							trace[j] = f1min[l*nxs*nts+i*nts+j];
-						}
-        				rc1fft(&trace[0],ctrace,ntfft,-1);
-        				for (iw=0; iw<nw; iw++) {
-        					cpplus[l*nx*nw+iw*nx+i].r = ctrace[nw_low+iw].r;
-        					cpplus[l*nx*nw+iw*nx+i].i = -ctrace[nw_low+iw].i;
-        				}
-					}
-				}
-
-				synthesis(cshots, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
-					xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, optn, nw, nw_low, nw_high, 
-					reci, off, nshots, verbose);
-
-				/* compute downgoing Green's G^+,+ */
-				for (l = 0; l < Nsyn; l++) {
-					for (i = 0; i < nxs; i++) {
-						j=0;
-						Gplus[l*nxs*nts+i*nts+j] = -weight*Nk[l*nxs*nts+i*nts+j] + f1plus[l*nxs*nts+i*nts+j];
-						for (j = 1; j < nts; j++) {
-							Gplus[l*nxs*nts+i*nts+j] = -weight*Nk[l*nxs*nts+i*nts+j] + f1plus[l*nxs*nts+i*nts+nts-j];
-						}
-					}
-				}
-			} /* end if for last iteration */
-
-			/* transform muted Nk_1 to frequency domain */
+		if (iter == niter-1) {
+			/* transform f1+ to frequency domain */
 			for (l = 0; l < Nsyn; l++) {
 				for (i = 0; i < nxs; i++) {
-        			rc1fft(&Nk_1[l*nxs*nts+i*nts],ctrace,ntfft,-1);
-        			for (iw=0; iw<nw; iw++) {
-        				cpplus[l*nx*nw+iw*nx+i].r = ctrace[nw_low+iw].r;
-        				cpplus[l*nx*nw+iw*nx+i].i = ctrace[nw_low+iw].i;
-        			}
+					for (j = 0; j < nts; j++) {
+						trace[j] = f1plus[l*nxs*nts+i*nts+j];
+					}
+       				rc1fft(&trace[0],ctrace,ntfft,-1);
+       				for (iw=0; iw<nw; iw++) {
+       					cpplus[l*nx*nw+iw*nx+i].r = ctrace[nw_low+iw].r;
+       					cpplus[l*nx*nw+iw*nx+i].i = ctrace[nw_low+iw].i;
+       				}
 				}
 			}
-			t2 = wallclock_time();
-			tfft +=  t2 - t3;
+
+			synthesis(cshots, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
+				xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, optn, nw, nw_low, nw_high, 
+				reci, off, nshots, verbose);
+
+			/* compute upgoing Green's G^-,+ */
+			for (l = 0; l < Nsyn; l++) {
+				for (i = 0; i < nxs; i++) {
+					j=0;
+					Gmin[l*nxs*nts+i*nts+j] = weight*Nk[l*nxs*nts+i*nts+j] - f1min[l*nxs*nts+i*nts+j];
+					for (j = 1; j < nts; j++) {
+						Gmin[l*nxs*nts+i*nts+j] = weight*Nk[l*nxs*nts+i*nts+j] - f1min[l*nxs*nts+i*nts+j];
+					}
+				}
+			}
+			/* Apply mute with window for Gmin */
+			applyMute(Gmin, mute, smooth, 1, Nsyn, nxs, nts, shift);
+
+			/* transform f1- to frequency domain */
+			for (l = 0; l < Nsyn; l++) {
+				for (i = 0; i < nxs; i++) {
+					for (j = 0; j < nts; j++) {
+						trace[j] = f1min[l*nxs*nts+i*nts+j];
+					}
+       				rc1fft(&trace[0],ctrace,ntfft,-1);
+       				for (iw=0; iw<nw; iw++) {
+       					cpplus[l*nx*nw+iw*nx+i].r = ctrace[nw_low+iw].r;
+       					cpplus[l*nx*nw+iw*nx+i].i = -ctrace[nw_low+iw].i;
+       				}
+				}
+			}
+
+			synthesis(cshots, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
+				xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, optn, nw, nw_low, nw_high, 
+				reci, off, nshots, verbose);
+
+			/* compute downgoing Green's G^+,+ */
+			for (l = 0; l < Nsyn; l++) {
+				for (i = 0; i < nxs; i++) {
+					j=0;
+					Gplus[l*nxs*nts+i*nts+j] = -weight*Nk[l*nxs*nts+i*nts+j] + f1plus[l*nxs*nts+i*nts+j];
+					for (j = 1; j < nts; j++) {
+						Gplus[l*nxs*nts+i*nts+j] = -weight*Nk[l*nxs*nts+i*nts+j] + f1plus[l*nxs*nts+i*nts+nts-j];
+					}
+				}
+			}
+		} /* end if for last iteration */
+
+		/* transform muted Nk_1 to frequency domain */
+		for (l = 0; l < Nsyn; l++) {
+			for (i = 0; i < nxs; i++) {
+        		rc1fft(&Nk_1[l*nxs*nts+i*nts],ctrace,ntfft,-1);
+        		for (iw=0; iw<nw; iw++) {
+        			cpplus[l*nx*nw+iw*nx+i].r = ctrace[nw_low+iw].r;
+        			cpplus[l*nx*nw+iw*nx+i].i = ctrace[nw_low+iw].i;
+        		}
+			}
+		}
+		t2 = wallclock_time();
+		tfft +=  t2 - t3;
 
 		if (verbose) vmess("*** Iteration %d finished ***", iter);
 

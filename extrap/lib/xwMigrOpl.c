@@ -13,9 +13,9 @@ void xwMigrOpl(float *data, int nx, int nt, float dt, float *velmod1, float *vel
 {
 	int     iomin, iomax, iom, niom, ix, jx, d, hopl, hopl2, i, j;
 	int     index1, i1, i2, nfreq, optn, lenx, hoplen, sign, slen;
-	int     ixrcv, ixsrc, ixmin, ixmax, ixo, ixn;
+	int     ixrcv, ixsrc, ixmin, ixmax, ixo, ixn, np;
 	float   dom, om, c, cprev, df, sr, max_e, eps, smooth;
-	float   *taper, scl, *locima, *locima2, *tmpim, *tmpim2, *pdata;
+	float   *taper, scl, *locima, *locima2, *pdata;
 	float 	*trace, *smoother;
     float   c1prev, c2prev;
     int     hoplen1, hoplen2;
@@ -45,6 +45,7 @@ void xwMigrOpl(float *data, int nx, int nt, float dt, float *velmod1, float *vel
 	niom  = iomax-iomin+1;
 	hopl  = (opl_max+1)/2;
 	hopl2 = hopl-1;
+	np    = 1;
 
 /* transformation of shot record to frequency domain  */
 
@@ -163,10 +164,6 @@ void xwMigrOpl(float *data, int nx, int nt, float dt, float *velmod1, float *vel
 		}
 		lenx  += 2*ntap;
 	}
-	if (imc == 2 || imc == 5) {
-		tmpim  = (float *)calloc(nxm*ndepth, sizeof(float));
-		tmpim2 = (float *)calloc(nxm*ndepth, sizeof(float));
-	}
 
 /* calculate image at depth = 0 */
 
@@ -192,6 +189,21 @@ void xwMigrOpl(float *data, int nx, int nt, float dt, float *velmod1, float *vel
 	}
 
 	t0 = wallclock_time();
+#pragma omp parallel default(none) \
+ shared(image, cexsrc, cexrcv, np) \
+ shared(hopl, hopl2, velmod1, velmod2, lenx, iomin, iomax, taper, dom) \
+ shared(nx, ndepth, ixmin, ixmax, eps, imc, csrc, cdata, scl, verbose) \
+ shared(ndepthex,izsrc,izrcv, nxm, nzm, ntap) \
+ private(hoplen, hoplen1, hoplen2) \
+ private(iom, tmp1, tmp2, cprev, c1prev, c2prev, d, ix, j, c, om, index1) \
+ private(sr, slen, opx, opxs, jx, wa, da, smooth, smoother) \
+ private(locdat, locsrc, locima, locima2, i1, i2)
+    { /* start of parallel region */
+#ifdef _OPENMP
+    np   = omp_get_num_threads();
+#endif
+#pragma omp single
+    if (verbose >=2) vmess("xwMigrOpl: number of OpenMP threads's = %d", np);
 
 	tmp1  = (complex *)calloc(lenx, sizeof(complex));
 	tmp2  = (complex *)calloc(lenx, sizeof(complex));
@@ -204,6 +216,7 @@ void xwMigrOpl(float *data, int nx, int nt, float dt, float *velmod1, float *vel
 
 /* start extrapolation for all frequencies, depths and x-positions */
 
+#pragma omp for 
 	for (iom = iomin; iom <= iomax; iom++) {
 		memset(locdat, 0, sizeof(complex)*(lenx));
 		memset(locsrc, 0, sizeof(complex)*(lenx));
@@ -505,6 +518,8 @@ void xwMigrOpl(float *data, int nx, int nt, float dt, float *velmod1, float *vel
 		}  /* end of depth loop */
 	} /* end of iom loop */
 
+#pragma omp critical
+{
 	if (imc < 2) {
 		for (d = 0; d < ndepth; d++) {
 			for (ix = ixmin, jx = 0; ix <= ixmax; ix++, jx++) {
@@ -553,6 +568,7 @@ void xwMigrOpl(float *data, int nx, int nt, float dt, float *velmod1, float *vel
 		}
 		free(smoother);
 	}
+} /* end critical */
 
 	free(opx);
 	free(opxs);
@@ -562,10 +578,10 @@ void xwMigrOpl(float *data, int nx, int nt, float dt, float *velmod1, float *vel
 	free(locsrc);
 	free(locima);
 	if (imc == 2 || imc == 5) {
-		free(tmpim);
-		free(tmpim2);
 		free(locima2);
 	}
+} /* end of parallel region */
+
 
 	if(exsrc) wx2xt(cexsrc, exsrc, optn, nxm, nxm, optn);
 	if(exrcv) wx2xt(cexrcv, exrcv, optn, nxm, nxm, optn);

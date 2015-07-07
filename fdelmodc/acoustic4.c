@@ -21,7 +21,7 @@ int acoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 /*********************************************************************
        COMPUTATIONAL OVERVIEW OF THE 4th ORDER STAGGERED GRID: 
 
-  The captial symbols T (=Txx,Tzz) Txz,Vx,Vz represent the actual grid
+  The captial symbols T (=P) Txz,Vx,Vz represent the actual grid
   The indices ix,iz are related to the T grid, so the capital T 
   symbols represent the actual modelled grid.
 

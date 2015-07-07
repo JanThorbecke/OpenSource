@@ -157,7 +157,17 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 			if (verbose>=4 && isam==0) {
 				vmess("Receiver %d read at gridpoint ix=%d iz=%d",irec, ix, iz);
 			}
-			if (rec.type.p)   rec_p[irec*rec.nt+isam] = tzz[ix*n1+iz];
+			if (rec.type.p) {
+				if (rec.int_p == 1) {
+					rec_p[irec*rec.nt+isam] = 0.5*(tzz[ix*n1+iz1]+tzz[ix*n1+iz]);
+				}
+				else if (rec.int_p == 2) {
+					rec_p[irec*rec.nt+isam] = 0.5*(tzz[ix1*n1+iz]+tzz[ix*n1+iz]);
+				}
+				else {
+					rec_p[irec*rec.nt+isam] = tzz[ix*n1+iz];
+				}
+			}
 			if (rec.type.txx) rec_txx[irec*rec.nt+isam] = txx[ix*n1+iz];
 			if (rec.type.tzz) rec_tzz[irec*rec.nt+isam] = tzz[ix*n1+iz];
 			if (rec.type.txz) {
@@ -182,8 +192,8 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 /* interpolate vz to vx position to the right and above of vz */
 				if (rec.int_vz == 1) {
 					rec_vz[irec*rec.nt+isam] = 0.25*(
-							vz[ix*n1+iz2]+vz[ix2*n1+iz2]+
-							vz[ix*n1+iz]+vz[ix2*n1+iz]);
+							vz[ix*n1+iz2]+vz[ix1*n1+iz2]+
+							vz[ix*n1+iz] +vz[ix1*n1+iz]);
 				}
 /* interpolate vz to Txx/Tzz position by taking the mean of 2 values */
 				else if (rec.int_vz == 2) {
@@ -198,8 +208,8 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 /* interpolate vx to vz position to the left and below of vx */
 				if (rec.int_vx == 1) {
 					rec_vx[irec*rec.nt+isam] = 0.25*(
-							vx[ix2*n1+iz]+vx[ix2*n1+iz2]+
-							vx[ix*n1+iz]+vx[ix*n1+iz2]);
+							vx[ix2*n1+iz]+vx[ix2*n1+iz1]+
+							vx[ix*n1+iz]+vx[ix*n1+iz1]);
 				}
 /* interpolate vx to Txx/Tzz position by taking the mean of 2 values */
 				else if (rec.int_vx == 2) {
