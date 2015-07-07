@@ -6,7 +6,7 @@ void xwMigr(float **data, int nx, int nt, float dt, float **velmod, int nxm, int
 {
 	int     iomin, iomax, iom, ix, jx, d, hopl, hopl2, i, j;
 	int     index1, i1, i2, nfreq, optn, lenx;
-	int     ixrcv, ixsrc, ixmin, ixmax, ixo, ixn;
+	int     ixrcv, ixsrc, ixmin, ixmax, ixo, ixn, np;
 	float   dom, om, c, cprev, df, sr, max_e, eps;
 	float   *taper, scl, *locima, *locima2, *tmpim, *tmpim2, *pdata;
 	float   t0, t1;
@@ -16,11 +16,6 @@ void xwMigr(float **data, int nx, int nt, float dt, float **velmod, int nxm, int
 	complex *cexsrc=(complex *) exsrc;
 	complex *cexrcv=(complex *) exrcv;
 
-#if defined(SGI)
-	int     np = mp_suggested_numthreads(0);
-
-	if (verbose >=2) vmess("xwMigr: number of CPU's = %d", np);
-#endif
 
 /* transformation of shot record to frequency domain  */
 
@@ -181,16 +176,18 @@ void xwMigr(float **data, int nx, int nt, float dt, float **velmod, int nxm, int
 	}
 
 	t0 = wallclock_time();
-#if defined (SGI)
-#pragma parallel
-#pragma shared(image, tmpim, tmpim2, cexsrc, cexrcv)
-#pragma byvalue(hopl, hopl2, velmod, lenx, iomin, iomax, taper, dom)
-#pragma byvalue(nx, ndepth, ixmin, ixmax, eps, imc, csrc, cdata, scl)
-#pragma byvalue(ndepthex,izsrc,izrcv)
-#pragma local(iom, tmp1, tmp2, cprev, d, ix, j, c, om, index1)
-#pragma local(sr, opx, jx, wa, da)
-#pragma local(locdat, locsrc, locima, locima2, i1, i2)
+#pragma omp parallel default(none) \
+ shared(image, tmpim, tmpim2, cexsrc, cexrcv) \
+ shared(hopl, hopl2, velmod, lenx, iomin, iomax, taper, dom) \
+ shared(nx, ndepth, ixmin, ixmax, eps, imc, csrc, cdata, scl) \
+ shared(ndepthex,izsrc,izrcv) \
+ private(iom, tmp1, tmp2, cprev, d, ix, j, c, om, index1) \
+ private(sr, opx, jx, wa, da) \
+ private(locdat, locsrc, locima, locima2, i1, i2)
 	{ /* start of parallel region */
+#ifdef _OPENMP
+    np   = omp_get_num_threads();
+	if (verbose >=2) vmess("xwMigr: number of OpenMP threads's = %d", np);
 #endif
 
 	tmp1  = (complex *)calloc(lenx, sizeof(complex));
@@ -203,9 +200,7 @@ void xwMigr(float **data, int nx, int nt, float dt, float **velmod, int nxm, int
 
 /* start extrapolation for all frequencies, depths and x-positions */
 
-#if defined(SGI)
-#pragma pfor iterate(iom=iomin;iomax;1) schedtype (simple)
-#endif
+#pragma omp for schedule(guided,1)
 	for (iom = iomin; iom <= iomax; iom++) {
 		for (j = 0, ix = ixmin; j < nx; j++, ix++) {
 			locdat[hopl2+j] = cdata[iom*nxm+ix];
@@ -410,10 +405,8 @@ void xwMigr(float **data, int nx, int nt, float dt, float **velmod, int nxm, int
 
 		}  /* end of depth loop */
 	} /* end of iom loop */
-#if defined(SGI)
-#pragma critical
+#pragma omp critical
 {
-#endif
 	if (imc < 2) {
 		for (d = 0; d < ndepth; d++) {
 			for (ix = ixmin, jx = 0; ix <= ixmax; ix++, jx++) {
@@ -429,9 +422,7 @@ void xwMigr(float **data, int nx, int nt, float dt, float **velmod, int nxm, int
 			}
 		}
 	}
-#if defined(SGI)
 }
-#endif
 
 	free(opx);
 	free(tmp1);
@@ -440,9 +431,7 @@ void xwMigr(float **data, int nx, int nt, float dt, float **velmod, int nxm, int
 	free(locsrc);
 	free(locima);
 	if (imc == 2) free(locima2);
-#if defined(SGI)
 } /* end of parallel region */
-#endif
 
 	if (imc == 2) {
 		for (d = 0; d < ndepth; d++) {

@@ -1048,7 +1048,6 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		if (!getparint("rec_type_pp", &rec->type.pp)) rec->type.pp=0;
 		if (!getparint("rec_type_ss", &rec->type.ss)) rec->type.ss=0;
 		/* for up and downgoing waves store all x-positons for Vz, Vx, Txz, Tzz into an array */
-    	if (rec->type.ud) {rec->type.vz=1; rec->type.p=1; rec->type.tzz=1; rec->type.txz=1; rec->int_vz=2;}
 	}
 	else {
 		if (!getparint("rec_type_p", &rec->type.p)) rec->type.p=1;
@@ -1058,7 +1057,6 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		rec->type.pp=0;
 		rec->type.ss=0;
 		/* for up and downgoing waves store all x-positons for P and Vz into an array */
-    	if (rec->type.ud) {rec->type.vz=1; rec->type.p=1; rec->int_vz=2;}
 	}
 
 	/* receivers are on a circle, use default interpolation to real (not on a grid-point) receiver position */
@@ -1096,8 +1094,10 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			vmess("ixmin   = %d ixmax   = %d ", rec->x[0], rec->x[rec->n-1]);
 			if (rec->type.p) {
 				fprintf(stderr,"    %s: Receiver interpolation for P: ",xargv[0]);
+				if(rec->int_p==0) fprintf(stderr,"p->p\n");
+				if(rec->int_p==1) fprintf(stderr,"p->vz\n");
+				if(rec->int_p==2) fprintf(stderr,"p->vx\n");
 				if(rec->int_p==3) fprintf(stderr,"interpolate to actual (no-grid) position of receiver\n");
-				else fprintf(stderr,"use closest grid-point to actual receiver position\n");
 			}
 			if (rec->type.vx) {
 				fprintf(stderr,"    %s: Receiver interpolation for Vx: ",xargv[0]);

@@ -14,10 +14,8 @@ void verr(char *fmt, ...)
 		fprintf(stderr, "\nverr: fflush failed on stdout");
 	}
 	fprintf(stderr, "    Error in %s: ", xargv[0]);
-#ifdef _CRAYMPP
-        fprintf(stderr, "PE %d: ", _my_pe());
-#elif defined(SGI)
-        fprintf(stderr, "PE %d: ", mp_my_threadnum());
+#ifdef _OPENMP
+        fprintf(stderr, "PE %d: ", omp_get_thread_num());
 #endif
 	va_start(args,fmt);
 	vfprintf(stderr, fmt, args);
@@ -35,10 +33,8 @@ void vwarn(char *fmt, ...)
 		fprintf(stderr, "\nvwarn: fflush failed on stdout");
 	}
 	fprintf(stderr, "    Warning in %s: ", xargv[0]);
-#ifdef _CRAYMPP
-        fprintf(stderr, "PE %d: ", _my_pe());
-#elif defined(SGI)
-        fprintf(stderr, "PE %d: ", mp_my_threadnum());
+#ifdef _OPENMP
+        fprintf(stderr, "PE %d: ", omp_get_thread_num());
 #endif
 	va_start(args,fmt);
 	vfprintf(stderr, fmt, args);
@@ -55,10 +51,8 @@ void vmess(char *fmt, ...)
 		fprintf(stderr, "\nvmess: fflush failed on stdout");
 	}
 	fprintf(stderr, "    %s: ", xargv[0]);
-#ifdef _CRAYMPP
-        fprintf(stderr, "PE %d: ", _my_pe());
-#elif defined(SGI)
-        fprintf(stderr, "PE %d: ", mp_my_threadnum());
+#ifdef _OPENMP
+        fprintf(stderr, "PE %d: ", omp_get_thread_num());
 #endif
 	va_start(args,fmt);
 	vfprintf(stderr, fmt, args);

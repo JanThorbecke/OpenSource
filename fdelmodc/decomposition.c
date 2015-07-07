@@ -121,7 +121,7 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 	fangle=pangle;
 	if (verbose>=2) vmess("Up-down going: P max=%e average=%e => angle at average %f", maxrp, avrp, pangle);
 	if (verbose>=2) vmess("Up-down going: Vz max=%e average=%e => angle at average %f", maxrvz, avrvz, vangle);
-	if (pangle >= 90) { /* use angle in Vz data, P might be placed on free surface */
+	if (pangle >= 90 || pangle <= 1) { /* use angle in Vz data, P might be placed on free surface */
 		fangle = vangle;
 	}
 	if(!getparfloat("kangle",&kangle)) kangle=fangle;
@@ -188,7 +188,7 @@ void decud(float om, float rho, float cp, float dx, int nkx, float kangle, float
 	if (kpos > kxnyq)  kpos = kxnyq;
 	band = kpos;
 	filterpoints = (int)abs((int)(perc*band/dkx));
-	kfilt = fabs(dkx*filterpoints);
+	kfilt = fabsf(dkx*filterpoints);
 	if (kpos+kfilt < kxnyq) {
 		kxfmax = kpos+kfilt;
 		filterppos = filterpoints;
@@ -273,7 +273,7 @@ complex ciroot(complex x, float stab)
     else {
 		kzz = cwp_csqrt(x);
  		kz.r = kzz.r;
- 		kz.i = -abs(kzz.i);
+ 		kz.i = -fabsf(kzz.i);
  		kd = kz.r*kz.r+kz.i*kz.i+stab;
         z.r = kz.r/kd;
         z.i = -kz.i/kd;
@@ -289,8 +289,8 @@ complex cwp_csqrt(complex z)
 		c.r = c.i = 0.0;
         return c;
     } else {
-        x = fabs(z.r);
-        y = fabs(z.i);
+        x = fabsf(z.r);
+        y = fabsf(z.i);
         if (x>=y) {
             r = y/x;
             w = sqrt(x)*sqrt(0.5*(1.0+sqrt(1.0+r*r)));

@@ -83,23 +83,19 @@ void xwVSP(float *data, int nx, int nt, float dt, float *xrcv, float *velmod, in
 		}
 	}
 
-#if defined (SGI)
-#pragma parallel
-#pragma shared(cdata, cvsp)
-#pragma byvalue(hopl, hopl2, velmod, lenx, iomin, iomax, taper, dom)
-#pragma byvalue(nx, ndepth, xi, zi, nvsp, ispr, nrec, nfreq, verbose)
-#pragma local(iom, tmp1, tmp2, wa, cprev, d, ix, j, c, om, index1)
-#pragma local(i1, i2, opx, ixp, izp)
+#pragma omp parallel \
+ shared(cdata, cvsp) \
+ shared(hopl, hopl2, velmod, lenx, iomin, iomax, taper, dom) \
+ shared(nx, ndepth, xi, zi, nvsp, ispr, nrec, nfreq, verbose) \
+ private(iom, tmp1, tmp2, wa, cprev, d, ix, j, c, om, index1) \
+ private(i1, i2, opx, ixp, izp) 
     { /* start of parallel region */
-#endif
 
 	tmp1  = (complex *)calloc(lenx, sizeof(complex));
 	tmp2  = (complex *)calloc(lenx, sizeof(complex));
 	opx   = (complex *)calloc(hopl, sizeof(complex));
 
-#if defined(SGI)
-#pragma pfor iterate(iom=iomin;iomax;1) schedtype (simple)
-#endif
+#pragma omp for 
 	for (iom = iomin; iom <= iomax; iom++) {
 		om = iom*dom;
 		cprev = 0;
@@ -150,9 +146,7 @@ void xwVSP(float *data, int nx, int nt, float dt, float *xrcv, float *velmod, in
 	free(tmp1);
 	free(tmp2);
 
-#if defined(SGI)
 } /* end of parallel region */
-#endif
 
 	rdata  = (float *)malloc(nx*optn*sizeof(float));
 	wx2xt(cdata, rdata, optn, nx, nx, optn);
