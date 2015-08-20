@@ -2,16 +2,16 @@
 
 export PATH=:$HOME/src/OpenSource/bin:$HOME/bin64:$PATH:
 
-dx=0.5
-dt=0.0001
+dx=1.0
+dt=0.0002
 fast=""
 
-dx=2.5
-dt=0.00050
-fast="fast"
+#dx=2.5
+#dt=0.00050
+#fast="fast"
 
 makemod sizex=6000 sizez=1250 dx=$dx dz=$dx cp0=1500  ro0=1000 \
-        orig=-3000,0 file_base=tutodelfast.su verbose=2 \
+        orig=-3000,0 file_base=tutodel${fast}.su verbose=2 \
         intt=def x=-3000,3000 z=240,240 cp=1950 ro=4500 grad=0 \
         intt=def x=-3000,3000 z=620,620 cp=1500 ro=1000 grad=0 
 
@@ -36,7 +36,7 @@ fdelmodc \
     rec_int_vx=2 \
     dtrcv=$dt \
     rec_delay=0.0 \
-    verbose=4 \
+    verbose=1 \
     tmod=4.4000 \
     xrcv1=-3000,-3000 xrcv2=3000,3000 zrcv1=0,1200 zrcv2=0,1200 \
     dxrcv=2.5,2.5 dzrcv=0,0 \
@@ -76,9 +76,10 @@ fdelmodc \
     rec_int_p=0 \
     dtrcv=$dt \
     rec_delay=0.0 \
-    verbose=4 \
+    verbose=1 \
     tmod=5.0000 \
     tsnap1=4.200 tsnap2=4.50 dtsnap=0.004 \
+	xsnap1=-1000 xsnap2=1000 \
     ntaper=400 \
     left=4 right=4 top=4 bottom=4
 

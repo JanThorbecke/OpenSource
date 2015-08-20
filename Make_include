@@ -58,9 +58,9 @@ OPTC += -fopenmp
 #OPTF = -Ofast -OPT:Ofast -fno-math-errno
 
 #Apple OSX clang/gcc (10.9) llvm
-CC = clang
-OPTC = -Ofast
-LDFLAGS = -Ofast
+#CC = clang
+#OPTC = -Ofast
+#LDFLAGS = -Ofast
 
 #AMD Open64
 #CC = opencc

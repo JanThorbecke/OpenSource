@@ -1025,10 +1025,10 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	rec->delay=NINT(rdelay/mod->dt);
 
 	rec->max_nrec += rec->max_nrec+1;
-	rec->x = (int *)malloc(rec->max_nrec*sizeof(int));
-	rec->z = (int *)malloc(rec->max_nrec*sizeof(int));
-	rec->xr = (float *)malloc(rec->max_nrec*sizeof(float));
-	rec->zr = (float *)malloc(rec->max_nrec*sizeof(float));
+	rec->x  = (int *)calloc(rec->max_nrec,sizeof(int));
+	rec->z  = (int *)calloc(rec->max_nrec,sizeof(int));
+	rec->xr = (float *)calloc(rec->max_nrec,sizeof(float));
+	rec->zr = (float *)calloc(rec->max_nrec,sizeof(float));
 	
 	/* calculates the receiver coordinates */
 	

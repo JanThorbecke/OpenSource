@@ -9,7 +9,7 @@ LIBS    += -L$L -lgenfft -lm $(LIBSM)
 #LIBS    += -L$L -lgenfft -lm -lc
 #OPTC = -g -Wall -fsignaling-nans -O0
 #OPTC += -fopenmp -Waddress
-OPTC += -g -DDEBUG
+#OPTC += -g -DDEBUG
 
 PRG = fdemmodc
 
