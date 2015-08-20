@@ -1,0 +1,107 @@
+#!/bin/bash
+
+export PATH=:$HOME/src/OpenSource/bin:$HOME/bin64:$PATH:
+
+dx=1.0
+dt=0.0002
+
+makemod sizex=700 sizez=700 dx=$dx dz=$dx cp0=1500 ro0=1000 \
+	orig=-350,-350 file_base=water.su verbose=2 \
+	intt=def x=-150,150 z=-150,-150 poly=1 cp=1950 ro=3700 \
+	intt=def x=-150,150 z=150,150 poly=1 cp=1500 ro=1000 
+
+makewave w=fw fmin=0 flef=5 frig=60 fmax=65  dt=$dt file_out=wavefw.su nt=4096 t0=0.4 scale=0
+
+makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=1
+
+#circular receivers
+../fdelmodc \
+    file_cp=water_cp.su ischeme=1 iorder=4 \
+    file_den=water_ro.su \
+    file_src=wave.su \
+    file_rcv=inj_rate.su \
+    src_type=1 \
+    src_injectionrate=1 \
+    rec_type_vz=1 \
+    rec_type_p=1 \
+    rec_int_p=0 \
+    dtrcv=$dt \
+    rec_delay=0.0 \
+    verbose=4 \
+    tmod=0.8000 \
+    xrcv1=-350,-350,-350,350 xrcv2=350,350,-350,350 zrcv1=-350,350,-350,-350 zrcv2=-350,350,350,350 \
+	dxrcv=$dx,$dx,0,0 dzrcv=0,0,$dx,$dx \
+    xsrc=0 zsrc=0  \
+    ntaper=400 \
+    left=4 right=4 top=4 bottom=4
+
+ #   oxrcv=0 ozrcv=0 dphi=1.0 rrcv=300 \
+#middle trace of snapshot number 11 at t=0
+#suwind key=fldr min=11 max=11 < snapinj_rate_sp.su | suwind key=tracf min=350 max=350 | suxgraph
+#suwind key=fldr min=11 max=11 < snapinj_rate_sp.su | suwind key=tracf min=350 max=350 | suxgraph x1beg=-100 x1end=100 style=normal
+
+../fdelmodc \
+    file_cp=water_cp.su ischeme=1 iorder=4 \
+    file_den=water_ro.su \
+    file_src=inj_rate_rp.su \
+    file_rcv=back_inj_rate.su \
+	file_snap=snapinj_rate.su \
+	grid_dir=1 \
+    src_type=1 \
+    src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_p=0 \
+    dtrcv=$dt \
+    rec_delay=0.0 \
+    verbose=4 \
+    tmod=1.1000 \
+	xrcv1=-300 xrcv2=300 \
+	zrcv1=0 zrcv2=0 dxrcv=1 \
+	tsnap1=0.000 tsnap2=0.90 dtsnap=0.01 \
+    ntaper=400 \
+    left=4 right=4 top=4 bottom=4
+
+exit
+
+../fdelmodc \
+    file_cp=water_cp.su ischeme=1 iorder=4 \
+    file_den=water_ro.su \
+    file_src=wave.su \
+    file_rcv=inj.su \
+    src_type=1 \
+    src_injectionrate=0 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_p=0 \
+    dtrcv=0.0004 \
+    rec_delay=0.0 \
+    verbose=4 \
+    tmod=0.4000 \
+    oxrcv=0 ozrcv=0 dphi=1.0 rrcv=300 \
+    xsrc=0 zsrc=0  \
+    ntaper=400 \
+    left=4 right=4 top=4 bottom=4
+
+
+../fdelmodc \
+    file_cp=water_cp.su ischeme=1 iorder=4 \
+    file_den=water_ro.su \
+    file_src=inj_rp.su \
+    file_rcv=back_inj.su \
+	file_snap=snapinj.su \
+	grid_dir=1 \
+    src_type=1 \
+    src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_p=0 \
+    dtrcv=0.0004 \
+    rec_delay=0.0 \
+    verbose=4 \
+    tmod=0.5000 \
+	xrcv1=-300 xrcv2=300 \
+	zrcv1=0 zrcv2=0 dxrcv=1 \
+	tsnap1=0.200 tsnap2=0.50 dtsnap=0.01 \
+    ntaper=400 \
+    left=4 right=4 top=4 bottom=4
