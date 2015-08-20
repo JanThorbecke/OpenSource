@@ -3,7 +3,7 @@
 #include<math.h>
 #include<assert.h>
 #include"fdelmodc.h"
-
+#define ISODD(n) ((n) & 01)
 static float *src1x, *src1z, *src2x, *src2z;
 static int first=1;
 void vmess(char *fmt, ...);
@@ -54,10 +54,10 @@ int storeSourceOnSurface(modPar mod, srcPar src, bndPar bnd, int ixsrc, int izsr
 
 /* check if there are sources placed on the boundaries */
 	is0 = -1*floor((src.n-1)/2);
-#pragma omp	for private (isrc) 
+#pragma omp	for private (isrc, ixs, izs, store) 
 	for (isrc=0; isrc<src.n; isrc++) {
 		/* calculate the source position */
-		if (src.random) {
+		if (src.random || src.multiwav) {
 			ixs = src.x[isrc] + ibndx;
 			izs = src.z[isrc] + ibndz;
 		}
@@ -74,10 +74,10 @@ int storeSourceOnSurface(modPar mod, srcPar src, bndPar bnd, int ixsrc, int izsr
  * conditions have been set */
 
         store=0;
-		if (ixs <= ibndx+1) store=1;
-		if (ixs >= nx+ibndx) store=1;
-		if (izs <= ibndz+1) store=1;
-		if (izs >= nz+ibndz) store=1;
+		if ( (ixs <= ibndx+1)  && ISODD(bnd.lef)) store=1;
+		if ( (ixs >= nx+ibndx) && ISODD(bnd.rig)) store=1;
+		if ( (izs <= ibndz+1)  && ISODD(bnd.top)) store=1;
+		if ( (izs >= nz+ibndz) && ISODD(bnd.bot)) store=1;
 
 		if (mod.ischeme <= 2) { /* Acoustic scheme */
             
@@ -290,10 +290,10 @@ int reStoreSourceOnSurface(modPar mod, srcPar src, bndPar bnd, int ixsrc, int iz
 
 	/* restore source positions on the edge */
 	is0 = -1*floor((src.n-1)/2);
-#pragma omp	for private (isrc) 
+#pragma omp	for private (isrc, ixs, izs, store) 
 	for (isrc=0; isrc<src.n; isrc++) {
 		/* calculate the source position */
-		if (src.random) {
+		if (src.random || src.multiwav) {
 			ixs = src.x[isrc] + ibndx;
 			izs = src.z[isrc] + ibndz;
 		}
@@ -303,10 +303,10 @@ int reStoreSourceOnSurface(modPar mod, srcPar src, bndPar bnd, int ixsrc, int iz
 		}
         
         store=0;
-		if (ixs <= ibndx+1) store=1;
-		if (ixs >= nx+ibndx) store=1;
-		if (izs <= ibndz+1) store=1;
-		if (izs >= nz+ibndz) store=1;
+		if ( (ixs <= ibndx+1)  && ISODD(bnd.lef)) store=1;
+		if ( (ixs >= nx+ibndx) && ISODD(bnd.rig)) store=1;
+		if ( (izs <= ibndz+1)  && ISODD(bnd.top)) store=1;
+		if ( (izs >= nz+ibndz) && ISODD(bnd.bot)) store=1;
         
 		if (mod.ischeme <= 2) { /* Acoustic scheme */
             

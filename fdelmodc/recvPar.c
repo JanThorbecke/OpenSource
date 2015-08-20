@@ -139,9 +139,9 @@ int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx,
 	assert(Nz1==Nz2);
 	assert(Nx1==Nz1);
 		
-	if (nrec==0 && Nx1==0) { /* no receivers are defined use default linear array of receivers on top of model */
-		Nx1=1;
-	}
+//	if (nrec==0 && Nx1==0) { /* no receivers are defined use default linear array of receivers on top of model */
+//		Nx1=1;
+//	}
 	
 
 	if (Nx1!=0) {

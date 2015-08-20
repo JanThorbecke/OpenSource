@@ -350,13 +350,14 @@ int main(int argc, char **argv)
 	if (rec.type.txz) rec_txz = (float *)calloc(size,sizeof(float));
 	if (rec.type.pp)  rec_pp  = (float *)calloc(size,sizeof(float));
 	if (rec.type.ss)  rec_ss  = (float *)calloc(size,sizeof(float));
-    if (rec.type.ud) { /* get velcity and density at first receiver location */
-		ir = mod.ioZz + rec.z[0]+(rec.x[0]+mod.ioZx)*n1;
-		rec.rho = mod.dt/(mod.dx*roz[ir]);
-		rec.cp  = sqrt(l2m[ir]*(roz[ir]))*mod.dx/mod.dt;
+    if (rec.type.ud) { 
 		rec_udvz  = (float *)calloc(mod.nax*rec.nt,sizeof(float));
 		rec_udp   = (float *)calloc(mod.nax*rec.nt,sizeof(float));
 	}
+	/* get velcity and density at first receiver location */
+	ir = mod.ioZz + rec.z[0]+(rec.x[0]+mod.ioZx)*n1;
+	rec.rho = mod.dt/(mod.dx*roz[ir]);
+	rec.cp  = sqrt(l2m[ir]*(roz[ir]))*mod.dx/mod.dt;
 	
 	if(sna.beam) {
 		size = sna.nz*sna.nx;
