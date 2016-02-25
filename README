@@ -27,11 +27,12 @@ INSTALLATION
 
 1) To compile and link the code you first have to set the ROOT variable in the Make_include file which can be found in the directory where you have found this README.
 
-2) Check the compiler and CFLAGS options in the file Make_include and adapt to the system you are using. The default options are set for a the GNU C compiler on a Linux system. A Fortran or g++ compiler is not needed to compile the code. The Makefile has been tested with GNU make. 
+2) Check the compiler and CFLAGS options in the file Make_include and adapt to the system you are using. The default options are set for a the GNU C-compiler on a Linux system. A Fortran or g++ compiler is not needed to compile the code. The Makefile has been tested with GNU make. 
 
 3) If the compiler options are set in the Make_include file you can type 
 
-==> Please make sure that SU is compiled without XDR (in $CWPROOT/Makefile.config make sure that XDRFLAG is NOT set). The SU output files of fdelmodc are all base on local IEEE data.
+==> Please make sure that SU is compiled without XDR (in $CWPROOT/Makefile.config make sure that XDRFLAG is NOT set). The SU output
+files of fdelmodc are all based on local IEEE data.
 
 > make clean
 > make 
@@ -68,6 +69,6 @@ The latest version of the source code and manual can be found at:
 
 http://www.xs4all.nl/~janth/Software/Software.html
 
-the code is used by many different people and when they request a new option for the code (for example place receivers in a circle) then I will try to implement, test and make it available. 
+The code is used by many different people and if there is a request for a new option in the code (for example place receivers in a circle) then I will try to implement, test and make it available. 
 
 

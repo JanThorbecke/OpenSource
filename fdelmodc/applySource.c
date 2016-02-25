@@ -50,7 +50,6 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
     	if (bnd.top==4 || bnd.top==2) ibndz += bnd.ntap;
 	}
 
-
 	n1   = mod.naz;
 	dt   = mod.dt;
 	sdx  = 1.0/mod.dx;

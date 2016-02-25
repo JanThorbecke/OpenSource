@@ -159,7 +159,6 @@ int main(int argc, char **argv)
   
   float   **gridcp, **gridcs, **gridro;
   segy    *hdrs;
-  FILE    *fpout;
   char    *file, intt[10], *file_base, filename[150];
   
   initargs(argc, argv);
@@ -649,12 +648,12 @@ int main(int argc, char **argv)
   }
 
   /* due to bug in SU, int-file has to be opened before other files are closed */
-  if (writeint == 1) {
-    strcpy(filename, file_base);
-    name_ext(filename, "_int");
-    fpint = fopen(filename,"w");
-    assert(fpint != NULL);
-  }
+	if (writeint == 1) {
+		strcpy(filename, file_base);
+		name_ext(filename, "_int");
+		fpint = fopen(filename,"w");
+		assert(fpint != NULL);
+	}
   
   /* write P-velocities in file */
   strcpy(filename, file_base);
@@ -734,7 +733,7 @@ int main(int argc, char **argv)
 	  hdrs[j].trid= TRID_DEPTH;
     }
     
-    /* note that due to bug in SU, interface file ha salready been opened */
+    /* note that due to bug in SU, interface file has already been opened */
     strcpy(filename, file_base);
     name_ext(filename, "_int");
 
@@ -744,7 +743,7 @@ int main(int argc, char **argv)
       for(j = 0; j < nx; j++) {
 	    data_out[jint*nx+j] = inter[jint][j]+orig[1];
       }
-      nwrite = fwrite( &hdrs[ix], 1, TRCBYTES, fpint);
+      nwrite = fwrite( &hdrs[jint], 1, TRCBYTES, fpint);
       assert(nwrite == TRCBYTES);
       nwrite = fwrite( &data_out[jint*nx], sizeof(float), nx, fpint);
       assert(nwrite == nx);
@@ -755,7 +754,7 @@ int main(int argc, char **argv)
       for(j = 0; j < nx; j++) {
 	     data_out[jint*nx+j] = inter[jint+Np][j]+orig[1];
       }
-      nwrite = fwrite( &hdrs[ix], 1, TRCBYTES, fpint);
+      nwrite = fwrite( &hdrs[jint], 1, TRCBYTES, fpint);
       assert(nwrite == TRCBYTES);
       nwrite = fwrite( &data_out[jint*nx], sizeof(float), nx, fpint);
       assert(nwrite == nx);
@@ -765,6 +764,7 @@ int main(int argc, char **argv)
   } /* end of writing interface file */
   
   if (rayfile == 1) {
+    FILE    *fpout, *fpcurve;
     strcpy(filename, file_base);
     strcpy(strrchr(filename, '.'), ".mod");
     
@@ -791,17 +791,23 @@ int main(int argc, char **argv)
 		fprintf(fpout,"%.1f\n", z[nxp-1]);
 		}
     */
-    for(jint = 0; jint < Np; jint++) {
-      fprintf(fpout,"\n# %d th interface\n\nx=0",jint+1);
-      for(j = skip; j < nx; j += skip) 
-	fprintf(fpout,",%.1f", (float)j*dx);
+	for(jint = 0; jint < Np; jint++) {
+		fprintf(fpout,"\n# %d th interface\n\nx=0",jint+1);
+		sprintf(filename,"curve%d",jint+1);
+		fpcurve = fopen(filename, "w+");
+		if (verbose) vmess("writing %d th interface to ascii file %s for usage in su(ps/x)image ",jint+1, filename);
+		for(j = 0; j < nx; j += skip)  {
+			fprintf(fpout,",%.1f", (float)j*dx);
+			fprintf(fpcurve,"%.1f %.1f\n", inter[jint][j], orig[0]+(float)j*dx);
+		}
+		fclose(fpcurve);
       
-      fprintf(fpout,"\nz=%.1f", inter[jint][0]);
-      for(j = skip; j < nx; j += skip) 
-	fprintf(fpout,",%.1f", inter[jint][j]);
-      fprintf(fpout,"\n");
-    }
-    fprintf(fpout,"\n# %d th interface\n\nx=0",jint+1);
+		fprintf(fpout,"\nz=%.1f", inter[jint][0]);
+		for(j = skip; j < nx; j += skip) 
+			fprintf(fpout,",%.1f", inter[jint][j]);
+		fprintf(fpout,"\n");
+	}
+	fprintf(fpout,"\n# %d th interface\n\nx=0",jint+1);
     for(j = skip; j < nx; j += skip) 
       fprintf(fpout,",%.1f", (float)j*dx);
     

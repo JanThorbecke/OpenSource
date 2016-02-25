@@ -13,6 +13,7 @@ ROOT=/Users/jan/src/OpenSource
 
 #GNU 
 CC = gcc
+CC = gcc-mp-5 
 FC = gfortran
 # Linux gcc version 4.x
 OPTC = -O3 -ffast-math

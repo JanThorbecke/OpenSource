@@ -7,6 +7,7 @@
 #
 # shows how different source distributions are defined 
 
+set -x
 export PATH=../../bin:$PATH
 
 makewave w=g2 fp=10 t0=0.15 dt=0.0010 nt=4096 file_out=G2.su verbose=1
@@ -53,6 +54,7 @@ fdelmodc \
 	tmod=$tmod \
 	dxrcv=10.0 \
 	plane_wave=0 \
+	xrcv1=0 xrcv2=10000 zrcv1=0 zrcv2=0 dxrcv=50 \
 	src_random=1 \
 	wav_random=${wav_random} \
 	fmax=$fmax \
@@ -98,6 +100,7 @@ fdelmodc \
 	tmod=$tmod \
 	dxrcv=10.0 \
 	plane_wave=0 \
+	xrcv1=0 xrcv2=10000 zrcv1=0 zrcv2=0 dxrcv=50 \
 	src_random=1 \
 	wav_random=${wav_random} \
 	fmax=$fmax \
@@ -142,6 +145,7 @@ fdelmodc \
 	tmod=$tmod \
 	dxrcv=10.0 \
 	plane_wave=1 \
+	xrcv1=0 xrcv2=10000 zrcv1=0 zrcv2=0 dxrcv=50 \
 	xsrc=5000 zsrc=2700 \
 	src_random=0 \
 	wav_random=${wav_random} \

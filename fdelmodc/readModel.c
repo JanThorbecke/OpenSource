@@ -141,7 +141,8 @@ int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float 
        			nread = fread(&qp[0], sizeof(float), nz, fpqp);
        			assert (nread == hdr.ns);
 				for (iz=0; iz<nz; iz++) {
-					a = sqrt(1.0+(1.0/(qp[iz]*qp[iz]))-(1.0/qp[iz]))/mod.fw;
+//                    a = sqrt(1.0+(1.0/(qp[iz]*qp[iz]))-(1.0/qp[iz]))/mod.fw;
+					a = (sqrt(1.0+(1.0/(qp[iz]*qp[iz])))-(1.0/qp[iz]))/mod.fw;
 					b = 1.0/(mod.fw*mod.fw*a);
 					tss[(i+ioPx)*n1+iz+ioPz] = 1.0/a;
 					tep[(i+ioPx)*n1+iz+ioPz] = b;
@@ -149,7 +150,8 @@ int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float 
 			}
 			else {
 				for (iz=0; iz<nz; iz++) {
-					a = sqrt(1.0+(1.0/(mod.Qp*mod.Qp))-(1.0/mod.Qp))/mod.fw;
+//                    a = sqrt(1.0+(1.0/(mod.Qp*mod.Qp))-(1.0/mod.Qp))/mod.fw;
+					a = (sqrt(1.0+(1.0/(mod.Qp*mod.Qp)))-(1.0/mod.Qp))/mod.fw;
 					b = 1.0/(mod.fw*mod.fw*a);
 					tss[(i+ioPx)*n1+iz+ioPz] = 1.0/a;
 					tep[(i+ioPx)*n1+iz+ioPz] = b;
