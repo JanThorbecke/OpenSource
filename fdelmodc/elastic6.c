@@ -13,9 +13,9 @@ int storeSourceOnSurface(modPar mod, srcPar src, bndPar bnd, int ixsrc, int izsr
 
 int reStoreSourceOnSurface(modPar mod, srcPar src, bndPar bnd, int ixsrc, int izsrc, float *vx, float *vz, float *tzz, float *txx, float *txz, int verbose);
 
-int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, int verbose);
+int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, int itime, int verbose);
 
-int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, int verbose);
+int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, int itime, int verbose);
 
 int elastic6(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx,
 float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float
@@ -133,7 +133,7 @@ float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float
 	}
 
     /* boundary condition clears velocities on boundaries */
-	boundariesP(mod, bnd, vx, vz, tzz, txx, txz, rox, roz, l2m, lam, mul, verbose);
+	boundariesP(mod, bnd, vx, vz, tzz, txx, txz, rox, roz, l2m, lam, mul, itime, verbose);
 
 	/* calculate Txx/tzz for all grid points except on the virtual boundary */
 #pragma omp	for private (ix, iz, dvx, dvz) nowait
@@ -177,7 +177,7 @@ float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float
     storeSourceOnSurface(mod, src, bnd, ixsrc, izsrc, vx, vz, tzz, txx, txz, verbose);
 
     /* Free surface: calculate free surface conditions for stresses */
-    boundariesV(mod, bnd, vx, vz, tzz, txx, txz, rox, roz, l2m, lam, mul, verbose);
+    boundariesV(mod, bnd, vx, vz, tzz, txx, txz, rox, roz, l2m, lam, mul, itime, verbose);
 
 	/* restore source positions on the edge */
 	reStoreSourceOnSurface(mod, src, bnd, ixsrc, izsrc, vx, vz, tzz, txx, txz, verbose);

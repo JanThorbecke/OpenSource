@@ -53,6 +53,7 @@ typedef struct _snapshotPar { /* Snapshot Parameters */
 	int x2;
 	int vxvztime;
 	int beam;
+	int withbnd;
 } snaPar;
 
 typedef struct _modelPar { /* Model Parameters */
@@ -72,6 +73,13 @@ typedef struct _modelPar { /* Model Parameters */
 	int nt;
 	float z0;
 	float x0;
+	/* medium max/min values */
+	float cp_min;
+	float cp_max;
+	float cs_min;
+	float cs_max;
+	float ro_min;
+	float ro_max;
 	int nz;
 	int nx;
 	int naz;
@@ -96,13 +104,16 @@ typedef struct _modelPar { /* Model Parameters */
 	int ioTz;
 	int ieTx;
 	int ieTz;
+	/* attenuation / dissipative medium */
 	float Qp;
 	float Qs;
 	float fw;
+	float qr;
 } modPar;
 
 typedef struct _waveletPar { /* Wavelet Parameters */
-	char *file_src;
+	char *file_src; /* general source */
+	int nsrcf;
 	int nt;
 	int nx;
 	float dt;
@@ -134,6 +145,7 @@ typedef struct _sourcePar { /* Source Array Parameters */
 	int window;
     int injectionrate;
 	int sinkdepth;
+	int src_at_rcv; /* Indicates that wavefield should be injected at receivers */
 } srcPar;
 
 typedef struct _shotPar { /* Shot Parameters */
@@ -153,7 +165,9 @@ typedef struct _boundPar { /* Boundary Parameters */
 	int cfree;
 	int ntap;
 	int *surface;
-    int pml;
+    int npml;
+    float R; /* reflection at side of model */
+    float m; /* scaling order */
     float *pml_Vx;
     float *pml_nzVx;
     float *pml_nxVz;

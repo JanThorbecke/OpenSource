@@ -13,9 +13,9 @@ int storeSourceOnSurface(modPar mod, srcPar src, bndPar bnd, int ixsrc, int izsr
 
 int reStoreSourceOnSurface(modPar mod, srcPar src, bndPar bnd, int ixsrc, int izsrc, float *vx, float *vz, float *tzz, float *txx, float *txz, int verbose);
 
-int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, int verbose);
+int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, int itime, int verbose);
 
-int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, int verbose);
+int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, int itime, int verbose);
 
 int viscoelastic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, float *tss, float *tep, float *tes, float *r, float *q, float *p, int verbose)
 {
@@ -144,7 +144,7 @@ GEOPHYSICS, VOL. 59, NO. 9 (SEPTEMBER 1994); P. 1444-1456
 	}
 
 	/* boundary condition clears velocities on boundaries */
-	boundariesP(mod, bnd, vx, vz, tzz, txx, txz, rox, roz, l2m, lam, mul, verbose);
+	boundariesP(mod, bnd, vx, vz, tzz, txx, txz, rox, roz, l2m, lam, mul, itime, verbose);
 
 	/* calculate Txx/Tzz for all grid points except on the virtual boundary */
 #pragma omp	for private (ix, iz) nowait
@@ -222,7 +222,7 @@ GEOPHYSICS, VOL. 59, NO. 9 (SEPTEMBER 1994); P. 1444-1456
     storeSourceOnSurface(mod, src, bnd, ixsrc, izsrc, vx, vz, tzz, txx, txz, verbose);
 
     /* Free surface: calculate free surface conditions for stresses */
-    boundariesV(mod, bnd, vx, vz, tzz, txx, txz, rox, roz, l2m, lam, mul, verbose);
+    boundariesV(mod, bnd, vx, vz, tzz, txx, txz, rox, roz, l2m, lam, mul, itime, verbose);
 
 	/* restore source positions on the edge */
 	reStoreSourceOnSurface(mod, src, bnd, ixsrc, izsrc, vx, vz, tzz, txx, txz, verbose);
@@ -239,6 +239,7 @@ GEOPHYSICS, VOL. 59, NO. 9 (SEPTEMBER 1994); P. 1444-1456
 	free(Tus);
 	free(Tt1);
 	free(Tt2);
+
 	return 0;
 }
 

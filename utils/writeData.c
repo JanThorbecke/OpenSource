@@ -25,3 +25,4 @@ int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2)
 
 	return 0;
 }
+

@@ -28,6 +28,8 @@ int acoustic4pml(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int 
 
 int acousticSH4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *tx, float *tz, float *vz, float *rox, float *roz, float *mul, int verbose);
 
+int acoustic4_qr(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, int verbose);
+
 int acoustic2(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, int verbose);
 
 int acoustic4Block(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx,
@@ -55,7 +57,7 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
 			 float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
 			 float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, int verbose);
 
-int writeSnapTimes(modPar mod, snaPar sna, int ixsrc, int izsrc, int itime, 
+int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, int ixsrc, int izsrc, int itime, 
 				   float *vx, float *vz, float *tzz, float *txx, float *txz, int verbose);
 
 int getBeamTimes(modPar mod, snaPar sna, float *vx, float *vz, float *tzz, float *txx, float *txz, 
@@ -65,8 +67,6 @@ int getBeamTimes(modPar mod, snaPar sna, float *vx, float *vz, float *tzz, float
 int writeBeams(modPar mod, snaPar sna, int ixsrc, int izsrc, int ishot, int fileno, 
 			   float *beam_vx, float *beam_vz, float *beam_txx, float *beam_tzz, float *beam_txz, 
 			   float *beam_p, float *beam_pp, float *beam_ss, int verbose);
-
-int taperEdges(modPar mod, bndPar bnd, float *vx, float *vz, int verbose);
 
 /* Self documentation */
 char *sdoc[] = {
@@ -88,7 +88,10 @@ char *sdoc[] = {
 " OPTIONAL PARAMETERS:",
 "   ischeme=3 ......... 1=acoustic, 2=visco-acoustic 3=elastic, 4=visco-elastic",
 "   tmod=(nt-1)*dt .... total registration time (nt from file_src)",
-"   ntaper=0 .......... length of taper at edges of model",
+"   ntaper=0 .......... length of taper in points at edges of model",
+"   npml=35 ........... length of PML layer in points at edges of model",
+"   R=1e-4 ............ the theoretical reflection coefficient at PML boundary",
+"   m=2.0 ............. scaling order of the PML sigma function ",
 "   tapfact=0.30 ...... taper strength: larger value gets stronger taper",
 "   For the 4 boundaries the options are:  1=free 2=pml 3=rigid 4=taper",
 "   top=1 ............. type of boundary on top edge of model",
@@ -110,6 +113,7 @@ char *sdoc[] = {
 "   sinkdepth_src=0 ... source grid points below topography (defined bij cp=0.0)",
 "   sinkvel=0 ......... use velocity of first receiver to sink through to next layer",
 "   beam=0 ............ calculate energy beam of wavefield in model",
+"   disable_check=0 ... disable stabilty and dispersion check and continue modeling",
 "   verbose=0 ......... silent mode; =1: display info",
 " ",
 " SHOT AND GENERAL SOURCE DEFINITION:",
@@ -130,6 +134,7 @@ char *sdoc[] = {
 "   wav_random=1 ...... 1 generates (band limited by fmax) noise signatures ",
 "   fmax=from_src ..... maximum frequency in wavelet",
 "   src_multiwav=0 .... use traces in file_src as areal source",
+"   src_at_rcv=1 ...... inject wavefield at receiver coordinates (1), inject at source (0)",
 "   src_injectionrate=0 set to 1 to use injection rate source",
 "" ,
 " PLANE WAVE SOURCE DEFINITION:",
@@ -165,6 +170,7 @@ char *sdoc[] = {
 "   dzsnap=dz ......... sampling in snapshot in z-direction",
 "   zsnap1=0 .......... first z-position for snapshots area",
 "   zsnap2=0 .......... last z-position for snapshot area",
+"   snapwithbnd=0 ..... write snapshots with absorbing boundaries",
 "   sna_type_p=1 ...... p registration _sp",
 "   sna_type_vz=1 ..... Vz registration _svz",
 "   sna_type_vx=0 ..... Vx registration _svx",
@@ -187,7 +193,7 @@ char *sdoc[] = {
 "   zrcv2=zrcv1 ....... last z-position of linear receiver array(s)",
 "   dzrcv=0.0 ......... z-position increment of receivers in linear array(s)",
 "   dtrcv=.004 ........ desired sampling in receiver data (seconds)",
-"   max_nrec=15000 .... maximum number of receivers",
+//"   max_nrec=15000 .... maximum number of receivers", not needed anymore 
 "   xrcva= ............ defines receiver array x-positions",
 "   zrcva= ............ defines receiver array z-positions",
 "   rrcv= ............. radius for receivers on a circle ",
@@ -195,6 +201,7 @@ char *sdoc[] = {
 "   oxrcv=0.0 ......... x-center position of circle",
 "   ozrcv=0.0 ......... z-center position of circle",
 "   dphi=2 ............ angle between receivers on circle ",
+"   rcv_txt=........... text file with receiver coordinates. Col 1: x, Col. 2: z",
 //"   largeSUfile=0 ..... writing large SU file (nt > 64000)",
 "   rec_ntsam=nt ...... maximum number of time samples in file_rcv files",
 "   rec_delay=0 ....... time in seconds to start recording",
@@ -232,6 +239,7 @@ char *sdoc[] = {
 "      Jan Thorbecke 2011",
 "      TU Delft",
 "      E-mail: janth@xs4all.nl ",
+"      2015  Contributions from Max Holicki",
 "",
 NULL};
 
@@ -339,7 +347,6 @@ int main(int argc, char **argv)
 		txz = (float *)calloc(sizem,sizeof(float));
 		txx = (float *)calloc(sizem,sizeof(float));
 	}
-	if (rec.type.vz)  rec_vz  = (float *)calloc(size,sizeof(float));
 	
 	size = rec.n*rec.nt;
 	if (rec.type.vz)  rec_vz  = (float *)calloc(size,sizeof(float));
@@ -490,6 +497,14 @@ private (tt, t2, t3) \
 shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 {
 			switch ( mod.ischeme ) {
+				case -2 : /* test code for PML */
+					acoustic4_test(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
+						vx, vz, tzz, rox, roz, l2m, verbose);
+					break;
+				case -1 : /* Acoustic dissipative media FD kernel */
+					acoustic4_qr(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
+						vx, vz, tzz, rox, roz, l2m, verbose);
+					break;
 				case 1 : /* Acoustic FD kernel */
 					if (mod.iorder==2) {
 						acoustic2(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
@@ -541,7 +556,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 				writeToFile = ! ( (((it-rec.delay)/rec.skipdt)+1)%rec.nt );
 				itwritten   = fileno*(rec.nt)*rec.skipdt;
 				isam        = (it-rec.delay-itwritten)/rec.skipdt;
-
+                /* Note that time step it=0 (t=0 for t**-fields t=-1/2 dt for v*-field) is not recorded */
 				/* store time at receiver positions */
 				getRecTimes(mod, rec, bnd, it, isam, vx, vz, tzz, txx, txz, 
 					rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
@@ -558,7 +573,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 
 			/* write snapshots to output file(s) */
 			if (sna.nsnap) {
-				writeSnapTimes(mod, sna, ixsrc, izsrc, it, vx, vz, tzz, txx, txz, verbose);
+				writeSnapTimes(mod, sna, bnd, ixsrc, izsrc, it, vx, vz, tzz, txx, txz, verbose);
 			}
 
 			/* calculate beams */
@@ -569,9 +584,6 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 			}
 }
 					
-			/* taper the edges of the model */
-//			taperEdges(mod, bnd, vx, vz, verbose);
-
 #pragma omp master
 {
 			if (verbose) {

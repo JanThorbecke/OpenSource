@@ -14,10 +14,10 @@
 
 #ifndef COMPLEX
 typedef struct _complexStruct { /* complex number */
-    float r,i;
+	float r,i;
 } complex;
 typedef struct _dcomplexStruct { /* complex number */
-    double r,i;
+	double r,i;
 } dcomplex;
 #endif/* complex */
 

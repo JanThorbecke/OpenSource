@@ -61,6 +61,7 @@ char *sdoc[] = {
 "   epsmax=0.1 ............... cut off range above which spectrum is flattened",
 "   alpha=0 .................. Laplace factor (good default = -2)",
 "   auto=0 ................... 1: sets data of file_in2 equal to file_in1",
+"   ntfft=nt ................. number of output time samples, add zero's to shorter traces",
 "   nxmax=512 ................ maximum number of traces in input file",
 "   ntmax=1024 ............... maximum number of samples/trace in input file",
 "   verbose=0 ................ silent option; >0 display info",
@@ -90,7 +91,7 @@ int main (int argc, char **argv)
 	FILE	*fp_in1, *fp_in2, *fp_out;
 	int		verbose, shift, repeat, k, autoco, nx1, nt1, nx2, nx2r, nt2;
 	int     nrec, nsam, ntmax, nxmax, ret, i, j, error;
-	int     size, ntraces, ngath, ntout;
+	int     size, ntraces, ngath, ntout, ntfft;
 	float   dt, d2, f1, f2, t0, t1, f1b, f2b, d1b, d2b, *etap, *etapi;
 	float	tmin1, tmin2;
 	float 	*data1, *data2, *conv, *p, *q, *tmpdata, epsmax, eps, reps, alpha, *tmpdata2;
@@ -212,6 +213,9 @@ int main (int argc, char **argv)
 		nx2r=nx2;	
 		nrec = MAX(nx1, nx2);
 		nsam = MAX(nt1, nt2);
+        if (!getparint("ntfft", &ntfft)) ntfft = nsam;
+        nsam = ntfft;
+
 		hdrs_out = (segy *) calloc(nxmax,sizeof(segy));
 		data1 = (float *)calloc(nsam*nxmax,sizeof(float));
 		data2 = (float *)calloc(nsam*nxmax,sizeof(float));

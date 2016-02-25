@@ -120,7 +120,9 @@ SRCH	= marchenko.c \
 		readShotData.c \
 		readTinvData.c \
 		writeData.c \
+		writeDataIter.c \
 		wallclock_time.c \
+		name_ext.c  \
 		verbosepkg.c  \
 		atopkge.c \
 		docpkge.c \

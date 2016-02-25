@@ -26,7 +26,7 @@ makewave fp=30 dt=$dt file_out=wave${fast}.su nt=4096 t0=0.1 scale=1
 file_cp=tutodel${fast}_cp.su
 file_ro=tutodel${fast}_ro.su
 
-#fdelmodc \
+../fdelmodc \
     file_cp=$file_cp ischeme=1 iorder=4 \
     file_den=$file_ro \
     file_src=wave${fast}.su \

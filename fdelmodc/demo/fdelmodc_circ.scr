@@ -29,6 +29,7 @@ export filero=model_ro.su
 
 export OMP_NUM_THREADS=1
 
+set -x
 ../fdelmodc \
 	file_cp=$filecp file_den=$filero \
 	ischeme=1 \
@@ -42,6 +43,8 @@ export OMP_NUM_THREADS=1
 	src_type=1 tmod=3.0 \
 	ntaper=190 \
 	left=4 right=4 bottom=4 top=4
+
+exit
 
 #for exptype in circle square doodle ;
 for exptype in circle ;

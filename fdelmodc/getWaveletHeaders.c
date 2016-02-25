@@ -6,14 +6,14 @@
 #include "segy.h"
 
 /**
-*  reads file which contain the source wavelets and reads receiver postions  
+*  reads file which contain the source wavelets and reads receiver positions  
 *
 *   AUTHOR:
 *           Jan Thorbecke (janth@xs4all.nl)
 *           The Netherlands 
 **/
 
-int getWaveletHeaders(char *file_src, int n1, int n2, float *gx, float *sx, float *gelev, int verbose)
+int getWaveletHeaders(char *file_src, int n1, int n2, float *gx, float *sx, float *gelev, float *selev, int verbose)
 {
     FILE   *fp;
     size_t nread;
@@ -34,7 +34,7 @@ int getWaveletHeaders(char *file_src, int n1, int n2, float *gx, float *sx, floa
 	if (hdr.scalel < 0) scll = 1.0/fabs(hdr.scalel);
 	else if (hdr.scalel == 0) scll = 1.0;
 	else scll = hdr.scalel;
-    trace_sz = sizeof(float)*(n1)+TRCBYTES;
+	trace_sz = sizeof(float)*(n1)+TRCBYTES;
 
 	for (ix=0; ix<n2; ix++) {
 		offset = ix*trace_sz;
@@ -44,9 +44,9 @@ int getWaveletHeaders(char *file_src, int n1, int n2, float *gx, float *sx, floa
 		gx[ix] = hdr.gx*scl;
         sx[ix] = hdr.sx*scl;
         gelev[ix] = -1.0*hdr.gelev*scll;
-//        gelev[ix] = -1.0*hdr.sx*scl;
+		selev[ix] = -1.0*hdr.selev*scll;
 	}
     fclose(fp);
-
     return 0;
 }
+

@@ -2,6 +2,8 @@
 #define _LARGEFILE_SOURCE
 #define _LARGEFILE64_SOURCE
 
+#define ISODD(n) ((n) & 01)
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,7 +30,7 @@ int traceWrite(segy *hdr, float *data, int n, FILE *fp);
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
-int writeSnapTimes(modPar mod, snaPar sna, int ixsrc, int izsrc, int itime, float *vx, float *vz, float *tzz, float *txx, float *txz, int verbose)
+int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, int ixsrc, int izsrc, int itime, float *vx, float *vz, float *tzz, float *txx, float *txz, int verbose)
 {
 	FILE    *fpvx, *fpvz, *fptxx, *fptzz, *fptxz, *fpp, *fppp, *fpss;
 	int append, isnap;
@@ -44,16 +46,18 @@ int writeSnapTimes(modPar mod, snaPar sna, int ixsrc, int izsrc, int itime, floa
     ibndz = mod.ioXz;
 	n1    = mod.naz;
 	sdx   = 1.0/mod.dx;
-#ifdef DEBUG
-	sna.nz=mod.naz;
-	sna.z1=0;
-	sna.z2=mod.naz-1;
-	sna.nx=mod.nax;
-	sna.x1=0;
-	sna.x2=mod.nax-1;
-	sna.skipdz=1;
-	sna.skipdx=1;
-#endif
+
+	if (sna.withbnd) {
+		sna.nz=mod.naz;
+		sna.z1=0;
+		sna.z2=mod.naz-1;
+		sna.skipdz=1;
+
+		sna.nx=mod.nax;
+		sna.x1=0;
+		sna.x2=mod.nax-1;
+		sna.skipdx=1;
+	}
 
 	/* check if this itime is a desired snapshot time */
 	if ( (((itime-sna.delay) % sna.skipdt)==0) && 
@@ -95,6 +99,12 @@ int writeSnapTimes(modPar mod, snaPar sna, int ixsrc, int izsrc, int itime, floa
 		hdr.f2     = sna.x1*mod.dx+mod.x0;
 		hdr.d1     = mod.dz*sna.skipdz;
 		hdr.d2     = mod.dx*sna.skipdx;
+		if (sna.withbnd) {
+        	if ( !ISODD(bnd.top)) hdr.f1 = mod.z0 - bnd.ntap*mod.dz;
+        	if ( !ISODD(bnd.lef)) hdr.f2 = mod.x0 - bnd.ntap*mod.dx;
+        	//if ( !ISODD(bnd.rig)) ;
+        	//if ( !ISODD(bnd.bot)) store=1;
+		}
 
 /***********************************************************************
 * vx velocities have one sample less in x-direction
@@ -116,14 +126,16 @@ int writeSnapTimes(modPar mod, snaPar sna, int ixsrc, int izsrc, int itime, floa
 
 			izs = sna.z1+ibndz;
 			ize = sna.z2+ibndz;
-#ifdef DEBUG
-			izs = 0;
-			ize = sna.z2;
-			ix = ixs;
-			ix1 = ix;
-			ix2 = ix;
-			if (sna.type.vz || sna.type.txz) izs = -1;
-#endif
+
+			if (sna.withbnd) {
+				izs = 0;
+				ize = sna.z2;
+				ix = ixs;
+				ix1 = ix;
+				ix2 = ix;
+				if (sna.type.vz || sna.type.txz) izs = -1;
+        		if ( !ISODD(bnd.lef)) hdr.gx = 1000*(mod.x0 - bnd.ntap*mod.dx);
+			}
 
 			if (sna.type.vx) {
 				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {

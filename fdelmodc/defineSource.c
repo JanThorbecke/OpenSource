@@ -37,8 +37,7 @@ int writesufilesrcnwav(char *filename, float **src_nwav, wavPar wav, int n1, int
 float gaussGen();
 float normal(double x,double mu,double sigma);
 int comp (const float *a, const float *b);
-void spline3(float x1, float x2, float z1, float z2, float dzdx1,
-         float dzdx2, float *a, float *b, float *c, float *d);
+void spline3(float x1, float x2, float z1, float z2, float dzdx1, float dzdx2, float *a, float *b, float *c, float *d);
 int randomWavelet(wavPar wav, srcPar src, float *trace, float tbeg, float tend, int verbose);
 
 /* random number generators */

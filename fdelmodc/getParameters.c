@@ -26,7 +26,7 @@ int getModelInfo(char *file_name, int *n1, int *n2, float *d1, float *d2, float 
 
 int getWaveletInfo(char *file_src, int *n1, int *n2, float *d1, float *d2, float *f1, float *f2, float *fmax, int *nxm, int verbose);
  
-int getWaveletHeaders(char *file_src, int n1, int n2, float *gx, float *sx, float *gelev, int verbose);
+int getWaveletHeaders(char *file_src, int n1, int n2, float *gx, float *sx, float *gelev, float *selev, int verbose);
 
 
 int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx, int nz);
@@ -55,7 +55,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	size_t nsamp;
 	int i, j;
 	int boundary, ibnd, cfree;
-	int ntaper,tapleft,tapright,taptop,tapbottom;
+	int npml,tapleft,tapright,taptop,tapbottom;
 	int nxsrc, nzsrc;
 	int largeSUfile;
 	int is,ir,ntraces,length_random;
@@ -80,16 +80,22 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		}
 	}
 	if (!getparstring("file_src",&wav->file_src)) wav->file_src=NULL;
+//	if (!getparstring("file_Fx",&wav->file_Fx)) wav->file_Fx=NULL;
+//	if (!getparstring("file_Fz",&wav->file_Fz)) wav->file_Fz=NULL;
 	if (!getparstring("file_snap",&sna->file_snap)) sna->file_snap="snap.su";
 	if (!getparstring("file_beam",&sna->file_beam)) sna->file_beam="beam.su";
 	if (!getparstring("file_rcv",&rec->file_rcv)) rec->file_rcv="recv.su";
 	if (!getparint("grid_dir",&mod->grid_dir)) mod->grid_dir=0;
-	
+	if (!getparint("src_at_rcv",&src->src_at_rcv)) src->src_at_rcv=1;
 	
 	/* read model parameters, which are used to set up source and receivers and check stability */
 	
 	getModelInfo(mod->file_cp, &nz, &nx, &dz, &dx, &sub_z0, &sub_x0, &cp_min, &cp_max, &axis, 1, verbose);
 	getModelInfo(mod->file_ro, &n1, &n2, &d1, &d2, &zstart, &xstart, &ro_min, &ro_max, &axis, 0, verbose);
+	mod->cp_max = cp_max;
+	mod->cp_min = cp_min;
+	mod->ro_max = ro_max;
+	mod->ro_min = ro_min;
 	assert( (ro_min != 0.0) );
 	if (NINT(100*(dx/d2)) != 100) 
 		vwarn("dx differs for file_cp and file_den!");
@@ -102,6 +108,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 
 	if (mod->ischeme>2) {
 		getModelInfo(mod->file_cs, &n1, &n2, &d1, &d2, &zstart, &xstart, &cs_min, &cs_max, &axis, 1, verbose);
+		mod->cs_max = cs_max;
+		mod->cs_min = cs_min;
 		if (NINT(100*(dx/d2)) != 100) 
 			vwarn("dx differs for file_cp and file_cs!");
 		if (NINT(100*(dz/d1)) != 100) 
@@ -137,6 +145,10 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		wav->dt=mod->dt;
 	}
 	assert(mod->dt!=0.0);
+	/* check if receiver delays is defined; add delay time to total modeling time */
+	if (!getparfloat("rec_delay",&rdelay)) rdelay=0.0;
+	rec->delay=NINT(rdelay/mod->dt);
+	mod->tmod += rdelay;
 	mod->nt = NINT(mod->tmod/mod->dt)+1;
 	dt = mod->dt;
 
@@ -155,6 +167,11 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		if (!getparfloat("Qp",&mod->Qp)) mod->Qp=1;
 		if (!getparfloat("Qs",&mod->Qs)) mod->Qs=mod->Qp;
 		if (!getparfloat("fw",&mod->fw)) mod->fw=0.5*wav->fmax;
+	}
+
+	/* dissipative medium option for Evert */
+	if (mod->ischeme==-1) {
+		if (!getparfloat("qr",&mod->qr)) mod->qr=0.1;
 	}
 	assert(src->type > 0);
 
@@ -261,8 +278,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		if (!disable_check) verr("********* leaving program *********");
 	}
 
-    /* to support old parameter interface */
-    if (!getparint("cfree",&cfree)) taptop=1;
+	/* to support old parameter interface */
+	if (!getparint("cfree",&cfree)) taptop=1;
 	if (!getparint("tapleft",&tapleft)) tapleft=0;
 	if (!getparint("tapright",&tapright)) tapright=0;
 	if (!getparint("taptop",&taptop)) taptop=0;
@@ -285,8 +302,11 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparint("bottom",&bnd->bot) && !tapbottom) bnd->bot=4;
 
     /* calculate default taper length to be three wavelenghts */
-	if (!getparint("ntaper",&ntaper)) ntaper=5*NINT((cp_max/wav->fmax)/dx);
-	bnd->ntap=ntaper;
+	if (!getparint("ntaper",&bnd->ntap)) bnd->ntap=0; // bnd->ntap=5*NINT((cp_max/wav->fmax)/dx);
+	if (!getparint("npml",&bnd->ntap)) bnd->ntap=35;
+	if (!getparfloat("R",&bnd->R)) bnd->R=1e-5;
+	if (!getparfloat("m",&bnd->m)) bnd->m=2.0;
+	bnd->npml=bnd->ntap;
 	
 /*
 	if (!getparint("boundary",&boundary)) boundary=1;
@@ -304,7 +324,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		else if (boundary == 4) {
 			bnd->free[ibnd]=0;
 			bnd->rig[ibnd]=0;
-			bnd->tap[ibnd]=ntaper;
+			bnd->tap[ibnd]=bnd->ntap;
 		}
 	}
 	if (!getparint("tapleft",&tapleft)) tapleft=0;
@@ -315,7 +335,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (tapleft) {
 		bnd->free[3]=0;
 		bnd->rig[3]=0;
-		bnd->tap[3]=ntaper;
+		bnd->tap[3]=bnd->ntap;
 	}
 	else {
 		bnd->tap[3]=0;
@@ -324,7 +344,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (tapright) {
 		bnd->free[1]=0;
 		bnd->rig[1]=0;
-		bnd->tap[1]=ntaper;
+		bnd->tap[1]=bnd->ntap;
 	}
 	else {
 		bnd->tap[1]=0;
@@ -334,7 +354,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (taptop) {
 		bnd->free[0]=0;
 		bnd->rig[0]=0;
-		bnd->tap[0]=ntaper;
+		bnd->tap[0]=bnd->ntap;
 	}
 	else {
 		bnd->tap[0]=0;
@@ -343,7 +363,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (tapbottom) {
 		bnd->free[2]=0;
 		bnd->rig[2]=0;
-		bnd->tap[2]=ntaper;
+		bnd->tap[2]=bnd->ntap;
 	}
 	else {
 		bnd->tap[2]=0;
@@ -357,40 +377,39 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	}
 */
 
-
-	if (ntaper) {
-		bnd->tapx  = (float *)malloc(ntaper*sizeof(float));
-		bnd->tapz  = (float *)malloc(ntaper*sizeof(float));
-		bnd->tapxz = (float *)malloc(ntaper*ntaper*sizeof(float));
+	if (bnd->ntap) {
+		bnd->tapx  = (float *)malloc(bnd->ntap*sizeof(float));
+		bnd->tapz  = (float *)malloc(bnd->ntap*sizeof(float));
+		bnd->tapxz = (float *)malloc(bnd->ntap*bnd->ntap*sizeof(float));
         if(!getparfloat("tapfact",&tapfact)) tapfact=0.30;
-		scl = tapfact/((float)ntaper);
-		for (i=0; i<ntaper; i++) {
+		scl = tapfact/((float)bnd->ntap);
+		for (i=0; i<bnd->ntap; i++) {
 			wfct = (scl*i);
 			bnd->tapx[i] = exp(-(wfct*wfct));
 
 			wfct = (scl*(i+0.5));
 			bnd->tapz[i] = exp(-(wfct*wfct));
 		}
-		for (j=0; j<ntaper; j++) {
-			for (i=0; i<ntaper; i++) {
+		for (j=0; j<bnd->ntap; j++) {
+			for (i=0; i<bnd->ntap; i++) {
 				wfct = (scl*sqrt(i*i+j*j));
-				bnd->tapxz[j*ntaper+i] = exp(-(wfct*wfct));
+				bnd->tapxz[j*bnd->ntap+i] = exp(-(wfct*wfct));
 			}
 		}
 	}
 
 /* To write tapers for in manual 
     free(bnd->tapx);
-    bnd->tapx  = (float *)malloc(20*ntaper*sizeof(float));
+    bnd->tapx  = (float *)malloc(20*bnd->ntap*sizeof(float));
     for (j=0; j<20; j++) {
         tapfact = j*0.1;
-        scl = tapfact/((float)ntaper);
-        for (i=0; i<ntaper; i++) {
+        scl = tapfact/((float)bnd->ntap);
+        for (i=0; i<bnd->ntap; i++) {
             wfct = (scl*i);
-            bnd->tapx[j*ntaper+i] = exp(-(wfct*wfct));
+            bnd->tapx[j*bnd->ntap+i] = exp(-(wfct*wfct));
         }
     }
-    writesufile("tapx.su", bnd->tapx, ntaper, 20, 0.0, 0.0, 1, 1);
+    writesufile("tapx.su", bnd->tapx, bnd->ntap, 20, 0.0, 0.0, 1, 1);
 */
     
     /* Vx: rox */
@@ -426,41 +445,43 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
     /* for tapered and PML extra points are needed at the boundaries of the model */
     
     if (bnd->top==4 || bnd->top==2) {
-        mod->naz  += ntaper; 
-        mod->ioXz += ntaper;
-        mod->ioZz += ntaper;
-        mod->ieXz += ntaper;
-        mod->ieZz += ntaper;
+        mod->naz  += bnd->ntap; 
+        mod->ioXz += bnd->ntap;
+        mod->ioZz += bnd->ntap;
+        mod->ieXz += bnd->ntap;
+        mod->ieZz += bnd->ntap;
 
         /* For P/Tzz, Txx and Txz fields the tapered boundaries are calculated in the main kernels */
-        //mod->ioPz += ntaper;
-        //mod->ioTz += ntaper;
-        mod->iePz += ntaper;
-        mod->ieTz += ntaper;
+        //mod->ioPz += bnd->ntap;
+//        mod->ioTz += bnd->ntap;
+        mod->iePz += bnd->ntap;
+        mod->ieTz += bnd->ntap;
 
     }
     if (bnd->bot==4 || bnd->bot==2) {
-        mod->naz += ntaper;
-        mod->iePz += ntaper;
-        mod->ieTz += ntaper;
+        mod->naz += bnd->ntap;
+        /* For P/Tzz, Txx and Txz fields the tapered boundaries are calculated in the main kernels */
+        mod->iePz += bnd->ntap;
+        mod->ieTz += bnd->ntap;
     }
     if (bnd->lef==4 || bnd->lef==2) {
-        mod->nax += ntaper;
-        mod->ioXx += ntaper;
-        mod->ioZx += ntaper;
-        mod->ieXx += ntaper;
-        mod->ieZx += ntaper;
+        mod->nax += bnd->ntap;
+        mod->ioXx += bnd->ntap;
+        mod->ioZx += bnd->ntap;
+        mod->ieXx += bnd->ntap;
+        mod->ieZx += bnd->ntap;
 
         /* For Tzz, Txx and Txz fields the tapered boundaries are calculated in the main kernels */
-        //mod->ioPx += ntaper;
-        //mod->ioTx += ntaper;
-        mod->iePx += ntaper;
-        mod->ieTx += ntaper;
+//        mod->ioPx += bnd->ntap;
+//        mod->ioTx += bnd->ntap;
+        mod->iePx += bnd->ntap;
+        mod->ieTx += bnd->ntap;
     }
     if (bnd->rig==4 || bnd->rig==2) {
-        mod->nax += ntaper;
-        mod->iePx += ntaper;
-        mod->ieTx += ntaper;
+        mod->nax += bnd->ntap;
+        /* For P/Tzz, Txx and Txz fields the tapered boundaries are calculated in the main kernels */
+        mod->iePx += bnd->ntap;
+        mod->ieTx += bnd->ntap;
     }    
 
 /*
@@ -476,6 +497,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 */
 
 	/* Intialize the array which contains the topography surface */
+    if (bnd->top==4 || bnd->top==2) ioPz=mod->ioPz - bnd->ntap;
+	else ioPz=mod->ioPz;
 	ioPz=mod->ioPz;
 	bnd->surface = (int *)malloc((mod->nax+mod->naz)*sizeof(int));
 	for (ix=0; ix<mod->nax+mod->naz; ix++) {
@@ -491,7 +514,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		vmess("Left boundary   : %d",bnd->lef);
 		vmess("Right boundary  : %d",bnd->rig);
 		vmess("Bottom boundary : %d",bnd->bot);
-        vmess("taper lenght = %d points",ntaper);
+        vmess("taper lenght = %d points",bnd->ntap);
 	}
 
 	/* define the number and type of shots to model */
@@ -739,11 +762,12 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	else if (wav->nx > 1) {
 		/* read file_src for number of sources and receiver positions */
 		if (!getparint("src_multiwav",&src->multiwav)) src->multiwav=1;
-		float *gx, *sx, *gelev;
+		float *gx, *sx, *gelev, *selev;
 		gx = (float *)malloc(wav->nx*sizeof(float));
 		sx = (float *)malloc(wav->nx*sizeof(float));
 		gelev = (float *)malloc(wav->nx*sizeof(float));
-		getWaveletHeaders(wav->file_src, wav->nt, wav->nx, gx, sx, gelev, verbose);
+		selev = (float *)malloc(wav->nx*sizeof(float));
+		getWaveletHeaders(wav->file_src, wav->nt, wav->nx, gx, sx, gelev, selev, verbose);
 		nsrc = wav->nx;
 		src->x = (int *)malloc(nsrc*sizeof(int));
 		src->z = (int *)malloc(nsrc*sizeof(int));
@@ -752,18 +776,26 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		wav->nsamp = (size_t *)malloc((nsrc+1)*sizeof(size_t));
 		nsamp=0;
 		for (is=0; is<nsrc; is++) {
-			src->x[is] = NINT((gx[is]-sub_x0)/dx);
-			src->z[is] = NINT((gelev[is]-sub_z0)/dz);
+			if (src->src_at_rcv>0){
+				src->x[is] = NINT((gx[is]-sub_x0)/dx);
+				src->z[is] = NINT((gelev[is]-sub_z0)/dz);
+				if (verbose>3) fprintf(stderr,"Source Array: xsrc[%d]=%f %d zsrc=%f %d\n", is, gx[is], src->x[is], gelev[is], src->z[is]);
+			}
+			else {
+                src->x[is]=NINT((sx[is]-sub_x0)/dx);
+                src->z[is]=NINT((selev[is]-sub_z0)/dz);
+				if (verbose>3) fprintf(stderr,"Source Array: xsrc[%d]=%f %d zsrc=%f %d\n", is, sx[is], src->x[is], selev[is], src->z[is]);
+			}
 			src->tbeg[is] = 0.0;
 			src->tend[is] = (wav->nt-1)*wav->dt;
 			wav->nsamp[is] = (size_t)(NINT((src->tend[is]-src->tbeg[is])/mod->dt)+1);
 			nsamp += wav->nsamp[is];
-			if (verbose>3) fprintf(stderr,"Source Array: xsrc[%d]=%f %d zsrc=%f %d\n", is, gx[is], src->x[is], gelev[is], src->z[is]);
 		}
 		wav->nsamp[nsrc] = nsamp; /* put total number of samples in last position */
 		free(gx);
 		free(sx);
 		free(gelev);
+		free(selev);
 	}
 	else {
 		if (src->plane) { if (!getparint("nsrc",&nsrc)) nsrc=1;}
@@ -894,6 +926,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparfloat("zsnap2", &zsnap2)) zsnap2=zmax;
 	if (!getparint("sna_vxvztime", &sna->vxvztime)) sna->vxvztime=0;
 	if (!getparint("beam", &sna->beam)) sna->beam=0;
+	if (!getparint("snapwithbnd", &sna->withbnd)) sna->withbnd=0;
 
 	if (!getparint("sna_type_vz", &sna->type.vz)) sna->type.vz=1;
 	if (!getparint("sna_type_vx", &sna->type.vx)) sna->type.vx=0;
@@ -1013,7 +1046,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	rec->skipdt=NINT(dtrcv/dt);
 	dtrcv = mod->dt*rec->skipdt;
 	if (!getparfloat("rec_delay",&rdelay)) rdelay=0.0;
-	if (!getparint("rec_ntsam",&rec->nt)) rec->nt=NINT((mod->tmod-rdelay)/dtrcv)+1;
+	if (!getparint("rec_ntsam",&rec->nt)) rec->nt=NINT((mod->tmod)/dtrcv)+1;
 	if (!getparint("rec_int_p",&rec->int_p)) rec->int_p=0;
 	if (!getparint("rec_int_vx",&rec->int_vx)) rec->int_vx=0;
 	if (!getparint("rec_int_vz",&rec->int_vz)) rec->int_vz=0;
@@ -1021,14 +1054,16 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparint("scale",&rec->scale)) rec->scale=0;
 	if (!getparfloat("dxspread",&dxspread)) dxspread=0;
 	if (!getparfloat("dzspread",&dzspread)) dzspread=0;
-	rec->nt=MIN(rec->nt, NINT((mod->tmod-rdelay)/dtrcv)+1);
-	rec->delay=NINT(rdelay/mod->dt);
+	rec->nt=MIN(rec->nt, NINT((mod->tmod)/dtrcv)+1);
 
+/* allocation of receiver arrays is done in recvPar */
+/*
 	rec->max_nrec += rec->max_nrec+1;
 	rec->x  = (int *)calloc(rec->max_nrec,sizeof(int));
 	rec->z  = (int *)calloc(rec->max_nrec,sizeof(int));
 	rec->xr = (float *)calloc(rec->max_nrec,sizeof(float));
 	rec->zr = (float *)calloc(rec->max_nrec,sizeof(float));
+*/
 	
 	/* calculates the receiver coordinates */
 	
