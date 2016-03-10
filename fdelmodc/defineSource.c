@@ -58,7 +58,7 @@ int defineSource(wavPar wav, srcPar src, float **src_nwav, int reverse, int verb
     size_t  nread;
     int optn, nfreq, i, j, k, iwmax, tracesToDo;
 	int iw, n1, namp;
-    float scl, d1, df, deltom, om;
+    float scl, d1, df, deltom, om, tshift;
 	float amp1, amp2, amp3;
 	float *trace, maxampl;
     complex *ctrace, tmp;
@@ -131,6 +131,16 @@ int defineSource(wavPar wav, srcPar src, float **src_nwav, int reverse, int verb
                     ctrace[iw].i = tmp.i;
                 }
             }
+            if (src.type < 6) { /* shift wavelet with 1/2 DeltaT due to staggered in time */
+				tshift=0.5*wav.dt;
+                for (iw=1;iw<iwmax;iw++) {
+            		om = deltom*iw*tshift;
+            		tmp.r = ctrace[iw].r*cos(-om) - ctrace[iw].i*sin(-om);
+            		tmp.i = ctrace[iw].i*cos(-om) + ctrace[iw].r*sin(-om);
+                    ctrace[iw].r = tmp.r;
+                    ctrace[iw].i = tmp.i;
+                }
+			}
 
 			/* zero frequency iw=0 set to 0 if the next sample has amplitude==0*/
 			amp1 = sqrt(ctrace[1].r*ctrace[1].r+ctrace[1].i*ctrace[1].i);

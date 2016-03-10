@@ -50,7 +50,8 @@ int elastic6(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsr
     float *roz, float *l2m, float *lam, float *mul, int verbose);
 
 int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *vx, float *vz, float *tzz, float *txx, 
-	float *txz, float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
+	float *txz, float *l2m, float *rox, float *roz,
+	float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
 	float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, int verbose);
 
 int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsrc, int nsam, int ishot, int fileno, 
@@ -559,6 +560,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
                 /* Note that time step it=0 (t=0 for t**-fields t=-1/2 dt for v*-field) is not recorded */
 				/* store time at receiver positions */
 				getRecTimes(mod, rec, bnd, it, isam, vx, vz, tzz, txx, txz, 
+					l2m, rox, roz, 
 					rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
 					rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose);
 			

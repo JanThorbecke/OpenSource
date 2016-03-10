@@ -6,7 +6,7 @@ LIBS    += -L$L -lgenfft -lm $(LIBSM)
 #OPTC += -openmp 
 #OPTC += -g -O0
 
-ALL: makemod makewave extendModel fconv correigen green basop fmute syn2d mat2su marchenko
+ALL: makemod makewave extendModel fconv correigen green basop fmute syn2d mat2su marchenko marchenko2
 
 SRCM	= \
 		makemod.c  \
@@ -128,6 +128,20 @@ SRCH	= marchenko.c \
 		docpkge.c \
 		getpars.c
 
+SRCH2	= marchenko2.c \
+		getFileInfo.c  \
+		readData.c \
+		readShotData.c \
+		readTinvData.c \
+		writeData.c \
+		writeDataIter.c \
+		wallclock_time.c \
+		name_ext.c  \
+		verbosepkg.c  \
+		atopkge.c \
+		docpkge.c \
+		getpars.c
+
 SRCA	= mat2su.c \
 		wallclock_time.c \
 		verbosepkg.c  \
@@ -184,14 +198,19 @@ syn2d:	$(OBJS)
 OBJH	= $(SRCH:%.c=%.o)
 
 marchenko:	$(OBJH) 
-	$(CC) -g $(LDFLAGS) $(OPTC) $(CFLAGS) -o marchenko $(OBJH) $(LIBS)
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o marchenko $(OBJH) $(LIBS)
+
+OBJH2	= $(SRCH2:%.c=%.o)
+
+marchenko2:	$(OBJH2) 
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o marchenko2 $(OBJH2) $(LIBS)
 
 OBJA	= $(SRCA:%.c=%.o)
 
 mat2su:	$(OBJA) 
 	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o mat2su $(OBJA) $(LIBS)
 
-install: makemod makewave extendModel fconv correigen green basop fmute syn2d mat2su marchenko
+install: makemod makewave extendModel fconv correigen green basop fmute syn2d mat2su marchenko marchenko2
 	cp makemod $B
 	cp makewave $B
 	cp extendModel $B
@@ -202,10 +221,11 @@ install: makemod makewave extendModel fconv correigen green basop fmute syn2d ma
 	cp fmute $B
 	cp syn2d $B
 	cp marchenko $B
+	cp marchenko2 $B
 	cp mat2su $B
 
 clean:
-		rm -f core $(OBJM) makemod $(OBJW) makewave $(OBJE) extendModel $(OBJF) fconv $(OBJG) $(OBJC) correigen green $(OBJB) basop $(OBJJ) fmute $(OBJS) syn2d $(OBJA) mat2su $(OBJH) marchenko
+		rm -f core $(OBJM) makemod $(OBJW) makewave $(OBJE) extendModel $(OBJF) fconv $(OBJG) $(OBJC) correigen green $(OBJB) basop $(OBJJ) fmute $(OBJS) syn2d $(OBJA) mat2su $(OBJH) marchenko $(OBJH2)
 
 realclean: clean
 		rm -f $B/makemod $B/makewave $B/extendModel $B/fconv $B/correigen $B/green $B/basop $B/fmute $B/syn2d $B/mat2su $B/marchenko
