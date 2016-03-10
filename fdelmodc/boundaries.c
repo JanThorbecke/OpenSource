@@ -26,6 +26,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
     float kappu, alphu, sigmax, R, a, m, fac, dx, dt;
     float dpx, dpz, *p;
     static float *Vxpml, *Vzpml, *sigmu, *RA;
+	static int allocated=0;
     float Jx, Jz, rho, d;
 
 	c1 = 9.0/8.0;
@@ -38,6 +39,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
     dt  = mod.dt;
     fac = dt/dx;
     if ( (bnd.top==2) || (bnd.bot==2) || (bnd.lef==2) || (bnd.rig==2) ) pml=1;
+	else pml=0;
 
 	ibnd = mod.iorder/2-1;
 
@@ -103,19 +105,24 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 
     npml=bnd.npml; /* lenght of pml in grid-points */
     if ( (npml != 0) && (itime==0) && pml) {
-        if (Vxpml != NULL) free(Vxpml);
-        if (Vzpml != NULL) free(Vzpml);
-        if (sigmu != NULL) free(sigmu);
-        if (RA != NULL) free(RA);
+#pragma omp master
+{
+		if (allocated) {
+            free(Vxpml);
+        	free(Vzpml);
+        	free(sigmu);
+        	free(RA);
+		}
         Vxpml = (float *)calloc(2*n1*npml,sizeof(float));
         Vzpml = (float *)calloc(2*n2*npml,sizeof(float));
         sigmu = (float *)calloc(npml,sizeof(float));
         RA    = (float *)calloc(npml,sizeof(float));
+		allocated = 1;
         
         /* calculate sigmu and RA only once with fixed velocity Cp */
         m=bnd.m; /* scaling order */
         R=bnd.R; /* the theoretical reflection coefficient after discretization */
-        kappu = 1.0; /* auxiliary attenuation coefficient for small angles */
+        kappu=1.0; /* auxiliary attenuation coefficient for small angles */
         alphu=0.0;   /* auxiliary attenuation coefficient  for low frequencies */
         d = (npml-1)*dx; /* depth of pml */
         /* sigmu attenuation factor representing the loss in the PML depends on the grid position in the PML */
@@ -127,7 +134,9 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
             RA[ib] = (1.0)/(1.0+0.5*dt*sigmu[ib]);
             if (verbose>=3) vmess("PML: sigmax=%e cp=%e sigmu[%d]=%e %e", sigmax, mod.cp_min, ib, sigmu[ib], a);
         }
+}
     }
+#pragma omp barrier
 
 	if (mod.ischeme == 1 && pml) { /* Acoustic scheme PML */
         p = tzz; /* Tzz array pointer points to P-field */
@@ -135,6 +144,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* PML left Vx */
         if (bnd.lef == 2) {
             /* PML left Vx-component */
+#pragma omp for private (ix, iz, dpx, Jx, ipml, rho)
             for (iz=mod.ioXz; iz<mod.ieXz; iz++) {
                 ipml = npml-1;
                 for (ix=mod.ioXx-npml; ix<mod.ioXx; ix++) {
@@ -148,6 +158,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 }
             }
             /* PML Vz-component same as default kernel */
+#pragma omp for private (ix, iz)
             for (ix=mod.ioZx-npml; ix<mod.ioZx; ix++) {
                 for (iz=mod.ioZz; iz<mod.ieZz; iz++) {
                     vz[ix*n1+iz] -= roz[ix*n1+iz]*(
@@ -160,6 +171,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* PML corner left-top V */
         if (bnd.lef == 2 && bnd.top == 2) {
             /* PML left Vx-component */
+#pragma omp for private (ix, iz, dpx, Jx, ipml, rho)
             for (iz=mod.ioXz-npml; iz<mod.ioXz; iz++) {
                 ipml = npml-1;
                 for (ix=mod.ioXx-npml; ix<mod.ioXx; ix++) {
@@ -173,6 +185,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 }
             }
             /* PML top Vz-component */
+#pragma omp for private (ix, iz, dpz, Jz, ipml, rho)
             for (ix=mod.ioZx-npml; ix<mod.ioZx; ix++) {
                 ipml = npml-1;
                 for (iz=mod.ioZz-npml; iz<mod.ioZz; iz++) {
@@ -190,6 +203,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* PML right V */
         if (bnd.rig == 2) {
             /* PML right Vx-component */
+#pragma omp for private (ix, iz, dpx, Jx, ipml, rho)
             for (iz=mod.ioXz; iz<mod.ieXz; iz++) {
                 ipml = 0;
                 for (ix=mod.ieXx; ix<mod.ieXx+npml; ix++) {
@@ -203,6 +217,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 }
             }
             /* PML Vz-component same as default kernel */
+#pragma omp for private (ix, iz)
             for (ix=mod.ieZx; ix<mod.ieZx+npml; ix++) {
                 for (iz=mod.ioZz; iz<mod.ieZz; iz++) {
                     vz[ix*n1+iz] -= roz[ix*n1+iz]*(
@@ -215,6 +230,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* PML corner right-top V */
         if (bnd.rig == 2 && bnd.top == 2) {
             /* PML right Vx-component */
+#pragma omp for private (ix, iz, dpx, Jx, ipml, rho)
             for (iz=mod.ioXz-npml; iz<mod.ioXz; iz++) {
                 ipml = 0;
                 for (ix=mod.ieXx; ix<mod.ieXx+npml; ix++) {
@@ -228,6 +244,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 }
             }
             /* PML top Vz-component */
+#pragma omp for private (ix, iz, dpz, Jz, ipml, rho)
             for (ix=mod.ieZx; ix<mod.ieZx+npml; ix++) {
                 ipml = npml-1;
                 for (iz=mod.ioZz-npml; iz<mod.ioZz; iz++) {
@@ -245,6 +262,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* PML top V */
         if (bnd.top == 2) {
             /* PML top Vz-component */
+#pragma omp for private (ix, iz, dpz, Jz, ipml, rho)
             for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
                 ipml = npml-1;
                 for (iz=mod.ioZz-npml; iz<mod.ioZz; iz++) {
@@ -258,6 +276,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 }
             }
             /* PML top Vx-component same as default kernel */
+#pragma omp for private (ix, iz)
             for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
                 for (iz=mod.ioXz-npml; iz<mod.ioXz; iz++) {
                     vx[ix*n1+iz] -= rox[ix*n1+iz]*(
@@ -270,6 +289,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* PML bottom V */
         if (bnd.bot == 2) {
             /* PML bottom Vz-component */
+#pragma omp for private (ix, iz, dpz, Jz, ipml, rho)
             for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
                 ipml = 0;
                 for (iz=mod.ieZz; iz<mod.ieZz+npml; iz++) {
@@ -283,6 +303,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 }
             }
             /* PML bottom Vx-component same as default kernel */
+#pragma omp for private (ix, iz)
             for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
                 for (iz=mod.ieXz; iz<mod.ieXz+npml; iz++) {
                     vx[ix*n1+iz] -= rox[ix*n1+iz]*(
@@ -295,6 +316,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* PML corner left-bottom */
         if (bnd.bot == 2 && bnd.lef == 2) {
             /* PML bottom Vz-component */
+#pragma omp for private (ix, iz, dpz, Jz, ipml, rho)
             for (ix=mod.ioZx-npml; ix<mod.ioZx; ix++) {
                 ipml = 0;
                 for (iz=mod.ieZz; iz<mod.ieZz+npml; iz++) {
@@ -308,6 +330,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 }
             }
             /* PML left Vx-component */
+#pragma omp for private (ix, iz, dpx, Jx, ipml, rho)
             for (iz=mod.ieXz; iz<mod.ieXz+npml; iz++) {
                 ipml = npml-1;
                 for (ix=mod.ioXx-npml; ix<mod.ioXx; ix++) {
@@ -325,6 +348,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* PML corner right-bottom */
         if (bnd.bot == 2 && bnd.rig == 2) {
             /* PML bottom Vz-component */
+#pragma omp for private (ix, iz, dpz, Jz, ipml, rho)
             for (ix=mod.ieZx; ix<mod.ieZx+npml; ix++) {
                 ipml = 0;
                 for (iz=mod.ieZz; iz<mod.ieZz+npml; iz++) {
@@ -338,6 +362,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 }
             }
             /* PML right Vx-component */
+#pragma omp for private (ix, iz, dpx, Jx, ipml, rho)
             for (iz=mod.ieXz; iz<mod.ieXz+npml; iz++) {
                 ipml = 0;
                 for (ix=mod.ieXx; ix<mod.ieXx+npml; ix++) {
@@ -1078,6 +1103,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
     float kappu, alphu, sigmax, R, a, m, fac, dx, dt;
     float *p;
     static float *Pxpml, *Pzpml, *sigmu, *RA;
+	static int allocated=0;
     float Jx, Jz, rho, d;
     
     c1 = 9.0/8.0;
@@ -1090,6 +1116,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
     dt  = mod.dt;
     fac = dt/dx;
     if ( (bnd.top==2) || (bnd.bot==2) || (bnd.lef==2) || (bnd.rig==2) ) pml=1;
+	else pml=0;
 
 /************************************************************/
 /* PML boundaries for acoustic schemes                      */
@@ -1098,14 +1125,19 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
    
     npml=bnd.npml; /* lenght of pml in grid-points */
     if ( (npml != 0) && (itime==0) && pml) {
-        if (Pxpml != NULL) free(Pxpml);
-        if (Pzpml != NULL) free(Pzpml);
-        if (sigmu != NULL) free(sigmu);
-        if (RA != NULL) free(RA);
+#pragma omp master
+{
+		if (allocated) {
+            free(Pxpml);
+        	free(Pzpml);
+        	free(sigmu);
+        	free(RA);
+		}
         Pxpml = (float *)calloc(2*n1*npml,sizeof(float));
         Pzpml = (float *)calloc(2*n2*npml,sizeof(float));
         sigmu = (float *)calloc(npml,sizeof(float));
         RA    = (float *)calloc(npml,sizeof(float));
+		allocated = 1;
         
         /* calculate sigmu and RA only once with fixed velocity Cp */
         m=bnd.m; /* scaling order */
@@ -1122,7 +1154,10 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
             RA[ib] = (1.0)/(1.0+0.5*dt*sigmu[ib]);
 //            if (verbose>=3) vmess("PML: sigmax=%e cp=%e sigmu[%d]=%e %e\n", sigmax, mod.cp_min, ib, sigmu[ib], a);
         }
+}
     }
+
+#pragma omp barrier
     if (mod.ischeme == 1 && pml) { /* Acoustic scheme PML's */
         p = tzz; /* Tzz array pointer points to P-field */
         
@@ -1134,6 +1169,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* PML top P */
         if (bnd.top == 2) {
             /* PML top P-Vz-component */
+#pragma omp for private (ix, iz, dvx, dvz, Jz, ipml) 
             for (ix=mod.ioPx; ix<mod.iePx; ix++) {
                 ipml = npml-1;
                 for (iz=mod.ioPz-npml; iz<mod.ioPz; iz++) {
@@ -1152,6 +1188,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* PML left P */
         if (bnd.lef == 2) {
             /* PML left P-Vx-component */
+#pragma omp for private (ix, iz, dvx, dvz, Jx, ipml) 
             for (iz=mod.ioPz; iz<mod.iePz; iz++) {
                 ipml = npml-1;
                 for (ix=mod.ioPx-npml; ix<mod.ioPx; ix++) {
@@ -1170,6 +1207,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* PML corner left-top P */
         if (bnd.lef == 2 && bnd.top == 2) {
             /* PML left P-Vx-component */
+#pragma omp for private (ix, iz, dvx, Jx, ipml) 
             for (iz=mod.ioPz-npml; iz<mod.ioPz; iz++) {
                 ipml = npml-1;
                 for (ix=mod.ioPx-npml; ix<mod.ioPx; ix++) {
@@ -1182,6 +1220,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 }
             }
             /* PML top P-Vz-component */
+#pragma omp for private (ix, iz, dvz, Jz, ipml) 
             for (ix=mod.ioPx-npml; ix<mod.ioPx; ix++) {
                 ipml = npml-1;
                 for (iz=mod.ioPz-npml; iz<mod.ioPz; iz++) {
@@ -1198,6 +1237,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* PML right P */
         if (bnd.rig == 2) {
             /* PML right P Vx-component */
+#pragma omp for private (ix, iz, dvx, dvz, Jx, ipml) 
             for (iz=mod.ioPz; iz<mod.iePz; iz++) {
                 ipml = 0;
                 for (ix=mod.iePx; ix<mod.iePx+npml; ix++) {
@@ -1216,6 +1256,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* PML corner right-top P */
         if (bnd.rig == 2 && bnd.top == 2) {
             /* PML right P Vx-component */
+#pragma omp for private (ix, iz, dvx, Jx, ipml) 
             for (iz=mod.ioPz-npml; iz<mod.ioPz; iz++) {
                 ipml = 0;
                 for (ix=mod.iePx; ix<mod.iePx+npml; ix++) {
@@ -1228,6 +1269,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 }
             }
             /* PML top P-Vz-component */
+#pragma omp for private (ix, iz, dvz, Jz, ipml) 
             for (ix=mod.iePx; ix<mod.iePx+npml; ix++) {
                 ipml = npml-1;
                 for (iz=mod.ioPz-npml; iz<mod.ioPz; iz++) {
@@ -1244,6 +1286,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* PML bottom P */
         if (bnd.bot == 2) {
             /* PML bottom P Vz-component */
+#pragma omp for private (ix, iz, dvx, dvz, Jz, ipml)
             for (ix=mod.ioPx; ix<mod.iePx; ix++) {
                 ipml = 0;
                 for (iz=mod.iePz; iz<mod.iePz+npml; iz++) {
@@ -1262,6 +1305,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* PML corner bottom-right P */
         if (bnd.bot == 2 && bnd.rig == 2) {
             /* PML bottom P Vz-component */
+#pragma omp for private (ix, iz, dvz, Jz, ipml)
             for (ix=mod.iePx; ix<mod.iePx+npml; ix++) {
                 ipml = 0;
                 for (iz=mod.iePz; iz<mod.iePz+npml; iz++) {
@@ -1274,6 +1318,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 }
             }
             /* PML right P Vx-component */
+#pragma omp for private (ix, iz, dvx, Jx, ipml)
             for (iz=mod.iePz; iz<mod.iePz+npml; iz++) {
                 ipml = 0;
                 for (ix=mod.iePx; ix<mod.iePx+npml; ix++) {
@@ -1291,6 +1336,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* PML corner left-bottom P */
         if (bnd.bot == 2 && bnd.lef == 2) {
             /* PML bottom P Vz-component */
+#pragma omp for private (ix, iz, dvz, Jz, ipml)
             for (ix=mod.ioPx-npml; ix<mod.ioPx; ix++) {
                 ipml = 0;
                 for (iz=mod.iePz; iz<mod.iePz+npml; iz++) {
@@ -1303,6 +1349,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 }
             }
             /* PML left P Vx-component */
+#pragma omp for private (ix, iz, dvx, Jx, ipml)
             for (iz=mod.iePz; iz<mod.iePz+npml; iz++) {
                 ipml = npml-1;
                 for (ix=mod.ioPx-npml; ix<mod.ioPx; ix++) {

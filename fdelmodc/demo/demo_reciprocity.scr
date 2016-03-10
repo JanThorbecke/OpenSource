@@ -17,11 +17,11 @@ then
   scalep=0.02
   scalev=0.01
 else
-  scalep=0.0001
+  scalep=0.0004
   scalev=0.0002
 fi
 
-export OMP_NUM_THREADS=1
+export OMP_NUM_THREADS=4
 
 makemod sizex=3000 sizez=3000 dx=$dx dz=$dx cp0=$cp ro0=$rho orig=-1500,-1500 file_base=layers.su \
 		intt=def poly=0 x=-1500,1500 z=250,250 cp=2000 ro=3000
@@ -43,14 +43,14 @@ sumax < wave.su
     rec_int_vz=2 \
     dtrcv=0.001 \
     verbose=2 \
-	rec_delay=0.1 \
+    rec_delay=0.1 \
     tmod=0.5 \
     dxrcv=10.0 \
     xrcv1=-1000 xrcv2=1000 \
     zrcv1=0 zrcv2=0 \
     xsrc=0 zsrc=600 \
     ntaper=100 \
-	left=4 right=4 bottom=4 top=4
+    left=4 right=4 bottom=4 top=4
 
 ../fdelmodc \
     file_cp=layers_cp.su ischeme=1 \
@@ -64,14 +64,14 @@ sumax < wave.su
     rec_int_vz=2 \
     dtrcv=0.001 \
     verbose=2 \
-	rec_delay=0.1 \
+    rec_delay=0.1 \
     tmod=0.5 \
     dxrcv=10.0 \
     xrcv1=-1000 xrcv2=1000 \
     zrcv1=600 zrcv2=600 \
     xsrc=0 zsrc=0 \
     ntaper=100 \
-	left=4 right=4 bottom=4 top=4
+    left=4 right=4 bottom=4 top=4
 
 
 ######### Force Source #######
@@ -88,14 +88,14 @@ sumax < wave.su
     rec_int_vz=2 \
     dtrcv=0.001 \
     verbose=2 \
-	rec_delay=0.1 \
+    rec_delay=0.1 \
     tmod=0.5 \
     dxrcv=10.0 \
     xrcv1=-1000 xrcv2=1000 \
     zrcv1=0 zrcv2=0 \
     xsrc=0 zsrc=600 \
     ntaper=100 \
-	left=4 right=4 bottom=4 top=4
+    left=4 right=4 bottom=4 top=4
 
 ../fdelmodc \
     file_cp=layers_cp.su ischeme=1 \
@@ -129,6 +129,7 @@ sumax < shot_dipZ0_rp.su; sumax < shot_monZ600_rvz.su
 
 
 exit
+
 # use different dx and dt to test independence of sampling on the amplitudes
 #########################
 cp=2000

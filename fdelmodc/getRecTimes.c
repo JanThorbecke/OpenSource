@@ -17,18 +17,20 @@
 *           The Netherlands 
 **/
 
-int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, int verbose)
+int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *vx, float *vz, float *tzz, float *txx, float *txz, float *l2m, float *rox, float *roz, float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, int verbose)
 {
 	int n1, ibndx, ibndz;
 	int irec, ix, iz, ix2, iz2, ix1, iz1;
-	float rdz, rdx, C00, C10, C01, C11;
-	float *vz_t, c1, c2, roz, vzt1, vzt2;
+	float dvx, dvz, rdz, rdx, C00, C10, C01, C11;
+	float *vz_t, c1, c2, lroz, vzt1, vzt2, field;
 
     ibndx = mod.ioPx;
     ibndz = mod.ioPz;
     if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
     if (bnd.top==4 || bnd.top==2) ibndz += bnd.ntap;
 	n1    = mod.naz;
+	c1 = 9.0/8.0;
+	c2 = -1.0/24.0;
 
 	if (!rec.n) return 0;
 
@@ -157,12 +159,43 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 			if (verbose>=4 && isam==0) {
 				vmess("Receiver %d read at gridpoint ix=%d iz=%d",irec, ix, iz);
 			}
+			/* interpolation of receivers to same time step is only done for acoustic scheme */
 			if (rec.type.p) {
 				if (rec.int_p == 1) {
-					rec_p[irec*rec.nt+isam] = 0.5*(tzz[ix*n1+iz1]+tzz[ix*n1+iz]);
+					if (mod.ischeme == 1) { /* interpolate Tzz times -1/2 Dt backward to Vz times */
+                        dvx = c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
+                              c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]);
+                        dvz = c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
+                              c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]);
+                        field = tzz[ix*n1+iz] + 0.5*l2m[ix*n1+iz]*(dvx+dvz);
+                        dvx = c1*(vx[(ix+1)*n1+iz1] - vx[ix*n1+iz1]) +
+                              c2*(vx[(ix+2)*n1+iz1] - vx[(ix-1)*n1+iz1]);
+                        dvz = c1*(vz[ix*n1+iz1+1]   - vz[ix*n1+iz1]) +
+                              c2*(vz[ix*n1+iz1+2]   - vz[ix*n1+iz1-1]);
+                        field += tzz[ix*n1+iz1] + 0.5*l2m[ix*n1+iz1]*(dvx+dvz);
+						rec_p[irec*rec.nt+isam] = 0.5*field;
+					}
+					else {
+						rec_p[irec*rec.nt+isam] = 0.5*(tzz[ix*n1+iz1]+tzz[ix*n1+iz]);
+					}
 				}
 				else if (rec.int_p == 2) {
-					rec_p[irec*rec.nt+isam] = 0.5*(tzz[ix1*n1+iz]+tzz[ix*n1+iz]);
+					if (mod.ischeme == 1) { /* interpolate Tzz times -1/2 Dt backward to Vx times */
+                        dvx = c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
+                              c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]);
+                        dvz = c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
+                              c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]);
+                        field = tzz[ix*n1+iz] + 0.5*l2m[ix*n1+iz]*(dvx+dvz);
+                        dvx = c1*(vx[(ix1+1)*n1+iz] - vx[ix1*n1+iz]) +
+                              c2*(vx[(ix+2)*n1+iz] - vx[(ix1-1)*n1+iz]);
+                        dvz = c1*(vz[ix1*n1+iz+1]   - vz[ix1*n1+iz]) +
+                              c2*(vz[ix1*n1+iz+2]   - vz[ix1*n1+iz-1]);
+                        field += tzz[ix1*n1+iz] + 0.5*l2m[ix1*n1+iz]*(dvx+dvz);
+						rec_p[irec*rec.nt+isam] = 0.5*field;
+					}
+					else {
+						rec_p[irec*rec.nt+isam] = 0.5*(tzz[ix1*n1+iz]+tzz[ix*n1+iz]);
+					}
 				}
 				else {
 					rec_p[irec*rec.nt+isam] = tzz[ix*n1+iz];
@@ -170,7 +203,7 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 			}
 			if (rec.type.txx) rec_txx[irec*rec.nt+isam] = txx[ix*n1+iz];
 			if (rec.type.tzz) rec_tzz[irec*rec.nt+isam] = tzz[ix*n1+iz];
-			if (rec.type.txz) {
+			if (rec.type.txz) { /* time interpolation to be done */
 				if (rec.int_vz == 2 || rec.int_vx == 2) {
 					rec_txz[irec*rec.nt+isam] = 0.25*(
 							txz[ix*n1+iz2]+txz[ix2*n1+iz2]+
@@ -197,10 +230,20 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 				}
 /* interpolate vz to Txx/Tzz position by taking the mean of 2 values */
 				else if (rec.int_vz == 2) {
-					rec_vz[irec*rec.nt+isam] = 0.5*(vz[ix*n1+iz2]+vz[ix*n1+iz]);
+					if (mod.ischeme == 1) { /* interpolate Vz times +1/2 Dt forward to P times */
+                        field = vz[ix*n1+iz] - 0.5*roz[ix*n1+iz]*(
+                        	c1*(tzz[ix*n1+iz]   - tzz[ix*n1+iz-1]) +
+                        	c2*(tzz[ix*n1+iz+1] - tzz[ix*n1+iz-2]));
+                        field += vz[ix*n1+iz2] - 0.5*roz[ix*n1+iz2]*(
+                        	c1*(tzz[ix*n1+iz2]   - tzz[ix*n1+iz2-1]) +
+                        	c2*(tzz[ix*n1+iz2+1] - tzz[ix*n1+iz2-2]));
+						rec_vz[irec*rec.nt+isam] = 0.5*field;
+					}
+					else {
+						rec_vz[irec*rec.nt+isam] = 0.5*(vz[ix*n1+iz2]+vz[ix*n1+iz]);
+					}
 				}
 				else {
-//					fprintf(stderr,"getting Vz at x=%d z=%d value=%e\n", ix, iz, vz[ix*n1+iz2]);
 					rec_vz[irec*rec.nt+isam] = vz[ix*n1+iz2];
 				}
 			}
@@ -213,7 +256,18 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 				}
 /* interpolate vx to Txx/Tzz position by taking the mean of 2 values */
 				else if (rec.int_vx == 2) {
-					rec_vx[irec*rec.nt+isam] = 0.5*(vx[ix2*n1+iz]+vx[ix*n1+iz]);
+					if (mod.ischeme == 1) { /* interpolate Vx times +1/2 Dt forward to P times */
+            			field = vx[ix*n1+iz] - 0.5*rox[ix*n1+iz]*(
+                			c1*(tzz[ix*n1+iz]     - tzz[(ix-1)*n1+iz]) +
+                			c2*(tzz[(ix+1)*n1+iz] - tzz[(ix-2)*n1+iz]));
+            			field += vx[ix2*n1+iz] - 0.5*rox[ix2*n1+iz]*(
+                			c1*(tzz[ix2*n1+iz]     - tzz[(ix2-1)*n1+iz]) +
+                			c2*(tzz[(ix2+1)*n1+iz] - tzz[(ix2-2)*n1+iz]));
+						rec_vx[irec*rec.nt+isam] = 0.5*field;
+					}
+					else {
+						rec_vx[irec*rec.nt+isam] = 0.5*(vx[ix2*n1+iz]+vx[ix*n1+iz]);
+					}
 				}
 				else {
 					rec_vx[irec*rec.nt+isam] = vx[ix2*n1+iz];
@@ -230,14 +284,12 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 		vz_t = (float *)calloc(2*mod.nax,sizeof(float));
 		/* P and Vz are staggered in time and need to correct for this */
 		/* -1- compute Vz at next time step and average with current time step */
-		c1 = 9.0/8.0;
-		c2 = -1.0/24.0;
-		roz = mod.dt/(mod.dx*rec.rho);
+		lroz = mod.dt/(mod.dx*rec.rho);
     	for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
-           	vz_t[ix] = vz[ix*n1+iz] - roz*(
+           	vz_t[ix] = vz[ix*n1+iz] - lroz*(
                        	c1*(tzz[ix*n1+iz]   - tzz[ix*n1+iz-1]) +
                        	c2*(tzz[ix*n1+iz+1] - tzz[ix*n1+iz-2]));
-           	vz_t[mod.nax+ix] = vz[ix*n1+iz2] - roz*(
+           	vz_t[mod.nax+ix] = vz[ix*n1+iz2] - lroz*(
                        	c1*(tzz[ix*n1+iz2]   - tzz[ix*n1+iz2-1]) +
                        	c2*(tzz[ix*n1+iz2+1] - tzz[ix*n1+iz2-2]));
        	}
