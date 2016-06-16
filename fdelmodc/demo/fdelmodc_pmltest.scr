@@ -47,6 +47,6 @@ file_ro=tutodel_ro.su
     npml=35 \
 	m=2 \
 	R=1e-5 \
-    left=1 right=2 top=1 bottom=2
+    left=2 right=2 top=2 bottom=2
 
 

@@ -68,7 +68,7 @@ int main (int argc, char **argv)
 	float	w1, w2;
 	float 	*tmpdata, eps, alpha, *tmpdata2, *costaper;
 	char 	*file_mute, *file_shot, option[5], *file, *file_out;
-	float   scl, sclsxgx, xmin, xmax, tmax, lmax;
+	float   scl, sclsxgx, sclshot, xmin, xmax, tmax, lmax;
 	segy	*hdrs_in1, *hdrs_in2, *hdrs_out;
 
 	t0 = wallclock_time();
@@ -124,7 +124,7 @@ int main (int argc, char **argv)
 /* Reading input data for file_shot */
 
 	ngath = 1;
-	getFileInfo(file_shot, &nt2, &nx2, &ngath, &d1b, &d2b, &f1b, &f2b, &xmin, &xmax, &scl, &ntraces);
+	getFileInfo(file_shot, &nt2, &nx2, &ngath, &d1b, &d2b, &f1b, &f2b, &xmin, &xmax, &sclshot, &ntraces);
 
 	if (!getparint("ntmax", &ntmax)) ntmax = nt2;
 	if (!getparint("nxmax", &nxmax)) nxmax = nx2;
@@ -322,9 +322,9 @@ int main (int argc, char **argv)
             if (ret < 0 ) verr("error on writing check file.");
 			for (i=0; i<nx1; i++) {
 				jmax = maxval[i]-shift;
-            	ret = fprintf(fp_psline1, "%.5f %.5f \n",jmax*dt,hdrs_in1[i].gx*sclsxgx);
+            	ret = fprintf(fp_psline1, "%.5f %.5f \n",jmax*dt,hdrs_in1[i].gx*sclshot);
 				jmax =-maxval[i]+shift;
-            	ret = fprintf(fp_psline2, "%.5f %.5f \n",jmax*dt,hdrs_in1[i].gx*sclsxgx);
+            	ret = fprintf(fp_psline2, "%.5f %.5f \n",jmax*dt,hdrs_in1[i].gx*sclshot);
 			}
         }
 

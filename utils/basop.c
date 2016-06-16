@@ -1437,6 +1437,7 @@ void decompAcoustic(float *data, int nsam, int nrec, float dt, float dx, float f
 	}
 	else if (opt==2) {
 		for (iom = iomin ; iom < iomax ; iom++) {
+            om = iom*deltom;
 			kp = iom*deltom/c;
 			kp2 = kp*kp;
 			ikxmax = MIN((int)(kp/dkx), nkx/2);

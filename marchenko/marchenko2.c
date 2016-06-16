@@ -7,6 +7,10 @@
 #include <assert.h>
 #include <genfft.h>
 
+int omp_get_max_threads(void);
+int omp_get_num_threads(void);
+void omp_set_num_threads(int num_threads);
+
 #ifndef MAX
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #endif
@@ -42,14 +46,16 @@ void synthesisPosistions(int nx, int nt, int nxs, int nts, float dt, float *xsyn
 /*********************** self documentation **********************/
 char *sdoc[] = {
 " ",
-" MARCHENKO - Iterative Green's functions retrieval in frequency domain",
+" MARCHENKO2 - Iterative Green's functions retrieval in frequency domain",
+"            - Special version for Evert with enforced medium",
 " ",
-" marchenko file_tinv= file_shot= nshots= [optional parameters]",
+" marchenko2 file_tinv= file_shotE= nshots= [optional parameters]",
 " ",
 " Required parameters: ",
 " ",
 "   file_tinv= ............... synthesis operator(s)",
-"   file_shot= ............... shot records (can be input pipe) ",
+"   file_shotE= .............. shot records for Strengthening medium  ",
+"   file_shotD= .............. shot records Dissipative medium ",
 "   file_window= ............. file with window function ",
 "   nshots= .................. number of shot records",
 " ",
@@ -103,7 +109,7 @@ int main (int argc, char **argv)
 	int		size, n1, n2, ntap, tap, di, ixrcv, ixsrc, off, ntraces;
     int     nf, nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
 	int		reci, mode, ixa, ixb, n2out, verbose, ntfft;
-	int 	iter, niter, iw, tracf;
+	int 	iter, niter, iw, tracf, scheme;
 	int     hw, smooth, above, shift, *ixpossyn, npossyn, ix;
 	float	fmin, fmax, df, *tapersh, *tapersy, fxf, dxf, fxs2, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
     double  t0, t1, t2, t3, tsyn, tread, tfft;
@@ -111,8 +117,8 @@ int main (int argc, char **argv)
 	float   *green, *pplus, *pmin, *tinv, *mute, dt, dx, dts, dxs, scl, alpha, mem;
 	float   *f1plus, *f1min, *Nk, *Nk_1, *trace, *Gmin, *Gplus;
 	float   max, scel, xmin, xmax, weight;
-    complex *cshots, *cpplus, *ctrace;
-	char	*file_tinv, *file_shot, *file_green, *file_iter;
+    complex *cshotsE, *cshotsD, *cpplus, *ctrace;
+	char	*file_tinv, *file_shotE, *file_shotD, *file_green, *file_iter;
 	char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_pplus, *file_pmin;
 	char 	number[16], filename[1024];
 	segy	*hdrs, *hdrs_in, *hdrs_out;
@@ -123,19 +129,20 @@ int main (int argc, char **argv)
 	tsyn = tread = tfft = 0.0;
 	t0   = wallclock_time();
 
-	if (!getparstring("file_shot", &file_shot)) file_shot = NULL;
+	if (!getparstring("file_shotE", &file_shotE)) file_shotE = NULL;
+	if (!getparstring("file_shotD", &file_shotD)) file_shotD = NULL;
 	if (!getparstring("file_tinv", &file_tinv)) file_tinv = NULL;
 	if (!getparstring("file_f1plus", &file_f1plus)) file_f1plus = NULL;
 	if (!getparstring("file_f1min", &file_f1min)) file_f1min = NULL;
 	if (!getparstring("file_gplus", &file_gplus)) file_gplus = NULL;
 	if (!getparstring("file_gmin", &file_gmin)) file_gmin = NULL;
-	if (!getparstring("file_pplus", &file_pplus)) file_pplus = NULL;
 	if (!getparstring("file_f2", &file_pplus)) file_pplus = NULL;
+	if (!getparstring("file_pplus", &file_pplus)) file_pplus = NULL;
 	if (!getparstring("file_pmin", &file_pmin)) file_pmin = NULL;
 	if (!getparstring("file_iter", &file_iter)) file_iter = NULL;
 	if (!getparint("verbose", &verbose)) verbose = 0;
-	if (file_tinv == NULL && file_shot == NULL) 
-		verr("file_tinv and file_shot cannot be both input pipe");
+	if (file_tinv == NULL && file_shotE == NULL) 
+		verr("file_tinv and file_shotE cannot be both input pipe");
 	if (!getparstring("file_green", &file_green)) {
 		if (verbose) vwarn("parameter file_green not found, assume pipe");
 		file_green = NULL;
@@ -143,6 +150,7 @@ int main (int argc, char **argv)
 	//if (!getparint("nshots", &nshots)) verr("nshots should be given");
 	if (!getparfloat("fmin", &fmin)) fmin = 0.0;
 	if (!getparfloat("fmax", &fmax)) fmax = 70.0;
+	if (!getparint("scheme", &scheme)) scheme = 0;
 	if (!getparint("ixa", &ixa)) ixa = 0;
 	if (!getparint("ixb", &ixb)) ixb = ixa;
 	if (!getparint("reci", &reci)) reci = 0;
@@ -171,7 +179,7 @@ int main (int argc, char **argv)
 	fxs = f2; fts = f1;
 
 	ngath = 0; /* setting ngath=0 scans all traces; nx contains maximum traces/gather */
-	ret = getFileInfo(file_shot, &nt, &nx, &ngath, &d1, &dx, &ft, &fx, &xmin, &xmax, &scl, &ntraces);
+	ret = getFileInfo(file_shotE, &nt, &nx, &ngath, &d1, &dx, &ft, &fx, &xmin, &xmax, &scl, &ntraces);
 	nshots = ngath;
 
 	if (!getparfloat("dt", &dt)) dt = d1;
@@ -251,7 +259,8 @@ int main (int argc, char **argv)
 
 /*================ Reading shot records ================*/
 
-    cshots  = (complex *)malloc(nw*nx*nshots*sizeof(complex));
+    cshotsE = (complex *)malloc(nw*nx*nshots*sizeof(complex));
+    cshotsD = (complex *)malloc(nw*nx*nshots*sizeof(complex));
 	tapersh = (float *)malloc(nx*sizeof(float));
     xsrc    = (float *)calloc(nshots,sizeof(float));
     zsrc    = (float *)calloc(nshots,sizeof(float));
@@ -259,7 +268,10 @@ int main (int argc, char **argv)
     xnx     = (int *)calloc(nshots,sizeof(int));
 
 	mode=1;
-    readShotData(file_shot, xrcv, xsrc, zsrc, xnx, cshots, nw, nw_low, ngath, nx, nx, ntfft, 
+    readShotData(file_shotE, xrcv, xsrc, zsrc, xnx, cshotsE, nw, nw_low, ngath, nx, nx, ntfft, 
+		alpha, mode, weight, verbose);
+	mode=1;
+    readShotData(file_shotD, xrcv, xsrc, zsrc, xnx, cshotsD, nw, nw_low, ngath, nx, nx, ntfft, 
 		alpha, mode, weight, verbose);
 
 	tapersh = (float *)malloc(nx*sizeof(float));
@@ -279,8 +291,10 @@ int main (int argc, char **argv)
 		for (l = 0; l < nshots; l++) {
 			for (j = 1; j < nw; j++) {
 				for (i = 0; i < nx; i++) {
-					cshots[l*nx*nw+j*nx+i].r *= tapersh[i];
-					cshots[l*nx*nw+j*nx+i].i *= tapersh[i];
+					cshotsE[l*nx*nw+j*nx+i].r *= tapersh[i];
+					cshotsE[l*nx*nw+j*nx+i].i *= tapersh[i];
+					cshotsD[l*nx*nw+j*nx+i].r *= tapersh[i];
+					cshotsD[l*nx*nw+j*nx+i].i *= tapersh[i];
 				}   
 			}   
 		}
@@ -395,9 +409,34 @@ int main (int argc, char **argv)
 	
 /*================ construction of Nk(-t) = - \int R(x,t) cpplus(t)  ================*/
 
-		synthesis(cshots, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
-			xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
-			reci, off, nshots, verbose);
+		if (iter % 2 == 0) { /* even iterations */
+			if (scheme==0) {
+				fprintf(stderr, "using Dissipative medium for iteration %d\n", iter);
+				synthesis(cshotsD, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
+					xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
+					reci, off, nshots, verbose);
+			}
+			else {
+				fprintf(stderr, "using Enforcing medium for iteration %d\n", iter);
+				synthesis(cshotsE, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
+					xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
+					reci, off, nshots, verbose);
+			}
+		}
+		else {
+			if (scheme==0) {
+				fprintf(stderr, "using Enforcing medium for iteration %d\n", iter);
+				synthesis(cshotsE, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
+					xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
+					reci, off, nshots, verbose);
+			}
+			else {
+				fprintf(stderr, "using Dissipative medium for iteration %d\n", iter);
+				synthesis(cshotsD, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
+					xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
+					reci, off, nshots, verbose);
+			}
+		}
 
 		/* set cpplus to zero, so new operator can be defined within ixpossyn points */
 		memset(&cpplus[0].r, 0, Nsyn*nxs*nw*2*sizeof(float));
@@ -617,9 +656,16 @@ int main (int argc, char **argv)
 				}
 			}
 
-			synthesis(cshots, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
-				xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
-				reci, off, nshots, verbose);
+			if (scheme==0) {
+				synthesis(cshotsD, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
+					xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
+					reci, off, nshots, verbose);
+			}
+			else {
+				synthesis(cshotsE, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
+					xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
+					reci, off, nshots, verbose);
+			}
 
 			/* compute upgoing Green's G^-,+ */
 			for (l = 0; l < Nsyn; l++) {
@@ -650,9 +696,16 @@ int main (int argc, char **argv)
 				}
 			}
 
-			synthesis(cshots, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
-				xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
-				reci, off, nshots, verbose);
+			if (scheme==0) {
+				synthesis(cshotsE, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
+					xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
+					reci, off, nshots, verbose);
+			}
+			else {
+				synthesis(cshotsD, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
+					xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
+					reci, off, nshots, verbose);
+			}
 
 			/* compute downgoing Green's G^+,+ */
 			for (l = 0; l < Nsyn; l++) {
@@ -886,7 +939,7 @@ void synthesis(complex *shots, complex *syncdata, float *syndata, int nx, int nt
  shared(syndata, dx, npe, nw, verbose) \
  shared(shots, Nsyn, reci, xrcv, xsrc, xsyn, fxs, nxs, dxs) \
  shared(nx, ixa, ixb, dxsrc, iox, inx, k, nfreq, nw_low, nw_high) \
- shared(syncdata, size, nts, ntfft, scl, ixsrc, stderr) \
+ shared(syncdata, size, nts, ntfft, scl, ixsrc) \
  private(l, x0, x1, ix, dosrc, j, m, i, ixrcv, sum, rdata, tmp, ts, to)
 	{ /* start of parallel region */
 	sum   = (complex *)malloc(nfreq*sizeof(complex));
@@ -947,7 +1000,6 @@ void synthesis(complex *shots, complex *syncdata, float *syndata, int nx, int nt
 {
 			cr1fft(sum, rdata, ntfft, 1);
 }
-//			fprintf(stderr,"synthesis[%d] = %d ix=%d\n", k,  ixsrc, ix);
 			/* dx = receiver distance */
 			for (j = 0; j < nts; j++) 
 				syndata[l*size+ix*nts+j] += rdata[j]*scl*dx;
@@ -1080,7 +1132,6 @@ void synthesisPosistions(int nx, int nt, int nxs, int nts, float dt, float *xsyn
 				ixpossyn[*npossyn]=ixsrc;
 				*npossyn += 1;
 			}
-//			fprintf(stderr,"ixpossyn[%d] = %d ixsrc=%d ix=%d\n", *npossyn-1, ixpossyn[*npossyn-1], ixsrc, ix);
 	
 			if (reci == 1 || reci == 2) {
 				for (i = iox; i < inx; i++) {

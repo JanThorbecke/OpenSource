@@ -131,7 +131,9 @@ int defineSource(wavPar wav, srcPar src, float **src_nwav, int reverse, int verb
                     ctrace[iw].i = tmp.i;
                 }
             }
-            if (src.type < 6) { /* shift wavelet with 1/2 DeltaT due to staggered in time */
+/*
+*/
+            if (src.type < 6) { // shift wavelet with +1/2 DeltaT due to staggered in time 
 				tshift=0.5*wav.dt;
                 for (iw=1;iw<iwmax;iw++) {
             		om = deltom*iw*tshift;

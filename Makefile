@@ -5,6 +5,7 @@ all: mkdirs
 	cd fdelmodc		; $(MAKE) install
 	cd fdemmodc		; $(MAKE) install
 	cd utils		; $(MAKE) install
+	cd marchenko	; $(MAKE) install
 
 mkdirs:
 	-mkdir -p lib
@@ -16,6 +17,7 @@ clean:
 	cd fdelmodc		; $(MAKE) $@
 	cd fdemmodc		; $(MAKE) $@
 	cd utils		; $(MAKE) $@
+	cd marchenko	; $(MAKE) $@
 	find . -name "._*"
 
 realclean:
@@ -23,6 +25,7 @@ realclean:
 	cd fdelmodc		; $(MAKE) $@
 	cd fdemmodc		; $(MAKE) $@
 	cd utils		; $(MAKE) $@
+	cd marchenko	; $(MAKE) $@
 	rm -f lib/*
 	rm -f include/*
 	rm -f bin/*
