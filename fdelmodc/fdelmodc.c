@@ -498,10 +498,10 @@ private (tt, t2, t3) \
 shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 {
 			switch ( mod.ischeme ) {
-				case -2 : /* test code for PML */
-					acoustic4_test(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
-						vx, vz, tzz, rox, roz, l2m, verbose);
-					break;
+//				case -2 : /* test code for PML */
+//					acoustic4_test(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
+//						vx, vz, tzz, rox, roz, l2m, verbose);
+//					break;
 				case -1 : /* Acoustic dissipative media FD kernel */
 					acoustic4_qr(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
 						vx, vz, tzz, rox, roz, l2m, verbose);
