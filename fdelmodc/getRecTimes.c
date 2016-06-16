@@ -245,6 +245,8 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 				}
 				else {
 					rec_vz[irec*rec.nt+isam] = vz[ix*n1+iz2];
+					//rec_vz[irec*rec.nt+isam] = vz[ix*n1+iz];
+					//fprintf(stderr,"isam=%d vz[%d]=%e vz[%d]=%e vz[%d]=%e \n",isam, iz-1,vz[ix*n1+iz-1],iz,vz[ix*n1+iz], iz+1, vz[ix*n1+iz+1]);
 				}
 			}
 			if (rec.type.vx) {

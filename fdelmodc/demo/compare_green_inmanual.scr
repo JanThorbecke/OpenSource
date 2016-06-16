@@ -12,6 +12,8 @@ dt=0.0001
 
 export PATH=../../bin:$PATH
 
+export OMP_NUM_THREADS=4
+
 makemod sizex=2000 sizez=2000 dx=$dx dz=$dx cp0=$cp ro0=$rho orig=-1000,0 file_base=simple.su
 makewave fp=15 dt=$dt file_out=wave.su nt=4096 t0=0.1
 

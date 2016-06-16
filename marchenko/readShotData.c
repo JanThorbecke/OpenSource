@@ -51,7 +51,8 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 
 	fseek(fp, 0, SEEK_SET);
 
-	nt        = hdr.ns;
+	nt = hdr.ns;
+	dt = (float)hdr.dt*1e-6;
 
 	trace  = (float *)calloc(ntfft,sizeof(float));
 	ctrace = (complex *)malloc(ntfft*sizeof(complex));

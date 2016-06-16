@@ -9,7 +9,6 @@ cp=2000
 rho=1000
 dx=2.5
 dt=0.0001
-halfdt=`perl -e "print 0.5*$dt;"`
 
 export PATH=../../bin:$PATH
 
@@ -36,17 +35,20 @@ makewave fp=15 dt=$dt file_out=wave.su nt=4096 t0=0.1
     ntaper=80 \
     left=4 right=4 top=4 bottom=4 
 
+sugain < shot_fd_rp.su scale=0.5 > nep.su; mv nep.su shot_fd_rp.su
+sugain < shot_fd_rvz.su scale=0.5 > nep.su; mv nep.su shot_fd_rvz.su
+
 makewave fp=15 dt=0.0005 file_out=wave.su nt=4096 t0=0.1
 
 green c=$cp rho=$rho file_src=wave.su zsrc1=500 xrcv=-500,500 dxrcv=5 nt=4096 dip=0 | suwind nt=1024 > shot_green_rp.su  
 green c=$cp rho=$rho file_src=wave.su zsrc1=500 xrcv=-500,500 dxrcv=5 nt=4096 dip=0 p_vz=1 | suwind nt=1024 > shot_green_rvz.su
 
 # rp
-(suwind key=tracl min=101 max=101 < shot_fd_rp.su | basop choice=shift shift=$halfdt ; suwind key=tracl min=101 max=101 < shot_green_rp.su ) | basop choice=shift shift=-0.1 | supsgraph style=normal  labelsize=10 wbox=4 hbox=2 label1='time in seconds' label2="Amplitude" linewidth=0.1 d2num=0.04 x2end=0.080 f2num=-0.4 > mon_rp.eps
+(suwind key=tracl min=101 max=101 < shot_fd_rp.su; suwind key=tracl min=101 max=101 < shot_green_rp.su ) | basop choice=shift shift=-0.1 | supsgraph style=normal  labelsize=10 wbox=4 hbox=2 label1='time in seconds' label2="Amplitude" linewidth=0.1 d2num=0.04 x2end=0.080 f2num=-0.4 > mon_rp.eps
 
-(suwind key=tracl min=101 max=101 < shot_fd_rp.su | basop choice=shift shift=$halfdt; suwind key=tracl min=101 max=101 < shot_green_rp.su;) | basop choice=shift shift=-0.1 | supsgraph style=normal labelsize=10 wbox=2 hbox=2 label1='time in seconds' label2="Amplitude" linewidth=0.1 linecolor=red,green x1beg=0.255 x1end=0.258 x2beg=0.0785 x2end=0.0797 d2num=0.0002 f2num=0.0786 > mon_zoom_rp.eps
+(suwind key=tracl min=101 max=101 < shot_fd_rp.su; suwind key=tracl min=101 max=101 < shot_green_rp.su;) | basop choice=shift shift=-0.1 | supsgraph style=normal labelsize=10 wbox=2 hbox=2 label1='time in seconds' label2="Amplitude" linewidth=0.1 linecolor=red,green x1beg=0.255 x1end=0.258 x2beg=0.0785 x2end=0.0797 d2num=0.0002 f2num=0.0786 > mon_zoom_rp.eps
 
-suwind key=tracl min=101 max=101 < shot_fd_rp.su | basop choice=shift shift=$halfdt > trace_fd.su
+suwind key=tracl min=101 max=101 < shot_fd_rp.su > trace_fd.su
 suwind key=tracl min=101 max=101 < shot_green_rp.su > trace_green.su
 
 sumax < trace_green.su outpar=nep
@@ -56,7 +58,7 @@ echo $a
 
 sudiff trace_green.su trace_fd.su | basop choice=shift shift=-0.1 | sugain scale=$a | suop op=abs | supsgraph style=normal labelsize=12 wbox=4 hbox=2 label1='time in seconds' label2="Relative error in percentage of peak" linewidth=0.1 linecolor=red x2beg=0.0 x2end=1.0 f2num=0.0 d2num=0.5  > mon_diff_dx${dx}_rp.eps
 
-(suwind key=tracl min=101 max=101 < shot_fd_rp.su | basop choice=shift shift=$halfdt; suwind key=tracl min=101 max=101 < shot_green_rp.su ) | basop choice=shift shift=-0.1 | suxgraph 
+(suwind key=tracl min=101 max=101 < shot_fd_rp.su; suwind key=tracl min=101 max=101 < shot_green_rp.su ) | basop choice=shift shift=-0.1 | suxgraph 
 
 
 # rvz

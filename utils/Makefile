@@ -6,7 +6,7 @@ LIBS    += -L$L -lgenfft -lm $(LIBSM)
 #OPTC += -openmp 
 #OPTC += -g -O0
 
-ALL: makemod makewave extendModel fconv correigen green basop fmute syn2d mat2su marchenko marchenko2
+ALL: makemod makewave extendModel fconv correigen green basop syn2d mat2su 
 
 SRCM	= \
 		makemod.c  \
@@ -94,49 +94,11 @@ SRCB	= basop.c \
 		docpkge.c \
 		getpars.c
 
-SRCJ	= fmute.c \
-		getFileInfo.c  \
-		readData.c \
-		writeData.c \
-		wallclock_time.c \
-		verbosepkg.c  \
-		atopkge.c \
-		docpkge.c \
-		getpars.c
-
 SRCS	= syn2d.c \
 		getFileInfo.c  \
 		readData.c \
 		writeData.c \
 		wallclock_time.c \
-		verbosepkg.c  \
-		atopkge.c \
-		docpkge.c \
-		getpars.c
-
-SRCH	= marchenko.c \
-		getFileInfo.c  \
-		readData.c \
-		readShotData.c \
-		readTinvData.c \
-		writeData.c \
-		writeDataIter.c \
-		wallclock_time.c \
-		name_ext.c  \
-		verbosepkg.c  \
-		atopkge.c \
-		docpkge.c \
-		getpars.c
-
-SRCH2	= marchenko2.c \
-		getFileInfo.c  \
-		readData.c \
-		readShotData.c \
-		readTinvData.c \
-		writeData.c \
-		writeDataIter.c \
-		wallclock_time.c \
-		name_ext.c  \
 		verbosepkg.c  \
 		atopkge.c \
 		docpkge.c \
@@ -185,32 +147,17 @@ OBJB	= $(SRCB:%.c=%.o)
 basop:	$(OBJB) 
 	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o basop $(OBJB) $(LIBS)
 
-OBJJ	= $(SRCJ:%.c=%.o)
-
-fmute:	$(OBJJ) 
-	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o fmute $(OBJJ) $(LIBS)
-
 OBJS	= $(SRCS:%.c=%.o)
 
 syn2d:	$(OBJS) 
 	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o syn2d $(OBJS) $(LIBS)
-
-OBJH	= $(SRCH:%.c=%.o)
-
-marchenko:	$(OBJH) 
-	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o marchenko $(OBJH) $(LIBS)
-
-OBJH2	= $(SRCH2:%.c=%.o)
-
-marchenko2:	$(OBJH2) 
-	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o marchenko2 $(OBJH2) $(LIBS)
 
 OBJA	= $(SRCA:%.c=%.o)
 
 mat2su:	$(OBJA) 
 	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o mat2su $(OBJA) $(LIBS)
 
-install: makemod makewave extendModel fconv correigen green basop fmute syn2d mat2su marchenko marchenko2
+install: makemod makewave extendModel fconv correigen green basop syn2d mat2su 
 	cp makemod $B
 	cp makewave $B
 	cp extendModel $B
@@ -218,17 +165,14 @@ install: makemod makewave extendModel fconv correigen green basop fmute syn2d ma
 	cp correigen $B
 	cp green $B
 	cp basop $B
-	cp fmute $B
 	cp syn2d $B
-	cp marchenko $B
-	cp marchenko2 $B
 	cp mat2su $B
 
 clean:
-		rm -f core $(OBJM) makemod $(OBJW) makewave $(OBJE) extendModel $(OBJF) fconv $(OBJG) $(OBJC) correigen green $(OBJB) basop $(OBJJ) fmute $(OBJS) syn2d $(OBJA) mat2su $(OBJH) marchenko $(OBJH2)
+		rm -f core $(OBJM) makemod $(OBJW) makewave $(OBJE) extendModel $(OBJF) fconv $(OBJG) $(OBJC) correigen green $(OBJB) basop $(OBJJ) syn2d $(OBJA) mat2su $(OBJH)
 
 realclean: clean
-		rm -f $B/makemod $B/makewave $B/extendModel $B/fconv $B/correigen $B/green $B/basop $B/fmute $B/syn2d $B/mat2su $B/marchenko
+		rm -f $B/makemod $B/makewave $B/extendModel $B/fconv $B/correigen $B/green $B/basop $B/syn2d $B/mat2su 
 
 
 

@@ -43,6 +43,36 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 
 	ibnd = mod.iorder/2-1;
 
+	if (mod.ischeme <= 2) { /* Acoustic scheme */
+		if (bnd.top==1) { /* free surface at top */
+#pragma omp	for private (ix) nowait
+			for (ix=mod.ioPx; ix<mod.iePx; ix++) {
+				iz = bnd.surface[ix];
+				//fprintf(stderr,"free iz=%d\n", iz);
+				vz[ix*n1+iz]   = vz[ix*n1+iz+1];
+				vz[ix*n1+iz-1] = vz[ix*n1+iz+2];
+			}
+		}
+//		if (bnd.rig==1) { /* free surface at right */
+//#pragma omp	for private (iz) nowait
+//			for (iz=mod.ioPz; iz<mod.iePz; iz++) {
+//				tzz[(mod.iePx-1)*n1+iz] = 0.0;
+//			}
+//		}
+//		if (bnd.bot==1) { /* free surface at bottom */
+//#pragma omp	for private (ix) nowait
+//			for (ix=mod.ioPx; ix<mod.iePx; ix++) {
+//				tzz[ix*n1+mod.iePz-1] = 0.0;
+//			}
+//		}
+//		if (bnd.lef==1) { /* free surface at left */
+//#pragma omp	for private (iz) nowait
+//			for (iz=mod.ioPz; iz<mod.iePz; iz++) {
+//				tzz[(mod.ioPx-1)*n1+iz] = 0.0;
+//			}
+//		}
+	}
+
 /************************************************************/
 /* rigid boundary condition clears velocities on boundaries */
 /************************************************************/
@@ -1538,12 +1568,12 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 		
 		if (bnd.rig==1) { /* free surface at right */
 			ix = mod.iePx;
-#pragma omp for private (ix, iz) 
+#pragma omp for private (iz) 
 			for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 				/* clear normal pressure */
-				txx[(ix)*n1+iz] = 0.0;
+				txx[ix*n1+iz] = 0.0;
 			}
-#pragma omp for private (ix, iz) 
+#pragma omp for private (iz) 
 			for (iz=mod.ioTz; iz<mod.ieTz; iz++) {
 				/* assure that txz=0 on boundary by filling virtual boundary */
 				txz[(ix+1)*n1+iz] = -txz[(ix)*n1+iz];

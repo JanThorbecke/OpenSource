@@ -145,10 +145,10 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		wav->dt=mod->dt;
 	}
 	assert(mod->dt!=0.0);
-	/* check if receiver delays is defined; add delay time to total modeling time */
+	/* check if receiver delays is defined; option inactive: add delay time to total modeling time */
 	if (!getparfloat("rec_delay",&rdelay)) rdelay=0.0;
 	rec->delay=NINT(rdelay/mod->dt);
-	mod->tmod += rdelay;
+//	mod->tmod += rdelay;
 	mod->nt = NINT(mod->tmod/mod->dt)+1;
 	dt = mod->dt;
 
@@ -158,7 +158,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		if (getparint("dipsrc",&src->orient)) src->orient=2; // for compatability with DELPHI's fdacmod
 	}
 	if (mod->ischeme<=2) {
-		if (src->type>1 && src->type<7)
+		if (src->type>1 && src->type<6)
 			verr("Invalid src_type for acoustic scheme!");
 	}
 	if (mod->ischeme==2 || mod->ischeme==4) {
@@ -302,8 +302,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparint("bottom",&bnd->bot) && !tapbottom) bnd->bot=4;
 
     /* calculate default taper length to be three wavelenghts */
-	if (!getparint("ntaper",&bnd->ntap)) bnd->ntap=0; // bnd->ntap=5*NINT((cp_max/wav->fmax)/dx);
-	if (!getparint("npml",&bnd->ntap)) bnd->ntap=35;
+	if (!getparint("ntaper",&bnd->ntap)) bnd->ntap=0; // bnd->ntap=3*NINT((cp_max/wav->fmax)/dx);
+	if (!bnd->ntap) if (!getparint("npml",&bnd->ntap)) bnd->ntap=3*NINT((cp_max/wav->fmax)/dx);
 	if (!getparfloat("R",&bnd->R)) bnd->R=1e-5;
 	if (!getparfloat("m",&bnd->m)) bnd->m=2.0;
 	bnd->npml=bnd->ntap;
@@ -1043,6 +1043,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparint("sinkdepth_src",&src->sinkdepth)) src->sinkdepth=0;
 	if (!getparint("sinkvel",&rec->sinkvel)) rec->sinkvel=0;
 	if (!getparfloat("dtrcv",&dtrcv)) dtrcv=0.004;
+	/* TODO check if dtrcv is integer multiple of dt */
 	rec->skipdt=NINT(dtrcv/dt);
 	dtrcv = mod->dt*rec->skipdt;
 	if (!getparfloat("rec_delay",&rdelay)) rdelay=0.0;
