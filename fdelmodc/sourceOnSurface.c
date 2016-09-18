@@ -8,6 +8,27 @@ static float *src1x, *src1z, *src2x, *src2z;
 static int first=1;
 void vmess(char *fmt, ...);
 
+int allocStoreSourceOnSurface(srcPar src)
+{
+    /* allocated 2x size for dipole Potential sources */
+    src1x = (float *)calloc(2*src.n, sizeof(float));
+    src1z = (float *)calloc(2*src.n, sizeof(float));
+    src2x = (float *)calloc(2*src.n, sizeof(float));
+    src2z = (float *)calloc(2*src.n, sizeof(float));
+    first = 0;
+    return 0;
+}
+
+int freeStoreSourceOnSurface(void)
+{
+    free(src1x);
+    free(src1z);
+    free(src2x);
+    free(src2z);
+    first = 1;
+    return 0;
+}
+
 int storeSourceOnSurface(modPar mod, srcPar src, bndPar bnd, int ixsrc, int izsrc, float *vx, float *vz, float *tzz, float *txx, float *txz, int verbose)
 {
 /**********************************************************************
@@ -41,15 +62,6 @@ int storeSourceOnSurface(modPar mod, srcPar src, bndPar bnd, int ixsrc, int izsr
 	else {	
     	ibndz = mod.ioPz;
     	ibndx = mod.ioPx;
-	}
-
-    /* allocated 2x size for dipole Potential sources */
-	if (first) {
-		src1x = (float *)calloc(2*src.n, sizeof(float));
-		src1z = (float *)calloc(2*src.n, sizeof(float));
-		src2x = (float *)calloc(2*src.n, sizeof(float));
-		src2z = (float *)calloc(2*src.n, sizeof(float));
-		first = 0;
 	}
 
 /* check if there are sources placed on the boundaries */

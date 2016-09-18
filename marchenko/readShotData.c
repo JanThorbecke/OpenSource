@@ -18,7 +18,7 @@ void rc1fft(float *rdata, complex *cdata, int n, int sign);
 int compare(const void *a, const void *b) 
 { return (*(float *)b-*(float *)a); }
 
-int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int ngath, int nx, int nxm, int ntfft, float alpha, int mode, float weight, int verbose)
+int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int ngath, int nx, int nxm, int ntfft, int mode, float weight, int verbose)
 {
 	FILE *fp;
 	segy hdr;
@@ -82,21 +82,12 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 			nread = fread( trace, sizeof(float), nt, fp );
 			assert (nread == hdr.ns);
 
-			/* apply alpha factor */
-			if (alpha != 0.0) {
-        		for (j=0; j<nt; j++) {
-						trace[j] *= exp(alpha*j*dt);
-				}
-			}
-
 			/* transform to frequency domain */
 			if (ntfft > hdr.ns) 
 				memset( &trace[nt-1], 0, sizeof(float)*(ntfft-nt) );
 
         	rc1fft(trace,ctrace,ntfft,-1);
         	for (iw=0; iw<nw; iw++) {
-//        		cdata[iw*ngath*nx+igath*nx+itrace] = ctrace[nw_low+iw];
-//        		cdata[igath*nx*nw+itrace*nw+iw] = ctrace[nw_low+iw];
         		cdata[igath*nx*nw+iw*nx+itrace].r = weight*ctrace[nw_low+iw].r;
         		cdata[igath*nx*nw+iw*nx+itrace].i = weight*mode*ctrace[nw_low+iw].i;
         	}

@@ -12,6 +12,8 @@
 
 double wallclock_time(void);
 
+void threadAfficity(void);
+
 int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, shotPar *shot, bndPar *bnd, int verbose);
 
 int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float *lam, float *muu, float *tss, float *tes, float *tep);
@@ -68,6 +70,10 @@ int getBeamTimes(modPar mod, snaPar sna, float *vx, float *vz, float *tzz, float
 int writeBeams(modPar mod, snaPar sna, int ixsrc, int izsrc, int ishot, int fileno, 
 			   float *beam_vx, float *beam_vz, float *beam_txx, float *beam_tzz, float *beam_txz, 
 			   float *beam_p, float *beam_pp, float *beam_ss, int verbose);
+
+int allocStoreSourceOnSurface(srcPar src);
+
+int freeStoreSourceOnSurface(void);
 
 /* Self documentation */
 char *sdoc[] = {
@@ -306,6 +312,7 @@ int main(int argc, char **argv)
 		p = (float *)calloc(sizem,sizeof(float));
 		q = (float *)calloc(sizem,sizeof(float));
 	}
+	allocStoreSourceOnSurface(src);
 
 	/* read velocity and density files */
 
@@ -494,9 +501,12 @@ shared (tss, tep, tes, r, q, p) \
 shared (tinit, it0, it1, its) \
 shared(beam_vx, beam_vz, beam_txx, beam_tzz, beam_txz, beam_p, beam_pp, beam_ss) \
 shared(rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, rec_p, rec_pp, rec_ss) \
-private (tt, t2, t3) \
+shared (tt, t2, t3) \
 shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 {
+			if (it==it0) {
+				threadAfficity();
+			}
 			switch ( mod.ischeme ) {
 //				case -2 : /* test code for PML */
 //					acoustic4_test(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
@@ -589,7 +599,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 #pragma omp master
 {
 			if (verbose) {
-				if (it==it0+100*its) t2=wallclock_time();
+				if (it==(it0+100*its)) t2=wallclock_time();
 				if (it==(it0+500*its)) {
 					t3=wallclock_time();
 					tt=(t3-t2)*(((it1-it0)*its)/400.0);
@@ -638,7 +648,8 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 	}
 
 	/* free arrays */
-	
+
+	initargs(argc,argv); /* this will free the arg arrays declared */
 	free(rox);
 	free(roz);
 	free(l2m);
@@ -647,6 +658,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 	free(vx);
 	free(vz);
 	free(tzz);
+	freeStoreSourceOnSurface();
 	if (rec.type.vz)  free(rec_vz);
 	if (rec.type.vx)  free(rec_vx);
 	if (rec.type.p)   free(rec_p);

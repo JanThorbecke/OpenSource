@@ -25,8 +25,8 @@ typedef struct _complexStruct { /* complex number */
 } complex;
 #endif/* complex */
 
-int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int ngath, int nx, int nxm, int ntfft, float alpha, int mode, float weight, int verbose);
-int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int ngath, int nx, int ntfft, float alpha, int mode, float *maxval, float *tinv, int hw, int verbose);
+int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int ngath, int nx, int nxm, int ntfft, int mode, float weight, int verbose);
+int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int ngath, int nx, int ntfft, int mode, float *maxval, float *tinv, int hw, int verbose);
 int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, float d2, float f2, int n2out, int Nsyn, float *xsyn, float *zsyn, int iter);
 void name_ext(char *filename, char *extension);
 
@@ -68,7 +68,6 @@ char *sdoc[] = {
 "   ntap=0 ................... number of taper points at boundaries",
 "   reci=0 ................... 1; add focusing in emission 2; emission only",
 "   off=0 .................... trace offset to start synthesis",
-"   alpha=0 .................. Laplace factor (good default = -2)",
 "   fmin=0 ................... minimum frequency",
 "   fmax=70 .................. maximum frequency",
 " MARCHENKO ITERATIONS ",
@@ -113,8 +112,8 @@ int main (int argc, char **argv)
 	int     hw, smooth, above, shift, *ixpossyn, npossyn, ix;
 	float	fmin, fmax, df, *tapersh, *tapersy, fxf, dxf, fxs2, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
     double  t0, t1, t2, t3, tsyn, tread, tfft;
-	float	*shotdata, d1, d2, f1, f2, fts, fxs, ft, fx, *etap, *xsyn, dxsrc;
-	float   *green, *pplus, *pmin, *tinv, *mute, dt, dx, dts, dxs, scl, alpha, mem;
+	float	*shotdata, d1, d2, f1, f2, fts, fxs, ft, fx, *xsyn, dxsrc;
+	float   *green, *pplus, *pmin, *tinv, *mute, dt, dx, dts, dxs, scl, mem;
 	float   *f1plus, *f1min, *Nk, *Nk_1, *trace, *Gmin, *Gplus;
 	float   max, scel, xmin, xmax, weight;
     complex *cshotsE, *cshotsD, *cpplus, *ctrace;
@@ -155,7 +154,6 @@ int main (int argc, char **argv)
 	if (!getparint("ixb", &ixb)) ixb = ixa;
 	if (!getparint("reci", &reci)) reci = 0;
 	if (!getparint("off", &off)) off = 0;
-	if (!getparfloat("alpha", &alpha)) alpha = 0.0;
 	if (!getparfloat("weight", &weight)) weight = 1.0;
 	if (!getparint("tap", &tap)) tap = 0;
 	if (!getparint("ntap", &ntap)) ntap = 0;
@@ -223,7 +221,7 @@ int main (int argc, char **argv)
 
 	mode=-1; /* apply complex conjugate to read in data */
     readTinvData(file_tinv, xrcvsyn, xsyn, zsyn, xnxsyn, cpplus, nw, nw_low, Nsyn, nxs, ntfft, 
-		alpha, mode, mute, tinv, hw, verbose);
+		mode, mute, tinv, hw, verbose);
                              
 	if (tap == 1 || tap == 3) {
 		for (j = 0; j < ntap; j++)
@@ -269,10 +267,10 @@ int main (int argc, char **argv)
 
 	mode=1;
     readShotData(file_shotE, xrcv, xsrc, zsrc, xnx, cshotsE, nw, nw_low, ngath, nx, nx, ntfft, 
-		alpha, mode, weight, verbose);
+		mode, weight, verbose);
 	mode=1;
     readShotData(file_shotD, xrcv, xsrc, zsrc, xnx, cshotsD, nw, nw_low, ngath, nx, nx, ntfft, 
-		alpha, mode, weight, verbose);
+		mode, weight, verbose);
 
 	tapersh = (float *)malloc(nx*sizeof(float));
 	if (tap == 2 || tap == 3) {
@@ -760,9 +758,6 @@ int main (int argc, char **argv)
 	size  = nxs*nts;
 */
 
-    etap = (float *)malloc(n1*sizeof(float));
-	for (j = 0; j < n1; j++) etap[j] = exp(-alpha*j*dt);
-
     fp_out = fopen(file_green, "w+");
     if (fp_out==NULL) verr("error on creating output file %s", file_green);
 	if (file_gmin != NULL) {
@@ -806,7 +801,6 @@ int main (int argc, char **argv)
 			hdrs_out[i].tracf = tracf++;
 			hdrs_out[i].selev  = NINT(zsyn[l]*1000);
 			hdrs_out[i].sdepth = NINT(-zsyn[l]*1000);
-			for (j = 0; j < n1; j++) green[l*size+i*n1+j] *= etap[j];
 		}
 
         ret = writeData(fp_out, (float *)&green[l*size], hdrs_out, n1, n2);

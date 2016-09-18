@@ -22,7 +22,7 @@ void cc1fft(complex *data, int n, int sign);
 void rc1fft(float *rdata, complex *cdata, int n, int sign);
 void findShotInMute(float *xrcvMute, float xrcvShot, int nxs, int *imute);
 
-int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int Nsyn, int nx, int ntfft, float alpha, int mode, float *maxval, float *tinv, int hw, int verbose)
+int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int Nsyn, int nx, int ntfft, int mode, float *maxval, float *tinv, int hw, int verbose)
 {
 	FILE *fp;
 	segy hdr;
@@ -98,21 +98,12 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 //        		for (j=1; j<nt; j++) tinv[ig+itrace*nt+j] = trace[nt-1-j];
 //			}
 
-			/* apply alpha factor */
-			if (alpha != 0.0) {
-        		for (j=0; j<nt; j++) {
-						trace[j] *= exp(alpha*j*dt);
-				}
-			}
-
 			/* transform to frequency domain */
 			if (ntfft > hdr.ns) 
 				memset( &trace[nt-1], 0, sizeof(float)*(ntfft-nt) );
 
         	rc1fft(trace,ctrace,ntfft,-1);
         	for (iw=0; iw<nw; iw++) {
-//        		cdata[iw*Nsyn*nx+isyn*nx+itrace] = ctrace[nw_low+iw];
-//        		cdata[isyn*nx*nw+itrace*nw+iw] = ctrace[nw_low+iw];
         		cdata[isyn*nx*nw+iw*nx+itrace].r = ctrace[nw_low+iw].r;
         		cdata[isyn*nx*nw+iw*nx+itrace].i = mode*ctrace[nw_low+iw].i;
         	}
