@@ -66,7 +66,7 @@ int main (int argc, char **argv)
     int     tstart, tend, scale;
 	float   dt, d2, f1, f2, t0, t1, f1b, f2b, d1, d1b, d2b, *etap, *etapi;
 	float	w1, w2;
-	float 	*tmpdata, eps, alpha, *tmpdata2, *costaper;
+	float 	*tmpdata, eps, *tmpdata2, *costaper;
 	char 	*file_mute, *file_shot, option[5], *file, *file_out;
 	float   scl, sclsxgx, sclshot, xmin, xmax, tmax, lmax;
 	segy	*hdrs_in1, *hdrs_in2, *hdrs_out;

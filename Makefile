@@ -1,4 +1,4 @@
-#master makefile for OpenExtrap
+#master makefile for OpenSource 
 
 all: mkdirs 
 	cd FFTlib		; $(MAKE)

@@ -54,6 +54,7 @@ SRCC	= $(PRG).c \
 		name_ext.c  \
 		atopkge.c \
 		docpkge.c \
+		threadAffinity.c \
 		getpars.c
 
 OBJC	= $(SRCC:%.c=%.o)
