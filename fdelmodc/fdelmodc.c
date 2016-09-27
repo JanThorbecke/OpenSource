@@ -12,7 +12,7 @@
 
 double wallclock_time(void);
 
-void threadAfficity(void);
+void threadAffinity(void);
 
 int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, shotPar *shot, bndPar *bnd, int verbose);
 
@@ -505,7 +505,7 @@ shared (tt, t2, t3) \
 shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 {
 			if (it==it0) {
-				threadAfficity();
+				threadAffinity();
 			}
 			switch ( mod.ischeme ) {
 //				case -2 : /* test code for PML */
