@@ -85,7 +85,8 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, int ixsrc, int izsrc, int
 		if (sna.type.ss)  fpss  = fileOpen(sna.file_snap, "_sss", append);
 	
 		memset(&hdr,0,TRCBYTES);
-		hdr.dt     = 1000000*(mod.dt);
+		hdr.dt     = 1000000*(sna.skipdt*mod.dt);
+		hdr.ungpow  = (sna.delay*mod.dt);
 		hdr.scalco = -1000;
 		hdr.scalel = -1000;
 		hdr.sx     = 1000*(mod.x0+ixsrc*mod.dx);

@@ -169,7 +169,7 @@ install: makemod makewave extendModel fconv correigen green basop syn2d mat2su
 	cp mat2su $B
 
 clean:
-		rm -f core $(OBJM) makemod $(OBJW) makewave $(OBJE) extendModel $(OBJF) fconv $(OBJG) $(OBJC) correigen green $(OBJB) basop $(OBJJ) syn2d $(OBJA) mat2su $(OBJH)
+		rm -f core $(OBJM) makemod $(OBJW) makewave $(OBJE) extendModel $(OBJF) fconv $(OBJG) $(OBJC) correigen green $(OBJB) basop $(OBJJ) syn2d $(OBJS) $(OBJA) mat2su $(OBJH)
 
 realclean: clean
 		rm -f $B/makemod $B/makewave $B/extendModel $B/fconv $B/correigen $B/green $B/basop $B/syn2d $B/mat2su 

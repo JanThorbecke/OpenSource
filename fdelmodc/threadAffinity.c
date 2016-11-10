@@ -3,12 +3,10 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
-#include <omp.h>
-
 #ifdef __USE_GNU
+#include <omp.h>
 #include <sched.h>
 #else /* for OSX */
-
 #include <sched.h>
 #include <sys/types.h>
 #include <sys/sysctl.h>
@@ -89,13 +87,17 @@ void threadAffinity(void)
   memset(hnbuf, 0, sizeof(hnbuf));
   (void)gethostname(hnbuf, sizeof(hnbuf));
 
-    strcpy(prefix,"Hello world from");
+  strcpy(prefix,"Hello world from");
 
 //  #pragma omp parallel private(thread, coremask, clbuf)
 /* for use inside parallel region */
   #pragma omp critical
   {
+#ifdef __USE_GNU
     thread = omp_get_thread_num();
+#else
+    thread = 1;
+#endif
     (void)sched_getaffinity(0, sizeof(coremask), &coremask);
     cpuset_to_cstr(&coremask, clbuf);
     printf("%s thread %d,               on %s. (core affinity = %s)\n",

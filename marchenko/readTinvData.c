@@ -54,12 +54,10 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 	if (hdr.scalel < 0) scel = 1.0/fabs(hdr.scalel);
 	else if (hdr.scalel == 0) scel = 1.0;
 	else scel = hdr.scalel;
-
 	fseek(fp, 0, SEEK_SET);
 
-	nt        = hdr.ns;
-
-	trace  = (float *)malloc(nt*nx*sizeof(float));
+	nt     = hdr.ns;
+	trace  = (float *)calloc(ntfft,sizeof(float));
 	ctrace = (complex *)malloc(ntfft*sizeof(complex));
 
 	end_of_file = 0;
@@ -82,25 +80,18 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 		xsrc[isyn] = sx_shot*scl;
 		zsrc[isyn] = hdr.selev*scel;
 		xnx[isyn]  = 0;
-        ig = isyn*nx*nt;
+        ig = isyn*nx*ntfft;
 		while (one_shot) {
 			xrcv[isyn*nx+itrace] = hdr.gx*scl;
 			nread = fread( trace, sizeof(float), nt, fp );
 			assert (nread == hdr.ns);
 
 			/* copy trace to data array */
-//			if (mode==1) {
-            	memcpy( &tinv[ig+itrace*ntfft], trace, nt*sizeof(float));
-//			}
-//			else {
-//				j=0;
-//        		tinv[ig+itrace*nt+j] = trace[j];
-//        		for (j=1; j<nt; j++) tinv[ig+itrace*nt+j] = trace[nt-1-j];
-//			}
+            memcpy( &tinv[ig+itrace*ntfft], trace, nt*sizeof(float));
 
 			/* transform to frequency domain */
 			if (ntfft > hdr.ns) 
-				memset( &trace[nt-1], 0, sizeof(float)*(ntfft-nt) );
+				memset( &trace[nt], 0, sizeof(float)*(ntfft-nt) );
 
         	rc1fft(trace,ctrace,ntfft,-1);
         	for (iw=0; iw<nw; iw++) {
@@ -184,13 +175,15 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 		else {
 			end_of_file = 1;
 		}
+
 		/* copy trace to data array for mode=-1 */
-		for (i = 0; i < nx1; i++) {
-			if (mode==-1) {
-            	memcpy( trace, &tinv[ig+i*ntfft], nt*sizeof(float));
+        /* time reverse trace */
+		if (mode==-1) {
+			for (i = 0; i < nx1; i++) {
+            	memcpy( trace, &tinv[ig+i*ntfft], ntfft*sizeof(float));
 				j=0;
 				tinv[ig+i*ntfft+j] = trace[j];
-				for (j=1; j<nt; j++) tinv[ig+i*ntfft+j] = trace[nt-j];
+				for (j=1; j<ntfft; j++) tinv[ig+i*ntfft+ntfft-j] = trace[j];
 			}
 		}
 	}

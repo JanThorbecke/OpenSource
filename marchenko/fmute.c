@@ -69,7 +69,7 @@ int main (int argc, char **argv)
 	float 	*tmpdata, eps, *tmpdata2, *costaper;
 	char 	*file_mute, *file_shot, option[5], *file, *file_out;
 	float   scl, sclsxgx, sclshot, xmin, xmax, tmax, lmax;
-	segy	*hdrs_in1, *hdrs_in2, *hdrs_out;
+	segy	*hdrs_in1, *hdrs_in2;
 
 	t0 = wallclock_time();
 	initargs(argc, argv);
@@ -120,7 +120,6 @@ int main (int argc, char **argv)
         }
     }
 
-
 /* Reading input data for file_shot */
 
 	ngath = 1;
@@ -164,7 +163,6 @@ int main (int argc, char **argv)
 
 	nrec = MAX(nx1, nx2);
 	nsam = MAX(nt1, nt2);
-	hdrs_out = (segy *) calloc(nxmax,sizeof(segy));
 
 	if (verbose) vmess("sampling file_mute=%d, file_shot=%d", nt1, nt2);
 
@@ -364,6 +362,7 @@ int main (int argc, char **argv)
         if (file_mute == NULL) {
             nx1=nx2;
             nt1=nt2;
+        	hdrs_in1 = hdrs_in2;
             tmpdata = tmpdata2;
         }
 
