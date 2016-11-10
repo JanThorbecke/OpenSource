@@ -18,7 +18,8 @@ clean:
 	cd fdemmodc		; $(MAKE) $@
 	cd utils		; $(MAKE) $@
 	cd marchenko	; $(MAKE) $@
-	find . -name "._*"
+
+#	find . -name "._*"
 
 realclean:
 	cd FFTlib 		; $(MAKE) $@

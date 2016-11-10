@@ -171,7 +171,7 @@ int main (int argc, char **argv)
     if (!getparfloat("dt", &dt)) dt = d1;
 
     ntfft = optncr(MAX(nt, nts)); 
-    nts   = ntfft;
+//    nts   = ntfft;
     nf    = ntfft/2+1;
     df    = 1.0/(ntfft*dt);
     nfreq = ntfft/2+1;
@@ -181,7 +181,7 @@ int main (int argc, char **argv)
     nw  = nw_high - nw_low + 1;
     scl   = 1.0/((float)ntfft);
     
-/*================ Reading all focusing operator(s) ================*/
+/*================ Allocating all data arrays ================*/
 
     Fop     = (complex *)malloc(nxs*nw*Nsyn*sizeof(complex));
     xrcvsyn = (float *)calloc(Nsyn*nxs,sizeof(float));
@@ -199,10 +199,17 @@ int main (int argc, char **argv)
     Nk      = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
     Nk_1    = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
     ctrace  = (complex *)malloc(ntfft*sizeof(complex));
-    trace  = (float *)malloc(ntfft*sizeof(float));
-    mute = (float *)calloc(Nsyn*nxs,sizeof(float));
-    tinv = (float *)malloc(Nsyn*nxs*ntfft*sizeof(float));
+    trace   = (float *)malloc(ntfft*sizeof(float));
+    mute    = (float *)calloc(Nsyn*nxs,sizeof(float));
+    tinv    = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
     ixpossyn = (int *)malloc(nxs*sizeof(int));
+
+    Refl    = (complex *)malloc(nw*nx*nshots*sizeof(complex));
+    tapersh = (float *)malloc(nx*sizeof(float));
+    xsrc    = (float *)calloc(nshots,sizeof(float));
+    zsrc    = (float *)calloc(nshots,sizeof(float));
+    xrcv    = (float *)calloc(nshots*nx,sizeof(float));
+    xnx     = (int *)calloc(nshots,sizeof(int));
 
 /*================ Read and define mute window based on focusing operator(s) ================*/
 /* Fop = p_0^+ = G_d (-t) ~ Tinv */
@@ -210,6 +217,8 @@ int main (int argc, char **argv)
     mode=-1; /* apply complex conjugate to read in data */
     readTinvData(file_tinv, xrcvsyn, xsyn, zsyn, xnxsyn, Fop, nw, nw_low, Nsyn, nxs, ntfft, 
          mode, mute, tinv, hw, verbose);
+/* reading data added zero's to the number of time samples to be the same as ntfft */
+    nts   = ntfft;
                              
     if (tap == 1 || tap == 3) {
         for (j = 0; j < ntap; j++)
@@ -244,13 +253,6 @@ int main (int argc, char **argv)
     }
 
 /*================ Reading shot records ================*/
-
-    Refl    = (complex *)malloc(nw*nx*nshots*sizeof(complex));
-    tapersh = (float *)malloc(nx*sizeof(float));
-    xsrc    = (float *)calloc(nshots,sizeof(float));
-    zsrc    = (float *)calloc(nshots,sizeof(float));
-    xrcv    = (float *)calloc(nshots*nx,sizeof(float));
-    xnx     = (int *)calloc(nshots,sizeof(int));
 
     mode=1;
     readShotData(file_shot, xrcv, xsrc, zsrc, xnx, Refl, nw, nw_low, ngath, nx, nx, ntfft, 
@@ -320,7 +322,7 @@ int main (int argc, char **argv)
         vmess("last source position           = %.2f", fxf+(nshots-1)*dxsrc);
         vmess("receiver distance     dxf      = %.2f", dxf);
         vmess("direction of increasing traces = %d", di);
-        vmess("number of time samples (ntfft) = %d (%d)", nt, ntfft);
+        vmess("number of time samples (nt,nts) = %d (%d,%d)", ntfft, nt, nts);
         vmess("time sampling                  = %e ", dt);
         if (file_green != NULL) vmess("Green output file              = %s ", file_green);
         if (file_gmin != NULL)  vmess("Gmin output file               = %s ", file_gmin);
@@ -400,9 +402,9 @@ int main (int argc, char **argv)
             writeDataIter(file_iter, Nk, hdrs_out, ntfft, nxs, d2, f2, n2out, Nsyn, xsyn, zsyn, iter);
         }
 
-        /* copy initialization value */
+        /* initialization */
         if (iter==0) {
-            /* N_0(t) = M_0(t) = -p0^-(x,-t)  = R * T_d^inv */
+            /* N_0(t) = M_0(t) = -p0^-(x,-t)  = -(R * T_d^inv)(-t) */
             for (l = 0; l < Nsyn; l++) {
                 for (i = 0; i < npossyn; i++) {
                     j = 0;
@@ -412,7 +414,7 @@ int main (int argc, char **argv)
                     }
                 }
             }
-            /* p0^- = Int R P0^+ = Nk */
+            /* p0^-(x,t) = Nk = (R * T_d^inv)(t) */
             for (l = 0; l < Nsyn; l++) {
                 for (i = 0; i < npossyn; i++) {
                     j = 0;
@@ -425,7 +427,7 @@ int main (int argc, char **argv)
 
             applyMute(Nk_1, mute, smooth, above, Nsyn, nxs, nts, xsrc, ixpossyn, npossyn, shift);
 
-            /* even iterations:  => - f_1^- (-t) = windowed(pmin(t)) */
+            /* even iterations:  => - f_1^-(-t) = windowed(Nk) */
             for (l = 0; l < Nsyn; l++) {
                 for (i = 0; i < npossyn; i++) {
                     j = 0;
@@ -452,11 +454,10 @@ int main (int argc, char **argv)
             for (l = 0; l < Nsyn; l++) {
                 for (i = 0; i < npossyn; i++) {
                     j=0;
-                    //ix = NINT((xsrc[i]-fxs)/dxs);
                     ix = ixpossyn[i];
                     green[l*nxs*nts+i*nts+j] = tinv[l*nxs*nts+ix*nts+j] + pmin[l*nxs*nts+i*nts+j];
                     for (j = 1; j < nts; j++) {
-                        green[l*nxs*nts+i*nts+j] = tinv[l*nxs*nts+ix*nts+j] + pmin[l*nxs*nts+i*nts+j];
+                        green[l*nxs*nts+i*nts+j] = tinv[l*nxs*nts+ix*nts-j]+ pmin[l*nxs*nts+i*nts+j];
                     }
                 }
             }
@@ -505,7 +506,6 @@ int main (int argc, char **argv)
             for (l = 0; l < Nsyn; l++) {
                 for (i = 0; i < npossyn; i++) {
                     j = 0;
-                    //ix = NINT((xsrc[i]-fxs)/dxs);
                     ix = ixpossyn[i];
                     f1plus[l*nxs*nts+i*nts+j] = tinv[l*nxs*nts+ix*nts+j] + Nk_1[l*nxs*nts+i*nts+j];
                     for (j = 1; j < nts; j++) {
@@ -587,6 +587,7 @@ int main (int argc, char **argv)
 
         } /* end else (iter!=0) branch */
 
+
         t3 = wallclock_time();
         tsyn +=  t3 - t2;
 
@@ -631,12 +632,12 @@ int main (int argc, char **argv)
                     for (j = 0; j < nts; j++) {
                         trace[j] = f1min[l*nxs*nts+i*nts+j];
                     }
-                       rc1fft(&trace[0],ctrace,ntfft,-1);
+                    rc1fft(&trace[0],ctrace,ntfft,-1);
                     ix = ixpossyn[i];
-                       for (iw=0; iw<nw; iw++) {
-                           Fop[l*nxs*nw+iw*nxs+ix].r = ctrace[nw_low+iw].r;
-                           Fop[l*nxs*nw+iw*nxs+ix].i = -ctrace[nw_low+iw].i;
-                       }
+                    for (iw=0; iw<nw; iw++) {
+                        Fop[l*nxs*nw+iw*nxs+ix].r = ctrace[nw_low+iw].r;
+                        Fop[l*nxs*nw+iw*nxs+ix].i = -ctrace[nw_low+iw].i;
+                    }
                 }
             }
 
@@ -735,11 +736,12 @@ int main (int argc, char **argv)
 
         for (i = 0; i < n2; i++) {
             hdrs_out[i].fldr   = l+1;
-            hdrs_out[i].sx = NINT(xsyn[l]*1000);
+            hdrs_out[i].sx     = NINT(xsyn[l]*1000);
             hdrs_out[i].offset = (long)NINT((f2+i*d2) - xsyn[l]);
-            hdrs_out[i].tracf = tracf++;
+            hdrs_out[i].tracf  = tracf++;
             hdrs_out[i].selev  = NINT(zsyn[l]*1000);
             hdrs_out[i].sdepth = NINT(-zsyn[l]*1000);
+        	hdrs_out[i].f1     = f1;
         }
 
         ret = writeData(fp_out, (float *)&green[l*size], hdrs_out, n1, n2);
