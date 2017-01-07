@@ -3,7 +3,6 @@
 all: mkdirs 
 	cd FFTlib		; $(MAKE)
 	cd fdelmodc		; $(MAKE) install
-	cd fdemmodc		; $(MAKE) install
 	cd utils		; $(MAKE) install
 	cd marchenko	; $(MAKE) install
 
@@ -15,16 +14,12 @@ mkdirs:
 clean:
 	cd FFTlib 		; $(MAKE) $@
 	cd fdelmodc		; $(MAKE) $@
-	cd fdemmodc		; $(MAKE) $@
 	cd utils		; $(MAKE) $@
 	cd marchenko	; $(MAKE) $@
-
-#	find . -name "._*"
 
 realclean:
 	cd FFTlib 		; $(MAKE) $@
 	cd fdelmodc		; $(MAKE) $@
-	cd fdemmodc		; $(MAKE) $@
 	cd utils		; $(MAKE) $@
 	cd marchenko	; $(MAKE) $@
 	rm -f lib/*

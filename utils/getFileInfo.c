@@ -48,7 +48,7 @@ int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *
     bytes = ftello( fp );
 
     *n1 = hdr.ns;
-    if (hdr.trid == 1 || hdr.dt != 0) {
+    if ( (hdr.trid == 1) && (hdr.dt != 0) ) {
         *d1 = ((float) hdr.dt)*1.e-6;
         *f1 = ((float) hdr.delrt)/1000.;
     }

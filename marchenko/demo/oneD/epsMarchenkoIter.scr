@@ -1,0 +1,100 @@
+#!/bin/bash
+
+export PATH=$HOME/src/OpenSource/bin/:$PATH:
+
+#Direct field of transmission repsponse
+file=p0plus.su
+file_base=${file%.su}
+ns=1024
+dtrcv=`surange < p0plus.su | grep dt | awk '{print $2/1000000.0}'`
+suwind key=gx min=-2250000 max=2250000 itmax=1023 < $file > nep.su
+shift=$(echo "scale=4; ($dtrcv*($ns/2.0-1))" | bc -l)
+basop choice=shift shift=$shift file_in=nep.su | \
+	suflip flip=3 | \
+    supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 \
+    n1tic=2 d2=5 x1beg=-1.504 x1end=1.5 d1num=0.4 \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > ${file_base}_flip.eps
+rm nep.su
+
+file=p0plus.su
+file_base=${file%.su}
+suwind key=gx min=-2250000 max=2250000 < $file | \
+	suflip flip=3 | \
+    supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 \
+    n1tic=2 d2=5 f1=-2.044 f1num=-2.000  x1beg=-2.004 x1end=0.0 d1num=0.4 \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > $file_base.eps
+
+#convolution of G_d with middle shot from R - not used -
+#suwind key=gx min=-2250000 max=2250000 < shot5_rp.su > shot0.su
+#fconv file_in1=iniFocus_rp.su file_in2=shot0.su file_out=GdRconv.su
+
+#mute to get pslinepos.asci files used in plotting only
+fmute file_shot=iniFocus_rp.su file_out=nep.su above=0 shift=8 verbose=1 check=1 hw=4
+
+#set same clip factor for iteration updates
+file=iter_001.su
+sumax < $file mode=abs outpar=nep
+clipiter=`cat nep | awk '{print $1/6}'`
+
+#iterations
+for (( iter=1; iter<=4; iter+=1 ))
+do
+piter=$(printf %03d $iter)
+echo $piter
+
+file=iter_$piter.su
+#ns=`surange < iter_001.su | grep ns | awk '{print $2}'`
+#dtrcv=`surange < iter_001.su | grep dt | awk '{print $2/1000000.0}'`
+#shift=$(echo "scale=4; ($dtrcv*($ns/2.0-1))" | bc -l)
+#basop choice=shift shift=$shift file_in=$file | \
+file_base=${file%.su}
+clipref=$clipiter
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < $file \
+	n1tic=2 d2=5 x1beg=-1.504 x1end=1.5 d1num=0.4 \
+	curve=pslinepos.asci,pslineneg.asci npair=901,901 curvewidth=2,2 curvecolor=black,black curvedash=3,3 \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > $file_base.eps
+
+file=f1min_$piter.su
+file_base=${file%.su}
+sumax < $file mode=abs outpar=nep
+clipref=`cat nep | awk '{print $1/4}'`
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < $file\
+    n1tic=2 d2=5 x1beg=-1.504 x1end=1.5 d1num=0.4 \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > $file_base.eps
+
+file=f1plus_$piter.su
+file_base=${file%.su}
+sumax < $file mode=abs outpar=nep
+clipref=`cat nep | awk '{print $1/4}'`
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < $file\
+    n1tic=2 d2=5 x1beg=-1.504 x1end=1.5 d1num=0.4 \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > $file_base.eps
+
+file=pgreen_$piter.su
+file_base=${file%.su}
+sumax < $file mode=abs outpar=nep
+clipref=`cat nep | awk '{print $1/3}'`
+suwind key=gx min=-2250000 max=2250000 < $file | \
+	supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 \
+	n1tic=2 d2=5 f1=0.0 x1beg=0 x1end=2.004 d1num=0.4 \
+	f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > $file_base.eps
+
+#compare Green's funtions on Marhcenko and reference result
+suwind key=gx min=0 max=0 itmax=511 < pgreen_$piter.su | sumax mode=abs outpar=nepmg
+suwind key=gx min=0 max=0 itmax=511 < referenceP_rp.su | sumax mode=abs outpar=neprf
+mg=`cat nepmg | awk '{print $1}'`
+rf=`cat neprf | awk '{print $1}'`
+value=${value/[eE][+][0]/*10^}
+mg=${mg/[eE][+][0]/*10^}
+rf=${rf/[eE][+][0]/*10^}
+rm nep*
+scale=$(echo "scale=3; ($rf)/($mg)" | bc -l)
+#echo $scale
+
+(suwind key=gx min=0 max=0 itmax=511 < pgreen_$piter.su | sugain scale=$scale;  \
+	suwind key=gx min=0 max=0 < referenceP_rp.su) | \
+	supsgraph hbox=6 wbox=1 labelsize=10 linegray=0.3,0.0 style=seismic \
+	lineon=3.5,1.0 lineoff=1.3,0.0 > compare_$piter.eps 
+
+done
+ 

@@ -3,10 +3,11 @@
 include ../Make_include
 
 LIBS    += -L$L -lgenfft -lm $(LIBSM)
-#OPTC += -openmp 
 #OPTC += -g -O0
 
-ALL: fmute marchenko marchenko2
+#ALL: fmute marchenko marchenko2
+
+ALL: fmute marchenko
 
 SRCJ	= fmute.c \
 		getFileInfo.c  \
@@ -61,10 +62,11 @@ OBJH2	= $(SRCH2:%.c=%.o)
 marchenko2:	$(OBJH2) 
 	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o marchenko2 $(OBJH2) $(LIBS)
 
-install: fmute marchenko marchenko2
+install: fmute marchenko 
 	cp fmute $B
 	cp marchenko $B
-	cp marchenko2 $B
+
+#	cp marchenko2 $B
 
 clean:
 		rm -f core fmute $(OBJJ) marchenko $(OBJH) marchenko2 $(OBJH2)

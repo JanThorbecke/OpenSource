@@ -6,7 +6,7 @@ LIBS    += -L$L -lgenfft -lm $(LIBSM)
 #OPTC += -openmp 
 #OPTC += -g -O0
 
-ALL: makemod makewave extendModel fconv correigen green basop syn2d mat2su 
+ALL: makemod makewave extendModel fconv correigen green basop syn2d mat2su ftr1d
 
 SRCM	= \
 		makemod.c  \
@@ -111,6 +111,15 @@ SRCA	= mat2su.c \
 		docpkge.c \
 		getpars.c
 
+SRCT	= ftr1d.c \
+		getFileInfo.c  \
+		readData.c \
+		writeData.c \
+		wallclock_time.c \
+		verbosepkg.c  \
+		atopkge.c \
+		docpkge.c \
+		getpars.c
 
 OBJM	= $(SRCM:%.c=%.o)
 
@@ -157,7 +166,12 @@ OBJA	= $(SRCA:%.c=%.o)
 mat2su:	$(OBJA) 
 	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o mat2su $(OBJA) $(LIBS)
 
-install: makemod makewave extendModel fconv correigen green basop syn2d mat2su 
+OBJT	= $(SRCT:%.c=%.o)
+
+ftr1d:	$(OBJT) 
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o ftr1d $(OBJT) $(LIBS)
+
+install: makemod makewave extendModel fconv correigen green basop syn2d mat2su ftr1d
 	cp makemod $B
 	cp makewave $B
 	cp extendModel $B
@@ -167,12 +181,13 @@ install: makemod makewave extendModel fconv correigen green basop syn2d mat2su
 	cp basop $B
 	cp syn2d $B
 	cp mat2su $B
+	cp ftr1d $B
 
 clean:
-		rm -f core $(OBJM) makemod $(OBJW) makewave $(OBJE) extendModel $(OBJF) fconv $(OBJG) $(OBJC) correigen green $(OBJB) basop $(OBJJ) syn2d $(OBJS) $(OBJA) mat2su $(OBJH)
+		rm -f core $(OBJM) makemod $(OBJW) makewave $(OBJE) extendModel $(OBJF) fconv $(OBJG) $(OBJC) correigen green $(OBJB) basop $(OBJJ) syn2d $(OBJS) $(OBJA) mat2su $(OBJH) ftr1d $(OBJT)
 
 realclean: clean
-		rm -f $B/makemod $B/makewave $B/extendModel $B/fconv $B/correigen $B/green $B/basop $B/syn2d $B/mat2su 
+		rm -f $B/makemod $B/makewave $B/extendModel $B/fconv $B/correigen $B/green $B/basop $B/syn2d $B/mat2su $B/ftr1d
 
 
 
