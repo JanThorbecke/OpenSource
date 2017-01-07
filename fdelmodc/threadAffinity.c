@@ -13,6 +13,7 @@
 
 #define CPU_SETSIZE	1024
 #define SYSCTL_CORE_COUNT   "machdep.cpu.core_count"
+void vmess(char *fmt, ...);
 
 typedef struct cpu_set {
   uint32_t    count;
@@ -100,8 +101,7 @@ void threadAffinity(void)
 #endif
     (void)sched_getaffinity(0, sizeof(coremask), &coremask);
     cpuset_to_cstr(&coremask, clbuf);
-    printf("%s thread %d,               on %s. (core affinity = %s)\n",
-	   prefix, thread, hnbuf, clbuf);
+    vmess("%s thread %d, on %s. (core affinity = %s)", prefix, thread, hnbuf, clbuf);
 
   }
   return;

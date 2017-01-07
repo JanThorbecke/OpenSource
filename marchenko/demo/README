@@ -1,9 +1,4 @@
-Description of files:
-1) shots.scr create the shots
-2) model.scr computes the model
-3) direct_wave.scr crate the direct wave to be removed from the shots
-4) remove_direct.scr remove the direct wave from the shots and scale them
-5) first_arrival.scr computes the first arrival
-6) marchenko.scr perform the Marchenko scheme
-7) referenceShot.scr creates the reference Green's function
+The scripts to reproduce the Figures in the manuscript can be found in the directory oneD. The oneD/README explains how to run the scripts.
+
+A more complicated model can be found in the directory twoD and will takes several hours to model the reflection data. 
 

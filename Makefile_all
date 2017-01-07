@@ -4,7 +4,9 @@
 all: mkdirs 
 	cd FFTlib		; $(MAKE)
 	cd fdelmodc		; $(MAKE) install
+	cd fdemmodc		; $(MAKE) install
 	cd utils		; $(MAKE) install
+	cd marchenko	; $(MAKE) install
 	cd extrap		; $(MAKE)
 	cd extrap3d		; $(MAKE) 
 
@@ -16,7 +18,9 @@ mkdirs:
 clean:
 	cd FFTlib 		; $(MAKE) $@
 	cd fdelmodc		; $(MAKE) $@
+	cd fdemmodc		; $(MAKE) $@
 	cd utils		; $(MAKE) $@
+	cd marchenko	; $(MAKE) $@
 	cd extrap		; $(MAKE) $@
 	cd extrap3d		; $(MAKE) $@
 
@@ -24,6 +28,7 @@ realclean:
 	cd FFTlib 		; $(MAKE) $@
 	cd fdelmodc		; $(MAKE) $@
 	cd utils		; $(MAKE) $@
+	cd marchenko	; $(MAKE) $@
 	cd extrap		; $(MAKE) $@
 	cd extrap3d		; $(MAKE) $@
 	rm -f lib/*

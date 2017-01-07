@@ -1,0 +1,54 @@
+#!/bin/bash
+
+export PATH=$HOME/src/OpenSource/bin/:$PATH:
+
+dx=2.5
+dt=0.0005
+
+file_snap="backpropf2"
+dtsnap=0.01
+nsnap=101
+for fldr in 71 86 98 99 101 103 104 116 131;
+do
+  times=$(echo "scale=2; $dtsnap*(${fldr}-$nsnap)" | bc -l)
+  atime=`printf "%4.2f" $times`
+  suwind key=fldr min=$fldr max=$fldr < ${file_snap}_sp.su | \
+	supsimage hbox=4 wbox=6 labelsize=10 \
+	x1beg=0 x1end=1250.0 clip=1e9 \
+    curve=line1,line2,line3 npair=2,2,2 curvecolor=black,black,black curvedash=3,3,3 \
+	n1tic=4 f2=-1000 d2=$dx x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > ${file_snap}_$atime.eps
+done
+
+#for the detailed, middle column, replace this line with the file_snap line above. 
+file_snap="backpropf2detail"
+dtsnap=0.0005
+nsnap=41
+for fldr in 1 21 41 61 81;
+do
+  times=$(echo "scale=2; $dtsnap*(${fldr}-$nsnap)" | bc -l)
+  atime=`printf "%4.2f" $times`
+  suwind key=fldr min=$fldr max=$fldr < ${file_snap}_sp.su | \
+	supsimage hbox=4 wbox=6 labelsize=10 \
+	x1beg=0 x1end=1250.0 clip=1e9 \
+    curve=line1,line2,line3 npair=2,2,2 curvecolor=black,black,black curvedash=3,3,3 \
+	n1tic=4 f2=-1000 d2=$dx x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > ${file_snap}_$atime.eps
+done
+
+#select files for snapshot between -0.7 => 0 <= +0.07 (fldr 31-101-171)
+#add pos and negative times to get response of homogenoeus Green's function
+
+file_snap="backpropf2"
+for fldr in 71 86 98 101;
+do
+  times=$(echo "scale=2; -0.01*(${fldr}-101)" | bc -l)
+  atime=`printf "%4.2f" $times`
+  suwind key=fldr min=$fldr max=$fldr < ${file_snap}_sp.su > neg.su
+  (( fldr = 101+(101-$fldr) ))
+  suwind key=fldr min=$fldr max=$fldr < ${file_snap}_sp.su > pos.su
+  susum neg.su pos.su | \
+	supsimage hbox=4 wbox=6 labelsize=10 \
+	x1beg=0 x1end=1250.0 clip=1e9 \
+    curve=line1,line2,line3 npair=2,2,2 curvecolor=black,black,black curvedash=3,3,3 \
+	n1tic=4 x2beg=-1000 d2=$dx f2num=-1000 d2num=500 x2end=1000 > ${file_snap}sum_$atime.eps
+done
+
