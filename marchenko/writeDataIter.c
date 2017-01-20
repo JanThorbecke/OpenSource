@@ -55,10 +55,9 @@ int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, floa
 			nwrite = fwrite(trace, sizeof(float), n1, fp_iter);
 			assert (nwrite == n1);
 		}
-//		ret = writeData(fp_iter, (float *)&data[l*size], hdrs, n1, n2out);
 	}
-	if (ret < 0 ) verr("error on writing output file.");
 	ret = fclose(fp_iter);
+	if (ret < 0 ) verr("error on writing output file.");
 	free(trace);
 
 	return 0;

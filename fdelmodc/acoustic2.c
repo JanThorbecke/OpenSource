@@ -64,16 +64,12 @@ int acoustic2(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 
 ***********************************************************************/
 
-	int   ix, iz, ixs, izs, ibnd;
-	int   nx, nz, n1;
+	int   ix, iz;
+	int   n1;
 	int ioXx, ioXz, ioZz, ioZx, ioPx, ioPz;
 	int ieXx, ieXz, ieZz, ieZx, iePx, iePz;
 
-	nx  = mod.nx;
-	nz  = mod.nz;
 	n1  = mod.naz;
-
-	ibnd = mod.iorder/2-1;
 
 	/* Vx: rox */
 	ioXx=mod.ioXx;

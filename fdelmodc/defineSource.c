@@ -238,7 +238,7 @@ int randomWavelet(wavPar wav, srcPar src, float *trace, float tbeg, float tend, 
 {
     int optn, nfreq, j, iwmax;
 	int iw, n1, itbeg, itmax, nsmth;
-    float scl, df, deltom, amp1;
+    float df, amp1;
 	float *rtrace;
 	float x1, x2, z1, z2, dzdx1, dzdx2, a, b, c, d, t;
     complex *ctrace;
@@ -251,8 +251,6 @@ int randomWavelet(wavPar wav, srcPar src, float *trace, float tbeg, float tend, 
 	rtrace = (float *)calloc(optn,sizeof(float));
 
 	df     = 1.0/(optn*wav.dt);
-    deltom = 2.*M_PI*df;
-	scl    = 1.0/optn;
     
 	iwmax = MIN(NINT(wav.fmax/df),nfreq);
 	

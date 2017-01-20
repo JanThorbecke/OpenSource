@@ -18,7 +18,7 @@ void fractint(int *zp, int minx, int maxx, float dx, float dz,
 {
 	int     i, j, ndeltx;
 	long	idum;
-	float   deltx, *phase, scale, *fract, fact;
+	float   deltx, *phase, scale, *fract;
 	float   k0bn, argsin;
 
 	phase = (float *)malloc(Nsin*sizeof(float));

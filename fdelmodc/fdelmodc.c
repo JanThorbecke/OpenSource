@@ -273,7 +273,7 @@ int main(int argc, char **argv)
 	float *beam_pp, *beam_ss;	
 	float sinkvel;
 	double t0, t1, t2, t3, tt, tinit;
-	size_t size, sizem, nsamp, memsize;
+	size_t size, sizem, nsamp;
 	int n1, ix, iz, ir, ishot, i;
 	int ioPx, ioPz;
 	int it0, it1, its, it, fileno, isam;

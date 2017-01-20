@@ -63,18 +63,14 @@ int acousticSH4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 ***********************************************************************/
 
 	float c1, c2;
-	int   ix, iz, ixs, izs, ibnd;
-	int   nx, nz, n1;
-	int   is0, isrc, ioXx, ioXz, ioZz, ioZx, ioPx, ioPz;
+	int   ix, iz;
+	int   n1;
+	int   ioXx, ioXz, ioZz, ioZx, ioPx, ioPz;
 
 
 	c1 = 9.0/8.0; 
 	c2 = -1.0/24.0;
-	nx  = mod.nx;
-	nz  = mod.nz;
 	n1  = mod.naz;
-
-	ibnd = mod.iorder/2-1;
 
 	ioXx=mod.iorder/2;
 	ioXz=ioXx-1;

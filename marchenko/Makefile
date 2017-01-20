@@ -3,7 +3,7 @@
 include ../Make_include
 
 LIBS    += -L$L -lgenfft -lm $(LIBSM)
-#OPTC += -g -O0
+OPTC += -g -O0 -Wall 
 
 #ALL: fmute marchenko marchenko2
 
@@ -12,6 +12,7 @@ ALL: fmute marchenko
 SRCJ	= fmute.c \
 		getFileInfo.c  \
 		readData.c \
+		applyMute.c \
 		writeData.c \
 		wallclock_time.c \
 		verbosepkg.c  \
@@ -24,6 +25,7 @@ SRCH	= marchenko.c \
 		readData.c \
 		readShotData.c \
 		readTinvData.c \
+		applyMute.c \
 		writeData.c \
 		writeDataIter.c \
 		wallclock_time.c \
@@ -38,6 +40,7 @@ SRCH2	= marchenko2.c \
 		readData.c \
 		readShotData.c \
 		readTinvData.c \
+		applyMute.c \
 		writeData.c \
 		writeDataIter.c \
 		wallclock_time.c \

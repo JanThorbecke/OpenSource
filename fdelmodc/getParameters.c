@@ -54,13 +54,13 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	float rsrc, oxsrc, ozsrc, dphisrc, ncsrc;
 	size_t nsamp;
 	int i, j;
-	int boundary, ibnd, cfree;
-	int npml,tapleft,tapright,taptop,tapbottom;
+	int cfree;
+	int tapleft,tapright,taptop,tapbottom;
 	int nxsrc, nzsrc;
 	int largeSUfile;
-	int is,ir,ntraces,length_random;
+	int is,ntraces,length_random;
 	float rand;
-	char *name, *src_positions, tmpname[1024];
+	char *src_positions, tmpname[1024];
 
 	if (!getparint("verbose",&verbose)) verbose=0;
 	if (!getparint("disable_check",&disable_check)) disable_check=0;

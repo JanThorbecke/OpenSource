@@ -119,15 +119,15 @@ int main(int argc, char **argv)
 {
 	FILE	*fp_in, *fp_out;
 	int     nrec, nsam, ntmax, nxmax, error, ret, verbose, i, j;
-	int     opt, size, n1, n2, num, first, nrot;
-	int     ntraces, ngath, ntout;
+	int     opt, size, n1, n2, first, nrot;
+	int     ntraces, ngath;
 	float   dt, dx, dy, c, rho, d1, d2, f1, f2; 
 	float   scl, xmin, xmax, trot;
 	double  t0, t1, t2;
 	float	fmin, fmax, *data, shift, rot, dz, eps, *tmpdata;
 	char  	*file_in, *file_out;
-	char  	choice[10], *choicepar, *choicenone;
-	segy	*hdrs, *hdrs_out;
+	char  	choice[10], *choicepar;
+	segy	*hdrs;
 
 	initargs(argc, argv);
 	requestdoc(1);
@@ -241,7 +241,6 @@ int main(int argc, char **argv)
 	/* loop for processing all data gathers */
 	error = 0;
 	first = 1;
-	num   = 1;
 	while (n2 > 0) {
 		nsam = n1; 
 		nrec = n2;
@@ -412,7 +411,7 @@ int main(int argc, char **argv)
 
 void timeShift(float *data, int nsam, int nrec, float dt, float shift, float fmin, float fmax)
 {
-	int 	optn, iom, iomin, iomax, nfreq, j, it, ix, sign;
+	int 	optn, iom, iomin, iomax, nfreq, ix, sign;
 	float	omin, omax, deltom, om, tom, df, *rdata, scl;
 	complex *cdata, *cdatascl;
 
@@ -475,7 +474,7 @@ void timeShift(float *data, int nsam, int nrec, float dt, float shift, float fmi
 
 void phaseRot(float *data, int nsam, int nrec, float dt, float rot, float fmin, float fmax)
 {
-	int 	optn, iom, iomin, iomax, nfreq, j, ix, sign;
+	int 	optn, iom, iomin, iomax, nfreq, ix, sign;
 	float	omin, omax, deltom, tom, df, *rdata, scl;
 	complex *cdata, *cdatascl;
 
@@ -671,7 +670,7 @@ void conjugate(float *data, int nsam, int nrec, float dt)
 
 void timeDiff(float *data, int nsam, int nrec, float dt, float fmin, float fmax, int opt)
 {
-	int 	optn, iom, iomin, iomax, nfreq, j, ix, sign;
+	int 	optn, iom, iomin, iomax, nfreq, ix, sign;
 	float	omin, omax, deltom, om, df, *rdata, scl;
 	complex *cdata, *cdatascl;
 
@@ -742,7 +741,7 @@ void timeDiff(float *data, int nsam, int nrec, float dt, float fmin, float fmax,
 
 void spaceDiff(float *data, int nsam, int nrec, float dt, float dx, float fmin, float fmax, int opt)
 {
-	int 	optn, iom, iomin, iomax, nfreq, j, ix, ikx, diff, nkx;
+	int 	optn, iom, iomin, iomax, nfreq, ix, ikx, nkx;
 	float	omin, omax, deltom, df, dkx, *rdata, kx, scl;
 	complex *cdata, *cdatascl;
 
@@ -834,7 +833,7 @@ void spaceDiff(float *data, int nsam, int nrec, float dt, float dx, float fmin, 
 
 void depthDiff(float *data, int nsam, int nrec, float dt, float dx, float fmin, float fmax, float c, int opt)
 {
-	int 	optn, iom, iomin, iomax, nfreq, j, ix, ikx, diff, nkx, ikxmax;
+	int 	optn, iom, iomin, iomax, nfreq, ix, ikx, nkx, ikxmax;
 	float	omin, omax, deltom, df, dkx, *rdata, kx, scl;
 	float	kx2, kz2, kp2, kp;
 	complex *cdata, *cdatascl, kz, kzinv;
@@ -844,7 +843,6 @@ void depthDiff(float *data, int nsam, int nrec, float dt, float dx, float fmin, 
 	df    = 1.0/(optn*dt);
 	nkx   = optncc(nrec);
 	dkx   = 2.0*PI/(nkx*dx);
-	diff  = (nkx-nrec)/2;
 	cdata = (complex *)malloc(nfreq*nkx*sizeof(complex));
 	if (cdata == NULL) verr("memory allocation error for cdata");
 
@@ -957,7 +955,7 @@ void depthDiff(float *data, int nsam, int nrec, float dt, float dx, float fmin, 
 
 void deghost(float *data, int nsam, int nrec, float dt, float dx, float fmin, float fmax, float c, float dz , float eps)
 {
-	int 	optn, iom, iomin, iomax, nfreq, j, ix, ikx, diff, nkx, ikxmax;
+	int 	optn, iom, iomin, iomax, nfreq, ix, ikx, nkx, ikxmax;
 	float	omin, omax, deltom, df, dkx, *rdata, kx, scl;
 	float	kx2, kz2, kp2, kp, sinkz, sinkz2;
 	complex *cdata, *cdatascl;
@@ -967,7 +965,6 @@ void deghost(float *data, int nsam, int nrec, float dt, float dx, float fmin, fl
 	df    = 1.0/(optn*dt);
 	nkx   = optncc(nrec);
 	dkx   = 2.0*PI/(nkx*dx);
-	diff  = (nkx-nrec)/2;
 	cdata = (complex *)malloc(nfreq*nkx*sizeof(complex));
 	if (cdata == NULL) verr("memory allocation error for cdata");
 
@@ -1049,7 +1046,7 @@ void deghost(float *data, int nsam, int nrec, float dt, float dx, float fmin, fl
 
 void sqrtk(float *data, int nsam, int nrec, float dt, float fmin, float fmax, float c, int opt)
 {
-	int 	optn, iom, iomin, iomax, nfreq, j, ix, sign;
+	int 	optn, iom, iomin, iomax, nfreq, ix, sign;
 	float	omin, omax, deltom, om, df, *rdata, k, scl;
 	complex *cdata, *cdatascl;
 
@@ -1122,7 +1119,7 @@ void sqrtk(float *data, int nsam, int nrec, float dt, float fmin, float fmax, fl
 
 void div_sjom(float *data, int nsam, int nrec, float dt, float fmin, float fmax, int opt)
 {
-	int 	optn, iom, iomin, iomax, nfreq, j, ix, sign;
+	int 	optn, iom, iomin, iomax, nfreq, ix, sign;
 	float	omin, omax, deltom, om, df, *rdata, scl, rot;
 	complex *cdata, *cdatascl, tmp;
 
@@ -1198,8 +1195,8 @@ void div_sjom(float *data, int nsam, int nrec, float dt, float fmin, float fmax,
 
 void div_som(float *data, int nsam, int nrec, float dt, float fmin, float fmax, int opt)
 {
-	int 	optn, iom, iomin, iomax, nfreq, j, ix, sign;
-	float	omin, omax, deltom, om, df, *rdata, scl, rot;
+	int 	optn, iom, iomin, iomax, nfreq, ix, sign;
+	float	omin, omax, deltom, om, df, *rdata, scl;
 	complex *cdata, *cdatascl, tmp;
 
 	optn = optncr(nsam);
@@ -1273,7 +1270,7 @@ void div_som(float *data, int nsam, int nrec, float dt, float fmin, float fmax, 
 
 void timeRotate(float *data, int nsam, int nrec, int nrot)
 {
-	int 	j, it, ix;
+	int 	it, ix;
 	float	*rdata;
 	
 	rdata = (float *)malloc(nsam*sizeof(float));
@@ -1295,7 +1292,7 @@ void timeRotate(float *data, int nsam, int nrec, int nrot)
 
 void divk(float *data, int nsam, int nrec, float dt, float fmin, float fmax, float c, int opt)
 {
-	int 	optn, iom, iomin, iomax, nfreq, j, ix, sign;
+	int 	optn, iom, iomin, iomax, nfreq, ix, sign;
 	float	omin, omax, deltom, om, df, *rdata, k, scl;
 	complex *cdata, *cdatascl;
 	
@@ -1368,17 +1365,16 @@ void divk(float *data, int nsam, int nrec, float dt, float fmin, float fmax, flo
 
 void decompAcoustic(float *data, int nsam, int nrec, float dt, float dx, float fmin, float fmax, float c, float rho, int opt)
 {
-	int 	optn, iom, iomin, iomax, nfreq, j, ix, ikx, diff, nkx, ikxmax;
+	int 	optn, iom, iomin, iomax, nfreq, ix, ikx, nkx, ikxmax;
 	float	omin, omax, deltom, df, dkx, *rdata, kx, scl, om;
 	float	kx2, kz2, kp2, kp;
-	complex *cdata, *cdatascl, kz, kzinv, deca;
+	complex *cdata, *cdatascl, kz, deca;
     
 	optn  = optncr(nsam);
 	nfreq = optncr(nsam)/2+1;
 	df    = 1.0/(optn*dt);
 	nkx   = optncc(nrec);
 	dkx   = 2.0*PI/(nkx*dx);
-	diff  = (nkx-nrec)/2;
 	cdata = (complex *)malloc(nfreq*nkx*sizeof(complex));
 	if (cdata == NULL) verr("memory allocation error for cdata");
     

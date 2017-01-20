@@ -72,10 +72,10 @@ GEOPHYSICS, VOL. 59, NO. 9 (SEPTEMBER 1994); P. 1444-1456
 ***********************************************************************/
 
 	float c1, c2;
-	float dp, dvx, dvz, ddt;
+	float ddt;
 	float *dxvx, *dzvz, *dxvz, *dzvx;
 	float *Tpp, *Tss, *Tmu, *Tlm, *Tlp, *Tus, *Tt1, *Tt2;
-	int   ix, iz, ixs, izs, izp, ibnd, isrc, is0;
+	int   ix, iz;
 	int   n1;
 //	int   ioXx, ioXz, ioZz, ioZx, ioPx, ioPz, ioTx, ioTz;
 
@@ -84,7 +84,6 @@ GEOPHYSICS, VOL. 59, NO. 9 (SEPTEMBER 1994); P. 1444-1456
 	c2 = -1.0/24.0;
 	n1  = mod.naz;
 	ddt = 1.0/mod.dt;
-	ibnd = mod.iorder/2-1;
 
 	dxvx = (float *)malloc(n1*sizeof(float));
 	dzvz = (float *)malloc(n1*sizeof(float));
@@ -113,7 +112,7 @@ GEOPHYSICS, VOL. 59, NO. 9 (SEPTEMBER 1994); P. 1444-1456
 //	ioTz=ioTx;
 
 	/* calculate vx for all grid points except on the virtual boundary*/
-#pragma omp for private (ix, iz) nowait
+#pragma omp for private (ix, iz) nowait schedule(guided,1)
 	for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
 #pragma ivdep
 		for (iz=mod.ioXz; iz<mod.ieXz; iz++) {
@@ -126,7 +125,7 @@ GEOPHYSICS, VOL. 59, NO. 9 (SEPTEMBER 1994); P. 1444-1456
 	}
 
 	/* calculate vz for all grid points except on the virtual boundary */
-#pragma omp for private (ix, iz) 
+#pragma omp for private (ix, iz)  schedule(guided,1)
 	for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
 #pragma ivdep
 		for (iz=mod.ioZz; iz<mod.ieZz; iz++) {
@@ -147,7 +146,7 @@ GEOPHYSICS, VOL. 59, NO. 9 (SEPTEMBER 1994); P. 1444-1456
 	boundariesP(mod, bnd, vx, vz, tzz, txx, txz, rox, roz, l2m, lam, mul, itime, verbose);
 
 	/* calculate Txx/Tzz for all grid points except on the virtual boundary */
-#pragma omp	for private (ix, iz) nowait
+#pragma omp	for private (ix, iz) nowait schedule(guided,1)
 	for (ix=mod.ioPx; ix<mod.iePx; ix++) {
 #pragma ivdep
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {

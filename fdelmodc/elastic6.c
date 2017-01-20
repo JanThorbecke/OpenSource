@@ -68,19 +68,15 @@ float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float
 ***********************************************************************/
 
 	float c1, c2, c3;
-	float dp, dvx, dvz;
-	int   ix, iz, ixs, izs, izp, ibnd, isrc, is0;
-	int   nx, nz, n1;
+	float dvx, dvz;
+	int   ix, iz;
+	int   n1;
 	int   ioXx, ioXz, ioZz, ioZx, ioPx, ioPz, ioTx, ioTz;
 
 	c1 = 75.0/64.0;
 	c2 = -25.0/384.0;
 	c3 = 3.0/640.0;
-	nx  = mod.nx;
-	nz  = mod.nz;
 	n1  = mod.naz;
-
-	ibnd = mod.iorder/2-1;
 
 	/* Vx: rox */
 	ioXx=mod.iorder/2;

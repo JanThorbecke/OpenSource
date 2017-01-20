@@ -81,13 +81,13 @@ int main (int argc, char **argv)
 {
     FILE	*fp_syn, *fp_shot, *fp_out, *fp_fres;
 	int		i, j, k, l, ret, nshots, Nsyn, nt, nx, nts, nxs, more, ngath;
-	int		size, n1, n2, ntap, tap, di, ixrcv, ixsrc, off, optn, ntraces;
+	int		size, n1, n2, ntap, tap, di, off, optn, ntraces;
 	int		nxmax, ntmax, reci, mode, nmo, ixa, ixb, n2out, verbose;
 	float	fmin, fmax, *taper, fxf, dxf, fxs2, xsrc, *xrcv;
     double  t0, t1, t2, t3, tsyn, tread;
-	float	*shotdata, d1, d2, f1, f2, fts, fxs, ft, fx, *etap, *xsyn, dxsrc;
-	float   *syndata, *tmpdata, dt, dx, dts, dxs, scl, alpha, mem;
-	float   max, *zsyn, scel, xmin, xmax;
+	float	*shotdata, d1, d2, f1, f2, fxs, ft, fx, *etap, *xsyn, dxsrc;
+	float   *syndata, *tmpdata, dt, dx, dxs, scl, alpha, mem;
+	float   *zsyn, scel, xmin, xmax;
 	char	*file_syn, *file_shot, *file_cfp, *file_fresnel;
 	segy	*hdrs, *hdrs_in, *hdrs_out;
 
@@ -207,8 +207,8 @@ int main (int argc, char **argv)
     fclose(fp_syn);
 
     
-	dxs = d2; dts = d1;
-	fxs = f2; fts = f1;
+	dxs = d2; 
+	fxs = f2; 
 	if (hdrs[0].gx != 0 || hdrs[1].gx != 0 ) fxs = hdrs[0].gx*scl;
 	fxs2 = fxs + (float)(nxs-1)*dxs;
 	dxf = (hdrs[nxs-1].gx - hdrs[0].gx)*scl/(float)(nxs-1);
@@ -538,7 +538,7 @@ void synthesis(float *shotdata, float *syndata, int nx, int nt, int nxs, int nts
 	static complex *syncdata;
 	static float scl;
 	int 	i, j, l, m, ixsrc, ixsyn, ix, ixrcv, dosrc;
-	float	*rdata, *p, **dum, x0, x1;
+	float	*rdata, *p, x0, x1;
 	static double t0, t1, tfft, t;
 	complex *sum, *cdata, *shotcdata, tmp, ts, to;
 	int      npe;

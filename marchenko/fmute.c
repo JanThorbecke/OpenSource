@@ -25,6 +25,7 @@ int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
 int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 int disp_fileinfo(char *file, int n1, int n2, float f1, float f2, float d1, float d2, segy *hdrs);
+void applyMute( float *data, int *mute, int smooth, int above, int Nsyn, int nxs, int nt, int *xrcvsyn, int nx, int shift);
 double wallclock_time(void);
 
 /*********************** self documentation **********************/
@@ -60,14 +61,14 @@ NULL};
 int main (int argc, char **argv)
 {
 	FILE	*fp_in1, *fp_in2, *fp_out, *fp_chk, *fp_psline1, *fp_psline2;
-	int		verbose, shift, repeat, k, l, autoco, nx1, nt1, nx2, nt2;
-	int     nrec, nsam, ntmax, nxmax, ret, i, j, jmax, imax, above, check;
-	int     size, ntraces, ngath, ntout, *maxval, hw, smooth;
-    int     tstart, tend, scale;
-	float   dt, d2, f1, f2, t0, t1, f1b, f2b, d1, d1b, d2b, *etap, *etapi;
-	float	w1, w2;
-	float 	*tmpdata, eps, *tmpdata2, *costaper;
-	char 	*file_mute, *file_shot, option[5], *file, *file_out;
+	int		verbose, shift, k, nx1, nt1, nx2, nt2;
+	int     ntmax, nxmax, ret, i, j, jmax, imax, above, check;
+	int     size, ntraces, ngath, *maxval, hw, smooth;
+    int     tstart, tend, scale, *xrcv;
+	float   dt, d2, f1, f2, t0, t1, f1b, f2b, d1, d1b, d2b;
+	float	w1, w2, dxrcv;
+	float 	*tmpdata, *tmpdata2, *costaper;
+	char 	*file_mute, *file_shot, *file_out;
 	float   scl, sclsxgx, sclshot, xmin, xmax, tmax, lmax;
 	segy	*hdrs_in1, *hdrs_in2;
 
@@ -161,14 +162,12 @@ int main (int argc, char **argv)
         hdrs_in1 = hdrs_in2;
     }
 
-	nrec = MAX(nx1, nx2);
-	nsam = MAX(nt1, nt2);
-
 	if (verbose) vmess("sampling file_mute=%d, file_shot=%d", nt1, nt2);
 
 /*================ initializations ================*/
 
 	maxval = (int *)calloc(nx1,sizeof(int));
+	xrcv   = (int *)calloc(nx1,sizeof(int));
 	
 	if (file_out==NULL) fp_out = stdout;
 	else {
@@ -203,7 +202,7 @@ int main (int argc, char **argv)
 
         /* find consistent (one event) maximum related to maximum value */
         
-        /* find global maximum */
+        /* find global maximum 
         xmax=0.0;
 		for (i = 0; i < nx1; i++) {
 			tmax=0.0;
@@ -220,8 +219,26 @@ int main (int argc, char **argv)
 				}
 			}
 			maxval[i] = jmax;
-		//	fprintf(stderr, "max at %d is sample %d\n", i, maxval[i]);
 		}
+		*/
+
+		/* alternative find maximum at source position */
+        dxrcv = (hdrs_in1[nx1-1].gx - hdrs_in1[0].gx)*sclsxgx/(float)(nx1-1);
+		imax = NINT(((hdrs_in1[0].sx-hdrs_in1[0].gx)*sclsxgx)/dxrcv);
+		tmax=0.0;
+		jmax = 0;
+		for (j = 0; j < nt1; j++) {
+            lmax = fabs(tmpdata[imax*nt1+j]);
+			if (lmax > tmax) {
+				jmax = j;
+				tmax = lmax;
+                   if (lmax > xmax) {
+                       xmax=lmax;
+                   }
+			}
+		}
+		maxval[imax] = jmax;
+		if (verbose >= 3) vmess("Mute max at src-trace %d is sample %d", imax, maxval[imax]);
 
         /* search forward */
         for (i = imax+1; i < nx1; i++) {
@@ -259,47 +276,18 @@ int main (int argc, char **argv)
 		if (scale==1) {
 			for (i = 0; i < nx2; i++) {
 				lmax = fabs(tmpdata2[i*nt2+maxval[i]]);
+				xrcv[i] = i;
 				for (j = 0; j < nt2; j++) {
 					tmpdata2[i*nt2+j] = tmpdata2[i*nt2+j]/lmax;
 				}
 			}
 		}
 
-/*================ write result to output file ================*/
+/*================ apply mute window ================*/
 
-		if (above==1) {
-			for (i = 0; i < nx2; i++) {
-				for (j = 0; j < maxval[i]-shift-smooth; j++) {
-					tmpdata2[i*nt2+j] = 0.0;
-				}
-				for (j = maxval[i]-shift-smooth,0,l=0; j < maxval[i]-shift; j++,l++) {
-					tmpdata2[i*nt2+j] *= costaper[smooth-l-1];
-				}
-			}
-		}
-		else if (above==0){
-			for (i = 0; i < nx2; i++) {
-				for (j = maxval[i]-shift,l=0; j < maxval[i]-shift+smooth; j++,l++) {
-					tmpdata2[i*nt2+j] *= costaper[l];
-				}
-				for (j = maxval[i]-shift+smooth; j < nt2-maxval[i]+shift-smooth; j++) {
-					tmpdata2[i*nt2+j] = 0.0;
-				}
-				for (j = nt2-maxval[i]+shift-smooth,l=0; j < nt2-maxval[i]+shift; j++,l++) {
-					tmpdata2[i*nt2+j] *= costaper[smooth-l-1];
-				}
-			}
-		}
-		else if (above==-1){
-			for (i = 0; i < nx2; i++) {
-				for (j = maxval[i]-shift,l=0; j < maxval[i]-shift+smooth; j++,l++) {
-					tmpdata2[i*nt2+j] *= costaper[l];
-				}
-                for (j = maxval[i]-shift+smooth; j < nt2; j++) {
-					tmpdata2[i*nt2+j] = 0.0;
-				}
-			}
-		}
+		applyMute(tmpdata2, maxval, smooth, above, 1, nx2, nt2, xrcv, nx2, shift);
+
+/*================ write result to output file ================*/
 
 		ret = writeData(fp_out, tmpdata2, hdrs_in2, nt2, nx2);
 		if (ret < 0 ) verr("error on writing output file.");
@@ -365,9 +353,6 @@ int main (int argc, char **argv)
         	hdrs_in1 = hdrs_in2;
             tmpdata = tmpdata2;
         }
-
-		nrec = MAX(nx1, nx2);
-		nsam = MAX(nt1, nt2);
 
 		k++;
 	}

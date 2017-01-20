@@ -40,14 +40,14 @@ NULL};
 int main(int argc, char **argv)
 {
 	FILE	*fp_in, *fp_out;
-	int     nrec, nsam, ntmax, nxmax, error, ret, verbose, i, j;
+	int     ret, verbose, i, j;
 	size_t  size, nread;
     int     n1, n2, n3, stype, num;
-	float   d1, d2, d3, f1, f2; 
+	float   d1, d2, d3; 
     double  *ddata;
     float   *data;
 	char  	*file_in, *file_out;
-	segy	*hdrs, *hdrs_out;
+	segy	*hdrs;
 
 	initargs(argc, argv);
 	requestdoc(1);

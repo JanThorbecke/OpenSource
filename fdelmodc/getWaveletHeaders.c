@@ -18,8 +18,7 @@ int getWaveletHeaders(char *file_src, int n1, int n2, float *gx, float *sx, floa
     FILE   *fp;
     size_t nread;
     int   ix;
-	off_t offset, ret, trace_sz, ntraces;
-    float *trace;
+	off_t offset, trace_sz;
 	float scl, scll;
     segy hdr;
     

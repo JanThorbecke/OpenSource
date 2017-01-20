@@ -63,7 +63,7 @@ void makecircle(int ix, int iz, int diffrwidth, float **med, float value)
     
 void diffraction(float *x, float *z, int nxp, float dx, float dz, float **gridcp, float **gridcs, float **gridro, float **cp, float **cs, float **ro, float *interface, int *zp, int nx, int diffrwidth, int type)
 {
-	int i, j, k;
+	int i;
 
 	for (i = 0; i < nx; i++) {
 		interface[i] = 0.0;

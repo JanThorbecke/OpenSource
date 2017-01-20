@@ -190,6 +190,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
             /* PML Vz-component same as default kernel */
 #pragma omp for private (ix, iz)
             for (ix=mod.ioZx-npml; ix<mod.ioZx; ix++) {
+#pragma ivdep
                 for (iz=mod.ioZz; iz<mod.ieZz; iz++) {
                     vz[ix*n1+iz] -= roz[ix*n1+iz]*(
                                     c1*(p[ix*n1+iz]   - p[ix*n1+iz-1]) +
@@ -249,6 +250,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
             /* PML Vz-component same as default kernel */
 #pragma omp for private (ix, iz)
             for (ix=mod.ieZx; ix<mod.ieZx+npml; ix++) {
+#pragma ivdep
                 for (iz=mod.ioZz; iz<mod.ieZz; iz++) {
                     vz[ix*n1+iz] -= roz[ix*n1+iz]*(
                                     c1*(p[ix*n1+iz]   - p[ix*n1+iz-1]) +
@@ -308,6 +310,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
             /* PML top Vx-component same as default kernel */
 #pragma omp for private (ix, iz)
             for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
+#pragma ivdep
                 for (iz=mod.ioXz-npml; iz<mod.ioXz; iz++) {
                     vx[ix*n1+iz] -= rox[ix*n1+iz]*(
                                     c1*(p[ix*n1+iz]     - p[(ix-1)*n1+iz]) +
@@ -335,6 +338,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
             /* PML bottom Vx-component same as default kernel */
 #pragma omp for private (ix, iz)
             for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
+#pragma ivdep
                 for (iz=mod.ieXz; iz<mod.ieXz+npml; iz++) {
                     vx[ix*n1+iz] -= rox[ix*n1+iz]*(
                                     c1*(p[ix*n1+iz]     - p[(ix-1)*n1+iz]) +

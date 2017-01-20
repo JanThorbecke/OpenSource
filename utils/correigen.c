@@ -97,8 +97,8 @@ int main (int argc, char **argv)
 	int     size, ntraces, ngath, ntout, cmplx;
 	int     n1, n2, imax;
 	float   dt, d1, d2, f1, f2, t0, t1, f1b, f2b, d1b, d2b, *etap, *etapi;
-	float	tmin1, tmin2, *eigen, max;
-	float 	*data1, *data2, *data3, *tmpc, *conv, *p, *q, *tmpdata, epsmax, eps, reps, alpha, *tmpdata2;
+	float	*eigen, max;
+	float 	*data1, *data2, *data3, *tmpc, *conv, *p, *tmpdata, epsmax, eps, reps, alpha, *tmpdata2;
 	char 	*file_in1, *file_in2, *file_en1, *file_en2, option[5], *file, *file_out, filename[150];
 	float   scl, xmin, xmax;
 	segy	*hdrs_in1, *hdrs_in2, *hdrs_out, *hdrs_eigen;
@@ -156,8 +156,6 @@ int main (int argc, char **argv)
 		if (verbose) vmess("end of file_in1 data reached");
 	}
 	/* save first axis start */
-	tmin1=f1;
-	tmin2=f1;
 	if (verbose) {
 		disp_fileinfo(file_in1, nt1, nx1, f1,  f2,  dt,  d2, hdrs_in1);
 	}
@@ -169,7 +167,6 @@ int main (int argc, char **argv)
 		data1 = (float *)malloc(nt1*nx1*sizeof(float));
 		data2 = (float *)malloc(nt1*nx1*sizeof(float));
 		hdrs_out = (segy *) calloc(nx1,sizeof(segy));
-		q = (float *) &data1[0];
 		p = (float *) &tmpdata[0];
 		etap = (float *)malloc(nt1*sizeof(float));
 
@@ -212,7 +209,6 @@ int main (int argc, char **argv)
 		d1b = (float)hdrs_in2[0].dt*1e-6;
 		
 		/* save start of first axis */
-		tmin2=f1;
 		if (verbose) {
 			disp_fileinfo(file_in2, nt2, nx2, f1b,  f2b,  d1b,  d2b, hdrs_in2);
 		}
@@ -453,10 +449,8 @@ int main (int argc, char **argv)
 **/
 void corr_cmplx(float *data1, float *data2, float *cov, int nrec, int nsam, float dt, int shift)
 {
-	int 	i, j, k, n, optn, nfreq, sign;
-	float  	df, dw, om, tau, scl;
-	float 	*qr, *qi, *p1r, *p1i, *p2r, *p2i, *rdata1, *rdata2;
-	complex *cdata1, *cdata2, *ccov, tmp;
+	int 	i, j, k;
+	complex *ccov, tmp;
 
 	ccov = (complex *)malloc(nsam*nrec*sizeof(complex)/2);
 	if (ccov == NULL) verr("memory allocation error for ccov");
@@ -602,10 +596,10 @@ void corr(float *data1, float *data2, float *cov, int nrec, int nsam, float dt, 
 
 void corr3(float *data1, float *data2, float *cov, int nrec, int nsam, float dt)
 {
-	int 	i, j, n, optn, nfreq, sign, ntout;
+	int 	j, n, optn, nfreq, sign, ntout;
 	float 	scl;
-	float 	*qr, *qi, *p1r, *p1i, *p2r, *p2i, *rdata1, *rdata2;
-	complex *cdata1, *cdata2, *ccov, tmp;
+	float 	*qr, *p1r, *p1i, *p2r, *p2i, *rdata1, *rdata2;
+	complex *cdata1, *cdata2, *ccov;
 
 	optn = optncr(nsam);
 	ntout= nsam/2;
@@ -638,7 +632,6 @@ void corr3(float *data1, float *data2, float *cov, int nrec, int nsam, float dt)
 	qr  = (float *) &ccov[0].r;
 	p1i = p1r + 1;
 	p2i = p2r + 1;
-	qi = qr + 1;
 	n = nrec*nfreq;
 	for (j = 0; j < n; j++) {
 		*qr = (*p1r * *p2r + *p1i * *p2i);

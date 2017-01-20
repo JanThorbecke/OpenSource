@@ -31,7 +31,7 @@ void roughint(int *zp, int minx, int maxx, float dz, float *interface, float amp
 	int     j, i, ndeltx, optn;
 	long	idum;
 
-	float   *fract, fact;
+	float   *fract;
 	float   dk, mean, std;
 	complex *fracc, *fracc2;
 

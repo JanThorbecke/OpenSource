@@ -46,10 +46,10 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
                float cp, float rho, int verbose)
 {
 	int      iom, iomin, iomax, ikx, nfreq, a, av;
-	float    omin, omax, deltom, om, kp, df, dkx;
+	float    omin, omax, deltom, om, df, dkx;
 	float    alpha, eps, *angle, avrp, avrvz, maxrp, maxrvz;
 	float    fangle, pangle, vangle, kangle;
-	complex  *pu, w;
+	complex  *pu;
 	complex  ax, az;
 	
 	df     = 1.0/((float)nt*dt);
@@ -158,10 +158,10 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 void decud(float om, float rho, float cp, float dx, int nkx, float kangle, float alpha, float eps, complex *pu)
 {
 	int 	 ikx, ikxmax1, ikxmax2, filterpoints, filterppos;
-	float 	 mu, kp, kp2, ks, ks2, ksk;
-	float 	 kx, kx2, kzp2, kzs2, dkx, stab;
-	float 	kxfmax, kxnyq, kpos, kneg, kfilt, perc, band, *filter;
-	complex kzp, kzs, cste, ckp, ckp2, ckzp2;
+	float 	 kp, kp2;
+	float 	 kx, kx2, kzp2, dkx, stab;
+	float 	kxfmax, kxnyq, kpos, kfilt, perc, band, *filter;
+	complex kzp,  ckp, ckp2;
 	
 /* with complex frequency
 	wom.r=om; 
@@ -183,7 +183,6 @@ void decud(float om, float rho, float cp, float dx, int nkx, float kangle, float
 	perc = 0.15; /* percentage of band to use for smooth filter */
 	filter = (float *)malloc(nkx*sizeof(float));
 	kpos = kp*sin(M_PI*kangle/180.0);
-	kneg = -kpos;
 	kxnyq  = M_PI/dx;
 	if (kpos > kxnyq)  kpos = kxnyq;
 	band = kpos;
