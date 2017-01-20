@@ -94,7 +94,7 @@ int main (int argc, char **argv)
 	int     size, ntraces, ngath, ntout, ntfft;
 	float   dt, d2, f1, f2, t0, t1, f1b, f2b, d1b, d2b, *etap, *etapi;
 	float	tmin1, tmin2;
-	float 	*data1, *data2, *conv, *p, *q, *tmpdata, epsmax, eps, reps, alpha, *tmpdata2;
+	float 	*data1, *data2, *conv, *p, *tmpdata, epsmax, eps, reps, alpha, *tmpdata2;
 	char 	*file_in1, *file_in2, option[5], *file, *file_out;
 	float   scl, xmin, xmax;
 	segy	*hdrs_in1, *hdrs_in2, *hdrs_out;
@@ -162,7 +162,6 @@ int main (int argc, char **argv)
 		data1 = (float *)malloc(nt1*nx1*sizeof(float));
 		data2 = (float *)malloc(nt1*nx1*sizeof(float));
 		hdrs_out = (segy *) calloc(nx1,sizeof(segy));
-		q = (float *) &data1[0];
 		p = (float *) &tmpdata[0];
 		etap = (float *)malloc(nt1*sizeof(float));
 
@@ -528,10 +527,10 @@ void corr(float *data1, float *data2, float *cov, int nrec, int nsam, float dt, 
 
 void corr3(float *data1, float *data2, float *cov, int nrec, int nsam, float dt)
 {
-	int 	i, j, n, optn, nfreq, sign, ntout;
+	int 	j, n, optn, nfreq, sign, ntout;
 	float 	scl;
 	float 	*qr, *qi, *p1r, *p1i, *p2r, *p2i, *rdata1, *rdata2;
-	complex *cdata1, *cdata2, *ccov, tmp;
+	complex *cdata1, *cdata2, *ccov;
 
 	optn = optncr(nsam);
 	ntout= nsam/2;
@@ -648,7 +647,6 @@ void deconv(float *data1, float *data2, float *decon, int nrec, int nsam,
 	qr = (float *) &cdec[0].r;
 	p1i = p1r + 1;
 	p2i = p2r + 1;
-	qi = qr + 1;
 	leps = reps*maxden+eps;
 //	fprintf(stderr,"eps=%e reps=%e max=%e => leps=%e\n", eps, reps, maxden, leps);
 	for (j = 0; j < n; j++) {

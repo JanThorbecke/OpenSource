@@ -30,8 +30,7 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, float d2, float f2, int n2out, int Nsyn, float *xsyn, float *zsyn, int iter);
 void name_ext(char *filename, char *extension);
 
-//void applyMute( float *data, float *mute, int smooth, int above, int Nsyn, int nx, int nt, int shift);
-void applyMute( float *data, float *mute, int smooth, int above, int Nsyn, int nxs, int nts, float *xsrc, int *xrcvsyn, int nx, int shift);
+void applyMute( float *data, float *mute, int smooth, int above, int Nsyn, int nxs, int nts, int *xrcvsyn, int npossyn, int shift);
 
 int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *nxm);
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
@@ -467,7 +466,7 @@ int main (int argc, char **argv)
 			}
 
 			//applyMute(Nk_1, mute, smooth, above, Nsyn, nxs, nts, shift);
-			applyMute(Nk_1, mute, smooth, above, Nsyn, nxs, nts, xsrc, ixpossyn, npossyn, shift);
+			applyMute(Nk_1, mute, smooth, above, Nsyn, nxs, nts, ixpossyn, npossyn, shift);
 
 			/* even iterations:  => - f_1^- (-t) = pmin(t) */
 			for (l = 0; l < Nsyn; l++) {
@@ -526,7 +525,7 @@ int main (int argc, char **argv)
 				}
 			}
 			//applyMute(Nk_1, mute, smooth, above, Nsyn, nxs, nts, shift);
-			applyMute(Nk_1, mute, smooth, above, Nsyn, nxs, nts, xsrc, ixpossyn, npossyn, shift);
+			applyMute(Nk_1, mute, smooth, above, Nsyn, nxs, nts, ixpossyn, npossyn, shift);
 			/* Pressure based scheme */
 			for (l = 0; l < Nsyn; l++) {
 				for (i = 0; i < npossyn; i++) {
@@ -581,7 +580,7 @@ int main (int argc, char **argv)
 				}
 			}
 			//applyMute(Nk_1, mute, smooth, above, Nsyn, nxs, nts, shift);
-			applyMute(Nk_1, mute, smooth, above, Nsyn, nxs, nts, xsrc, ixpossyn, npossyn, shift);
+			applyMute(Nk_1, mute, smooth, above, Nsyn, nxs, nts, ixpossyn, npossyn, shift);
 
 			/* compute full Green's function G = p^+(-t) + p^-(t) */
 			if (iter == niter-1) {
@@ -677,7 +676,7 @@ int main (int argc, char **argv)
 			}
 			/* Apply mute with window for Gmin */
 			//applyMute(Gmin, mute, smooth, 1, Nsyn, nxs, nts, shift);
-			applyMute(Gmin, mute, smooth, 1, Nsyn, nxs, nts, xsrc, ixpossyn, npossyn, shift);
+			applyMute(Gmin, mute, smooth, 1, Nsyn, nxs, nts, ixpossyn, npossyn, shift);
 
 			/* transform f1- to frequency domain */
 			for (l = 0; l < Nsyn; l++) {

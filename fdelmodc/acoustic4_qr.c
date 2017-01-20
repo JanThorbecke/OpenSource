@@ -65,9 +65,8 @@ int acoustic4_qr(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int 
 ***********************************************************************/
 
 	float c1, c2, *timep;
-	int   ix, iz, ixs, izs, ib;
+	int   ix, iz, ib;
 	int   nx, nz, n1;
-	int   is0, isrc;
 	int   ioXx, ioXz, ioZz, ioZx, ioPx, ioPz, ioTx, ioTz;
 	int   ieXx, ieXz, ieZz, ieZx, iePx, iePz, ieTx, ieTz;
 

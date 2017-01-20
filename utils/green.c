@@ -95,7 +95,7 @@ NULL};
 int main(int argc, char **argv)
 {
 	FILE	*fp_in, *fp_out;
-	int     n1, n2, i, ret, j, nkeys, nrx, nrz, dip, key_idx;
+	int     n1, n2, i, j, nrx, nrz, dip;
 	int     far, p_vz, nt, nx, Ns, is, sum, lint, verbose;
 	int     size, ntraces, ngath, Fz, Fx;
 	float   scl, xmin, xmax;

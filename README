@@ -86,9 +86,15 @@ Other make commands which can be useful:
 make clean : removes all object files, but leaves libraries and executables
 make realclean: removes also object files, libraries and executables.
 
+
+UPDATES AND LATEST VERSION
+--------------------------
 The latest version of the source code and manual can be found at:
 
 http://www.xs4all.nl/~janth/Software/Software.html
+ or at github:
+
+git clone https://github.com/JanThorbecke/OpenSource.git
 
 The code is used by many different people and if there is a request for a new option in the code cle) then I will try to implement, test and make it available. 
 

@@ -63,19 +63,15 @@ int acoustic6(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 ***********************************************************************/
 
 	float c1, c2, c3;
-	int   ix, iz, ixs, izs, ibnd, isrc, is0;
-	int   nx, nz, n1;
+	int   ix, iz;
+	int   n1;
 	int ioXx, ioXz, ioZz, ioZx, ioPx, ioPz;
 
 
 	c1 = 75.0/64.0;
 	c2 = -25.0/384.0;
 	c3 = 3.0/640.0;
-	nx  = mod.nx;
-	nz  = mod.nz;
 	n1  = mod.naz;
-
-	ibnd = mod.iorder/2-1;
 
     /* Vx: rox */
 	ioXx=mod.iorder/2;

@@ -566,8 +566,6 @@ int main(int argc, char **argv)
       if (above == 0) Nvi++; else Nvi--;
     }
    	else if (strstr(intt,"randdf") != NULL) {
-		float x0, z0, dsx, dsz;
-		int i;
 		Nv = countnparval(Nvi, "var");
 		if (Nv != 2) verr("randdf interface must have 2 variables: number of points, width.");
 		getnparfloat(Nvi,"var", var);

@@ -37,9 +37,9 @@ void rc1fft(float *rdata, complex *cdata, int n, int sign);
 int getWaveletInfo(char *file_src, int *n1, int *n2, float *d1, float *d2, float *f1, float *f2, float *fmax, int *nxm, int verbose)
 {
     FILE    *fp;
-    size_t  nread, data_sz;
+    size_t  nread;
 	off_t bytes, ret, trace_sz, ntraces;
-    int sx_shot, gx_start, one_shot;
+    int one_shot;
     int optn, nfreq, i, iwmax;
     float *trace;
 	float ampl, amplmax, tampl, tamplmax; 
@@ -67,7 +67,6 @@ int getWaveletInfo(char *file_src, int *n1, int *n2, float *d1, float *d2, float
     }
     *f2 = hdr.f2;
 
-    data_sz = sizeof(float)*(*n1);
     trace_sz = sizeof(float)*(*n1)+TRCBYTES;
     ntraces  = (int) (bytes/trace_sz);
 	*n2 = ntraces;
@@ -78,8 +77,6 @@ int getWaveletInfo(char *file_src, int *n1, int *n2, float *d1, float *d2, float
 	nfreq = optn/2 + 1;
 	ctrace = (complex *)malloc(nfreq*sizeof(complex));
     one_shot = 1;
-    sx_shot  = hdr.sx;
-    gx_start = hdr.gx;
     trace = (float *)malloc(optn*sizeof(float));
     fseeko( fp, TRCBYTES, SEEK_SET );
 

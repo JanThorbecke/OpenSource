@@ -17,21 +17,18 @@ typedef struct { /* complex number */
 #endif
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
-int optncr(int n);
-void cc1fft(complex *data, int n, int sign);
-void rc1fft(float *rdata, complex *cdata, int n, int sign);
 void findShotInMute(float *xrcvMute, float xrcvShot, int nxs, int *imute);
 
-int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int Nsyn, int nx, int ntfft, int mode, float *maxval, float *tinv, int hw, int verbose)
+int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nsyn, int nx, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose)
 {
 	FILE *fp;
 	segy hdr;
 	size_t nread;
-	int fldr_shot, sx_shot, itrace, one_shot, ig, isyn, iw, i, j, k;
-	int end_of_file, nt, ir, is;
+	int fldr_shot, sx_shot, itrace, one_shot, ig, isyn, i, j;
+	int end_of_file, nt, gx0, gx1;
 	int nx1, jmax, imax, tstart, tend;
-	float xmin, xmax, tmax, lmax;
-	float scl, scel, dt, *trace;
+	float xmax, tmax, lmax;
+	float scl, scel, *trace, dxrcv;
 	complex *ctrace;
 
 	/* Reading first header  */
@@ -77,6 +74,7 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 
 		sx_shot    = hdr.sx;
 		fldr_shot  = hdr.fldr;
+        gx0        = hdr.gx;
 		xsrc[isyn] = sx_shot*scl;
 		zsrc[isyn] = hdr.selev*scel;
 		xnx[isyn]  = 0;
@@ -89,15 +87,7 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 			/* copy trace to data array */
             memcpy( &tinv[ig+itrace*ntfft], trace, nt*sizeof(float));
 
-			/* transform to frequency domain */
-			if (ntfft > hdr.ns) 
-				memset( &trace[nt], 0, sizeof(float)*(ntfft-nt) );
-
-        	rc1fft(trace,ctrace,ntfft,-1);
-        	for (iw=0; iw<nw; iw++) {
-        		cdata[isyn*nx*nw+iw*nx+itrace].r = ctrace[nw_low+iw].r;
-        		cdata[isyn*nx*nw+iw*nx+itrace].i = mode*ctrace[nw_low+iw].i;
-        	}
+            gx1 = hdr.gx;
 			itrace++;
 
 			/* read next hdr of next trace */
@@ -118,7 +108,7 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
         /* find consistent (one event) maximum related to maximum value */
 		nx1 = itrace;
 		xnx[isyn]=nx1;
-        /* find global maximum */
+        /* find global maximum 
 		xmax=0.0;
 		for (i = 0; i < nx1; i++) {
             tmax=0.0;
@@ -136,6 +126,25 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
             }
             maxval[isyn*nx+i] = jmax;
 		}
+		*/
+
+        /* alternative find maximum at source position */
+        dxrcv = (gx1 - gx0)*scl/(float)(nx1-1);
+        imax = NINT(((sx_shot-gx0)*scl)/dxrcv);
+        tmax=0.0;
+        jmax = 0;
+        for (j = 0; j < nt; j++) {
+            lmax = fabs(tinv[ig+imax*ntfft+j]);
+            if (lmax > tmax) {
+                jmax = j;
+                tmax = lmax;
+                   if (lmax > xmax) {
+                       xmax=lmax;
+                   }
+            }
+        }
+        maxval[isyn*nx+imax] = jmax;
+        if (verbose >= 3) vmess("Mute max at src-trace %d is sample %d", imax, maxval[imax]);
 
         /* search forward in trace direction from maximum in file */
         for (i = imax+1; i < nx1; i++) {
@@ -194,71 +203,6 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 	return 0;
 }
 
-
-void applyMute( float *data, float *mute, int smooth, int above, int Nsyn, int nxs, int nt, float *xsrc, int *xrcvsyn, int nx, int shift)
-//void applyMute( float *data, float *mute, int smooth, int above, int Nsyn, int nx, int nt, int shift)
-{
- 	int i, j, k, l, isyn;
-	float *costaper, scl, xrcvShot;
-	int ixrcvMute, imute, tmute;
-
-	if (smooth) {
-        costaper = (float *)malloc(smooth*sizeof(float));
-        scl = M_PI/((float)smooth);
-        for (i=0; i<smooth; i++) {
-            costaper[i] = 0.5*(1.0+cos((i+1)*scl));
-        }
-    }
-
-	for (isyn = 0; isyn < Nsyn; isyn++) {
-		if (above==1) {
-            for (i = 0; i < nx; i++) {
-				//xrcvShot = xsrc[i];
-				/* this is an expensive search method TODO; try to find a better search method-quicksort */
-				//findShotInMute(&xrcvsyn[isyn*nxs], xrcvShot, nxs, &imute);
-				imute = xrcvsyn[i];
-				tmute = mute[isyn*nxs+imute];
-                for (j = 0; j < tmute-shift-smooth; j++) {
-                    data[isyn*nx*nt+i*nt+j] = 0.0;
-                }
-                for (j = tmute-shift-smooth,0,l=0; j < tmute-shift; j++,l++) {
-                    data[isyn*nx*nt+i*nt+j] *= costaper[smooth-l-1];
-                }
-            }
-        }
-        else if (above==0){
-            for (i = 0; i < nx; i++) {
-				//xrcvShot = xsrc[i];
-				/* this is an expensive search method TODO; try to find a better search method-quicksort */
-				//findShotInMute(&xrcvsyn[isyn*nxs], xrcvShot, nxs, &imute);
-				imute = xrcvsyn[i];
-				tmute = mute[isyn*nxs+imute];
-                for (j = tmute-shift,l=0; j < tmute-shift+smooth; j++,l++) {
-                    data[isyn*nx*nt+i*nt+j] *= costaper[l];
-                }
-                for (j = tmute-shift+smooth+1; j < nt+1-tmute+shift-smooth; j++) {
-                    data[isyn*nx*nt+i*nt+j] = 0.0;
-                }
-                for (j = nt-tmute+shift-smooth,l=0; j < nt-tmute+shift; j++,l++) {
-                    data[isyn*nx*nt+i*nt+j] *= costaper[smooth-l-1];
-                }
-            }
-        }
-        else if (above==-1){
-            for (i = 0; i < nx; i++) {
-                for (j = mute[isyn*nx+i]-shift,l=0; j < mute[isyn*nx+i]-shift+smooth; j++,l++) {
-                    data[isyn*nx*nt+i*nt+j] *= costaper[l];
-                }
-                for (j = mute[isyn*nx+i]-shift+smooth; j < nt; j++) {
-                    data[isyn*nx*nt+i*nt+j] = 0.0;
-                }
-            }
-        }
-	}
-	if (smooth) free(costaper);
-
-	return;
-}
 
 /* simple sort algorithm */
 void findShotInMute(float *xrcvMute, float xrcvShot, int nxs, int *imute)

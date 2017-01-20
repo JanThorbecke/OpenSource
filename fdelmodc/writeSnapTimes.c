@@ -36,7 +36,7 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, int ixsrc, int izsrc, int
 	int append, isnap;
 	static int first=1;
 	int n1, ibndx, ibndz, ixs, izs, ize, i, j;
-	int ix, iz, ix1, iz1, ix2, iz2;
+	int ix, iz, ix2;
 	float *snap, sdx;
 	segy hdr;
 
@@ -122,7 +122,6 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, int ixsrc, int izsrc, int
 			hdr.tracl  = isnap*sna.nx+i+1;
 			hdr.gx     = 1000*(mod.x0+ixs*mod.dx);
 			ix = ixs+ibndx;
-			ix1 = ix-1;
 			ix2 = ix+1;
 
 			izs = sna.z1+ibndz;
@@ -132,7 +131,6 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, int ixsrc, int izsrc, int
 				izs = 0;
 				ize = sna.z2;
 				ix = ixs;
-				ix1 = ix;
 				ix2 = ix;
 				if (sna.type.vz || sna.type.txz) izs = -1;
         		if ( !ISODD(bnd.lef)) hdr.gx = 1000*(mod.x0 - bnd.ntap*mod.dx);
@@ -177,7 +175,6 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, int ixsrc, int izsrc, int
 			/* calculate divergence of velocity field */
 			if (sna.type.pp) {
 				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
-					iz2 = iz+1;
 					snap[j] = sdx*((vx[(ix+1)*n1+iz]-vx[ix*n1+iz])+
 									(vz[ix*n1+iz+1]-vz[ix*n1+iz]));
 				}
@@ -186,7 +183,6 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, int ixsrc, int izsrc, int
 			/* calculate rotation of velocity field */
 			if (sna.type.ss) {
 				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
-					iz2 = iz+1;
 					snap[j] = sdx*((vx[ix*n1+iz]-vx[ix*n1+iz-1])-
 									(vz[ix*n1+iz]-vz[(ix-1)*n1+iz]));
 				}

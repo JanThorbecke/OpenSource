@@ -79,7 +79,7 @@ static char *cpuset_to_cstr(cpu_set_t *mask, char *str)
 
 void threadAffinity(void)
 {
-  int rank, thread;
+  int thread;
   cpu_set_t coremask;
   char clbuf[7 * CPU_SETSIZE], hnbuf[64];
   char prefix[200];

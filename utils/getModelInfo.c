@@ -27,7 +27,7 @@ int getModelInfo(char *file_name, int *n1, int *n2, float *d1, float *d2, float 
     FILE    *fp;
     size_t  nread;
 	off_t bytes, ret, trace_sz, ntraces;
-    int i, itrace, one_shot;
+    int i, one_shot;
     float *trace, cmin;
     segy hdr;
     
@@ -61,7 +61,6 @@ int getModelInfo(char *file_name, int *n1, int *n2, float *d1, float *d2, float 
     /* check to find out min and max values gather */
 
     one_shot = 1;
-    itrace = 0;
     trace = (float *)malloc(trace_sz);
     fseeko( fp, TRCBYTES, SEEK_SET );
 	nread = fread( trace, sizeof(float), hdr.ns, fp );

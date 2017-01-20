@@ -38,7 +38,7 @@ NULL};
 int main(int argc, char *argv[])
 {
     FILE *fpout, *fpin;
-    size_t  nread, nwrite;
+    size_t  nread;
     int nbefore, nafter, nbelow, nabove, itrace;
 	int nx, nz, axis, verbose, i, j, tracesToDo, nsout;
     char *file_out, *file_in;
@@ -101,14 +101,14 @@ int main(int argc, char *argv[])
 		if (itrace==0){	
 			for (i=0; i<nbefore; i++) {
 				hdr2.gx = hdr.gx - (nbefore-i)*dx*scl;
-				nwrite = fwrite(&hdr2, TRCBYTES, 1, fpout);
-				nwrite = fwrite(traceout, sizeof(float), nsout, fpout);
+				fwrite(&hdr2, TRCBYTES, 1, fpout);
+				fwrite(traceout, sizeof(float), nsout, fpout);
 			}
 			hdr2.gx = hdr.gx;
 		}
 
-		nwrite = fwrite(&hdr2, TRCBYTES, 1, fpout);
-		nwrite = fwrite(traceout, sizeof(float), nsout, fpout);
+		fwrite(&hdr2, TRCBYTES, 1, fpout);
+		fwrite(traceout, sizeof(float), nsout, fpout);
 
     	nread = fread(&hdr, 1, TRCBYTES, fpin);
 		if (nread==0) break;
@@ -117,8 +117,8 @@ int main(int argc, char *argv[])
 	}
 	for (i=0; i<nafter; i++) {
 		hdr2.gx = hdr.gx + (i+1)*dx*scl;
-		nwrite = fwrite(&hdr2, TRCBYTES, 1, fpout);
-		nwrite = fwrite(traceout, sizeof(float), nsout, fpout);
+		fwrite(&hdr2, TRCBYTES, 1, fpout);
+		fwrite(traceout, sizeof(float), nsout, fpout);
 	}
 
 	fclose(fpin);

@@ -22,7 +22,7 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 	int n1, ibndx, ibndz;
 	int irec, ix, iz, ix2, iz2, ix1, iz1;
 	float dvx, dvz, rdz, rdx, C00, C10, C01, C11;
-	float *vz_t, c1, c2, lroz, vzt1, vzt2, field;
+	float *vz_t, c1, c2, lroz, field;
 
     ibndx = mod.ioPx;
     ibndz = mod.ioPz;

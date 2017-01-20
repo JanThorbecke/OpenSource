@@ -39,7 +39,7 @@ int storeSourceOnSurface(modPar mod, srcPar src, bndPar bnd, int ixsrc, int izsr
 
 ***********************************************************************/
 
-	int   ixs, izs, izp, ibnd, isrc, is0;
+	int   ixs, izs, isrc, is0;
     int   ibndz, ibndx, store;
 	int   nx, nz, n1;
 
@@ -275,7 +275,7 @@ int reStoreSourceOnSurface(modPar mod, srcPar src, bndPar bnd, int ixsrc, int iz
      
      ***********************************************************************/
     
-	int   ixs, izs, izp, ibnd, isrc, is0;
+	int   ixs, izs, isrc, is0;
     int   ibndz, ibndx, store;
 	int   nx, nz, n1;
     

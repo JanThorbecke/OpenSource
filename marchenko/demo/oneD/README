@@ -19,7 +19,7 @@ To reproduce the Figures in the Manuscript:
 * Figure 2: Wavelet
 * Figure 3: Model + Initial wavefield
 
-run model.scr to generate the data .su files: this will take 3-4 minutes. The files generate are:
+==> run model.scr to generate the data .su files: this will take 3-4 minutes. The files generate are:
 	- hom_cp.su, hom_ro.su
 	- model10_cp.su, model10_ro.su
 	- shot5_fd_rp.su
@@ -28,12 +28,12 @@ run model.scr to generate the data .su files: this will take 3-4 minutes. The fi
 	- wave.su
 	- wavefw.su
 
-run initialFocus.scr to compute the direct arrival of the transmission response G_d. This will take 1-2 minutes.
+==> run initialFocus.scr to compute the direct arrival of the transmission response G_d. This will take 1-2 minutes.
 	- modelup_cp.su
 	- modelup_ro.su
 	- iniFocus_rp.su
 
-run epsModel.scr to generate the postscript files of Figure 2 and 3
+==> run epsModel.scr to generate the postscript files of Figure 2 and 3
 
 wavefw.eps 		=> Figure 2a
 wavefw_freq.eps		=> Figure 2b
@@ -51,12 +51,12 @@ iniFocus_rp.eps 	=> Figure 3d
 
 The full R matrix is build up from the the shot record computed with model.scr
 
-run p5all.scr to generate the full R matrix for a fixed spread geometry. This will take less than one minute. The file generated is
+==> run p5all.scr to generate the full R matrix for a fixed spread geometry. This will take less than one minute. The file generated is
 	- shotsdx5_rp.su the file has a size of 3.3 GB
 
 This R, together with iniFocus_rp.su, is the input of the Marchenko algorithm
 
-run marchenkoIter.scr to compute the first 4 iteration of the Marchenko algorithm. This will take 1-2 minutes. The generated files are:
+==> run marchenkoIter.scr to compute the first 4 iteration of the Marchenko algorithm. This will take 1-2 minutes. The generated files are:
 	- p0plus.su
 	- pgreen_001.su
 	- f1plus_001.su
@@ -80,12 +80,12 @@ run marchenkoIter.scr to compute the first 4 iteration of the Marchenko algorith
 	- Gmin_004.su
 
 To Compute the reference Green's function at x=0 z=900 m in the actual model
-run referenceShot.scr  This will take 1 minute. 
+==> run referenceShot.scr  This will take 1 minute and generates the file;
 	- referenceP_rp.su
 
 To generate all postscript files for Figure 4, 5 and 6
 
-run epsMarchenkoIter.scr
+==> run epsMarchenkoIter.scr
 
 
 shotx0_rp.eps 		=> Figure 4 R == Figure 3c
@@ -128,7 +128,7 @@ compare_004.eps
 
 To compute the marchenko results for 8 iterations.  
 
-run marchenko.scr This will take less than 1 minute. The generated files are:
+==> run marchenko.scr This will take less than 1 minute. The generated files are:
 	- pgreen.su, pgreen512.su
 	- diffref.su
 	- Gplus0.su
@@ -142,7 +142,7 @@ At the end of the run the script will display in X11 a comparison of the middle 
 
 To make the postscript figure 
 
-run epsCompare.scr
+==> run epsCompare.scr
 
 mergeGreenRef.eps 	=> Figure 7
 
@@ -151,13 +151,13 @@ mergeGreenRef.eps 	=> Figure 7
 
 To compute the snapshots 
 
-run backpropf2.scr This will take about 2 minutes. The generated output files are
+==> run backpropf2.scr This will take about 2 minutes. The generated output files are
 	- backpropf2_sp.su
 	- backpropf2detail_sp.su
 
 The postscript files of Figure 8  are generated with 
 
-epsBackprop.scr
+==> run epsBackprop.scr
 
 
 -- Figure 8 column 1

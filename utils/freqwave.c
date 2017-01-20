@@ -297,7 +297,6 @@ void freqwave(float *wave, int nt, float dt, float fp, float fmin, float flef, f
 			}
 		}
         for (iof = 0; iof < nfreq; iof++) {
-			float om;
     	    f = iof*df;
     		fact = f*f/(freq*freq);
         	fact *= exp(-fact);

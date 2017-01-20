@@ -26,15 +26,14 @@ void name_ext(char *filename, char *extension);
 int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx, int nz)
 {
 	float *xrcv1, *xrcv2, *zrcv1, *zrcv2;
-	int ix0, ix1, iz0, iz1, i, ix, iz, ir, isign, verbose;
-	float dxrcv, dzrcv, *dxr, *dzr, r, rr;
+	int   i, ix, ir, verbose;
+	float dxrcv, dzrcv, *dxr, *dzr;
 	float rrcv, dphi, oxrcv, ozrcv, arcv;
 	double circ, h, a, b, e, s, xr, zr, dr, srun, phase;
 	float xrange, zrange, sub_x1, sub_z1;
-	int Nx1, Nx2, Nz1, Nz2, Ndx, Ndz, iarray, nskip, nrec, nh;
+	int Nx1, Nx2, Nz1, Nz2, Ndx, Ndz, iarray, nrec, nh;
 	int nxrcv, nzrcv, ncrcv, nrcv, ntrcv, *nlrcv;
 	float *xrcva, *zrcva;
-	char tmp;
 	char* rcv_txt;
 	FILE *fp;
 
