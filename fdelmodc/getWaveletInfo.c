@@ -37,12 +37,12 @@ void rc1fft(float *rdata, complex *cdata, int n, int sign);
 int getWaveletInfo(char *file_src, int *n1, int *n2, float *d1, float *d2, float *f1, float *f2, float *fmax, int *nxm, int verbose)
 {
     FILE    *fp;
-    size_t  nread;
-	off_t bytes, ret, trace_sz, ntraces;
-    int one_shot;
-    int optn, nfreq, i, iwmax;
-    float *trace;
-	float ampl, amplmax, tampl, tamplmax; 
+    size_t  nread, trace_sz;
+    off_t   bytes;
+    int     ret, one_shot, ntraces;
+    int     optn, nfreq, i, iwmax;
+    float   *trace;
+	float   ampl, amplmax, tampl, tamplmax; 
     complex *ctrace;
     segy hdr;
     
@@ -67,13 +67,13 @@ int getWaveletInfo(char *file_src, int *n1, int *n2, float *d1, float *d2, float
     }
     *f2 = hdr.f2;
 
-    trace_sz = sizeof(float)*(*n1)+TRCBYTES;
+    trace_sz = (size_t)(sizeof(float)*(*n1)+TRCBYTES);
     ntraces  = (int) (bytes/trace_sz);
 	*n2 = ntraces;
 
     /* check to find out number of traces in shot gather */
 
-	optn = optncr(hdr.ns);
+	optn = optncr(*n1);
 	nfreq = optn/2 + 1;
 	ctrace = (complex *)malloc(nfreq*sizeof(complex));
     one_shot = 1;
@@ -82,10 +82,10 @@ int getWaveletInfo(char *file_src, int *n1, int *n2, float *d1, float *d2, float
 
     while (one_shot) {
 		memset(trace,0,optn*sizeof(float));
-        nread = fread( trace, sizeof(float), hdr.ns, fp );
-        assert (nread == hdr.ns);
+        nread = fread( trace, sizeof(float), *n1, fp );
+        assert (nread == *n1);
 		tamplmax = 0.0;
-		for (i=0;i<hdr.ns;i++) {
+		for (i=0;i<(*n1);i++) {
 			tampl = fabsf(trace[i]);
 			if (tampl > tamplmax) tamplmax = tampl;
 		}

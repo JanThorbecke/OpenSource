@@ -7,6 +7,10 @@
 #include <assert.h>
 #include <genfft.h>
 
+int omp_get_max_threads(void);
+int omp_get_num_threads(void);
+void omp_set_num_threads(int num_threads);
+
 #ifndef MAX
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #endif
@@ -542,6 +546,15 @@ void synthesis(float *shotdata, float *syndata, int nx, int nt, int nxs, int nts
 	static double t0, t1, tfft, t;
 	complex *sum, *cdata, *shotcdata, tmp, ts, to;
 	int      npe;
+
+#ifdef _OPENMP
+    npe   = omp_get_max_threads();
+    /* parallelisation is over number of virtual source positions (Nsyn) */
+    if (npe > Nsyn) {
+        vmess("Number of OpenMP threads set to %d (was %d)", Nsyn, npe);
+        omp_set_num_threads(Nsyn);
+    }
+#endif
 
 
 /*============= Transform synthesis operator(s), only one time =============*/

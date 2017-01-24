@@ -58,7 +58,7 @@ char *sdoc[] = {
 NULL};
 /**************** end self doc ***********************************/
 
-void main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     FILE    *fp_in, *fp_out;
 	short   trid, trid_out;

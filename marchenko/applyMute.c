@@ -66,7 +66,7 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nsyn, int nxs
                 }
             }
         }
-    	else if (above==4) { //Psi gate which is the inverse of the Theta gate
+    	else if (above==4) { //Psi gate which is the inverse of the Theta gate (above=0)
             for (i = 0; i < npossyn; i++) {
                 imute = xrcvsyn[i];
                 tmute = mute[isyn*nxs+imute];

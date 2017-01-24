@@ -25,7 +25,7 @@ int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
 int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 int disp_fileinfo(char *file, int n1, int n2, float f1, float f2, float d1, float d2, segy *hdrs);
-void applyMute( float *data, int *mute, int smooth, int above, int Nsyn, int nxs, int nt, int *xrcvsyn, int nx, int shift);
+void applyMute( float *data, int *mute, int smooth, int above, int Nsyn, int nxs, int nt, int *xrcvsyn, int npossyn, int shift);
 double wallclock_time(void);
 
 /*********************** self documentation **********************/
@@ -33,12 +33,12 @@ char *sdoc[] = {
 " ",
 " fmute - mute in time domain file_shot along curve of maximum amplitude in file_mute ",
 " ",
-" fmute file_mute= {file_shot=} [optional parameters]",
+" fmute file_shot= {file_mute=} [optional parameters]",
 " ",
 " Required parameters: ",
 " ",
-"   file_mute= ................ input file 1",
-"   file_shot= ................ input file 2",
+"   file_mute= ................ input file with event that defines the mute line",
+"   file_shot= ................ input data thats is muted",
 " ",
 " Optional parameters: ",
 " ",
@@ -47,10 +47,10 @@ char *sdoc[] = {
 "   shift=0 .................. number of points above(positive) / below(negative) maximum time for mute",
 "   check=0 .................. plots muting window on top of file_mute: output file check.su",
 "   scale=0 .................. scale data by dividing through maximum",
-"   hw=15 .................... window in time samples to look for maximum in next trace",
+"   hw=15 .................... window in time samples to look for maximum in next trace of file_mute",
 "   smooth=0 ................. number of points to smooth mute with cosine window",
-"   nxmax=512 ................ maximum number of traces in input file",
-"   ntmax=1024 ............... maximum number of samples/trace in input file",
+//"   nxmax=512 ................ maximum number of traces in input file",
+//"   ntmax=1024 ............... maximum number of samples/trace in input file",
 "   verbose=0 ................ silent option; >0 display info",
 " ",
 " author  : Jan Thorbecke : 2012 (janth@xs4all.nl)",
@@ -160,6 +160,7 @@ int main (int argc, char **argv)
         f2=f2b;
         tmpdata = tmpdata2;
         hdrs_in1 = hdrs_in2;
+        sclsxgx = sclshot;
     }
 
 	if (verbose) vmess("sampling file_mute=%d, file_shot=%d", nt1, nt2);
@@ -227,6 +228,7 @@ int main (int argc, char **argv)
 		imax = NINT(((hdrs_in1[0].sx-hdrs_in1[0].gx)*sclsxgx)/dxrcv);
 		tmax=0.0;
 		jmax = 0;
+		xmax=0.0;
 		for (j = 0; j < nt1; j++) {
             lmax = fabs(tmpdata[imax*nt1+j]);
 			if (lmax > tmax) {
@@ -276,12 +278,13 @@ int main (int argc, char **argv)
 		if (scale==1) {
 			for (i = 0; i < nx2; i++) {
 				lmax = fabs(tmpdata2[i*nt2+maxval[i]]);
-				xrcv[i] = i;
 				for (j = 0; j < nt2; j++) {
 					tmpdata2[i*nt2+j] = tmpdata2[i*nt2+j]/lmax;
 				}
 			}
 		}
+
+        for (i = 0; i < nx2; i++) xrcv[i] = i;
 
 /*================ apply mute window ================*/
 
