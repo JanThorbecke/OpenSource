@@ -98,3 +98,11 @@ scale=$(echo "scale=3; ($rf)/($mg)" | bc -l)
 
 done
  
+
+#special treatment of f1+ zero-iteration: which is zero, to make a nice gray plot (and not black)
+file=f1plus_001.su
+file_base=${file%.su}
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < $file\
+    n1tic=2 d2=5 x1beg=-1.504 x1end=1.5 d1num=0.4 \
+    f2=-2250 f2num=-2000 d2num=1000 bclip=1 wclip=-1> $file_base.eps
+
