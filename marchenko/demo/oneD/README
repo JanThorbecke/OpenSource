@@ -159,7 +159,6 @@ The postscript files of Figure 8  are generated with
 
 ==> run epsBackprop.scr
 
-
 -- Figure 8 column 1
 backpropf2_-0.30.eps
 backpropf2_-0.15.eps
@@ -183,5 +182,11 @@ The figures in the appendix, to explain the different options in the programs, a
 ==> run figAppendi.scr
 
 -- Figure A-1
+noise_above0.eps
+noise_above1.eps
+noise_above-1.eps
+noise_above2.eps
+noise_above4.eps
 
 -- Figure A-2
+iniFocus_shifts.eps
