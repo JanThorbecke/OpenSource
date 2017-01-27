@@ -1,0 +1,43 @@
+#!/bin/bash
+
+file=iter_002.su
+file_base=${file%.su}
+
+ns=`surange < $file | grep ns | awk '{print $2}'`
+dtrcv=`surange < $file | grep dt | awk '{print $2/1000000.0}'`
+shift=$(echo "scale=4; ($dtrcv*($ns/2.0-1))" | bc -l)
+suzero < $file itmax=$ns | suaddnoise | sushw key=f1 a=0 > noise.su
+file_base=noise
+sumax < ${file_base}.su mode=abs outpar=nep
+clipiter=`cat nep | awk '{print $1/6}'`
+clipref=$clipiter
+
+#basop choice=shift shift=$shift file_in=$file file_out=${file_base}_t0.su
+
+for above in 0 1 -1 2 4
+do
+fmute file_mute=iniFocus_rp.su file_shot=${file_base}.su file_out=nep.su above=${above} shift=8 verbose=1 check=1 hw=4
+
+basop choice=shift shift=-$shift file_in=nep.su file_out=nep_t0.su
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < nep.su \
+    n1tic=2 d2=5 x1beg=0  d1num=0.5 \
+    curve=pslinepos.asci,pslineneg.asci npair=901,901 curvewidth=2,2 curvecolor=black,black curvedash=3,3 \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > ${file_base}_above${above}.eps
+done
+
+for shift in 0 20 -20
+do
+fmute file_mute=iniFocus_rp.su file_shot=${file_base}.su file_out=nep.su above=${above} shift=$shift verbose=1 check=1 hw=4
+mv pslinepos.asci pslinepos${shift}.asci
+done
+
+suzero < $file itmax=$ns | sushw key=f1 a=0 > zero.su
+sumax < iniFocus_rp.su mode=abs outpar=nep
+clipiter=`cat nep | awk '{print $1/6}'`
+clipref=$clipiter
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < iniFocus_rp.su \
+    n1tic=2 d2=5 x1beg=0  d1num=0.5 \
+    curve=pslinepos0.asci,pslinepos15.asci,pslinepos-15.asci npair=901,901,901 \
+	curvewidth=1,1,1 curvecolor=white,black,black curvedash=3,3,3 \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > iniFocus_shifts.eps
+

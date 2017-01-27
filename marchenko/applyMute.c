@@ -14,11 +14,11 @@
 
 void applyMute( float *data, int *mute, int smooth, int above, int Nsyn, int nxs, int nt, int *xrcvsyn, int npossyn, int shift)
 {
- 	int i, j, l, isyn;
-	float *costaper, scl;
-	int imute, tmute;
+     int i, j, l, isyn;
+    float *costaper, scl;
+    int imute, tmute;
 
-	if (smooth) {
+    if (smooth) {
         costaper = (float *)malloc(smooth*sizeof(float));
         scl = M_PI/((float)smooth);
         for (i=0; i<smooth; i++) {
@@ -26,11 +26,11 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nsyn, int nxs
         }
     }
 
-	for (isyn = 0; isyn < Nsyn; isyn++) {
-		if (above==1) {
+    for (isyn = 0; isyn < Nsyn; isyn++) {
+        if (above==1) {
             for (i = 0; i < npossyn; i++) {
-				imute = xrcvsyn[i];
-				tmute = mute[isyn*nxs+imute];
+                imute = xrcvsyn[i];
+                tmute = mute[isyn*nxs+imute];
                 for (j = 0; j < tmute-shift-smooth; j++) {
                     data[isyn*nxs*nt+i*nt+j] = 0.0;
                 }
@@ -41,8 +41,12 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nsyn, int nxs
         }
         else if (above==0){
             for (i = 0; i < npossyn; i++) {
-				imute = xrcvsyn[i];
-				tmute = mute[isyn*nxs+imute];
+                imute = xrcvsyn[i];
+                tmute = mute[isyn*nxs+imute];
+                if (tmute >= nt/2) {
+                    memset(&data[isyn*nxs*nt+i*nt],0, sizeof(float)*nt);
+                    continue;
+                }
                 for (j = tmute-shift,l=0; j < tmute-shift+smooth; j++,l++) {
                     data[isyn*nxs*nt+i*nt+j] *= costaper[l];
                 }
@@ -56,8 +60,8 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nsyn, int nxs
         }
         else if (above==-1){
             for (i = 0; i < npossyn; i++) {
-				imute = xrcvsyn[i];
-				tmute = mute[isyn*nxs+imute];
+                imute = xrcvsyn[i];
+                tmute = mute[isyn*nxs+imute];
                 for (j = tmute-shift,l=0; j < tmute-shift+smooth; j++,l++) {
                     data[isyn*nxs*nt+i*nt+j] *= costaper[l];
                 }
@@ -66,7 +70,7 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nsyn, int nxs
                 }
             }
         }
-    	else if (above==4) { //Psi gate which is the inverse of the Theta gate (above=0)
+        else if (above==4) { //Psi gate which is the inverse of the Theta gate (above=0)
             for (i = 0; i < npossyn; i++) {
                 imute = xrcvsyn[i];
                 tmute = mute[isyn*nxs+imute];
@@ -104,8 +108,8 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nsyn, int nxs
         }
     }
 
-	if (smooth) free(costaper);
+    if (smooth) free(costaper);
 
-	return;
+    return;
 }
 
