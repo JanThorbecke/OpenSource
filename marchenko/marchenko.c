@@ -100,7 +100,7 @@ int main (int argc, char **argv)
     int     iter, niter, tracf, *muteW;
     int     hw, smooth, above, shift, *ixpossyn, npossyn, ix;
     float   fmin, fmax, *tapersh, *tapersy, fxf, dxf, fxs2, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
-    double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy;
+    double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, energyNi;
     float   d1, d2, f1, f2, fxs, ft, fx, *xsyn, dxsrc;
     float   *green, *f2p, *pmin, *G_d, dt, dx, dxs, scl, mem;
     float   *f1plus, *f1min, *iRN, *Ni, *trace, *Gmin, *Gplus;
@@ -279,7 +279,7 @@ int main (int argc, char **argv)
 
     /* check consistency of header values */
     fxf = xsrc[0];
-    if (nx > 1) dxf = (xrcv[0] - xrcv[nx-1])/(float)(nx-1);
+    if (nx > 1) dxf = (xrcv[nx-1] - xrcv[0])/(float)(nx-1);
     else dxf = d2;
     if (NINT(dx*1e3) != NINT(fabs(dxf)*1e3)) {
         vmess("dx in hdr.d1 (%.3f) and hdr.gx (%.3f) not equal",dx, dxf);
@@ -405,11 +405,15 @@ int main (int argc, char **argv)
                 j = 0;
                 Ni[l*nxs*nts+i*nts+j]    = -iRN[l*nxs*nts+i*nts+j];
                 pmin[l*nxs*nts+i*nts+j] += iRN[l*nxs*nts+i*nts+j];
+                energyNi = sqrt(iRN[l*nxs*nts+i*nts+j]*iRN[l*nxs*nts+i*nts+j]);
                 for (j = 1; j < nts; j++) {
                     Ni[l*nxs*nts+i*nts+j]    = -iRN[l*nxs*nts+i*nts+nts-j];
                     pmin[l*nxs*nts+i*nts+j] += iRN[l*nxs*nts+i*nts+j];
+                    energyNi = sqrt(iRN[l*nxs*nts+i*nts+j]*iRN[l*nxs*nts+i*nts+j]);
                 }
             }
+            if (verbose >=2) vmess("    - operator %d at iteration %d has energy %e", l, iter, energyNi);
+
         }
 
         /* apply mute window based on times of direct arrival (in muteW) */
