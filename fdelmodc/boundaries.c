@@ -1113,6 +1113,17 @@ tzz[ix*n1+iz], txz[ix*n1+iz], txx[ix*n1+iz], lam[ix*n1+iz], l2m[ix*n1+iz]);
 
 	}
 
+    if ( (npml != 0) && (itime==mod.nt-1) && pml) {
+#pragma omp master
+{
+		if (allocated) {
+            free(Vxpml);
+        	free(Vzpml);
+        	free(sigmu);
+        	free(RA);
+		}
+}
+	}
 
 	return 0;
 } 
@@ -1648,9 +1659,19 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 				}
 			}
 		}
-
-		
 	}
 	
+    if ( (npml != 0) && (itime==mod.nt-1) && pml) {
+#pragma omp master
+{
+		if (allocated) {
+            free(Pxpml);
+        	free(Pzpml);
+        	free(sigmu);
+        	free(RA);
+		}
+}
+	}
+
 	return 0;
 }
