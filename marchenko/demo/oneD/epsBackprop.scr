@@ -54,7 +54,7 @@ done
 #add pos and negative times to get response of homogenoeus Green's function
 
 file_snap="backpropf2"
-for fldr in 71 86 98 101;
+for fldr in 71 86 98 99 101;
 do
   times=$(echo "scale=2; -0.01*(${fldr}-101)" | bc -l)
   atime=`printf "%4.2f" $times`

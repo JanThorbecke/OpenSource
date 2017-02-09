@@ -60,31 +60,3 @@ fdelmodc \
     left=2 right=2 top=2 bottom=2
 
 
-#for detailed, middle column, 
-#backpropagate f2.su and collect snapshots
-fdelmodc \
-    file_cp=$file_cp ischeme=1 iorder=4 \
-    file_den=$file_ro \
-    file_src=pplusdt.su \
-    file_rcv=backprop_f2_z900.su \
-    grid_dir=0 \
-    src_type=1 \
-    src_injectionrate=1 \
-	src_orient=1 \
-    rec_type_vz=0 \
-    rec_type_p=1 \
-    rec_int_vz=2 \
-    dtrcv=0.004 \
-	rec_delay=0.0 \
-    verbose=2 \
-    tmod=3.10 \
-    dxrcv=5.0 \
-    xrcv1=-2250 xrcv2=2250 \
-    zrcv1=900 zrcv2=900 \
-	zsrc=0 xsrc=0 \
-    npml=101 \
-	file_snap=backpropf2detail.su tsnap1=2.0245 dtsnap=0.0005 tsnap2=2.0645 dxsnap=2.5 dzsnap=2.5 zsnap1=0 zsnap2=1250 xsnap1=-1000 xsnap2=1000 \
-    sna_type_vz=0 \
-    sna_type_p=1 \
-    left=2 right=2 top=2 bottom=2
-

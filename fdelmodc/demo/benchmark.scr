@@ -15,7 +15,8 @@ makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
 
 xsrc=-200
 
-time ../fdelmodc \
+set -x
+../fdelmodc \
     file_cp=syncl_cp.su ischeme=1 \
     file_den=syncl_ro.su \
     file_src=wave.su \
@@ -35,5 +36,5 @@ time ../fdelmodc \
     zrcv1=0 zrcv2=0 \
     xsrc=0 zsrc=1150 \
     ntaper=200 \
-    left=4 right=4 top=1 bottom=4
+    left=2 right=2 top=1 bottom=2
 
