@@ -28,5 +28,5 @@ suwind < referenceP_rp.su j=50 s=1 | \
     n1tic=2 d2=250 f1=0.0 x1beg=0 x1end=2.004 d1num=0.4 \
     f2=-2250 f2num=-2000 d2num=500 > ref.eps
 
-psmerge in=green.eps in=ref.eps > mergeGreenRef.eps
+psmerge in=ref.eps in=green.eps > mergeGreenRef.eps
 

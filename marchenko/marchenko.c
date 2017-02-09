@@ -405,14 +405,14 @@ int main (int argc, char **argv)
                 j = 0;
                 Ni[l*nxs*nts+i*nts+j]    = -iRN[l*nxs*nts+i*nts+j];
                 pmin[l*nxs*nts+i*nts+j] += iRN[l*nxs*nts+i*nts+j];
-                energyNi = sqrt(iRN[l*nxs*nts+i*nts+j]*iRN[l*nxs*nts+i*nts+j]);
+                energyNi = iRN[l*nxs*nts+i*nts+j]*iRN[l*nxs*nts+i*nts+j];
                 for (j = 1; j < nts; j++) {
                     Ni[l*nxs*nts+i*nts+j]    = -iRN[l*nxs*nts+i*nts+nts-j];
                     pmin[l*nxs*nts+i*nts+j] += iRN[l*nxs*nts+i*nts+j];
-                    energyNi = sqrt(iRN[l*nxs*nts+i*nts+j]*iRN[l*nxs*nts+i*nts+j]);
+                    energyNi += iRN[l*nxs*nts+i*nts+j]*iRN[l*nxs*nts+i*nts+j];
                 }
             }
-            if (verbose >=2) vmess("    - operator %d at iteration %d has energy %e", l, iter, energyNi);
+            if (verbose >=2) vmess("    - operator %d at iteration %d has energy %e", l, iter, sqrt(energyNi));
 
         }
 
@@ -474,7 +474,7 @@ int main (int argc, char **argv)
         }
         else {
             /* next iterations  */
-            /* N_k(x,t) = -N_(k-1)(x,-t) */
+            /*  -N_(k-1)(x,-t) */
 
             /* update f2 */
             for (l = 0; l < Nsyn; l++) {

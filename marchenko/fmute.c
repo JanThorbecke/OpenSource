@@ -38,7 +38,7 @@ char *sdoc[] = {
 " Required parameters: ",
 " ",
 "   file_mute= ................ input file with event that defines the mute line",
-"   file_shot= ................ input data thats is muted",
+"   file_shot= ................ input data that is muted",
 " ",
 " Optional parameters: ",
 " ",

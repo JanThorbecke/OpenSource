@@ -151,30 +151,31 @@ mergeGreenRef.eps 	=> Figure 7
 
 To compute the snapshots 
 
-==> run backpropf2.scr This will take about 2 minutes. The generated output files are
+==> run backpropf2.scr This will take about 1 minute. The generated output file is
 	- backpropf2_sp.su
-	- backpropf2detail_sp.su
 
-The postscript files of Figure 8  are generated with 
+The postscript files of Figure 8 are generated with 
 
 ==> run epsBackprop.scr
 
 -- Figure 8 column 1
 backpropf2_-0.30.eps
 backpropf2_-0.15.eps
-backpropf2_0.0.eps
-backpropf2_0.15.eps
-backpropf2_0.30.eps
--- Figure 8 column 2
 backpropf2_-0.03.eps
 backpropf2_-0.02.eps
 backpropf2_0.00.eps
-backpropf2_0.02.eps
+-- Figure 8 column 2
+backpropf2_0.30.eps
+backpropf2_0.15.eps
 backpropf2_0.03.eps
+backpropf2_0.02.eps
+backpropf2_0.00.eps
 -- Figure 8 column 3
-backpropf2sum_0.03.eps
-backpropf2sum_0.15.eps
 backpropf2sum_0.30.eps
+backpropf2sum_0.15.eps
+backpropf2sum_0.03.eps
+backpropf2sum_0.02.eps
+backpropf2_0.00.eps
 
 
 The figures in the appendix, to explain the different options in the programs, are reproduced by
@@ -190,3 +191,4 @@ noise_above4.eps
 
 -- Figure A-2
 iniFocus_shifts.eps
+
