@@ -17,7 +17,7 @@ CC = gcc
 FC = gfortran
 # Linux gcc version 4.x
 OPTC = -O3 -ffast-math
-OPTC += -Wunused-but-set-variable -Wunused-variable
+#OPTC += -Wunused-but-set-variable -Wunused-variable
 #to include parallelisation with OpenMP
 OPTC += -fopenmp
 

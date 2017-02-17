@@ -5,9 +5,7 @@
 #PBS -k eo
 #PBS -j eo
 
-export PATH=$HOME/bin:$HOME/src/OpenSource/bin:$PATH:
-
-cd /home/thorbcke/data/Kees/MultElim/ModelImageBackprop
+export PATH=$HOME/src/OpenSource/bin:$PATH:
 
 dxshot=10
 ishot=0
