@@ -1,16 +1,15 @@
 Description of files:
 1) model.scr computes the model and the 'basis' shot of R => shot5_rp.su
 2) p5all.scr create from basis shot full Reflection response matrix => shotsdx5_rp.su (3.3 GB)
-3) initialFocus.scr model G_d the intitiAla focusing function => iniFocus_rp.su
+3) initialFocus.scr model G_d the intitial focusing function => iniFocus_rp.su
 4) referenceShot.scr creates the reference Green's function at focal point => referenceP_rp.su
 5) marchenko.scr perform the Marchenko scheme => pgreen.su, f1plus0.su, f1min0.su, f2.su
 
 extra scripts
-marchenkoIter.scr to make the figure with "Four iterations of the Marchenko method."
-
-backpropf2.scr to make Figure "Snapshots of back-propagation of f_2."
-
-eps*.scr reproduce the postscript files of the manuscript using SU postscript plotting programs.
++) marchenkoIter.scr : to make the figure with "Four iterations of the Marchenko method."
++) backpropf2.scr : to make Figure "Snapshots of back-propagation of f_2."
++) eps*.scr : reproduce the postscript files of the manuscript using SU postscript plotting programs.
++) clean : remove all produced files and start with a clean directory
 
 
 To reproduce the Figures in the Manuscript:
@@ -52,7 +51,7 @@ iniFocus_rp.eps 	=> Figure 3d
 The full R matrix is build up from the the shot record computed with model.scr
 
 ==> run p5all.scr to generate the full R matrix for a fixed spread geometry. This will take less than one minute. The file generated is
-	- shotsdx5_rp.su the file has a size of 3.3 GB
+	- shotsdx5_rp.su this file has a size of 3.3 GB
 
 This R, together with iniFocus_rp.su, is the input of the Marchenko algorithm
 
@@ -86,7 +85,6 @@ To Compute the reference Green's function at x=0 z=900 m in the actual model
 To generate all postscript files for Figure 4, 5 and 6
 
 ==> run epsMarchenkoIter.scr
-
 
 shotx0_rp.eps 		=> Figure 4 R == Figure 3c
 p0plus.eps	 	=> Figure 4 G_d
@@ -122,6 +120,9 @@ compare_001.eps
 compare_002.eps
 compare_003.eps
 compare_004.eps
+
+
+Note that the script epsIterwithLabels.scr produces the same figures, but with axis-labels. In figures 6 and 8 only one picture has axis-labels to avoid a busy picture. From that single label the labels of the other pictures, with the same axis, can be derived. 
 
 --------------------------
 * Figure 7: Comparison of Marchenko result with reference

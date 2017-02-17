@@ -1,8 +1,6 @@
 #!/bin/bash
 
-export PATH=$HOME/bin:$HOME/src/OpenSource/bin:$PATH:
-
-cd /home/thorbcke/data/Kees/MultElim/ModelImageBackprop
+export PATH=$HOME/src/OpenSource/bin:$PATH:
 
 dx=2.5
 dt=0.0005
@@ -13,7 +11,7 @@ makemod sizex=12000 sizez=4000 dx=$dx dz=$dx cp0=1900 ro0=1200 \
 export OMP_NUM_THREADS=8
 makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3 scale=0
 
-$HOME/bin/fdelmodc \
+fdelmodc \
     file_cp=noContrast_cp.su ischeme=1 iorder=4 \
     file_den=noContrast_ro.su \
     file_src=wavefw.su \
@@ -32,6 +30,6 @@ $HOME/bin/fdelmodc \
     xrcv1=-6000 xrcv2=6000 \
     zrcv1=0 zrcv2=0 \
     xsrc=0 zsrc=0 \
-    ntaper=400 \
-    left=4 right=4 top=4 bottom=4
+    ntaper=200 \
+    left=2 right=2 top=2 bottom=2
 

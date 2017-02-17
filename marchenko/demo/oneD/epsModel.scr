@@ -20,12 +20,14 @@ EOF3
 
 #model
 supsimage hbox=4 wbox=6 labelsize=12 < model10_cp.su \
-        x1beg=0 x1end=1400.0 d1num=200 legend=1 threecolor=0 \
+        x1beg=0 x1end=1400.0 d1num=200 lstyle=vertright legend=1 threecolor=0 \
+    	label1="depth (m)" label2="lateral distance (m)" \
         curve=line1,line2,line3 npair=2,2,2 curvecolor=black,black,black \
         n1tic=5 x2beg=-2250 f2num=-2000 d2num=1000 x2end=2250 > model_cp_line.eps
 
 supsimage hbox=4 wbox=6 labelsize=12 < model10_ro.su \
-        x1beg=0 x1end=1400.0 d1num=200 legend=1 threecolor=0 \
+        x1beg=0 x1end=1400.0 d1num=200 lstyle=vertright legend=1 threecolor=0 \
+    	label1="depth (m)" label2="lateral distance (m)" \
         curve=line1,line2,line3 npair=2,2,2 curvecolor=black,black,black \
         n1tic=5 x2beg=-2250 f2num=-2000 d2num=1000 x2end=2250 > model_ro_line.eps
 
@@ -48,6 +50,7 @@ sumax < $file mode=abs outpar=nep
 clipref=`cat nep | awk '{print $1/3}'`
 suwind key=gx min=-2250000 max=2250000 < $file | \
         supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 \
+    	label1="time (s)" label2="lateral distance (m)" \
         n1tic=2 d2=5 f1=0.0 x1beg=0 x1end=2.004 d1num=0.4 \
         f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > shotx0_rp.eps
 
@@ -58,6 +61,7 @@ sumax < $file mode=abs outpar=nep
 clipref=`cat nep | awk '{print $1/3}'`
 suwind key=gx min=-2250000 max=2250000 < $file | \
         supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 \
+    	label1="time (s)" label2="lateral distance (m)" \
         n1tic=2 d2=5 f1=0.0 x1beg=0 x1end=2.004 d1num=0.4 \
         f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > $file_base.eps
 

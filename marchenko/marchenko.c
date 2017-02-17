@@ -70,7 +70,7 @@ char *sdoc[] = {
 "   smooth=5 ................. number of points to smooth mute with cosine window",
 " REFLECTION RESPONSE CORRECTION ",
 "   tsq=0.0 .................. weight factor n for t^n for true amplitude recovery",
-"   weight=1 ................. weight factor of R for summation of Ni with G_d",
+"   weight=2 ................. weight factor of R for summation of Ni with G_d",
 " OUTPUT DEFINITION ",
 "   file_green= .............. output file with full Green function(s)",
 "   file_gplus= .............. output file with G+ ",
@@ -139,7 +139,7 @@ int main (int argc, char **argv)
     if (!getparint("ixb", &ixb)) ixb = ixa;
 //    if (!getparint("reci", &reci)) reci = 0;
     reci=0; // source-receiver reciprocity is not yet fully build into the code
-    if (!getparfloat("weight", &weight)) weight = 1.0;
+    if (!getparfloat("weight", &weight)) weight = 2.0;
     if (!getparfloat("tsq", &tsq)) tsq = 0.0;
     if (!getparint("tap", &tap)) tap = 0;
     if (!getparint("ntap", &ntap)) ntap = 0;

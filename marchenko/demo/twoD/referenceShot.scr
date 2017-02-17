@@ -5,9 +5,7 @@
 #PBS -k eo
 #PBS -j eo
 
-export PATH=$HOME/bin:$HOME/src/OpenSource/bin:$PATH:
-
-cd /home/thorbcke/data/Kees/MultElim/ModelImageBackprop/Redatum
+export PATH=$HOME/src/OpenSource/bin:$PATH:
 
 #makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3
 
@@ -18,7 +16,7 @@ makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=1
 
 export OMP_NUM_THREADS=8
 
-$HOME/bin/fdelmodc \
+fdelmodc \
     file_cp=../syncl_cp.su ischeme=1 iorder=4 \
     file_den=../syncl_ro.su \
     file_src=wave.su \
@@ -38,7 +36,7 @@ $HOME/bin/fdelmodc \
     zrcv1=0 zrcv2=0 \
     xsrc=0 zsrc=1100 \
 	file_snap=backpropref.su tsnap1=0.1 dtsnap=0.010 tsnap2=2.100 dxsnap=10 dzsnap=10 zsnap1=0 zsnap2=2000 xsnap1=-2250 xsnap2=2250 \
-    ntaper=400 \
-    left=4 right=4 top=4 bottom=4
+    ntaper=200 \
+    left=2 right=2 top=2 bottom=2
 
 

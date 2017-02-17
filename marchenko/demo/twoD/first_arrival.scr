@@ -5,9 +5,7 @@
 #PBS -k eo
 #PBS -j eo
 
-export PATH=$HOME/bin:$HOME/src/OpenSource/bin:$PATH:
-
-cd /home/thorbcke/data/Kees/MultElim/ModelImageBackprop/Redatum
+export PATH=$HOME/src/OpenSource/bin:$PATH:
 
 dx=2.5
 dt=0.0005
@@ -43,7 +41,6 @@ while (( ishot < nshots ))
 do
 
 		(( xsrc = -3000 + ${ishot}*${dxshot} ))
-#		(( xsrc = -1100 + ${ishot}*${dxshot} ))
 		echo xsrc=$xsrc
 		file_rcv=shots/shotsmonPz1100_${xsrc}.su
 
@@ -57,10 +54,13 @@ do
 #PBS -l nodes=1
 #PBS -V
 
-cd /home/thorbcke/data/Kees/MultElim/ModelImageBackprop/Redatum
-export OMP_NUM_THREADS=1
+
+export PATH=\$HOME/src/OpenSource/bin:\$PATH:
+cd \$PBS_O_WORKDIR
+
+export OMP_NUM_THREADS=4
 	
-		$HOME/bin64/fdelmodc \
+		fdelmodc \
 			file_cp=synclDown_cp.su ischeme=1 iorder=4 \
    			file_den=synclDown_ro.su \
    			file_src=wave.su \
@@ -79,8 +79,8 @@ export OMP_NUM_THREADS=1
    			xrcv1=-3000 xrcv2=3000 \
    			zrcv1=0 zrcv2=0 \
    			xsrc=$xsrc zsrc=1100 \
-   			ntaper=300 \
-   			left=4 right=4 top=4 bottom=4
+   			ntaper=200 \
+   			left=2 right=2 top=2 bottom=2
 EOF
 
         qsub jobs/pbs_$ishot.job 

@@ -5,11 +5,7 @@
 #PBS -k eo
 #PBS -j eo
 
-export PATH=$HOME/bin:$HOME/src/OpenSource/bin:$PATH:
-which makewave
-which makemod
-
-cd /home/thorbcke/data/Kees/MultElim/ModelImageBackprop
+export PATH=$HOME/src/OpenSource/bin:$PATH:
 
 dt=0.0005
 makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3 scale=0 scfft=1
@@ -41,12 +37,13 @@ do
 #PBS -l nodes=1
 #PBS -V
 
-cd /home/thorbcke/data/Kees/MultElim/ModelImageBackprop
+export PATH=\$HOME/src/OpenSource/bin:\$PATH:
+cd \$PBS_O_WORKDIR
 
-	export OMP_NUM_THREADS=1
+	export OMP_NUM_THREADS=4
 	file_rcv=shots/shots_${xsrc}.su
 
-	$HOME/bin/fdelmodc \
+	fdelmodc \
    		file_cp=syncl_cp.su ischeme=1 iorder=4 \
    		file_den=syncl_ro.su \
    		file_src=wavefw.su \
@@ -65,8 +62,8 @@ cd /home/thorbcke/data/Kees/MultElim/ModelImageBackprop
    		xrcv1=-3000,-3000,-3000 xrcv2=3000,3000,3000 \
    		zrcv1=0,1000,1600 zrcv2=0,1000,1600 \
    		xsrc=$xsrc zsrc=$zsrc \
-   		ntaper=400 \
-   		left=4 right=4 top=4 bottom=4
+   		ntaper=200 \
+   		left=2 right=2 top=2 bottom=2
 EOF
 
 qsub jobs/pbs_$ishot.job
