@@ -2,12 +2,6 @@
 
 export PATH=$HOME/src/OpenSource/bin/:$PATH:
 
-cd /Users/jan/LaTeX/Articles/Marchenko/scripts/oneD
-which ftr1d
-
-#dx=1.25
-#dt=0.00025
-
 dx=2.5
 dt=0.0005
 
@@ -17,7 +11,7 @@ file_ro=model10_ro.su
 export OMP_NUM_THREADS=4
 
 # t=0 focal time is at 2.0445 seconds back=propagating
-#shift f2.su such that t=0 is positioned in the middle of the time axis
+# shift f2.su such that t=0 is positioned in the middle of the time axis
 # the extra shift of 0.000250 is needed because of the staggered time implementation of the Finite Difference program.
 ns=1024
 dtrcv=`surange < f2.su | grep dt | awk '{print $2/1000000.0}'`
