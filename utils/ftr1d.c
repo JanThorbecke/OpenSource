@@ -65,10 +65,10 @@ int main(int argc, char *argv[])
 	int     optn, choice, sign, ntmax, nxmax, verbose, first, ngath, ntraces;
 	int     nfreq, error, n1, n2, ret, n1_org, nf_org, i, j;
 	size_t  size;
-	float   *rdata, *datin, *datout, d1, d2, f1, f2, scale;
+	float   *rdata=NULL, *datin=NULL, *datout=NULL, d1, d2, f1, f2, scale;
     float   scl, xmin, xmax;
 	double  t0, t1, t2;
-	complex *cdata;
+	complex *cdata=NULL;
 	segy	*hdrs;
 	char    *file_in, *file_out;
 
@@ -378,7 +378,7 @@ int main(int argc, char *argv[])
 
 	free(hdrs);
 	free(datin);
-	if (datout !=NULL) free(datout);
+	if (datout!= NULL) free(datout);
 	if (rdata != NULL) free(rdata);
 	if (cdata != NULL) free(cdata);
 
