@@ -52,3 +52,16 @@ dt=0.0005
        intt=elipse poly=0 x=1000 z=800 cp=3400 ro=1500 var=250,170\
        verbose=4
 
+#simple fault model
+cp=2000
+makemod sizex=6000 sizez=2000 dx=5 dz=5 cp0=$cp ro0=1000 file_base=fault.su orig=0,0  \
+	intt=def poly=2 x=0,600,1000,2000,4000,5000 \
+	z=550,550,550,200,200,500 cp=$cp ro=2000 \
+	intt=def poly=0 x=5000,6000 z=300,300 cp=$cp ro=1500 \
+	intt=def poly=0 x=0,2500 z=900,900 cp=$cp ro=2200 \
+	intt=def poly=0 x=3000,5000 z=1000,300 cp=$cp ro=1500 \
+	intt=def poly=0 x=2000,3000,6000 z=1000,770,770 cp=$cp ro=1800 \
+	intt=def poly=0 x=2000,6000 z=1000,1000 cp=$cp ro=2200 \
+	intt=def poly=0 x=0,6000 z=1400,1400 cp=$cp ro=2400
+
+

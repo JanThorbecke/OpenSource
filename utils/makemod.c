@@ -565,45 +565,47 @@ int main(int argc, char **argv)
       if (above == 0) Noi++; else Noi--;
       if (above == 0) Nvi++; else Nvi--;
     }
-   	else if (strstr(intt,"randdf") != NULL) {
-		Nv = countnparval(Nvi, "var");
-		if (Nv != 2) verr("randdf interface must have 2 variables: number of points, width.");
-		getnparfloat(Nvi,"var", var);
-        if(!getparint("dtype", &dtype)) dtype = -1;
+    if ((strstr(intt,"elipse") != NULL) || (strstr(intt,"diffr") != NULL) || (strstr(intt,"randdf") != NULL)) {
+   	    if (strstr(intt,"randdf") != NULL) {
+        	Nv = countnparval(Nvi, "var");
+			if (Nv != 2) verr("randdf interface must have 2 variables: number of points, width.");
+			getnparfloat(Nvi,"var", var);
+        	if(!getparint("dtype", &dtype)) dtype = -1;
         
-        randdf(x, z, nxp, dx, dz, gridcp, gridcs, gridro, cp, cs, ro,
-              interface, zp, nx, sizex, sizez, var[0], (int)var[1], dtype);
+        	randdf(x, z, nxp, dx, dz, gridcp, gridcs, gridro, cp, cs, ro,
+           	   interface, zp, nx, sizex, sizez, var[0], (int)var[1], dtype);
 
-		if (above == 0) Noi++; else Noi--;
-		if (above == 0) Nvi++; else Nvi--;
-	}
-	else if (strstr(intt,"elipse") != NULL) {
-		Nv = countnparval(Nvi, "var");
-		if (Nv != 2) verr("Elipse interface must have 2 variables.");
-		getnparfloat(Nvi,"var", var);
-		elipse(x, z, nxp, dx, dz, gridcp, gridcs, gridro, 
-			cp, cs, ro, interface, zp, nz, nx, var[0], var[1], gradcp, gradcs, gradro);
-		if (above == 0) Noi++; else Noi--;
-		if (above == 0) Nvi++; else Nvi--;
-	}
-	else if ((strstr(intt,"diffr") != NULL)) {
-		Nv = countnparval(Nvi, "var");
-        if (Nv == 2 || Nv == 1) {
-            getnparfloat(Nvi,"var", var);
-            diffrwidth=(int)var[0];
-            if (Nv==1) {
-            	if(!getparint("dtype", &dtype)) dtype = 0;
+			if (above == 0) Noi++; else Noi--;
+			if (above == 0) Nvi++; else Nvi--;
+		}
+		if (strstr(intt,"elipse") != NULL) {
+			Nv = countnparval(Nvi, "var");
+			if (Nv != 2) verr("Elipse interface must have 2 variables.");
+			getnparfloat(Nvi,"var", var);
+			elipse(x, z, nxp, dx, dz, gridcp, gridcs, gridro, 
+				cp, cs, ro, interface, zp, nz, nx, var[0], var[1], gradcp, gradcs, gradro);
+			if (above == 0) Noi++; else Noi--;
+			if (above == 0) Nvi++; else Nvi--;
+		}
+		else if ((strstr(intt,"diffr") != NULL)) {
+			Nv = countnparval(Nvi, "var");
+        	if (Nv == 2 || Nv == 1) {
+           		getnparfloat(Nvi,"var", var);
+           		diffrwidth=(int)var[0];
+           		if (Nv==1) {
+           			if(!getparint("dtype", &dtype)) dtype = 0;
 			}
-            else dtype=(int)var[1];
-        }
-        else {
-            verr("diffr interface must have 1 or 2 variables: width,type.");
-        }
-        
-		diffraction(x, z, nxp, dx, dz, gridcp, gridcs, gridro,
-			cp, cs, ro, interface, zp, nx, diffrwidth, dtype);
-		if (above == 0) Noi++; else Noi--;
-		if (above == 0) Nvi++; else Nvi--;
+           		else dtype=(int)var[1];
+        	}
+        	else {
+           		verr("diffr interface must have 1 or 2 variables: width,type.");
+        	}
+        	
+			diffraction(x, z, nxp, dx, dz, gridcp, gridcs, gridro,
+				cp, cs, ro, interface, zp, nx, diffrwidth, dtype);
+			if (above == 0) Noi++; else Noi--;
+			if (above == 0) Nvi++; else Nvi--;
+		}
 	}
     else {
 		if (above == 0) {
