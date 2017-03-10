@@ -49,8 +49,9 @@ void roughint(int *zp, int minx, int maxx, float dz, float *interface, float amp
 */
 	idum = (long) seed;
 	srand48(idum);
-	for (j = 0; j < optn; j++) 
+	for (j = 0; j < optn; j++) {
 		fract[j] = (float)drand48();
+	}
 
 	pfarc(-1, optn, fract, fracc);
 
@@ -82,8 +83,7 @@ void roughint(int *zp, int minx, int maxx, float dz, float *interface, float amp
 		interface[i] += fract[j];
 		zp[i] = NINT(interface[i]/dz);
 		j++;
-		if (SGN(zp[i]) < 0) 
-			zp[i] = 0;
+		if (SGN(zp[i]) < 0) {zp[i] = 0;}
 	}
 
 	free(fract);

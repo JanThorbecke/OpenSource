@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export PATH=$HOME/src/OpenSource/bin/:$PATH:
+
 file=iter_002.su
 file_base=${file%.su}
 

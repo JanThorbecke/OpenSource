@@ -99,6 +99,7 @@ int getWaveletInfo(char *file_src, int *n1, int *n2, float *d1, float *d2, float
 
 		/* find maximum amplitude */
 		amplmax = 0.0;
+		iwmax = 0;
 		for (i=0;i<nfreq;i++) {
 			ampl = sqrt(ctrace[i].r*ctrace[i].r+ctrace[i].i*ctrace[i].i);
 			if (ampl > amplmax) {

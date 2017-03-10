@@ -1121,6 +1121,7 @@ tzz[ix*n1+iz], txz[ix*n1+iz], txx[ix*n1+iz], lam[ix*n1+iz], l2m[ix*n1+iz]);
         	free(Vzpml);
         	free(sigmu);
         	free(RA);
+			allocated=0;
 		}
 }
 	}
@@ -1669,6 +1670,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         	free(Pzpml);
         	free(sigmu);
         	free(RA);
+            allocated=0;
 		}
 }
 	}
