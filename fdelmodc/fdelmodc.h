@@ -115,8 +115,10 @@ typedef struct _waveletPar { /* Wavelet Parameters */
 	char *file_src; /* general source */
 	int nsrcf;
 	int nt;
+	int ns;
 	int nx;
 	float dt;
+	float ds;
 	float fmax;
 	int random;
 	int seed;

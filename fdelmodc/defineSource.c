@@ -52,19 +52,20 @@ void seedCMWC4096(void);
 #define     MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
-int defineSource(wavPar wav, srcPar src, float **src_nwav, int reverse, int verbose)
+int defineSource(wavPar wav, srcPar src, modPar mod, float **src_nwav, int reverse, int verbose)
 {
     FILE    *fp;
     size_t  nread;
     int optn, nfreq, i, j, k, iwmax, tracesToDo;
-    int iw, n1, namp;
+    int iw, n1, namp, optnscale, nfreqscale;
     float scl, d1, df, deltom, om, tshift;
     float amp1, amp2, amp3;
-    float *trace, maxampl;
+    float *trace, maxampl, scale;
     complex *ctrace, tmp;
     segy hdr;
     
-    n1 = wav.nt;
+	scale = 1.0;
+    n1 = wav.ns;
     if (wav.random) { /* initialize random sequence */
         srand48(wav.seed+1);
         seedCMWC4096();
@@ -97,15 +98,21 @@ int defineSource(wavPar wav, srcPar src, float **src_nwav, int reverse, int verb
             i++;
         }
         fclose(fp);
+        if (NINT(wav.ds*1000000) != NINT(mod.dt*1000000)) {
+			vmess("Sampling in wavelet is %e while for modeling is set to %e", wav.ds, mod.dt);
+			vmess("Wavelet sampling will be FFT-interpolated to sampling of modeling");
+		}
     }
 
-
-    optn = optncr(2*n1);
+    optn = optncr(n1);
     nfreq = optn/2 + 1;
-    ctrace = (complex *)calloc(nfreq,sizeof(complex));
-    trace = (float *)calloc(optn,sizeof(float));
+	optnscale  = wav.nt;
+	nfreqscale = optnscale/2 + 1;
+    ctrace = (complex *)calloc(nfreqscale,sizeof(complex));
+    trace = (float *)calloc(optnscale,sizeof(float));
+	//fprintf(stderr,"define S optn=%d ns=%d %e nt=%d %e\n", optn, wav.ns, wav.ds, optnscale, wav.dt);
 
-    df     = 1.0/(optn*wav.dt);
+    df     = 1.0/(optn*wav.ds);
     deltom = 2.*M_PI*df;
     scl    = 1.0/optn;
     maxampl=0.0;
@@ -116,8 +123,8 @@ int defineSource(wavPar wav, srcPar src, float **src_nwav, int reverse, int verb
             randomWavelet(wav, src, &src_nwav[i][0], src.tbeg[i], src.tend[i], verbose);
         }
         else {
-            memset(&ctrace[0].r,0,nfreq*sizeof(complex));
-            memset(&trace[0],0,optn*sizeof(float));
+            memset(&ctrace[0].r,0,nfreqscale*sizeof(complex));
+            memset(&trace[0],0,optnscale*sizeof(float));
             memcpy(&trace[0],&src_nwav[i][0],n1*sizeof(float));
             rc1fft(trace,ctrace,optn,-1);
             /* Scale source from file with -j/w (=1/(jw)) for volume source injections
@@ -131,8 +138,7 @@ int defineSource(wavPar wav, srcPar src, float **src_nwav, int reverse, int verb
                     ctrace[iw].i = tmp.i;
                 }
             }
-/*
-*/
+
             if (src.type < 6) { // shift wavelet with +1/2 DeltaT due to staggered in time 
                 tshift=0.5*wav.dt;
                 for (iw=1;iw<iwmax;iw++) {
@@ -158,20 +164,21 @@ int defineSource(wavPar wav, srcPar src, float **src_nwav, int reverse, int verb
                     ctrace[0].r *= -1.0;
                 }
             }
-            for (iw=iwmax;iw<nfreq;iw++) {
+            for (iw=iwmax;iw<nfreqscale;iw++) {
                 ctrace[iw].r = 0.0;
                 ctrace[iw].i = 0.0;
             }
-            cr1fft(ctrace,trace,optn,1);
+
+            memset(&trace[0],0,optnscale*sizeof(float));
+            cr1fft(ctrace,trace,optnscale,1);
             /* avoid a (small) spike in the last sample 
                this is done to avoid diffraction from last wavelet sample
                which will act as a pulse */
             if (reverse) {
-                for (j=0; j<n1; j++) src_nwav[i][j] = scl*(trace[n1-j-1]-trace[0]);
-//                for (j=0; j<n1; j++) src_nwav[i][j] = scl*(trace[j]-trace[optn-1]);
+                for (j=0; j<optnscale; j++) src_nwav[i][j] = scl*(trace[optnscale-j-1]-trace[0]);
             }
             else {
-                for (j=0; j<n1; j++) src_nwav[i][j] = scl*(trace[j]-trace[optn-1]);
+                for (j=0; j<optnscale; j++) src_nwav[i][j] = scl*(trace[j]-trace[optnscale-1]);
             }
         }
 
