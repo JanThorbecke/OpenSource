@@ -367,14 +367,14 @@ void rcdft(REAL *rdata, complex *cdata, int n, int sign)
 void crdft(complex *cdata, REAL *rdata, int n, int sign)
 {
 	int i, j, k, nc; 
-	REAL scl, sumr;
-	static REAL *csval;
+	double scl, sumr;
+	static double *csval;
 	static int nprev=0;
 
 	if (nprev != n) {
-		scl = 2.0*M_PI/(REAL)n;
+		scl = 2.0*M_PI/((double)n);
 		if (csval) free(csval);
-		csval = (REAL *) malloc(2*n*sizeof(REAL));
+		csval = (double *) malloc(2*n*sizeof(double));
 		for (i=0; i<n; i++) {
 			csval[2*i] = cos(scl*i);
 			csval[2*i+1] = sin(scl*i);
@@ -382,19 +382,23 @@ void crdft(complex *cdata, REAL *rdata, int n, int sign)
 		nprev = n;
 	}
 
+
 	nc = (n+2)/2;
+	scl = 2.0*M_PI/((double)n);
 	for (i=0; i<n; i++) {
 		sumr = 0.0;
 		for (j=0; j<nc; j++) {
 			k = 2*((i*j)%n);
 			sumr += cdata[j].r*csval[k]-sign*cdata[j].i*csval[k+1];
+			//sumr += cdata[j].r*cos(scl*i*j)-sign*cdata[j].i*sin(scl*i*j);
 		}
-		rdata[i] = 2*sumr-cdata[0].r;
+		rdata[i] = (REAL)2.0*sumr-cdata[0].r;
+		//rdata[i] = sumr;
 	}
 
 /* there is something strange here but adding these values for even
    transformation numbers solves it ??? */
-
+/*
 	if (!(n & 01)) {
 		scl = n*0.25;
 		for (i=0; i<nc-1; i++) {
@@ -402,6 +406,7 @@ void crdft(complex *cdata, REAL *rdata, int n, int sign)
 			rdata[2*i+1] += scl;
 		}
 	}
+*/
 
 	return;
 }

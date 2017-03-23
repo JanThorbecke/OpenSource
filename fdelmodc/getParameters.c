@@ -22,6 +22,8 @@
 
 float gaussGen();
 
+int optncr(int n);
+
 int getModelInfo(char *file_name, int *n1, int *n2, float *d1, float *d2, float *f1, float *f2, float *min, float *max, int *axis, int zeroch, int verbose);
 
 int getWaveletInfo(char *file_src, int *n1, int *n2, float *d1, float *d2, float *f1, float *f2, float *fmax, int *nxm, int verbose);
@@ -36,7 +38,7 @@ int writesufile(char *filename, float *data, int n1, int n2, float f1, float f2,
 int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, shotPar *shot, bndPar *bnd, int verbose)
 {
 	int isnapmax1, isnapmax2, isnapmax, sna_nrsna;
-	int n1, n2, nx, nz, nsrc, ix, axis, ioPz, is0;
+	int n1, n2, nx, nz, nsrc, ix, axis, ioPz, is0, optn;
 	int idzshot, idxshot;
 	int src_ix0, src_iz0, src_ix1, src_iz1;
 	int disable_check;
@@ -49,7 +51,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	float tsnap1, tsnap2, dtsnap, dxsnap, dzsnap, dtrcv;
 	float xsnap1, xsnap2, zsnap1, zsnap2, xmax, zmax;
 	float xsrc1, xsrc2, zsrc1, zsrc2, tsrc1, tsrc2, tlength, tactive;
-	float src_angle, src_velo, p, grad2rad, rdelay;
+	float src_angle, src_velo, p, grad2rad, rdelay, scaledt;
 	float *xsrca, *zsrca, rrcv;
 	float rsrc, oxsrc, ozsrc, dphisrc, ncsrc;
 	size_t nsamp;
@@ -127,13 +129,31 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	/* define wavelet(s), modeling time and wavelet maximum frequency */
 
 	if (wav->file_src!=NULL) {
-		getWaveletInfo(wav->file_src, &wav->nt, &wav->nx, &wav->dt, &d2, &f1, &f2, &fmax, &ntraces, verbose);
+		getWaveletInfo(wav->file_src, &wav->ns, &wav->nx, &wav->ds, &d2, &f1, &f2, &fmax, &ntraces, verbose);
 		if (wav->dt <= 0.0) {
 			vwarn("dt in wavelet (file_src) equal to 0.0 or negative.");
 			vwarn("Use parameter dt= to overule dt from file_src.");
 		}
+		wav->nt = wav->ns;
+		wav->dt = wav->ds;
 		if(!getparfloat("tmod",&mod->tmod)) mod->tmod = (wav->nt-1)*wav->dt;
 		if(!getparfloat("dt",&mod->dt)) mod->dt=wav->dt;
+        if (NINT(wav->ds*1000000) != NINT(mod->dt*1000000)) {
+			if (wav->dt > mod->dt) {
+				scaledt = wav->dt/mod->dt;
+				//assert (floorf(scaledt) == scaledt);
+				fprintf(stderr,"floor(scaledt)=%f scaledt=%f\n", floorf(scaledt), scaledt);
+				scaledt = floor(wav->dt/mod->dt);
+    			optn = optncr(wav->ns);
+				wav->nt  = floorf(scaledt*optn);
+				fprintf(stderr,"optn=%d ns=%d scaleoptn=%d\n", optn, wav->ns, wav->nt);
+				vmess("file_src dt-scalefactor=%f : wav.dt=%e => mod.dt=%e", scaledt, wav->dt, mod->dt);
+				wav->dt = mod->dt;
+			}
+			else {
+				wav->dt = mod->dt; /* in case if wav.dt is smaller than 1e-7 and can not be read by SU-getpar */
+			}
+		}
 		if(!getparfloat("fmax",&wav->fmax)) wav->fmax=fmax;
 	}
 	else {
@@ -767,7 +787,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		sx = (float *)malloc(wav->nx*sizeof(float));
 		gelev = (float *)malloc(wav->nx*sizeof(float));
 		selev = (float *)malloc(wav->nx*sizeof(float));
-		getWaveletHeaders(wav->file_src, wav->nt, wav->nx, gx, sx, gelev, selev, verbose);
+		getWaveletHeaders(wav->file_src, wav->ns, wav->nx, gx, sx, gelev, selev, verbose);
 		nsrc = wav->nx;
 		src->x = (int *)malloc(nsrc*sizeof(int));
 		src->z = (int *)malloc(nsrc*sizeof(int));
@@ -880,7 +900,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		vmess("*******************************************");
 		vmess("************* wavelet info ****************");
 		vmess("*******************************************");
-		vmess("wav_nt   = %6d   wav_nx      = %d", wav->nt, wav->nx);
+		vmess("wav_nt   = %6d   wav_nx      = %d", wav->ns, wav->nx);
 		vmess("src_type = %6d   src_orient  = %d", src->type, src->orient);
 		vmess("fmax     = %8.2f", fmax);
 		fprintf(stderr,"    %s: Source type         : ",xargv[0]);

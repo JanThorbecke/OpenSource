@@ -36,10 +36,10 @@ int writesufile(char *filename, float *data, int n1, int n2, float f1, float f2,
 //    *ptr = '\0';
 
 	
-	if (n1 > 65535) {
-		vwarn("Output file %s: number of samples is truncated from %d to 65535.", filename, n1);
+	if (n1 > USHRT_MAX) {
+		vwarn("Output file %s: number of samples is truncated from %d to USHRT_MAX.", filename, n1);
 	}
-	ns = MIN(n1,65535);
+	ns = MIN(n1,USHRT_MAX);
 
 	file_out = fopen( filename, "w+" );
 	assert( file_out );
@@ -87,10 +87,10 @@ int writesufilesrcnwav(char *filename, float **src_nwav, wavPar wav, int n1, int
 //    ptr = strstr(filename, " ");
 //    *ptr = '\0';
 
-	if (n1 > 65535) {
-		vwarn("Output file %s: number of samples is truncated from %d to 65535.", filename, n1);
+	if (n1 > USHRT_MAX) {
+		vwarn("Output file %s: number of samples is truncated from %d to USHRT_MAX.", filename, n1);
 	}
-	ns = MIN(n1,65535);
+	ns = MIN(n1,USHRT_MAX);
 
 	file_out = fopen( filename, "w+" );
 	assert( file_out );
