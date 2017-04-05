@@ -3,3 +3,16 @@ bin/*
 *.su
 *.bin
 .DS*
+fdelmodc_cuda.tgz
+marchenko/fmute
+marchenko/marchenko
+utils/basop
+utils/correigen
+utils/extendModel
+utils/fconv
+utils/ftr1d
+utils/green
+utils/makemod
+utils/makewave
+utils/mat2su
+utils/syn2d

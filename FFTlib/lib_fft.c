@@ -368,13 +368,13 @@ void crdft(complex *cdata, REAL *rdata, int n, int sign)
 {
 	int i, j, k, nc; 
 	double scl, sumr;
-	static double *csval;
+	static REAL *csval;
 	static int nprev=0;
 
 	if (nprev != n) {
-		scl = 2.0*M_PI/((double)n);
+		scl = 2.0*M_PI/((REAL)n);
 		if (csval) free(csval);
-		csval = (double *) malloc(2*n*sizeof(double));
+		csval = (REAL *) malloc(2*n*sizeof(REAL));
 		for (i=0; i<n; i++) {
 			csval[2*i] = cos(scl*i);
 			csval[2*i+1] = sin(scl*i);
@@ -382,11 +382,12 @@ void crdft(complex *cdata, REAL *rdata, int n, int sign)
 		nprev = n;
 	}
 
-
 	nc = (n+2)/2;
-	scl = 2.0*M_PI/((double)n);
+	scl = 2.0*M_PI/((REAL)n);
+	#pragma ivdep
 	for (i=0; i<n; i++) {
 		sumr = 0.0;
+		#pragma ivdep
 		for (j=0; j<nc; j++) {
 			k = 2*((i*j)%n);
 			sumr += cdata[j].r*csval[k]-sign*cdata[j].i*csval[k+1];

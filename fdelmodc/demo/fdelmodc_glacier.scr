@@ -1,0 +1,69 @@
+#!/bin/bash
+#
+#OK:
+dt=0.0001
+dx=0.5
+cp=1665
+
+makewave file_out=wavelet.su dt=$dt nt=1024 fp=100 shift=1 w=g2 verbose=1
+
+makemod file_base=modelHom.su \
+       cp0=$cp ro0=1000 sizex=250 sizez=125 \
+       dx=$dx dz=$dx orig=-25,-25 \
+
+makemod file_base=model.su \
+       cp0=$cp ro0=1000 sizex=250 sizez=125 \
+	   intt=def x=60,90 z=-25,-25 cp=1500 ro=1000 \
+       dx=$dx dz=$dx orig=-25,-25 \
+
+export DYLD_LIBRARY_PATH=/opt/intel/Compiler/11.1/046/Frameworks/mkl/lib/universal/:$DYLD_LIBRARY_PATH:/usr/local/cuda/lib:
+
+which smooth
+smooth nxsm=7 niter=5 < model_cp.su > nep.su
+exit
+mv nep.su model_cp.su
+
+export OMP_NUM_THREADS=2
+
+for model in _
+do
+export filecp=model${model}cp.su
+export filero=model${model}ro.su
+
+xsrc=0
+zsrc=0
+
+../fdelmodc \
+        file_cp=$filecp file_den=$filero \
+        ischeme=1 \
+        file_src=wavelet.su verbose=1 \
+        file_rcv=shot${model}x${xsrc}_z${zsrc}.su \
+        xrcv1=50,100,150 xrcv2=50,100,150 dzrcv=5,1.5,5 dxrcv=0,0,0 \
+        zrcv1=0,37,0 zrcv2=75,40,75 \
+        rec_type_vz=1 rec_type_vx=0 rec_int_vz=2 \
+        dtrcv=0.0005 \
+        xsrc=$xsrc zsrc=$zsrc nshot=76 dzshot=1 dxshot=0 \
+        src_type=1 tmod=0.3  \
+		npml=100 \
+	    left=2 right=2 bottom=2 top=2 \
+
+xsrc=200
+zsrc=0
+
+../fdelmodc \
+        file_cp=$filecp file_den=$filero \
+        ischeme=1 \
+        file_src=wavelet.su verbose=1 \
+        file_rcv=shot${model}x${xsrc}_z${zsrc}.su \
+        xrcv1=50,100,150 xrcv2=50,100,150 dzrcv=5,1.5,5 dxrcv=0,0,0 \
+        zrcv1=0,37,0 zrcv2=75,40,75 \
+        rec_type_vz=1 rec_type_vx=0 rec_int_vz=2 \
+        dtrcv=0.0005 \
+        xsrc=$xsrc zsrc=$zsrc nshot=76 dzshot=1 dxshot=0 \
+        src_type=1 tmod=0.3  \
+		npml=100 \
+	    left=2 right=2 bottom=2 top=2 \
+
+done
+
+

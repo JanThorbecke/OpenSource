@@ -130,24 +130,21 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 
 	if (wav->file_src!=NULL) {
 		getWaveletInfo(wav->file_src, &wav->ns, &wav->nx, &wav->ds, &d2, &f1, &f2, &fmax, &ntraces, verbose);
-		if (wav->dt <= 0.0) {
+		if (wav->ds <= 0.0) {
 			vwarn("dt in wavelet (file_src) equal to 0.0 or negative.");
 			vwarn("Use parameter dt= to overule dt from file_src.");
 		}
-		wav->nt = wav->ns;
+        wav->nt = wav->ns;
 		wav->dt = wav->ds;
 		if(!getparfloat("tmod",&mod->tmod)) mod->tmod = (wav->nt-1)*wav->dt;
 		if(!getparfloat("dt",&mod->dt)) mod->dt=wav->dt;
         if (NINT(wav->ds*1000000) != NINT(mod->dt*1000000)) {
 			if (wav->dt > mod->dt) {
 				scaledt = wav->dt/mod->dt;
-				//assert (floorf(scaledt) == scaledt);
-				fprintf(stderr,"floor(scaledt)=%f scaledt=%f\n", floorf(scaledt), scaledt);
-				scaledt = floor(wav->dt/mod->dt);
+				scaledt = floorf(wav->dt/mod->dt);
     			optn = optncr(wav->ns);
 				wav->nt  = floorf(scaledt*optn);
-				fprintf(stderr,"optn=%d ns=%d scaleoptn=%d\n", optn, wav->ns, wav->nt);
-				vmess("file_src dt-scalefactor=%f : wav.dt=%e => mod.dt=%e", scaledt, wav->dt, mod->dt);
+				vmess("file_src dt-scalefactor=%f : wav.dt=%e ==interpolated==> mod.dt=%e", scaledt, wav->dt, mod->dt);
 				wav->dt = mod->dt;
 			}
 			else {
