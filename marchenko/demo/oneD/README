@@ -31,6 +31,9 @@ To reproduce the Figures in the Manuscript:
 	- modelup_cp.su
 	- modelup_ro.su
 	- iniFocus_rp.su
+Note if you model the initial Focusing operator also with a w=fw wavelet the length of the wavelet becomes very long. The
+mute-windows applied in Marchenko will then also mute a big part of this very long fw wavelet and will not converge anymore.  
+
 
 ==> run epsModel.scr to generate the postscript files of Figure 2 and 3
 

@@ -134,7 +134,8 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 		/* old amplitude setting does not obey reciprocity */
 		// src_ampl *= rox[ix*n1+iz]*l2m[ix*n1+iz]/(dt);
 
-/* added factor 2.0 to be compliant with defined Green's functions */
+/* in older version added factor 2.0 to be compliant with defined Green's functions in Marchenko algorithm */
+/* this is now set to 1.0 */
 		src_ampl *= (1.0/mod.dx)*l2m[ix*n1+iz];
 
 		/* Force source */

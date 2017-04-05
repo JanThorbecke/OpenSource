@@ -88,7 +88,7 @@ int defineSource(wavPar wav, srcPar src, modPar mod, float **src_nwav, int rever
         tracesToDo = wav.nx;
         i = 0;
         while (tracesToDo) {
-            memset(&src_nwav[i][0],0,n1*sizeof(float));
+            memset(&src_nwav[i][0],0,wav.nt*sizeof(float));
             nread = fread(&src_nwav[i][0], sizeof(float), hdr.ns, fp);
             assert (nread == hdr.ns);
     
@@ -98,19 +98,25 @@ int defineSource(wavPar wav, srcPar src, modPar mod, float **src_nwav, int rever
             i++;
         }
         fclose(fp);
-        if (NINT(wav.ds*1000000) != NINT(mod.dt*1000000)) {
-			vmess("Sampling in wavelet is %e while for modeling is set to %e", wav.ds, mod.dt);
-			vmess("Wavelet sampling will be FFT-interpolated to sampling of modeling");
-		}
     }
 
     optn = optncr(n1);
     nfreq = optn/2 + 1;
-	optnscale  = wav.nt;
-	nfreqscale = optnscale/2 + 1;
+    if (wav.nt != wav.ns) {
+		vmess("Sampling in wavelet is %e while for modeling is set to %e", wav.ds, mod.dt);
+		vmess("Wavelet sampling will be FFT-interpolated to sampling of modeling");
+		vmess("file_src Nt=%d sampling after interpolation=%d", wav.ns, wav.nt);
+		optnscale  = wav.nt;
+		nfreqscale = optnscale/2 + 1;
+	}
+	else {
+		optnscale  = optn;
+		nfreqscale = optnscale/2 + 1;
+	}
+
     ctrace = (complex *)calloc(nfreqscale,sizeof(complex));
     trace = (float *)calloc(optnscale,sizeof(float));
-	//fprintf(stderr,"define S optn=%d ns=%d %e nt=%d %e\n", optn, wav.ns, wav.ds, optnscale, wav.dt);
+	fprintf(stderr,"define S optn=%d ns=%d %e nt=%d %e\n", optn, wav.ns, wav.ds, optnscale, wav.dt);
 
     df     = 1.0/(optn*wav.ds);
     deltom = 2.*M_PI*df;
@@ -175,11 +181,12 @@ int defineSource(wavPar wav, srcPar src, modPar mod, float **src_nwav, int rever
                this is done to avoid diffraction from last wavelet sample
                which will act as a pulse */
             if (reverse) {
-                for (j=0; j<optnscale; j++) src_nwav[i][j] = scl*(trace[optnscale-j-1]-trace[0]);
+                for (j=0; j<wav.nt; j++) src_nwav[i][j] = scl*(trace[wav.nt-j-1]-trace[0]);
             }
             else {
-                for (j=0; j<optnscale; j++) src_nwav[i][j] = scl*(trace[j]-trace[optnscale-1]);
+                for (j=0; j<wav.nt; j++) src_nwav[i][j] = scl*(trace[j]-trace[wav.nt-1]);
             }
+			vmess("Wavelet sampling FFT-interpolated done for trace %d", i);
         }
 
     }
