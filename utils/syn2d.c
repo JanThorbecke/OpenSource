@@ -620,7 +620,7 @@ void synthesis(float *shotdata, float *syndata, int nx, int nt, int nxs, int nts
 	cdata     = (complex *)malloc(nfreq*sizeof(complex));
 #pragma omp for
 	for(i = 0; i < nx; i++) {
-#pragma omp critical 
+//#pragma omp critical 
 {
 		rc1fft(&shotdata[i*optn], cdata, optn, -1);
 }
@@ -711,7 +711,7 @@ void synthesis(float *shotdata, float *syndata, int nx, int nt, int nxs, int nts
 					sum[j].i = tmp.i*ts.r - tmp.r*ts.i;
 				}
 			}
-#pragma omp critical
+//#pragma omp critical
 {
 			cr1fft(sum, rdata, optn, 1);
 }
@@ -734,7 +734,7 @@ void synthesis(float *shotdata, float *syndata, int nx, int nt, int nxs, int nts
 					sum[j].i = shotcdata[j*nx+i].i*tmp.r -
 							   shotcdata[j*nx+i].r*tmp.i;
 				}
-#pragma omp critical
+//#pragma omp critical
 {
 				cr1fft(sum, rdata, optn, 1);
 }

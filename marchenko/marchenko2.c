@@ -27,10 +27,10 @@ typedef struct _complexStruct { /* complex number */
 
 int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int ngath, int nx, int nxm, int ntfft, int mode, float weight, int verbose);
 int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int ngath, int nx, int ntfft, int mode, float *maxval, float *tinv, int hw, int verbose);
-int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, float d2, float f2, int n2out, int Nsyn, float *xsyn, float *zsyn, int iter);
+int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, float d2, float f2, int n2out, int Nfoc, float *xsyn, float *zsyn, int iter);
 void name_ext(char *filename, char *extension);
 
-void applyMute( float *data, float *mute, int smooth, int above, int Nsyn, int nxs, int nts, int *xrcvsyn, int npossyn, int shift);
+void applyMute( float *data, float *mute, int smooth, int above, int Nfoc, int nxs, int nts, int *xrcvsyn, int npossyn, int shift);
 
 int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *nxm);
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
@@ -38,9 +38,9 @@ int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 int disp_fileinfo(char *file, int n1, int n2, float f1, float f2, float d1, float d2, segy *hdrs);
 double wallclock_time(void);
 
-void synthesis(complex *shots, complex *syncdata, float *syndata, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int reci, int off, int nshots, int verbose);
+void synthesis(complex *shots, complex *syncdata, float *syndata, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nfoc, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int reci, int off, int nshots, int verbose);
 
-void synthesisPosistions(int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb,  int reci, int off, int nshots, int *ixpossyn, int *npossyn, int verbose);
+void synthesisPosistions(int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nfoc, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb,  int reci, int off, int nshots, int *ixpossyn, int *npossyn, int verbose);
 
 /*********************** self documentation **********************/
 char *sdoc[] = {
@@ -103,7 +103,7 @@ int main (int argc, char **argv)
 {
     FILE	*fp_syn, *fp_shot, *fp_out, *fp_f1plus, *fp_f1min;
 	FILE	*fp_gmin, *fp_gplus, *fp_pplus, *fp_pmin;
-	int		i, j, k, l, ret, nshots, Nsyn, nt, nx, nts, nxs, more, ngath;
+	int		i, j, k, l, ret, nshots, Nfoc, nt, nx, nts, nxs, more, ngath;
 	int		size, n1, n2, ntap, tap, di, ixrcv, ixsrc, off, ntraces;
     int     nf, nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
 	int		reci, mode, ixa, ixb, n2out, verbose, ntfft;
@@ -169,7 +169,7 @@ int main (int argc, char **argv)
 
 	ngath = 0; /* setting ngath=0 scans all traces; n2 contains maximum traces/gather */
 	ret = getFileInfo(file_tinv, &n1, &n2, &ngath, &d1, &d2, &f1, &f2, &xmin, &xmax, &scl, &ntraces);
-	Nsyn = ngath;
+	Nfoc = ngath;
 	nxs = n2; 
     nts = n1;
 	dxs = d2; dts = d1;
@@ -194,32 +194,32 @@ int main (int argc, char **argv)
     
 /*================ Reading all synthesis operator(s) ================*/
 
-	cpplus  = (complex *)malloc(nxs*nw*Nsyn*sizeof(complex));
-    xrcvsyn = (float *)calloc(Nsyn*nxs,sizeof(float));
-	xsyn    = (float *)malloc(Nsyn*sizeof(float));
-	zsyn    = (float *)malloc(Nsyn*sizeof(float));
+	cpplus  = (complex *)malloc(nxs*nw*Nfoc*sizeof(complex));
+    xrcvsyn = (float *)calloc(Nfoc*nxs,sizeof(float));
+	xsyn    = (float *)malloc(Nfoc*sizeof(float));
+	zsyn    = (float *)malloc(Nfoc*sizeof(float));
 	tapersy = (float *)malloc(nxs*sizeof(float));
-    xnxsyn  = (int *)calloc(Nsyn,sizeof(int));
-	green   = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
-	pplus   = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
-	pmin    = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
-	Gmin    = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
-	Gplus   = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
-	f1plus  = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
-	f1min   = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
-	Nk      = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
-	Nk_1    = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
+    xnxsyn  = (int *)calloc(Nfoc,sizeof(int));
+	green   = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
+	pplus   = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
+	pmin    = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
+	Gmin    = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
+	Gplus   = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
+	f1plus  = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
+	f1min   = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
+	Nk      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
+	Nk_1    = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
 	ctrace  = (complex *)malloc(ntfft*sizeof(complex));
 	trace  = (float *)malloc(ntfft*sizeof(float));
-    mute = (float *)calloc(Nsyn*nxs,sizeof(float));
-	tinv = (float *)malloc(Nsyn*nxs*ntfft*sizeof(float));
+    mute = (float *)calloc(Nfoc*nxs,sizeof(float));
+	tinv = (float *)malloc(Nfoc*nxs*ntfft*sizeof(float));
 	ixpossyn = (int *)malloc(nxs*sizeof(int));
 
 /*================ Read and define mute window based on synthesis operator(s) ================*/
 /* cpplus = p_0^+ = G_d (-t) ~ Tinv*/
 
 	mode=-1; /* apply complex conjugate to read in data */
-    readTinvData(file_tinv, xrcvsyn, xsyn, zsyn, xnxsyn, cpplus, nw, nw_low, Nsyn, nxs, ntfft, 
+    readTinvData(file_tinv, xrcvsyn, xsyn, zsyn, xnxsyn, cpplus, nw, nw_low, Nfoc, nxs, ntfft, 
 		mode, mute, tinv, hw, verbose);
                              
 	if (tap == 1 || tap == 3) {
@@ -235,7 +235,7 @@ int main (int argc, char **argv)
 	}
 	if (tap == 1 || tap == 3) {
 		if (verbose) vmess("Taper for operator applied ntap=%d", ntap);
-		for (l = 0; l < Nsyn; l++) {
+		for (l = 0; l < Nfoc; l++) {
 			for (j = 1; j < nw; j++) {
 				for (i = 0; i < nxs; i++) {
 					cpplus[l*nxs*nw+j*nxs+i].r *= tapersy[i];
@@ -326,7 +326,7 @@ int main (int argc, char **argv)
 	if (nt != nts) 
 		vmess("Time samples in shot (%d) and synthesis operator (%d) are not equal",nt, nts);
 	if (verbose) {
-		vmess("Number of synthesis operators  = %d", Nsyn);
+		vmess("Number of synthesis operators  = %d", Nfoc);
 		vmess("Number of receivers in synthop = %d", nxs);
 		vmess("number of shots                = %d", nshots);
 		vmess("number of receiver/shot        = %d", nx);
@@ -356,7 +356,7 @@ int main (int argc, char **argv)
 	if (ixa || ixb) n2out = ixa + ixb + 1;
 	else if (reci) n2out = nxs;
 	else n2out = nshots;
-	mem = Nsyn*n2out*ntfft*sizeof(float)/1048576.0;
+	mem = Nfoc*n2out*ntfft*sizeof(float)/1048576.0;
 	if (verbose) {
 		vmess("number of output traces        = %d", n2out);
 		vmess("number of output samples       = %d", ntfft);
@@ -364,7 +364,7 @@ int main (int argc, char **argv)
 	}
 
 	/* dry-run of synthesis to get all x-positions calcalated by the integration */
-	synthesisPosistions(nx, nt, nxs, nts, dt, xsyn, Nsyn, xrcv, xsrc, fxs2, fxs, 
+	synthesisPosistions(nx, nt, nxs, nts, dt, xsyn, Nfoc, xrcv, xsrc, fxs2, fxs, 
 		dxs, dxsrc, dx, ixa, ixb,  reci, off, nshots, ixpossyn, &npossyn, verbose);
 	if (verbose) {
 		vmess("synthesisPosistions: nshots=%d npossyn=%d", nshots, npossyn);
@@ -409,13 +409,13 @@ int main (int argc, char **argv)
 		if (iter % 2 == 0) { /* even iterations */
 			if (scheme==0) {
 				fprintf(stderr, "using Dissipative medium for iteration %d\n", iter);
-				synthesis(cshotsD, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
+				synthesis(cshotsD, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nfoc, 
 					xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
 					reci, off, nshots, verbose);
 			}
 			else {
 				fprintf(stderr, "using Enforcing medium for iteration %d\n", iter);
-				synthesis(cshotsE, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
+				synthesis(cshotsE, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nfoc, 
 					xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
 					reci, off, nshots, verbose);
 			}
@@ -423,29 +423,29 @@ int main (int argc, char **argv)
 		else {
 			if (scheme==0) {
 				fprintf(stderr, "using Enforcing medium for iteration %d\n", iter);
-				synthesis(cshotsE, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
+				synthesis(cshotsE, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nfoc, 
 					xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
 					reci, off, nshots, verbose);
 			}
 			else {
 				fprintf(stderr, "using Dissipative medium for iteration %d\n", iter);
-				synthesis(cshotsD, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
+				synthesis(cshotsD, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nfoc, 
 					xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
 					reci, off, nshots, verbose);
 			}
 		}
 
 		/* set cpplus to zero, so new operator can be defined within ixpossyn points */
-		memset(&cpplus[0].r, 0, Nsyn*nxs*nw*2*sizeof(float));
+		memset(&cpplus[0].r, 0, Nfoc*nxs*nw*2*sizeof(float));
 
     	if (file_iter != NULL) {
-			writeDataIter(file_iter, Nk, hdrs_out, ntfft, nxs, d2, f2, n2out, Nsyn, xsyn, zsyn, iter);
+			writeDataIter(file_iter, Nk, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, iter);
 		}
 
 		/* copy initialization value */
 		if (iter==0) {
 			/* N_0(t) = M_0(t) = -p0^-(x,-t) */
-			for (l = 0; l < Nsyn; l++) {
+			for (l = 0; l < Nfoc; l++) {
 				for (i = 0; i < npossyn; i++) {
 					j = 0;
 					Nk_1[l*nxs*nts+i*nts+j] = -Nk[l*nxs*nts+i*nts+j];
@@ -455,7 +455,7 @@ int main (int argc, char **argv)
 				}
 			}
 			/* p0^- = Int R P0^+ */
-			for (l = 0; l < Nsyn; l++) {
+			for (l = 0; l < Nfoc; l++) {
 				for (i = 0; i < npossyn; i++) {
 					j = 0;
 					pmin[l*nxs*nts+i*nts+j] = -Nk_1[l*nxs*nts+i*nts+j];
@@ -465,11 +465,11 @@ int main (int argc, char **argv)
 				}
 			}
 
-			//applyMute(Nk_1, mute, smooth, above, Nsyn, nxs, nts, shift);
-			applyMute(Nk_1, mute, smooth, above, Nsyn, nxs, nts, ixpossyn, npossyn, shift);
+			//applyMute(Nk_1, mute, smooth, above, Nfoc, nxs, nts, shift);
+			applyMute(Nk_1, mute, smooth, above, Nfoc, nxs, nts, ixpossyn, npossyn, shift);
 
 			/* even iterations:  => - f_1^- (-t) = pmin(t) */
-			for (l = 0; l < Nsyn; l++) {
+			for (l = 0; l < Nfoc; l++) {
 				for (i = 0; i < npossyn; i++) {
 					j = 0;
 					f1min[l*nxs*nts+i*nts+j] -= Nk_1[l*nxs*nts+i*nts+j];
@@ -479,7 +479,7 @@ int main (int argc, char **argv)
 				}
 			}
 
-			for (l = 0; l < Nsyn; l++) {
+			for (l = 0; l < Nfoc; l++) {
 				for (i = 0; i < npossyn; i++) {
 					j = 0;
 					//ix = NINT((xsrc[i]-fxs)/dxs);
@@ -492,7 +492,7 @@ int main (int argc, char **argv)
 				}
 			}
 			/* Pressure based scheme */
-			for (l = 0; l < Nsyn; l++) {
+			for (l = 0; l < Nfoc; l++) {
 				for (i = 0; i < npossyn; i++) {
 					j=0;
 					//ix = NINT((xsrc[i]-fxs)/dxs);
@@ -506,7 +506,7 @@ int main (int argc, char **argv)
 		}
 		else if (iter==1) {
 			/* Nk_1(x,t) = -\int R(x,t) M_0(x,-t) dxdt*/
-			for (l = 0; l < Nsyn; l++) {
+			for (l = 0; l < Nfoc; l++) {
 				for (i = 0; i < npossyn; i++) {
 					j = 0;
 					Nk_1[l*nxs*nts+i*nts+j] = -Nk[l*nxs*nts+i*nts+j];
@@ -515,7 +515,7 @@ int main (int argc, char **argv)
 					}
 				}
 			}
-			for (l = 0; l < Nsyn; l++) {
+			for (l = 0; l < Nfoc; l++) {
 				for (i = 0; i < npossyn; i++) {
 					j = 0;
 					pmin[l*nxs*nts+i*nts+j] -= Nk_1[l*nxs*nts+i*nts+j];
@@ -524,10 +524,10 @@ int main (int argc, char **argv)
 					}
 				}
 			}
-			//applyMute(Nk_1, mute, smooth, above, Nsyn, nxs, nts, shift);
-			applyMute(Nk_1, mute, smooth, above, Nsyn, nxs, nts, ixpossyn, npossyn, shift);
+			//applyMute(Nk_1, mute, smooth, above, Nfoc, nxs, nts, shift);
+			applyMute(Nk_1, mute, smooth, above, Nfoc, nxs, nts, ixpossyn, npossyn, shift);
 			/* Pressure based scheme */
-			for (l = 0; l < Nsyn; l++) {
+			for (l = 0; l < Nfoc; l++) {
 				for (i = 0; i < npossyn; i++) {
 					j=0;
 					green[l*nxs*nts+i*nts+j] = pplus[l*nxs*nts+i*nts+j] + pmin[l*nxs*nts+i*nts+j];
@@ -536,7 +536,7 @@ int main (int argc, char **argv)
 					}
 				}
 			}
-			for (l = 0; l < Nsyn; l++) {
+			for (l = 0; l < Nfoc; l++) {
 				for (i = 0; i < npossyn; i++) {
 					j = 0;
 					pplus[l*nxs*nts+i*nts+j] += Nk_1[l*nxs*nts+i*nts+j];
@@ -546,7 +546,7 @@ int main (int argc, char **argv)
 				}
 			}
 			/* odd iterations: M_m^+  */
-			for (l = 0; l < Nsyn; l++) {
+			for (l = 0; l < Nfoc; l++) {
 				for (i = 0; i < npossyn; i++) {
 					j = 0;
 					//ix = NINT((xsrc[i]-fxs)/dxs);
@@ -561,7 +561,7 @@ int main (int argc, char **argv)
 		else {
 			/* in next iteration use time reversal (and scale with scalar w)*/
 			/* N_k(x,t) = -N_(k-1)(x,-t) */
-			for (l = 0; l < Nsyn; l++) {
+			for (l = 0; l < Nfoc; l++) {
 				for (i = 0; i < npossyn; i++) {
 					j = 0;
 					Nk_1[l*nxs*nts+i*nts+j] = -Nk[l*nxs*nts+i*nts+j];
@@ -570,7 +570,7 @@ int main (int argc, char **argv)
 					}
 				}
 			}
-			for (l = 0; l < Nsyn; l++) {
+			for (l = 0; l < Nfoc; l++) {
 				for (i = 0; i < npossyn; i++) {
 					j = 0;
 					pmin[l*nxs*nts+i*nts+j] -= Nk_1[l*nxs*nts+i*nts+j];
@@ -579,13 +579,13 @@ int main (int argc, char **argv)
 					}
 				}
 			}
-			//applyMute(Nk_1, mute, smooth, above, Nsyn, nxs, nts, shift);
-			applyMute(Nk_1, mute, smooth, above, Nsyn, nxs, nts, ixpossyn, npossyn, shift);
+			//applyMute(Nk_1, mute, smooth, above, Nfoc, nxs, nts, shift);
+			applyMute(Nk_1, mute, smooth, above, Nfoc, nxs, nts, ixpossyn, npossyn, shift);
 
 			/* compute full Green's function G = p^+(-t) + p^-(t) */
 			if (iter == niter-1) {
 				/* Pressure based scheme */
-				for (l = 0; l < Nsyn; l++) {
+				for (l = 0; l < Nfoc; l++) {
 					for (i = 0; i < npossyn; i++) {
 						j=0;
 						green[l*nxs*nts+i*nts+j] = pplus[l*nxs*nts+i*nts+j] + pmin[l*nxs*nts+i*nts+j];
@@ -596,7 +596,7 @@ int main (int argc, char **argv)
 				}
 			} /* end if for last iteration */
 
-			for (l = 0; l < Nsyn; l++) {
+			for (l = 0; l < Nfoc; l++) {
 				for (i = 0; i < npossyn; i++) {
 					j = 0;
 					pplus[l*nxs*nts+i*nts+j] += Nk_1[l*nxs*nts+i*nts+j];
@@ -608,7 +608,7 @@ int main (int argc, char **argv)
 
 
 			if (iter % 2 == 0) { /* even iterations: => - f_1^- (-t) = pmin(t) */
-				for (l = 0; l < Nsyn; l++) {
+				for (l = 0; l < Nfoc; l++) {
 					for (i = 0; i < npossyn; i++) {
 						j = 0;
 						f1min[l*nxs*nts+i*nts+j] -= Nk_1[l*nxs*nts+i*nts+j];
@@ -619,7 +619,7 @@ int main (int argc, char **argv)
 				}
 			}
 			else {/* odd iterations: M_m^+  */
-				for (l = 0; l < Nsyn; l++) {
+				for (l = 0; l < Nfoc; l++) {
 					for (i = 0; i < npossyn; i++) {
 						j = 0;
 						f1plus[l*nxs*nts+i*nts+j] += Nk_1[l*nxs*nts+i*nts+j];
@@ -639,7 +639,7 @@ int main (int argc, char **argv)
 		/* f1 based scheme */
 		if (iter == niter-1) {
 			/* transform f1+ to frequency domain */
-			for (l = 0; l < Nsyn; l++) {
+			for (l = 0; l < Nfoc; l++) {
 				for (i = 0; i < npossyn; i++) {
 					for (j = 0; j < nts; j++) {
 						trace[j] = f1plus[l*nxs*nts+i*nts+j];
@@ -654,18 +654,18 @@ int main (int argc, char **argv)
 			}
 
 			if (scheme==0) {
-				synthesis(cshotsD, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
+				synthesis(cshotsD, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nfoc, 
 					xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
 					reci, off, nshots, verbose);
 			}
 			else {
-				synthesis(cshotsE, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
+				synthesis(cshotsE, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nfoc, 
 					xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
 					reci, off, nshots, verbose);
 			}
 
 			/* compute upgoing Green's G^-,+ */
-			for (l = 0; l < Nsyn; l++) {
+			for (l = 0; l < Nfoc; l++) {
 				for (i = 0; i < npossyn; i++) {
 					j=0;
 					Gmin[l*nxs*nts+i*nts+j] = Nk[l*nxs*nts+i*nts+j] - f1min[l*nxs*nts+i*nts+j];
@@ -675,11 +675,11 @@ int main (int argc, char **argv)
 				}
 			}
 			/* Apply mute with window for Gmin */
-			//applyMute(Gmin, mute, smooth, 1, Nsyn, nxs, nts, shift);
-			applyMute(Gmin, mute, smooth, 1, Nsyn, nxs, nts, ixpossyn, npossyn, shift);
+			//applyMute(Gmin, mute, smooth, 1, Nfoc, nxs, nts, shift);
+			applyMute(Gmin, mute, smooth, 1, Nfoc, nxs, nts, ixpossyn, npossyn, shift);
 
 			/* transform f1- to frequency domain */
-			for (l = 0; l < Nsyn; l++) {
+			for (l = 0; l < Nfoc; l++) {
 				for (i = 0; i < npossyn; i++) {
 					for (j = 0; j < nts; j++) {
 						trace[j] = f1min[l*nxs*nts+i*nts+j];
@@ -694,18 +694,18 @@ int main (int argc, char **argv)
 			}
 
 			if (scheme==0) {
-				synthesis(cshotsE, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
+				synthesis(cshotsE, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nfoc, 
 					xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
 					reci, off, nshots, verbose);
 			}
 			else {
-				synthesis(cshotsD, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
+				synthesis(cshotsD, cpplus, Nk, nx, nt, nxs, nts, dt, xsyn, Nfoc, 
 					xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, 
 					reci, off, nshots, verbose);
 			}
 
 			/* compute downgoing Green's G^+,+ */
-			for (l = 0; l < Nsyn; l++) {
+			for (l = 0; l < Nfoc; l++) {
 				for (i = 0; i < npossyn; i++) {
 					j=0;
 					Gplus[l*nxs*nts+i*nts+j] = -Nk[l*nxs*nts+i*nts+j] + f1plus[l*nxs*nts+i*nts+j];
@@ -717,7 +717,7 @@ int main (int argc, char **argv)
 		} /* end if for last iteration */
 
 		/* transform muted Nk_1 to frequency domain */
-		for (l = 0; l < Nsyn; l++) {
+		for (l = 0; l < Nfoc; l++) {
 			for (i = 0; i < npossyn; i++) {
         		rc1fft(&Nk_1[l*nxs*nts+i*nts],ctrace,ntfft,-1);
 				ix = ixpossyn[i];
@@ -786,7 +786,7 @@ int main (int argc, char **argv)
 
 
 	tracf = 1;
-	for (l = 0; l < Nsyn; l++) {
+	for (l = 0; l < Nfoc; l++) {
 		if (ixa || ixb) f2 = xsyn[l]-ixb*d2;
 		else {
 			if (reci) f2 = fxs;
@@ -874,7 +874,7 @@ int main (int argc, char **argv)
 	exit(0);
 }
 
-void synthesis(complex *shots, complex *syncdata, float *syndata, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int reci, int off, int nshots, int verbose)
+void synthesis(complex *shots, complex *syncdata, float *syndata, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nfoc, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int reci, int off, int nshots, int verbose)
 {
 	int nfreq, size, iox, inx;
 	float scl;
@@ -894,7 +894,7 @@ void synthesis(complex *shots, complex *syncdata, float *syndata, int nx, int nt
 	t0 = wallclock_time();
 
 	/* reset output data to zero */
-	memset(&syndata[0], 0, Nsyn*nxs*nts*sizeof(float));
+	memset(&syndata[0], 0, Nfoc*nxs*nts*sizeof(float));
 
 	for (k=0; k<nshots; k++) {
 
@@ -921,16 +921,16 @@ void synthesis(complex *shots, complex *syncdata, float *syndata, int nx, int nt
 
 #ifdef _OPENMP
     npe   = omp_get_max_threads();
-	/* parallelisation is over number of virtual source positions (Nsyn) */
-	if (npe > Nsyn) {
-		vmess("Number of OpenMP threads set to %d (was %d)", Nsyn, npe);
-		omp_set_num_threads(Nsyn);
+	/* parallelisation is over number of virtual source positions (Nfoc) */
+	if (npe > Nfoc) {
+		vmess("Number of OpenMP threads set to %d (was %d)", Nfoc, npe);
+		omp_set_num_threads(Nfoc);
 	}
 #endif
 
 #pragma omp parallel default(none) \
  shared(syndata, dx, npe, nw, verbose) \
- shared(shots, Nsyn, reci, xrcv, xsrc, xsyn, fxs, nxs, dxs) \
+ shared(shots, Nfoc, reci, xrcv, xsrc, xsyn, fxs, nxs, dxs) \
  shared(nx, ixa, ixb, dxsrc, iox, inx, k, nfreq, nw_low, nw_high) \
  shared(syncdata, size, nts, ntfft, scl, ixsrc) \
  private(l, x0, x1, ix, dosrc, j, m, i, ixrcv, sum, rdata, tmp, ts, to)
@@ -938,7 +938,7 @@ void synthesis(complex *shots, complex *syncdata, float *syndata, int nx, int nt
 	sum   = (complex *)malloc(nfreq*sizeof(complex));
 	rdata = (float *)calloc(ntfft,sizeof(float));
 #pragma omp for 
-	for (l = 0; l < Nsyn; l++) {
+	for (l = 0; l < Nfoc; l++) {
 
 /*
 		if (ixa || ixb) { 
@@ -1024,7 +1024,7 @@ void synthesis(complex *shots, complex *syncdata, float *syndata, int nx, int nt
 		}
 */
 
-	} /* end of parallel Nsyn loop */
+	} /* end of parallel Nfoc loop */
 
 	free(sum);
 	free(rdata);
@@ -1049,7 +1049,7 @@ void synthesis(complex *shots, complex *syncdata, float *syndata, int nx, int nt
 	return;
 }
 
-void synthesisPosistions(int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb,  int reci, int off, int nshots, int *ixpossyn, int *npossyn, int verbose)
+void synthesisPosistions(int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nfoc, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb,  int reci, int off, int nshots, int *ixpossyn, int *npossyn, int verbose)
 {
 	int nfreq, size, iox, inx;
 	float scl;
@@ -1063,7 +1063,7 @@ void synthesisPosistions(int nx, int nt, int nxs, int nts, float dt, float *xsyn
 /*================ SYNTHESIS ================*/
 
 	for (l = 0; l < 1; l++) { /* assuming all synthesis operators cover the same lateral area */
-//	for (l = 0; l < Nsyn; l++) {
+//	for (l = 0; l < Nfoc; l++) {
 		*npossyn=0;
 
 		for (k=0; k<nshots; k++) {
@@ -1138,7 +1138,7 @@ void synthesisPosistions(int nx, int nt, int nxs, int nts, float dt, float *xsyn
 				}
 			}
 	
-		} /* end of Nsyn loop */
+		} /* end of Nfoc loop */
 
 	} /* end of nshots (k) loop */
 

@@ -50,9 +50,8 @@ export fileqs=relax_cs.su
 	zrcv1=300 zrcv2=300 \
 	dtrcv=0.004 xsrc=1000 zsrc=300 nshot=1 \
 	src_type=1 \
-	tapfact=0.9 \
-	ntaper=200 \
-	left=4 right=4 bottom=4 top=4 \
+	ntaper=100 \
+	left=2 right=2 bottom=2 top=2 \
 	tmod=1.5 dt=0.001 
 
 #    tsnap1=0 tsnap2=1.5 dtsnap=0.05 \
@@ -89,9 +88,8 @@ export fileqs=relax_cs.su
 	zrcv1=300 zrcv2=300 \
 	dtrcv=0.004 xsrc=1000 zsrc=300 nshot=1 ntaper=100 \
 	src_type=1 \
-	tapfact=0.9 \
-	ntaper=200 \
-	left=4 right=4 bottom=4 top=4 \
+	ntaper=100 \
+	left=2 right=2 bottom=2 top=2 \
 	tmod=1.5 dt=0.001 
 
 # substract mean and plot in eps

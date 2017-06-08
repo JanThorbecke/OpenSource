@@ -64,6 +64,7 @@ REAL *fz;
  REAL *fi,*fn,*gi;
  TRIG_VARS;
 
+#pragma omp threadprivate (halsec,costab,coswrk,sintab,sinwrk)
  for (k1=1,k2=0;k1<n;k1++)
     {
      REAL a;

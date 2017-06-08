@@ -19,7 +19,7 @@ typedef struct { /* complex number */
 
 void findShotInMute(float *xrcvMute, float xrcvShot, int nxs, int *imute);
 
-int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nsyn, int nx, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose)
+int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nfoc, int nx, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose)
 {
 	FILE *fp;
 	segy hdr;

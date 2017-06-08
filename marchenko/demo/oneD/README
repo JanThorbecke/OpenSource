@@ -125,7 +125,7 @@ compare_003.eps
 compare_004.eps
 
 
-Note that the script epsIterwithLabels.scr produces the same figures, but with axis-labels. In figures 6 and 8 only one picture has axis-labels to avoid a busy picture. From that single label the labels of the other pictures, with the same axis, can be derived. 
+Note that the script epsIterwithLabels.scr produces the same figures, but with axis-labels. 
 
 --------------------------
 * Figure 7: Comparison of Marchenko result with reference

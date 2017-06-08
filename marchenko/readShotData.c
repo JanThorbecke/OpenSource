@@ -18,7 +18,7 @@ void rc1fft(float *rdata, complex *cdata, int n, int sign);
 int compare(const void *a, const void *b) 
 { return (*(float *)b-*(float *)a); }
 
-int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int ngath, int nx, int nxm, int ntfft, int mode, float weight, float tsq, int verbose)
+int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int ngath, int nx, int nxm, int ntfft, int mode, float scale, float tsq, int verbose)
 {
     FILE *fp;
     segy hdr;
@@ -95,8 +95,8 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 
             rc1fft(trace,ctrace,ntfft,-1);
             for (iw=0; iw<nw; iw++) {
-                cdata[igath*nx*nw+iw*nx+itrace].r = weight*ctrace[nw_low+iw].r;
-                cdata[igath*nx*nw+iw*nx+itrace].i = weight*mode*ctrace[nw_low+iw].i;
+                cdata[igath*nx*nw+iw*nx+itrace].r = scale*ctrace[nw_low+iw].r;
+                cdata[igath*nx*nw+iw*nx+itrace].i = scale*mode*ctrace[nw_low+iw].i;
             }
             itrace++;
             xnx[igath]+=1;

@@ -57,7 +57,7 @@ cd \$PBS_O_WORKDIR
 		rec_delay=0.3 \
    		dtrcv=0.004 \
    		verbose=2 \
-   		tmod=4.394 \
+   		tmod=4.392 \
    		dxrcv=10.0 \
    		xrcv1=-3000,-3000,-3000 xrcv2=3000,3000,3000 \
    		zrcv1=0,1000,1600 zrcv2=0,1000,1600 \
