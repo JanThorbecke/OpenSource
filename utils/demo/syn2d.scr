@@ -1,0 +1,15 @@
+#!/bin/bash
+
+export OMP_NUM_THREADS=8
+nt=256
+
+../makewave nt=$nt w=g2 file_out=wave.su w=g2 dt=0.004 
+
+../green c=2000 nt=$nt dt=0.004 zsrc1=500 xsrc1=-60 xsrc2=60 dxsrc=15 file_src=wave.su  file_out=green.su
+
+../green c=2000 nt=$nt dt=0.004 zsrc1=500 xsrc1=-1500 xsrc2=1500 dxsrc=15 file_src=wave.su  file_out=shots.su
+
+
+../syn2d file_syn=green.su file_shot=shots.su  verbose=1 nshots=201 file_cfp=syn.su
+
+
