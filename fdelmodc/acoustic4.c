@@ -94,7 +94,7 @@ int acoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 	}
 
 	/* calculate vz for all grid points except on the virtual boundary */
-#pragma omp for private (ix, iz) schedule(guided,1)
+#pragma omp for private (ix, iz) schedule(guided,1) 
 #pragma ivdep
 	for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
 #pragma ivdep
@@ -120,7 +120,7 @@ int acoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
     if (bnd.rig==2) mod.iePx -= bnd.npml;
 
 	/* calculate p/tzz for all grid points except on the virtual boundary */
-#pragma omp for private (ix, iz) schedule(guided,1)
+#pragma omp for private (ix, iz) schedule(guided,1) 
 //#pragma omp for private (ix, iz) schedule(dynamic) 
 #pragma ivdep
 	for (ix=mod.ioPx; ix<mod.iePx; ix++) {

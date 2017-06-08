@@ -40,7 +40,7 @@ supsgraph < wavefw.su \
  
 sufft < wavefw.su | suamp | sugain scale=$dt | supsgraph \
     labelsize=12 style=normal \
-    label1="time (s)" label2="amplitude" \
+    label1="frequency (1/s)" label2="amplitude" \
     d1num=10 wbox=6 hbox=3 x1end=125 x2end=1.1 > wavefw_freq.eps
  
 

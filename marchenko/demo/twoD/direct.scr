@@ -25,7 +25,7 @@ fdelmodc \
 	rec_delay=0.3 \
     dtrcv=0.004 \
     verbose=2 \
-    tmod=4.394 \
+    tmod=4.392 \
     dxrcv=10.0 \
     xrcv1=-6000 xrcv2=6000 \
     zrcv1=0 zrcv2=0 \

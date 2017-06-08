@@ -27,15 +27,15 @@ sumax < ${file_snap}_sp.su mode=abs outpar=nep
 clip=`cat nep | awk '{print $1/2}'`
 
 #first snap-shot with labels
-  fldr=71
-  times=$(echo "scale=2; $dtsnap*(${fldr}-$nsnap)" | bc -l)
-  atime=`printf "%4.2f" $times`
-  suwind key=fldr min=$fldr max=$fldr < ${file_snap}_sp.su | \
-	supsimage hbox=4 wbox=6 labelsize=10 \
-   	label1="depth (m)" label2="lateral distance (m)" \
-	x1beg=0 x1end=1250.0 clip=${clip} \
-    curve=line1,line2,line3 npair=2,2,2 curvecolor=black,black,black curvedash=3,3,3 \
-	n1tic=4 f2=-1000 d2=$dx x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > ${file_snap}_${atime}_labels.eps
+#  fldr=71
+#  times=$(echo "scale=2; $dtsnap*(${fldr}-$nsnap)" | bc -l)
+#  atime=`printf "%4.2f" $times`
+#  suwind key=fldr min=$fldr max=$fldr < ${file_snap}_sp.su | \
+#	supsimage hbox=4 wbox=6 labelsize=10 \
+#   	label1="depth (m)" label2="lateral distance (m)" \
+#	x1beg=0 x1end=1250.0 clip=${clip} \
+#    curve=line1,line2,line3 npair=2,2,2 curvecolor=black,black,black curvedash=3,3,3 \
+#	n1tic=4 f2=-1000 d2=$dx x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > ${file_snap}_${atime}_labels.eps
 
 for fldr in 71 86 98 99 101 103 104 116 131;
 do

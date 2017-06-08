@@ -1,26 +1,15 @@
 #!/bin/bash -x
-#PBS -N fdelmod
-#PBS -q verylong
-#PBS -l nodes=1
-#PBS -k eo
-#PBS -j eo
 
 export PATH=$HOME/src/OpenSource/bin:$PATH:
 
 export OMP_NUM_THREADS=1
 
-cd Redatum
+#mute all events below the first arrival to get the intial focusing field
+fmute file_shot=shots/iniFocus_z1100_x0_rp.su file_out=p0plus.su above=-1 shift=-10 verbose=1 check=1 hw=4
 
-#for dt=0.004 with modeling at 0.0005
-smooth=3
-
-fmute file_shot=shots/shotsmonPz1100_0_rp.su file_out=p0plus.su above=-1 shift=-10 verbose=1 check=1 hw=4
-
-suwind itmax=1023 < p0plus.su | \
-suwind key=gx min=-3000000 max=3000000 | \
-sushw key=fldr a=1 > p0plussx.su
-
-#
-marchenko file_shot=../shots/refl_rp.su file_tinv=p0plussx.su nshots=601 file_green=pgreen.su verbose=1 tap=0 ntap=10 niter=15 hw=8 shift=7 smooth=$smooth file_gplus=Gplus0.su file_gmin=Gmin0.su  file_f1plus=f1plus0.su file_f1min=f1min0.su file_pplus=Pplus0.su
-
+#apply the Marchenko algorithm
+marchenko file_shot=../shots/refl_rp.su file_tinv=p0plus.su nshots=601 verbose=1 \
+	tap=0 niter=15 hw=8 shift=7 smooth=3 \
+    file_green=pgreen.su file_gplus=Gplus0.su file_gmin=Gmin0.su  \
+    file_f1plus=f1plus0.su file_f1min=f1min0.su file_f2=f2.su
 

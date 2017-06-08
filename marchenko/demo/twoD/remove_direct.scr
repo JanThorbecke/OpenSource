@@ -1,9 +1,4 @@
 #!/bin/bash
-#PBS -N fdelmod
-#PBS -q verylong
-#PBS -l nodes=1
-#PBS -k eo
-#PBS -j eo
 
 export PATH=$HOME/src/OpenSource/bin:$PATH:
 

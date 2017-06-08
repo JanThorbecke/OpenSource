@@ -25,7 +25,7 @@ int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
 int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 int disp_fileinfo(char *file, int n1, int n2, float f1, float f2, float d1, float d2, segy *hdrs);
-void applyMute( float *data, int *mute, int smooth, int above, int Nsyn, int nxs, int nt, int *xrcvsyn, int npossyn, int shift);
+void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *xrcvsyn, int npossyn, int shift);
 double wallclock_time(void);
 
 /*********************** self documentation **********************/
@@ -43,11 +43,12 @@ char *sdoc[] = {
 " Optional parameters: ",
 " ",
 "   file_out= ................ output file",
-"   above=0 .................. mute above(1), around(0) or below(-1) the maximum times of file_mute",
+"   above=0 .................. mute after(0), before(1) or around(2) the maximum times of file_mute",
+"   .......................... options 4 is the inverse of 0 and -1 the inverse of 1",
 "   shift=0 .................. number of points above(positive) / below(negative) maximum time for mute",
 "   check=0 .................. plots muting window on top of file_mute: output file check.su",
 "   scale=0 .................. scale data by dividing through maximum",
-"   hw=15 .................... window in time samples to look for maximum in next trace of file_mute",
+"   hw=15 .................... number of time samples to look up and down in next trace for maximum",
 "   smooth=0 ................. number of points to smooth mute with cosine window",
 //"   nxmax=512 ................ maximum number of traces in input file",
 //"   ntmax=1024 ............... maximum number of samples/trace in input file",

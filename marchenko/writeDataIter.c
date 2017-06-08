@@ -17,7 +17,7 @@
 void name_ext(char *filename, char *extension);
 int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 
-int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, float d2, float f2, int n2out, int Nsyn, float *xsyn, float *zsyn, int iter)
+int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, float d2, float f2, int n2out, int Nfoc, float *xsyn, float *zsyn, int iter)
 {
 	FILE *fp_iter;
 	size_t nwrite;
@@ -33,7 +33,7 @@ int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, floa
 	if (fp_iter==NULL) verr("error on creating output file %s", filename);
 	tracf=1;
 	size=n1*n2;
-	for (l = 0; l < Nsyn; l++) {
+	for (l = 0; l < Nfoc; l++) {
 		for (i = 0; i < n2out; i++) {
 			hdrs[i].fldr   = l+1; 
 			hdrs[i].sx = NINT(xsyn[l]*1000);
