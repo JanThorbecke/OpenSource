@@ -7,11 +7,11 @@
 
 # receivers are placed on a circle 
 
-export PATH=../../utils:$PATH:
+export PATH=../../bin:$PATH:
 
-dt=0.0001
-#makewave file_out=wavelet.su dt=0.0020 nt=1024 fp=13 shift=1 w=g2 verbose=1
-makewave w=fw fmin=0 flef=6 frig=89 fmax=95  dt=$dt file_out=wavefw.su nt=16384 t0=0.3 scale=0 scfft=1
+dt=0.0008
+makewave file_out=wave.su dt=$dt nt=1024 fp=25 shift=1 w=g2 verbose=1
+#makewave w=fw fmin=0 flef=6 frig=89 fmax=95  dt=$dt file_out=wavefw.su nt=16384 t0=0.3 scale=0 scfft=1
 #sufft < wavefw.su | suamp | sugain scale=0.0001 | suxgraph style=normal
 
 makemod file_base=model.su \
@@ -38,7 +38,7 @@ set -x
     dxrcv=10 \
 	dtrcv=0.004 \
 	xsrc=0 zsrc=-2000 nshot=1 nsrc=1 \
-	src_type=1 tmod=4.092 \
+	src_type=1 tmod=1.020 \
 	ntaper=100 \
 	left=2 right=2 bottom=2 top=2
 
@@ -46,17 +46,17 @@ export filecp=hom_cp.su
 export filero=hom_ro.su
 file_rcv=hom.su
 
-../fdelmodc \
+fdelmodc \
 	file_cp=$filecp file_den=$filero \
 	ischeme=1 \
-	file_src=wavefw.su verbose=2 \
+	src_type=7 \
+	file_src=wave.su verbose=2 \
 	file_rcv=$file_rcv \
-	rec_type_vz=0 rec_type_p=1 \
-    xrcv1=-2000 xrcv2=2000 zrcv1=-2000 zrcv2=-2000 \
-    dxrcv=10 \
+	rec_type_vz=1 rec_type_p=1 \
+	rrcv=500 dphi=1 \
 	dtrcv=0.004 \
-	xsrc=0 zsrc=-2000 nshot=1 nsrc=1 \
-	src_type=1 tmod=4.092 \
+	xsrc=0 zsrc=0 nshot=1 nsrc=1 \
+	tmod=1.020 \
 	ntaper=100 \
 	left=2 right=2 bottom=2 top=2
 

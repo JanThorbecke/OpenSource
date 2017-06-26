@@ -113,15 +113,14 @@ int defineSource(wavPar wav, srcPar src, modPar mod, float **src_nwav, int rever
 		optnscale  = optn;
 		nfreqscale = optnscale/2 + 1;
 	}
+//	fprintf(stderr,"define S optn=%d ns=%d %e nt=%d %e\n", optn, wav.ns, wav.ds, optnscale, wav.dt);
 
     ctrace = (complex *)calloc(nfreqscale,sizeof(complex));
     trace = (float *)calloc(optnscale,sizeof(float));
-	fprintf(stderr,"define S optn=%d ns=%d %e nt=%d %e\n", optn, wav.ns, wav.ds, optnscale, wav.dt);
 
     df     = 1.0/(optn*wav.ds);
     deltom = 2.*M_PI*df;
     scl    = 1.0/optn;
-    maxampl=0.0;
     iwmax = nfreq;
 
     for (i=0; i<wav.nx; i++) {
@@ -180,16 +179,29 @@ int defineSource(wavPar wav, srcPar src, modPar mod, float **src_nwav, int rever
             /* avoid a (small) spike in the last sample 
                this is done to avoid diffraction from last wavelet sample
                which will act as a pulse */
+    		maxampl=0.0;
             if (reverse) {
-                for (j=0; j<wav.nt; j++) src_nwav[i][j] = scl*(trace[wav.nt-j-1]-trace[0]);
+                for (j=0; j<wav.nt; j++) {
+					src_nwav[i][j] = scl*(trace[wav.nt-j-1]-trace[0]);
+					maxampl = MAX(maxampl,fabs(src_nwav[i][j]));
+				}
             }
             else {
-                for (j=0; j<wav.nt; j++) src_nwav[i][j] = scl*(trace[j]-trace[wav.nt-1]);
+                for (j=0; j<wav.nt; j++) {
+					src_nwav[i][j] = scl*(trace[j]-trace[wav.nt-1]);
+					maxampl = MAX(maxampl,fabs(src_nwav[i][j]));
+				}
             }
-			vmess("Wavelet sampling FFT-interpolated done for trace %d", i);
+			if (verbose > 3) vmess("Wavelet sampling (FFT-interpolated) done for trace %d", i);
         }
-
     }
+	/* set values smaller than 1e-5 maxampl to zero */
+	maxampl *= 1e-5;
+    for (i=0; i<wav.nx; i++) {
+        for (j=0; j<wav.nt; j++) {
+	        if (fabs(src_nwav[i][j]) < maxampl) src_nwav[i][j] = 0.0;
+	    }
+	}
     free(ctrace);
     free(trace);
 
