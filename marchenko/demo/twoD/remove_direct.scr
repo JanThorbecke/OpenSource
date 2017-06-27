@@ -29,3 +29,5 @@ do
 
 done
 
+rm refl.su shotz0.su direct.su
+

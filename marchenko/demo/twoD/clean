@@ -1,4 +1,4 @@
 #!/bin/bash
 
-rm *.su *.bin *.txt *.eps nep
+rm *.su *.bin *.txt *.eps nep *.asci
 

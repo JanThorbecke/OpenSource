@@ -19,7 +19,7 @@ fdelmodc \
     src_type=7 \
 	src_orient=1 \
 	src_injectionrate=1 \
-    rec_type_vz=1 \
+    rec_type_vz=0 \
     rec_type_p=1 \
     rec_int_vz=2 \
 	rec_delay=0.3 \
