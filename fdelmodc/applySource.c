@@ -141,16 +141,16 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 		/* Force source */
 
 		if (src.type == 6) {
-			//vx[ix*n1+iz] += src_ampl*rox[ix*n1+iz]/(l2m[ix*n1+iz]);
+			vx[ix*n1+iz] += src_ampl*rox[ix*n1+iz]/(l2m[ix*n1+iz]);
 			/* stable implementation from "Numerical Techniques for Conservation Laws with Source Terms" by Justin Hudson */
-			vx[ix*n1+iz] = 0.5*(vx[(ix+1)*n1+iz]+vx[(ix-1)*n1+iz])+src_ampl*rox[ix*n1+iz]/(l2m[ix*n1+iz]);
+			/* stable implementation changes amplitude and more work is needed */
+			//vx[ix*n1+iz] = 0.5*(vx[(ix+1)*n1+iz]+vx[(ix-1)*n1+iz])+src_ampl*rox[ix*n1+iz]/(l2m[ix*n1+iz]);
 		}
 		else if (src.type == 7) {
-			/* old amplitude setting does not obey reciprocity */
-			//vz[ix*n1+iz] += src_ampl*(dt/mod.dx)/(l2m[ix*n1+iz]);
-			//vz[ix*n1+iz] += src_ampl*roz[ix*n1+iz]/(l2m[ix*n1+iz]);
+			vz[ix*n1+iz] += src_ampl*roz[ix*n1+iz]/(l2m[ix*n1+iz]);
 			/* stable implementation from "Numerical Techniques for Conservation Laws with Source Terms" by Justin Hudson */
-			vz[ix*n1+iz] = 0.5*(vz[ix*n1+iz-1]+vz[ix*n1+iz+1])+src_ampl*roz[ix*n1+iz]/(l2m[ix*n1+iz]);
+			//vz[ix*n1+iz] = 0.5*(vz[ix*n1+iz-1]+vz[ix*n1+iz+1])+src_ampl*roz[ix*n1+iz]/(l2m[ix*n1+iz]);
+			//vz[ix*n1+iz] = 0.25*(vz[ix*n1+iz-2]+vz[ix*n1+iz-1]+vz[ix*n1+iz]+vz[ix*n1+iz+1])+src_ampl*roz[ix*n1+iz]/(l2m[ix*n1+iz]);
         } /* src.type */
 
         
