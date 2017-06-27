@@ -16,8 +16,9 @@ mkdir -p shots
 mkdir -p jobs
 
 dxshot=10
-ishot=0
+ishot=50
 nshots=601
+nshots=51
 zsrc=0
 
 while (( ishot < nshots ))
