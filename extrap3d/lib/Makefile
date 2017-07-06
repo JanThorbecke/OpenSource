@@ -9,6 +9,7 @@ CFLAGS += -D_GNU_SOURCE
 CSRC = \
 	xwExtr3d.c \
 	xwCFP3d.c \
+	xwMigr3d.c \
 	getreccfp.c \
 	SolveAxb.c \
 	W3d.c \
