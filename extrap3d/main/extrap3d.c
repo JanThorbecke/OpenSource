@@ -673,7 +673,7 @@ int main(int argc, char *argv[])
 	MPI_Finalize();
 #endif
 
-	return;
+	return 0;
 }
 
 

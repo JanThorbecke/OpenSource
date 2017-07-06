@@ -5,7 +5,7 @@
 
 # Directories
 
-export datadir=/home/thorbcke/src/OpenSource/extrap3d/test
+export datadir=/home/thorbcke/src/OpenSource/extrap3d/demo
 export PATH=/home/thorbcke/src/OpenSource/bin:$PATH
 
 cd $datadir
