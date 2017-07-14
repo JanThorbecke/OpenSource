@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2017 by the Society of Exploration Geophysicists.
+ * For more information, go to http://software.seg.org/2017/00XX .
+ * You must read and accept usage terms at:
+ * http://software.seg.org/disclaimer.txt before use.
+ */
 #include "par.h"
 #include "segy.h"
 #include <time.h>

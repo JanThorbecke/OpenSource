@@ -83,7 +83,6 @@ int acoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 */
 	/* calculate vx for all grid points except on the virtual boundary*/
 #pragma omp for private (ix, iz) nowait schedule(guided,1)
-#pragma ivdep
 	for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
 #pragma ivdep
 		for (iz=mod.ioXz; iz<mod.ieXz; iz++) {
@@ -95,7 +94,6 @@ int acoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 
 	/* calculate vz for all grid points except on the virtual boundary */
 #pragma omp for private (ix, iz) schedule(guided,1) 
-#pragma ivdep
 	for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
 #pragma ivdep
 		for (iz=mod.ioZz; iz<mod.ieZz; iz++) {
