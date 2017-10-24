@@ -24,7 +24,8 @@ do
 
 	suwind < shot5_rp.su key=tracl min=$tr1 max=$tr2 | \
 	sushw key=sx,gx,fldr,trwf \
-	a=$xsrc,-2250000,$ishot,901 b=0,5000,0,0 j=0,901,0,0 >> shotsdx5_rp.su
+	a=$xsrc,-2250000,$ishot,901 b=0,5000,0,0 j=0,901,0,0 | \
+	suchw key1=offset key2=gx key3=sx c=-1 d=1000 >> shotsdx5_rp.su
 
 done
 

@@ -12,7 +12,7 @@
 #endif
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
-void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *xrcvsyn, int npossyn, int shift)
+void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift)
 {
      int i, j, l, isyn;
     float *costaper, scl;
@@ -28,8 +28,8 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
 
     for (isyn = 0; isyn < Nfoc; isyn++) {
         if (above==1) {
-            for (i = 0; i < npossyn; i++) {
-                imute = xrcvsyn[i];
+            for (i = 0; i < npos; i++) {
+                imute = ixpos[i];
                 tmute = mute[isyn*nxs+imute];
                 for (j = 0; j < tmute-shift-smooth; j++) {
                     data[isyn*nxs*nt+i*nt+j] = 0.0;
@@ -40,8 +40,8 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
             }
         }
         else if (above==0){
-            for (i = 0; i < npossyn; i++) {
-                imute = xrcvsyn[i];
+            for (i = 0; i < npos; i++) {
+                imute = ixpos[i];
                 tmute = mute[isyn*nxs+imute];
                 if (tmute >= nt/2) {
                     memset(&data[isyn*nxs*nt+i*nt],0, sizeof(float)*nt);
@@ -59,8 +59,8 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
             }
         }
         else if (above==-1){
-            for (i = 0; i < npossyn; i++) {
-                imute = xrcvsyn[i];
+            for (i = 0; i < npos; i++) {
+                imute = ixpos[i];
                 tmute = mute[isyn*nxs+imute];
                 for (j = tmute-shift,l=0; j < tmute-shift+smooth; j++,l++) {
                     data[isyn*nxs*nt+i*nt+j] *= costaper[l];
@@ -71,8 +71,8 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
             }
         }
         else if (above==4) { //Psi gate which is the inverse of the Theta gate (above=0)
-            for (i = 0; i < npossyn; i++) {
-                imute = xrcvsyn[i];
+            for (i = 0; i < npos; i++) {
+                imute = ixpos[i];
                 tmute = mute[isyn*nxs+imute];
                 for (j = tmute-shift-smooth,l=0; j < tmute-shift; j++,l++) {
                     data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
@@ -89,8 +89,8 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
             }
         }
         else if (above==2){//Separates the direct part of the wavefield from the coda
-            for (i = 0; i < npossyn; i++) {
-                imute = xrcvsyn[i];
+            for (i = 0; i < npos; i++) {
+                imute = ixpos[i];
                 tmute = mute[isyn*nxs+imute];
                 for (j = 0; j < tmute-shift-smooth; j++) {
                     data[isyn*nxs*nt+i*nt+j] = 0.0;
