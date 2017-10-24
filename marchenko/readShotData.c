@@ -75,6 +75,7 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
         if (nread != TRCBYTES) { /* no more data in file */
             break;
         }
+
 /* ToDo Don't store the traces that are not in the aperture */
 /*
         if ( (NINT(sx_shot*scl-fxse) > 0) || (NINT(-fxsb) > 0) ) {
