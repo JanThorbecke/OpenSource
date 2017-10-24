@@ -25,7 +25,7 @@ int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
 int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 int disp_fileinfo(char *file, int n1, int n2, float f1, float f2, float d1, float d2, segy *hdrs);
-void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *xrcvsyn, int npossyn, int shift);
+void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift);
 double wallclock_time(void);
 
 /*********************** self documentation **********************/
