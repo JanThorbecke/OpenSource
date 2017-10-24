@@ -11,7 +11,7 @@ makemod sizex=6000 sizez=2000 dx=$dx dz=$dx cp0=$cp cs0=$cs ro0=$rho \
 	intt=def x=-3000,-2000,-1000,-800,0,800,3000 z=650,650,700,750,900,750,600 poly=2 cp=2100 ro=2000 \
 	intt=def x=-3000,3000 z=1250,1250 poly=0 cp=2400 ro=1800 \
 	
-export OMP_NUM_THREADS=1
+export OMP_NUM_THREADS=2
 
 ./raytime \
     file_cp=syncl_cp.su  \
@@ -23,4 +23,4 @@ export OMP_NUM_THREADS=1
     zrcv1=0 zrcv2=0 \
     xsrc=0 zsrc=1100 
 
-echo "testblaas"
+echo "testJan"
