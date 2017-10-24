@@ -17,3 +17,5 @@ utils/makemod
 utils/makewave
 utils/mat2su
 utils/syn2d
+fdelmodc/fdelmodc
+include/genfft.h
