@@ -12,7 +12,7 @@ LIBS    += -L$L -lgenfft -lm $(LIBSM)
 #OPTC := $(subst -O3 -ffast-math, -O1 -g ,$(OPTC))
 #PGI options for compiler feedback
 #OPTC += -Mprof=lines
-OPTC += -qopt-report
+#OPTC += -qopt-report
 #LDFLAGS += -Mprof=lines
 
 all: fdelmodc 
