@@ -35,21 +35,6 @@ SRCH	= marchenko.c \
 		docpkge.c \
 		getpars.c
 
-SRCH2	= marchenko2.c \
-		getFileInfo.c  \
-		readData.c \
-		readShotData.c \
-		readTinvData.c \
-		applyMute.c \
-		writeData.c \
-		writeDataIter.c \
-		wallclock_time.c \
-		name_ext.c  \
-		verbosepkg.c  \
-		atopkge.c \
-		docpkge.c \
-		getpars.c
-
 OBJJ	= $(SRCJ:%.c=%.o)
 
 fmute:	$(OBJJ) 
