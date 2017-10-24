@@ -6,18 +6,17 @@
 #   -3- on Solaris system use RANLIB=ranlib which is defined below
 
 # the current directory (in vi ":r!pwd")
-ROOT=/Users/jan/src/OpenSource
+ROOT=/vardim/home/thorbcke/src/OpenSource
 
 ########################################################################
 # C compiler; change this only if you are using a different C-compiler
 
 #GNU 
+#CC = gcc-mp-5 
 CC = gcc
-#CC = gcc-mp-6 
 FC = gfortran
 # Linux gcc version 4.x
 OPTC = -O3 -ffast-math
-#OPTC += -Wunused-but-set-variable -Wunused-variable
 #to include parallelisation with OpenMP
 OPTC += -fopenmp
 
@@ -37,13 +36,16 @@ OPTC += -fopenmp
 #OPTF = -O2
 
 #Intel 
-#CC = icc
-#FC = ifort
-# Linux
-#OPTC = -O3 -no-prec-div
-#OPTF = -O3 -no-prec-div 
+CC = icc
+FC = ifort
+## Linux
+#OPTC = -O3 -no-prec-div -qopt-report-phase=vec,openmp
+#OPTF = -O3 -no-prec-div -qopt-report-phase=vec,openmp
+OPTC = -O3 -no-prec-div -xCORE-AVX2
+OPTF = -O3 -no-prec-div -xCORE-AVX2
 #to include parallelisation with OpenMP
-#OPTC += -qopenmp
+OPTC += -qopenmp
+
 # Apple OSX intel 11.1.076 snow leopard 10.6.2
 #OPTC = -O3 -msse3 -no-prec-div -vec-report2 -fno-builtin-__sprintf_chk 
 
