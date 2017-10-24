@@ -1,0 +1,1096 @@
+number of threads=2
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************** general info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: tmod    = 4.100000
+    ../fdelmodc: ntsam   = 8201   dt      = 0.000500(5.000000e-04)
+    ../fdelmodc: Acoustic staggered grid, pressure/velocity
+    ../fdelmodc: Forward modelling
+    ../fdelmodc: *******************************************
+    ../fdelmodc: *************** model info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: nz      =      801   nx      =     2401
+    ../fdelmodc: dz      =   2.5000   dx      =   2.5000
+    ../fdelmodc: zmin    =   0.0000   zmax    = 2000.0000
+    ../fdelmodc: xmin    = -3000.0000   xmax    = 3000.0000
+    ../fdelmodc: min(cp) =  2000.000  max(cp) =  2400.000
+    ../fdelmodc: min(ro) =  1000.000  max(ro) =  2000.000
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ******** dispersion and stability *********
+    ../fdelmodc: *******************************************
+    ../fdelmodc: Dispersion criterion is   5 points per wavelength: 
+    ../fdelmodc:  ====> wavelength > 12.500000 m [dx*disp]
+    ../fdelmodc: The maximum frequency in source wavelet must be:
+    ../fdelmodc:  ====> frequency < 160.000000 Hz. [Cmin/dx*disp]
+    ../fdelmodc: Stability criterion for current settings: 
+    ../fdelmodc:  ====> Cp < 3029.999756 m/s [dx*disp/dt]
+    ../fdelmodc:  For wavelet(s) in file_src fmax = 60.546871
+    ../fdelmodc: Optimal discretisation for current model:
+    ../fdelmodc:  With maximum velocity  = 2400.000000 dt <= 6.312500e-04
+    ../fdelmodc:  With maximum frequency = 60.546871 dx <= 6.606452e+00
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* boundary info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ***  1=free 2=pml 3=rigid 4=tapered     ***
+    ../fdelmodc: Top boundary    : 1
+    ../fdelmodc: Left boundary   : 2
+    ../fdelmodc: Right boundary  : 2
+    ../fdelmodc: Bottom boundary : 2
+    ../fdelmodc: taper lenght = 101 points
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* wavelet info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: wav_nt   =   4096   wav_nx      = 1
+    ../fdelmodc: src_type =      7   src_orient  = 1
+    ../fdelmodc: fmax     =    60.55
+    ../fdelmodc: Source type         : Fz 
+    ../fdelmodc: *************** no snapshots **************
+    ../fdelmodc: **************** no beams *****************
+    ../fdelmodc: Total number of linear array receivers: 501
+    ../fdelmodc: Total number of receivers: 501
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* receiver info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ntrcv   = 4101 nrcv    = 501 
+    ../fdelmodc: dtrcv   = 0.001000              
+    ../fdelmodc: dzrcv   = 0.000000 dxrcv   = 10.000000 
+    ../fdelmodc: time-delay = 0.100000 = points = 200
+    ../fdelmodc: Receiver sampling can be => 8.258065e-03
+    ../fdelmodc: Receiver array at coordinates: 
+    ../fdelmodc: zmin    = 0.000000 zmax    = 0.000000 
+    ../fdelmodc: xmin    = -2500.000000 xmax    = 2500.000000 
+    ../fdelmodc: which are gridpoints: 
+    ../fdelmodc: izmin   = 0 izmax   = 0 
+    ../fdelmodc: ixmin   = 200 ixmax   = 2200 
+    ../fdelmodc: Receiver interpolation for P: p->p
+    ../fdelmodc: Receiver interpolation for Vz: vz->vz
+    ../fdelmodc: Receiver types        : Vz p 
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* runtime info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: CPU time for intializing arrays and model = 0.089452
+    ../fdelmodc: Modeling source 0 at gridpoints ix=1200 iz=0
+    ../fdelmodc:  which are actual positions x=0.00 z=0.00
+    ../fdelmodc: Receivers at gridpoint x-range ix=200 - 2200
+    ../fdelmodc:  which are actual positions x=-2500.00 - 2500.00
+    ../fdelmodc: Receivers at gridpoint z-range iz=0 - 0
+    ../fdelmodc:  which are actual positions z=0.00 - 0.00
+OMP: Info #204: KMP_AFFINITY: decoding x2APIC ids.
+OMP: Info #202: KMP_AFFINITY: Affinity capable, using global cpuid leaf 11 info
+OMP: Info #154: KMP_AFFINITY: Initial OS proc set respected: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39}
+OMP: Info #156: KMP_AFFINITY: 40 available OS procs
+OMP: Info #157: KMP_AFFINITY: Uniform topology
+OMP: Info #179: KMP_AFFINITY: 2 packages x 10 cores/pkg x 2 threads/core (20 total cores)
+OMP: Info #206: KMP_AFFINITY: OS proc to physical thread map:
+OMP: Info #171: KMP_AFFINITY: OS proc 0 maps to package 0 core 0 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 20 maps to package 0 core 0 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 1 maps to package 0 core 1 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 21 maps to package 0 core 1 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 2 maps to package 0 core 2 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 22 maps to package 0 core 2 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 3 maps to package 0 core 3 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 23 maps to package 0 core 3 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 4 maps to package 0 core 4 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 24 maps to package 0 core 4 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 5 maps to package 0 core 8 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 25 maps to package 0 core 8 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 6 maps to package 0 core 9 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 26 maps to package 0 core 9 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 7 maps to package 0 core 10 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 27 maps to package 0 core 10 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 8 maps to package 0 core 11 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 28 maps to package 0 core 11 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 9 maps to package 0 core 12 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 29 maps to package 0 core 12 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 10 maps to package 1 core 0 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 30 maps to package 1 core 0 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 11 maps to package 1 core 1 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 31 maps to package 1 core 1 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 12 maps to package 1 core 2 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 32 maps to package 1 core 2 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 13 maps to package 1 core 3 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 33 maps to package 1 core 3 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 14 maps to package 1 core 4 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 34 maps to package 1 core 4 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 15 maps to package 1 core 8 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 35 maps to package 1 core 8 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 16 maps to package 1 core 9 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 36 maps to package 1 core 9 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 17 maps to package 1 core 10 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 37 maps to package 1 core 10 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 18 maps to package 1 core 11 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 38 maps to package 1 core 11 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 19 maps to package 1 core 12 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 39 maps to package 1 core 12 thread 1 
+OMP: Info #242: KMP_AFFINITY: pid 31464 thread 0 bound to OS proc set {0}
+OMP: Info #242: KMP_AFFINITY: pid 31464 thread 1 bound to OS proc set {1}
+    ../fdelmodc: Hello world from thread 0, on cnode1. (core affinity = 0)
+    ../fdelmodc: Hello world from thread 1, on cnode1. (core affinity = 1)
+    ../fdelmodc: Estimated compute time = 62.21 s. per shot.
+    ../fdelmodc: Estimated total compute time = 62.30 s.
+    ../fdelmodc: Number of samples written to last file = 4001
+    ../fdelmodc: Total compute time FD modelling = 62.53 s.
+
+real	1m2.534s
+user	2m4.720s
+sys	0m0.151s
+number of threads=4
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************** general info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: tmod    = 4.100000
+    ../fdelmodc: ntsam   = 8201   dt      = 0.000500(5.000000e-04)
+    ../fdelmodc: Acoustic staggered grid, pressure/velocity
+    ../fdelmodc: Forward modelling
+    ../fdelmodc: *******************************************
+    ../fdelmodc: *************** model info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: nz      =      801   nx      =     2401
+    ../fdelmodc: dz      =   2.5000   dx      =   2.5000
+    ../fdelmodc: zmin    =   0.0000   zmax    = 2000.0000
+    ../fdelmodc: xmin    = -3000.0000   xmax    = 3000.0000
+    ../fdelmodc: min(cp) =  2000.000  max(cp) =  2400.000
+    ../fdelmodc: min(ro) =  1000.000  max(ro) =  2000.000
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ******** dispersion and stability *********
+    ../fdelmodc: *******************************************
+    ../fdelmodc: Dispersion criterion is   5 points per wavelength: 
+    ../fdelmodc:  ====> wavelength > 12.500000 m [dx*disp]
+    ../fdelmodc: The maximum frequency in source wavelet must be:
+    ../fdelmodc:  ====> frequency < 160.000000 Hz. [Cmin/dx*disp]
+    ../fdelmodc: Stability criterion for current settings: 
+    ../fdelmodc:  ====> Cp < 3029.999756 m/s [dx*disp/dt]
+    ../fdelmodc:  For wavelet(s) in file_src fmax = 60.546871
+    ../fdelmodc: Optimal discretisation for current model:
+    ../fdelmodc:  With maximum velocity  = 2400.000000 dt <= 6.312500e-04
+    ../fdelmodc:  With maximum frequency = 60.546871 dx <= 6.606452e+00
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* boundary info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ***  1=free 2=pml 3=rigid 4=tapered     ***
+    ../fdelmodc: Top boundary    : 1
+    ../fdelmodc: Left boundary   : 2
+    ../fdelmodc: Right boundary  : 2
+    ../fdelmodc: Bottom boundary : 2
+    ../fdelmodc: taper lenght = 101 points
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* wavelet info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: wav_nt   =   4096   wav_nx      = 1
+    ../fdelmodc: src_type =      7   src_orient  = 1
+    ../fdelmodc: fmax     =    60.55
+    ../fdelmodc: Source type         : Fz 
+    ../fdelmodc: *************** no snapshots **************
+    ../fdelmodc: **************** no beams *****************
+    ../fdelmodc: Total number of linear array receivers: 501
+    ../fdelmodc: Total number of receivers: 501
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* receiver info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ntrcv   = 4101 nrcv    = 501 
+    ../fdelmodc: dtrcv   = 0.001000              
+    ../fdelmodc: dzrcv   = 0.000000 dxrcv   = 10.000000 
+    ../fdelmodc: time-delay = 0.100000 = points = 200
+    ../fdelmodc: Receiver sampling can be => 8.258065e-03
+    ../fdelmodc: Receiver array at coordinates: 
+    ../fdelmodc: zmin    = 0.000000 zmax    = 0.000000 
+    ../fdelmodc: xmin    = -2500.000000 xmax    = 2500.000000 
+    ../fdelmodc: which are gridpoints: 
+    ../fdelmodc: izmin   = 0 izmax   = 0 
+    ../fdelmodc: ixmin   = 200 ixmax   = 2200 
+    ../fdelmodc: Receiver interpolation for P: p->p
+    ../fdelmodc: Receiver interpolation for Vz: vz->vz
+    ../fdelmodc: Receiver types        : Vz p 
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* runtime info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: CPU time for intializing arrays and model = 0.046987
+    ../fdelmodc: Modeling source 0 at gridpoints ix=1200 iz=0
+    ../fdelmodc:  which are actual positions x=0.00 z=0.00
+    ../fdelmodc: Receivers at gridpoint x-range ix=200 - 2200
+    ../fdelmodc:  which are actual positions x=-2500.00 - 2500.00
+    ../fdelmodc: Receivers at gridpoint z-range iz=0 - 0
+    ../fdelmodc:  which are actual positions z=0.00 - 0.00
+OMP: Info #204: KMP_AFFINITY: decoding x2APIC ids.
+OMP: Info #202: KMP_AFFINITY: Affinity capable, using global cpuid leaf 11 info
+OMP: Info #154: KMP_AFFINITY: Initial OS proc set respected: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39}
+OMP: Info #156: KMP_AFFINITY: 40 available OS procs
+OMP: Info #157: KMP_AFFINITY: Uniform topology
+OMP: Info #179: KMP_AFFINITY: 2 packages x 10 cores/pkg x 2 threads/core (20 total cores)
+OMP: Info #206: KMP_AFFINITY: OS proc to physical thread map:
+OMP: Info #171: KMP_AFFINITY: OS proc 0 maps to package 0 core 0 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 20 maps to package 0 core 0 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 1 maps to package 0 core 1 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 21 maps to package 0 core 1 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 2 maps to package 0 core 2 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 22 maps to package 0 core 2 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 3 maps to package 0 core 3 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 23 maps to package 0 core 3 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 4 maps to package 0 core 4 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 24 maps to package 0 core 4 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 5 maps to package 0 core 8 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 25 maps to package 0 core 8 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 6 maps to package 0 core 9 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 26 maps to package 0 core 9 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 7 maps to package 0 core 10 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 27 maps to package 0 core 10 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 8 maps to package 0 core 11 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 28 maps to package 0 core 11 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 9 maps to package 0 core 12 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 29 maps to package 0 core 12 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 10 maps to package 1 core 0 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 30 maps to package 1 core 0 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 11 maps to package 1 core 1 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 31 maps to package 1 core 1 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 12 maps to package 1 core 2 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 32 maps to package 1 core 2 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 13 maps to package 1 core 3 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 33 maps to package 1 core 3 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 14 maps to package 1 core 4 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 34 maps to package 1 core 4 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 15 maps to package 1 core 8 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 35 maps to package 1 core 8 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 16 maps to package 1 core 9 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 36 maps to package 1 core 9 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 17 maps to package 1 core 10 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 37 maps to package 1 core 10 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 18 maps to package 1 core 11 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 38 maps to package 1 core 11 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 19 maps to package 1 core 12 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 39 maps to package 1 core 12 thread 1 
+OMP: Info #242: KMP_AFFINITY: pid 31479 thread 0 bound to OS proc set {0}
+OMP: Info #242: KMP_AFFINITY: pid 31479 thread 1 bound to OS proc set {1}
+OMP: Info #242: KMP_AFFINITY: pid 31479 thread 3 bound to OS proc set {3}
+    ../fdelmodc: Hello world from thread 1, on cnode1. (core affinity = 1)
+    ../fdelmodc: Hello world from thread 0, on cnode1. (core affinity = 0)
+OMP: Info #242: KMP_AFFINITY: pid 31479 thread 2 bound to OS proc set {2}
+    ../fdelmodc: Hello world from thread 3, on cnode1. (core affinity = 3)
+    ../fdelmodc: Hello world from thread 2, on cnode1. (core affinity = 2)
+    ../fdelmodc: Estimated compute time = 34.77 s. per shot.
+    ../fdelmodc: Estimated total compute time = 34.82 s.
+    ../fdelmodc: Number of samples written to last file = 4001
+    ../fdelmodc: Total compute time FD modelling = 34.67 s.
+
+real	0m34.677s
+user	2m18.252s
+sys	0m0.183s
+number of threads=8
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************** general info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: tmod    = 4.100000
+    ../fdelmodc: ntsam   = 8201   dt      = 0.000500(5.000000e-04)
+    ../fdelmodc: Acoustic staggered grid, pressure/velocity
+    ../fdelmodc: Forward modelling
+    ../fdelmodc: *******************************************
+    ../fdelmodc: *************** model info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: nz      =      801   nx      =     2401
+    ../fdelmodc: dz      =   2.5000   dx      =   2.5000
+    ../fdelmodc: zmin    =   0.0000   zmax    = 2000.0000
+    ../fdelmodc: xmin    = -3000.0000   xmax    = 3000.0000
+    ../fdelmodc: min(cp) =  2000.000  max(cp) =  2400.000
+    ../fdelmodc: min(ro) =  1000.000  max(ro) =  2000.000
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ******** dispersion and stability *********
+    ../fdelmodc: *******************************************
+    ../fdelmodc: Dispersion criterion is   5 points per wavelength: 
+    ../fdelmodc:  ====> wavelength > 12.500000 m [dx*disp]
+    ../fdelmodc: The maximum frequency in source wavelet must be:
+    ../fdelmodc:  ====> frequency < 160.000000 Hz. [Cmin/dx*disp]
+    ../fdelmodc: Stability criterion for current settings: 
+    ../fdelmodc:  ====> Cp < 3029.999756 m/s [dx*disp/dt]
+    ../fdelmodc:  For wavelet(s) in file_src fmax = 60.546871
+    ../fdelmodc: Optimal discretisation for current model:
+    ../fdelmodc:  With maximum velocity  = 2400.000000 dt <= 6.312500e-04
+    ../fdelmodc:  With maximum frequency = 60.546871 dx <= 6.606452e+00
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* boundary info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ***  1=free 2=pml 3=rigid 4=tapered     ***
+    ../fdelmodc: Top boundary    : 1
+    ../fdelmodc: Left boundary   : 2
+    ../fdelmodc: Right boundary  : 2
+    ../fdelmodc: Bottom boundary : 2
+    ../fdelmodc: taper lenght = 101 points
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* wavelet info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: wav_nt   =   4096   wav_nx      = 1
+    ../fdelmodc: src_type =      7   src_orient  = 1
+    ../fdelmodc: fmax     =    60.55
+    ../fdelmodc: Source type         : Fz 
+    ../fdelmodc: *************** no snapshots **************
+    ../fdelmodc: **************** no beams *****************
+    ../fdelmodc: Total number of linear array receivers: 501
+    ../fdelmodc: Total number of receivers: 501
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* receiver info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ntrcv   = 4101 nrcv    = 501 
+    ../fdelmodc: dtrcv   = 0.001000              
+    ../fdelmodc: dzrcv   = 0.000000 dxrcv   = 10.000000 
+    ../fdelmodc: time-delay = 0.100000 = points = 200
+    ../fdelmodc: Receiver sampling can be => 8.258065e-03
+    ../fdelmodc: Receiver array at coordinates: 
+    ../fdelmodc: zmin    = 0.000000 zmax    = 0.000000 
+    ../fdelmodc: xmin    = -2500.000000 xmax    = 2500.000000 
+    ../fdelmodc: which are gridpoints: 
+    ../fdelmodc: izmin   = 0 izmax   = 0 
+    ../fdelmodc: ixmin   = 200 ixmax   = 2200 
+    ../fdelmodc: Receiver interpolation for P: p->p
+    ../fdelmodc: Receiver interpolation for Vz: vz->vz
+    ../fdelmodc: Receiver types        : Vz p 
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* runtime info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: CPU time for intializing arrays and model = 0.046825
+    ../fdelmodc: Modeling source 0 at gridpoints ix=1200 iz=0
+    ../fdelmodc:  which are actual positions x=0.00 z=0.00
+    ../fdelmodc: Receivers at gridpoint x-range ix=200 - 2200
+    ../fdelmodc:  which are actual positions x=-2500.00 - 2500.00
+    ../fdelmodc: Receivers at gridpoint z-range iz=0 - 0
+    ../fdelmodc:  which are actual positions z=0.00 - 0.00
+OMP: Info #204: KMP_AFFINITY: decoding x2APIC ids.
+OMP: Info #202: KMP_AFFINITY: Affinity capable, using global cpuid leaf 11 info
+OMP: Info #154: KMP_AFFINITY: Initial OS proc set respected: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39}
+OMP: Info #156: KMP_AFFINITY: 40 available OS procs
+OMP: Info #157: KMP_AFFINITY: Uniform topology
+OMP: Info #179: KMP_AFFINITY: 2 packages x 10 cores/pkg x 2 threads/core (20 total cores)
+OMP: Info #206: KMP_AFFINITY: OS proc to physical thread map:
+OMP: Info #171: KMP_AFFINITY: OS proc 0 maps to package 0 core 0 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 20 maps to package 0 core 0 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 1 maps to package 0 core 1 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 21 maps to package 0 core 1 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 2 maps to package 0 core 2 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 22 maps to package 0 core 2 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 3 maps to package 0 core 3 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 23 maps to package 0 core 3 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 4 maps to package 0 core 4 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 24 maps to package 0 core 4 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 5 maps to package 0 core 8 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 25 maps to package 0 core 8 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 6 maps to package 0 core 9 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 26 maps to package 0 core 9 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 7 maps to package 0 core 10 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 27 maps to package 0 core 10 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 8 maps to package 0 core 11 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 28 maps to package 0 core 11 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 9 maps to package 0 core 12 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 29 maps to package 0 core 12 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 10 maps to package 1 core 0 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 30 maps to package 1 core 0 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 11 maps to package 1 core 1 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 31 maps to package 1 core 1 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 12 maps to package 1 core 2 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 32 maps to package 1 core 2 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 13 maps to package 1 core 3 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 33 maps to package 1 core 3 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 14 maps to package 1 core 4 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 34 maps to package 1 core 4 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 15 maps to package 1 core 8 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 35 maps to package 1 core 8 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 16 maps to package 1 core 9 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 36 maps to package 1 core 9 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 17 maps to package 1 core 10 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 37 maps to package 1 core 10 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 18 maps to package 1 core 11 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 38 maps to package 1 core 11 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 19 maps to package 1 core 12 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 39 maps to package 1 core 12 thread 1 
+OMP: Info #242: KMP_AFFINITY: pid 31484 thread 0 bound to OS proc set {0}
+OMP: Info #242: KMP_AFFINITY: pid 31484 thread 1 bound to OS proc set {1}
+OMP: Info #242: KMP_AFFINITY: pid 31484 thread 2 bound to OS proc set {2}
+OMP: Info #242: KMP_AFFINITY: pid 31484 thread 6 bound to OS proc set {6}
+OMP: Info #242: KMP_AFFINITY: pid 31484 thread 3 bound to OS proc set {3}
+OMP: Info #242: KMP_AFFINITY: pid 31484 thread 7 bound to OS proc set {7}
+    ../fdelmodc: Hello world from thread 1, on cnode1. (core affinity = 1)
+OMP: Info #242: KMP_AFFINITY: pid 31484 thread 4 bound to OS proc set {4}
+OMP: Info #242: KMP_AFFINITY: pid 31484 thread 5 bound to OS proc set {5}
+    ../fdelmodc: Hello world from thread 0, on cnode1. (core affinity = 0)
+    ../fdelmodc: Hello world from thread 2, on cnode1. (core affinity = 2)
+    ../fdelmodc: Hello world from thread 3, on cnode1. (core affinity = 3)
+    ../fdelmodc: Hello world from thread 7, on cnode1. (core affinity = 7)
+    ../fdelmodc: Hello world from thread 4, on cnode1. (core affinity = 4)
+    ../fdelmodc: Hello world from thread 6, on cnode1. (core affinity = 6)
+    ../fdelmodc: Hello world from thread 5, on cnode1. (core affinity = 5)
+    ../fdelmodc: Estimated compute time = 26.01 s. per shot.
+    ../fdelmodc: Estimated total compute time = 26.05 s.
+    ../fdelmodc: Number of samples written to last file = 4001
+    ../fdelmodc: Total compute time FD modelling = 24.50 s.
+
+real	0m24.502s
+user	3m15.265s
+sys	0m0.205s
+number of threads=12
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************** general info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: tmod    = 4.100000
+    ../fdelmodc: ntsam   = 8201   dt      = 0.000500(5.000000e-04)
+    ../fdelmodc: Acoustic staggered grid, pressure/velocity
+    ../fdelmodc: Forward modelling
+    ../fdelmodc: *******************************************
+    ../fdelmodc: *************** model info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: nz      =      801   nx      =     2401
+    ../fdelmodc: dz      =   2.5000   dx      =   2.5000
+    ../fdelmodc: zmin    =   0.0000   zmax    = 2000.0000
+    ../fdelmodc: xmin    = -3000.0000   xmax    = 3000.0000
+    ../fdelmodc: min(cp) =  2000.000  max(cp) =  2400.000
+    ../fdelmodc: min(ro) =  1000.000  max(ro) =  2000.000
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ******** dispersion and stability *********
+    ../fdelmodc: *******************************************
+    ../fdelmodc: Dispersion criterion is   5 points per wavelength: 
+    ../fdelmodc:  ====> wavelength > 12.500000 m [dx*disp]
+    ../fdelmodc: The maximum frequency in source wavelet must be:
+    ../fdelmodc:  ====> frequency < 160.000000 Hz. [Cmin/dx*disp]
+    ../fdelmodc: Stability criterion for current settings: 
+    ../fdelmodc:  ====> Cp < 3029.999756 m/s [dx*disp/dt]
+    ../fdelmodc:  For wavelet(s) in file_src fmax = 60.546871
+    ../fdelmodc: Optimal discretisation for current model:
+    ../fdelmodc:  With maximum velocity  = 2400.000000 dt <= 6.312500e-04
+    ../fdelmodc:  With maximum frequency = 60.546871 dx <= 6.606452e+00
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* boundary info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ***  1=free 2=pml 3=rigid 4=tapered     ***
+    ../fdelmodc: Top boundary    : 1
+    ../fdelmodc: Left boundary   : 2
+    ../fdelmodc: Right boundary  : 2
+    ../fdelmodc: Bottom boundary : 2
+    ../fdelmodc: taper lenght = 101 points
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* wavelet info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: wav_nt   =   4096   wav_nx      = 1
+    ../fdelmodc: src_type =      7   src_orient  = 1
+    ../fdelmodc: fmax     =    60.55
+    ../fdelmodc: Source type         : Fz 
+    ../fdelmodc: *************** no snapshots **************
+    ../fdelmodc: **************** no beams *****************
+    ../fdelmodc: Total number of linear array receivers: 501
+    ../fdelmodc: Total number of receivers: 501
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* receiver info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ntrcv   = 4101 nrcv    = 501 
+    ../fdelmodc: dtrcv   = 0.001000              
+    ../fdelmodc: dzrcv   = 0.000000 dxrcv   = 10.000000 
+    ../fdelmodc: time-delay = 0.100000 = points = 200
+    ../fdelmodc: Receiver sampling can be => 8.258065e-03
+    ../fdelmodc: Receiver array at coordinates: 
+    ../fdelmodc: zmin    = 0.000000 zmax    = 0.000000 
+    ../fdelmodc: xmin    = -2500.000000 xmax    = 2500.000000 
+    ../fdelmodc: which are gridpoints: 
+    ../fdelmodc: izmin   = 0 izmax   = 0 
+    ../fdelmodc: ixmin   = 200 ixmax   = 2200 
+    ../fdelmodc: Receiver interpolation for P: p->p
+    ../fdelmodc: Receiver interpolation for Vz: vz->vz
+    ../fdelmodc: Receiver types        : Vz p 
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* runtime info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: CPU time for intializing arrays and model = 0.049332
+    ../fdelmodc: Modeling source 0 at gridpoints ix=1200 iz=0
+    ../fdelmodc:  which are actual positions x=0.00 z=0.00
+    ../fdelmodc: Receivers at gridpoint x-range ix=200 - 2200
+    ../fdelmodc:  which are actual positions x=-2500.00 - 2500.00
+    ../fdelmodc: Receivers at gridpoint z-range iz=0 - 0
+    ../fdelmodc:  which are actual positions z=0.00 - 0.00
+OMP: Info #204: KMP_AFFINITY: decoding x2APIC ids.
+OMP: Info #202: KMP_AFFINITY: Affinity capable, using global cpuid leaf 11 info
+OMP: Info #154: KMP_AFFINITY: Initial OS proc set respected: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39}
+OMP: Info #156: KMP_AFFINITY: 40 available OS procs
+OMP: Info #157: KMP_AFFINITY: Uniform topology
+OMP: Info #179: KMP_AFFINITY: 2 packages x 10 cores/pkg x 2 threads/core (20 total cores)
+OMP: Info #206: KMP_AFFINITY: OS proc to physical thread map:
+OMP: Info #171: KMP_AFFINITY: OS proc 0 maps to package 0 core 0 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 20 maps to package 0 core 0 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 1 maps to package 0 core 1 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 21 maps to package 0 core 1 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 2 maps to package 0 core 2 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 22 maps to package 0 core 2 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 3 maps to package 0 core 3 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 23 maps to package 0 core 3 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 4 maps to package 0 core 4 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 24 maps to package 0 core 4 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 5 maps to package 0 core 8 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 25 maps to package 0 core 8 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 6 maps to package 0 core 9 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 26 maps to package 0 core 9 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 7 maps to package 0 core 10 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 27 maps to package 0 core 10 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 8 maps to package 0 core 11 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 28 maps to package 0 core 11 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 9 maps to package 0 core 12 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 29 maps to package 0 core 12 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 10 maps to package 1 core 0 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 30 maps to package 1 core 0 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 11 maps to package 1 core 1 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 31 maps to package 1 core 1 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 12 maps to package 1 core 2 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 32 maps to package 1 core 2 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 13 maps to package 1 core 3 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 33 maps to package 1 core 3 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 14 maps to package 1 core 4 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 34 maps to package 1 core 4 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 15 maps to package 1 core 8 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 35 maps to package 1 core 8 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 16 maps to package 1 core 9 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 36 maps to package 1 core 9 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 17 maps to package 1 core 10 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 37 maps to package 1 core 10 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 18 maps to package 1 core 11 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 38 maps to package 1 core 11 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 19 maps to package 1 core 12 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 39 maps to package 1 core 12 thread 1 
+OMP: Info #242: KMP_AFFINITY: pid 31502 thread 0 bound to OS proc set {0}
+OMP: Info #242: KMP_AFFINITY: pid 31502 thread 1 bound to OS proc set {1}
+OMP: Info #242: KMP_AFFINITY: pid 31502 thread 3 bound to OS proc set {3}
+OMP: Info #242: KMP_AFFINITY: pid 31502 thread 4 bound to OS proc set {4}
+OMP: Info #242: KMP_AFFINITY: pid 31502 thread 2 bound to OS proc set {2}
+OMP: Info #242: KMP_AFFINITY: pid 31502 thread 5 bound to OS proc set {5}
+OMP: Info #242: KMP_AFFINITY: pid 31502 thread 6 bound to OS proc set {6}
+OMP: Info #242: KMP_AFFINITY: pid 31502 thread 7 bound to OS proc set {7}
+OMP: Info #242: KMP_AFFINITY: pid 31502 thread 8 bound to OS proc set {8}
+OMP: Info #242: KMP_AFFINITY: pid 31502 thread 10 bound to OS proc set {10}
+OMP: Info #242: KMP_AFFINITY: pid 31502 thread 9 bound to OS proc set {9}
+    ../fdelmodc: Hello world from thread 0, on cnode1. (core affinity = 0)
+    ../fdelmodc: Hello world from thread 1, on cnode1. (core affinity = 1)
+    ../fdelmodc: Hello world from thread 2, on cnode1. (core affinity = 2)
+    ../fdelmodc: Hello world from thread 10, on cnode1. (core affinity = 10)
+    ../fdelmodc: Hello world from thread 8, on cnode1. (core affinity = 8)
+    ../fdelmodc: Hello world from thread 5, on cnode1. (core affinity = 5)
+    ../fdelmodc: Hello world from thread 3, on cnode1. (core affinity = 3)
+    ../fdelmodc: Hello world from thread 9, on cnode1. (core affinity = 9)
+    ../fdelmodc: Hello world from thread 4, on cnode1. (core affinity = 4)
+    ../fdelmodc: Hello world from thread 7, on cnode1. (core affinity = 7)
+    ../fdelmodc: Hello world from thread 6, on cnode1. (core affinity = 6)
+OMP: Info #242: KMP_AFFINITY: pid 31502 thread 11 bound to OS proc set {11}
+    ../fdelmodc: Hello world from thread 11, on cnode1. (core affinity = 11)
+    ../fdelmodc: Estimated compute time = 21.74 s. per shot.
+    ../fdelmodc: Estimated total compute time = 21.79 s.
+    ../fdelmodc: Number of samples written to last file = 4001
+    ../fdelmodc: Total compute time FD modelling = 21.50 s.
+
+real	0m21.505s
+user	4m16.133s
+sys	0m1.029s
+number of threads=16
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************** general info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: tmod    = 4.100000
+    ../fdelmodc: ntsam   = 8201   dt      = 0.000500(5.000000e-04)
+    ../fdelmodc: Acoustic staggered grid, pressure/velocity
+    ../fdelmodc: Forward modelling
+    ../fdelmodc: *******************************************
+    ../fdelmodc: *************** model info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: nz      =      801   nx      =     2401
+    ../fdelmodc: dz      =   2.5000   dx      =   2.5000
+    ../fdelmodc: zmin    =   0.0000   zmax    = 2000.0000
+    ../fdelmodc: xmin    = -3000.0000   xmax    = 3000.0000
+    ../fdelmodc: min(cp) =  2000.000  max(cp) =  2400.000
+    ../fdelmodc: min(ro) =  1000.000  max(ro) =  2000.000
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ******** dispersion and stability *********
+    ../fdelmodc: *******************************************
+    ../fdelmodc: Dispersion criterion is   5 points per wavelength: 
+    ../fdelmodc:  ====> wavelength > 12.500000 m [dx*disp]
+    ../fdelmodc: The maximum frequency in source wavelet must be:
+    ../fdelmodc:  ====> frequency < 160.000000 Hz. [Cmin/dx*disp]
+    ../fdelmodc: Stability criterion for current settings: 
+    ../fdelmodc:  ====> Cp < 3029.999756 m/s [dx*disp/dt]
+    ../fdelmodc:  For wavelet(s) in file_src fmax = 60.546871
+    ../fdelmodc: Optimal discretisation for current model:
+    ../fdelmodc:  With maximum velocity  = 2400.000000 dt <= 6.312500e-04
+    ../fdelmodc:  With maximum frequency = 60.546871 dx <= 6.606452e+00
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* boundary info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ***  1=free 2=pml 3=rigid 4=tapered     ***
+    ../fdelmodc: Top boundary    : 1
+    ../fdelmodc: Left boundary   : 2
+    ../fdelmodc: Right boundary  : 2
+    ../fdelmodc: Bottom boundary : 2
+    ../fdelmodc: taper lenght = 101 points
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* wavelet info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: wav_nt   =   4096   wav_nx      = 1
+    ../fdelmodc: src_type =      7   src_orient  = 1
+    ../fdelmodc: fmax     =    60.55
+    ../fdelmodc: Source type         : Fz 
+    ../fdelmodc: *************** no snapshots **************
+    ../fdelmodc: **************** no beams *****************
+    ../fdelmodc: Total number of linear array receivers: 501
+    ../fdelmodc: Total number of receivers: 501
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* receiver info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ntrcv   = 4101 nrcv    = 501 
+    ../fdelmodc: dtrcv   = 0.001000              
+    ../fdelmodc: dzrcv   = 0.000000 dxrcv   = 10.000000 
+    ../fdelmodc: time-delay = 0.100000 = points = 200
+    ../fdelmodc: Receiver sampling can be => 8.258065e-03
+    ../fdelmodc: Receiver array at coordinates: 
+    ../fdelmodc: zmin    = 0.000000 zmax    = 0.000000 
+    ../fdelmodc: xmin    = -2500.000000 xmax    = 2500.000000 
+    ../fdelmodc: which are gridpoints: 
+    ../fdelmodc: izmin   = 0 izmax   = 0 
+    ../fdelmodc: ixmin   = 200 ixmax   = 2200 
+    ../fdelmodc: Receiver interpolation for P: p->p
+    ../fdelmodc: Receiver interpolation for Vz: vz->vz
+    ../fdelmodc: Receiver types        : Vz p 
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* runtime info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: CPU time for intializing arrays and model = 0.046892
+    ../fdelmodc: Modeling source 0 at gridpoints ix=1200 iz=0
+    ../fdelmodc:  which are actual positions x=0.00 z=0.00
+    ../fdelmodc: Receivers at gridpoint x-range ix=200 - 2200
+    ../fdelmodc:  which are actual positions x=-2500.00 - 2500.00
+    ../fdelmodc: Receivers at gridpoint z-range iz=0 - 0
+    ../fdelmodc:  which are actual positions z=0.00 - 0.00
+OMP: Info #204: KMP_AFFINITY: decoding x2APIC ids.
+OMP: Info #202: KMP_AFFINITY: Affinity capable, using global cpuid leaf 11 info
+OMP: Info #154: KMP_AFFINITY: Initial OS proc set respected: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39}
+OMP: Info #156: KMP_AFFINITY: 40 available OS procs
+OMP: Info #157: KMP_AFFINITY: Uniform topology
+OMP: Info #179: KMP_AFFINITY: 2 packages x 10 cores/pkg x 2 threads/core (20 total cores)
+OMP: Info #206: KMP_AFFINITY: OS proc to physical thread map:
+OMP: Info #171: KMP_AFFINITY: OS proc 0 maps to package 0 core 0 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 20 maps to package 0 core 0 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 1 maps to package 0 core 1 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 21 maps to package 0 core 1 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 2 maps to package 0 core 2 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 22 maps to package 0 core 2 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 3 maps to package 0 core 3 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 23 maps to package 0 core 3 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 4 maps to package 0 core 4 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 24 maps to package 0 core 4 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 5 maps to package 0 core 8 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 25 maps to package 0 core 8 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 6 maps to package 0 core 9 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 26 maps to package 0 core 9 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 7 maps to package 0 core 10 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 27 maps to package 0 core 10 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 8 maps to package 0 core 11 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 28 maps to package 0 core 11 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 9 maps to package 0 core 12 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 29 maps to package 0 core 12 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 10 maps to package 1 core 0 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 30 maps to package 1 core 0 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 11 maps to package 1 core 1 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 31 maps to package 1 core 1 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 12 maps to package 1 core 2 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 32 maps to package 1 core 2 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 13 maps to package 1 core 3 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 33 maps to package 1 core 3 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 14 maps to package 1 core 4 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 34 maps to package 1 core 4 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 15 maps to package 1 core 8 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 35 maps to package 1 core 8 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 16 maps to package 1 core 9 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 36 maps to package 1 core 9 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 17 maps to package 1 core 10 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 37 maps to package 1 core 10 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 18 maps to package 1 core 11 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 38 maps to package 1 core 11 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 19 maps to package 1 core 12 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 39 maps to package 1 core 12 thread 1 
+OMP: Info #242: KMP_AFFINITY: pid 31515 thread 0 bound to OS proc set {0}
+OMP: Info #242: KMP_AFFINITY: pid 31515 thread 1 bound to OS proc set {1}
+OMP: Info #242: KMP_AFFINITY: pid 31515 thread 2 bound to OS proc set {2}
+OMP: Info #242: KMP_AFFINITY: pid 31515 thread 3 bound to OS proc set {3}
+OMP: Info #242: KMP_AFFINITY: pid 31515 thread 4 bound to OS proc set {4}
+OMP: Info #242: KMP_AFFINITY: pid 31515 thread 5 bound to OS proc set {5}
+OMP: Info #242: KMP_AFFINITY: pid 31515 thread 6 bound to OS proc set {6}
+OMP: Info #242: KMP_AFFINITY: pid 31515 thread 7 bound to OS proc set {7}
+OMP: Info #242: KMP_AFFINITY: pid 31515 thread 8 bound to OS proc set {8}
+OMP: Info #242: KMP_AFFINITY: pid 31515 thread 9 bound to OS proc set {9}
+OMP: Info #242: KMP_AFFINITY: pid 31515 thread 10 bound to OS proc set {10}
+OMP: Info #242: KMP_AFFINITY: pid 31515 thread 11 bound to OS proc set {11}
+OMP: Info #242: KMP_AFFINITY: pid 31515 thread 13 bound to OS proc set {13}
+OMP: Info #242: KMP_AFFINITY: pid 31515 thread 12 bound to OS proc set {12}
+    ../fdelmodc: Hello world from thread 0, on cnode1. (core affinity = 0)
+    ../fdelmodc: Hello world from thread 2, on cnode1. (core affinity = 2)
+OMP: Info #242: KMP_AFFINITY: pid 31515 thread 14 bound to OS proc set {14}
+    ../fdelmodc: Hello world from thread 13, on cnode1. (core affinity = 13)
+OMP: Info #242: KMP_AFFINITY: pid 31515 thread 15 bound to OS proc set {15}
+    ../fdelmodc: Hello world from thread 9, on cnode1. (core affinity = 9)
+    ../fdelmodc: Hello world from thread 5, on cnode1. (core affinity = 5)
+    ../fdelmodc: Hello world from thread 6, on cnode1. (core affinity = 6)
+    ../fdelmodc: Hello world from thread 8, on cnode1. (core affinity = 8)
+    ../fdelmodc: Hello world from thread 1, on cnode1. (core affinity = 1)
+    ../fdelmodc: Hello world from thread 10, on cnode1. (core affinity = 10)
+    ../fdelmodc: Hello world from thread 12, on cnode1. (core affinity = 12)
+    ../fdelmodc: Hello world from thread 4, on cnode1. (core affinity = 4)
+    ../fdelmodc: Hello world from thread 7, on cnode1. (core affinity = 7)
+    ../fdelmodc: Hello world from thread 3, on cnode1. (core affinity = 3)
+    ../fdelmodc: Hello world from thread 11, on cnode1. (core affinity = 11)
+    ../fdelmodc: Hello world from thread 14, on cnode1. (core affinity = 14)
+    ../fdelmodc: Hello world from thread 15, on cnode1. (core affinity = 15)
+    ../fdelmodc: Estimated compute time = 20.03 s. per shot.
+    ../fdelmodc: Estimated total compute time = 20.08 s.
+    ../fdelmodc: Number of samples written to last file = 4001
+    ../fdelmodc: Total compute time FD modelling = 18.84 s.
+
+real	0m18.849s
+user	4m59.022s
+sys	0m1.371s
+number of threads=20
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************** general info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: tmod    = 4.100000
+    ../fdelmodc: ntsam   = 8201   dt      = 0.000500(5.000000e-04)
+    ../fdelmodc: Acoustic staggered grid, pressure/velocity
+    ../fdelmodc: Forward modelling
+    ../fdelmodc: *******************************************
+    ../fdelmodc: *************** model info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: nz      =      801   nx      =     2401
+    ../fdelmodc: dz      =   2.5000   dx      =   2.5000
+    ../fdelmodc: zmin    =   0.0000   zmax    = 2000.0000
+    ../fdelmodc: xmin    = -3000.0000   xmax    = 3000.0000
+    ../fdelmodc: min(cp) =  2000.000  max(cp) =  2400.000
+    ../fdelmodc: min(ro) =  1000.000  max(ro) =  2000.000
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ******** dispersion and stability *********
+    ../fdelmodc: *******************************************
+    ../fdelmodc: Dispersion criterion is   5 points per wavelength: 
+    ../fdelmodc:  ====> wavelength > 12.500000 m [dx*disp]
+    ../fdelmodc: The maximum frequency in source wavelet must be:
+    ../fdelmodc:  ====> frequency < 160.000000 Hz. [Cmin/dx*disp]
+    ../fdelmodc: Stability criterion for current settings: 
+    ../fdelmodc:  ====> Cp < 3029.999756 m/s [dx*disp/dt]
+    ../fdelmodc:  For wavelet(s) in file_src fmax = 60.546871
+    ../fdelmodc: Optimal discretisation for current model:
+    ../fdelmodc:  With maximum velocity  = 2400.000000 dt <= 6.312500e-04
+    ../fdelmodc:  With maximum frequency = 60.546871 dx <= 6.606452e+00
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* boundary info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ***  1=free 2=pml 3=rigid 4=tapered     ***
+    ../fdelmodc: Top boundary    : 1
+    ../fdelmodc: Left boundary   : 2
+    ../fdelmodc: Right boundary  : 2
+    ../fdelmodc: Bottom boundary : 2
+    ../fdelmodc: taper lenght = 101 points
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* wavelet info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: wav_nt   =   4096   wav_nx      = 1
+    ../fdelmodc: src_type =      7   src_orient  = 1
+    ../fdelmodc: fmax     =    60.55
+    ../fdelmodc: Source type         : Fz 
+    ../fdelmodc: *************** no snapshots **************
+    ../fdelmodc: **************** no beams *****************
+    ../fdelmodc: Total number of linear array receivers: 501
+    ../fdelmodc: Total number of receivers: 501
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* receiver info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ntrcv   = 4101 nrcv    = 501 
+    ../fdelmodc: dtrcv   = 0.001000              
+    ../fdelmodc: dzrcv   = 0.000000 dxrcv   = 10.000000 
+    ../fdelmodc: time-delay = 0.100000 = points = 200
+    ../fdelmodc: Receiver sampling can be => 8.258065e-03
+    ../fdelmodc: Receiver array at coordinates: 
+    ../fdelmodc: zmin    = 0.000000 zmax    = 0.000000 
+    ../fdelmodc: xmin    = -2500.000000 xmax    = 2500.000000 
+    ../fdelmodc: which are gridpoints: 
+    ../fdelmodc: izmin   = 0 izmax   = 0 
+    ../fdelmodc: ixmin   = 200 ixmax   = 2200 
+    ../fdelmodc: Receiver interpolation for P: p->p
+    ../fdelmodc: Receiver interpolation for Vz: vz->vz
+    ../fdelmodc: Receiver types        : Vz p 
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* runtime info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: CPU time for intializing arrays and model = 0.078822
+    ../fdelmodc: Modeling source 0 at gridpoints ix=1200 iz=0
+    ../fdelmodc:  which are actual positions x=0.00 z=0.00
+    ../fdelmodc: Receivers at gridpoint x-range ix=200 - 2200
+    ../fdelmodc:  which are actual positions x=-2500.00 - 2500.00
+    ../fdelmodc: Receivers at gridpoint z-range iz=0 - 0
+    ../fdelmodc:  which are actual positions z=0.00 - 0.00
+OMP: Info #204: KMP_AFFINITY: decoding x2APIC ids.
+OMP: Info #202: KMP_AFFINITY: Affinity capable, using global cpuid leaf 11 info
+OMP: Info #154: KMP_AFFINITY: Initial OS proc set respected: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39}
+OMP: Info #156: KMP_AFFINITY: 40 available OS procs
+OMP: Info #157: KMP_AFFINITY: Uniform topology
+OMP: Info #179: KMP_AFFINITY: 2 packages x 10 cores/pkg x 2 threads/core (20 total cores)
+OMP: Info #206: KMP_AFFINITY: OS proc to physical thread map:
+OMP: Info #171: KMP_AFFINITY: OS proc 0 maps to package 0 core 0 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 20 maps to package 0 core 0 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 1 maps to package 0 core 1 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 21 maps to package 0 core 1 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 2 maps to package 0 core 2 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 22 maps to package 0 core 2 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 3 maps to package 0 core 3 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 23 maps to package 0 core 3 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 4 maps to package 0 core 4 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 24 maps to package 0 core 4 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 5 maps to package 0 core 8 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 25 maps to package 0 core 8 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 6 maps to package 0 core 9 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 26 maps to package 0 core 9 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 7 maps to package 0 core 10 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 27 maps to package 0 core 10 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 8 maps to package 0 core 11 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 28 maps to package 0 core 11 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 9 maps to package 0 core 12 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 29 maps to package 0 core 12 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 10 maps to package 1 core 0 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 30 maps to package 1 core 0 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 11 maps to package 1 core 1 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 31 maps to package 1 core 1 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 12 maps to package 1 core 2 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 32 maps to package 1 core 2 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 13 maps to package 1 core 3 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 33 maps to package 1 core 3 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 14 maps to package 1 core 4 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 34 maps to package 1 core 4 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 15 maps to package 1 core 8 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 35 maps to package 1 core 8 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 16 maps to package 1 core 9 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 36 maps to package 1 core 9 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 17 maps to package 1 core 10 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 37 maps to package 1 core 10 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 18 maps to package 1 core 11 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 38 maps to package 1 core 11 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 19 maps to package 1 core 12 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 39 maps to package 1 core 12 thread 1 
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 0 bound to OS proc set {0}
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 1 bound to OS proc set {1}
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 2 bound to OS proc set {2}
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 3 bound to OS proc set {3}
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 4 bound to OS proc set {4}
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 5 bound to OS proc set {5}
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 6 bound to OS proc set {6}
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 7 bound to OS proc set {7}
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 8 bound to OS proc set {8}
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 9 bound to OS proc set {9}
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 10 bound to OS proc set {10}
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 11 bound to OS proc set {11}
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 13 bound to OS proc set {13}
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 12 bound to OS proc set {12}
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 14 bound to OS proc set {14}
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 15 bound to OS proc set {15}
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 16 bound to OS proc set {16}
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 17 bound to OS proc set {17}
+    ../fdelmodc: Hello world from thread 8, on cnode1. (core affinity = 8)
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 19 bound to OS proc set {19}
+    ../fdelmodc: Hello world from thread 9, on cnode1. (core affinity = 9)
+OMP: Info #242: KMP_AFFINITY: pid 31542 thread 18 bound to OS proc set {18}
+    ../fdelmodc: Hello world from thread 13, on cnode1. (core affinity = 13)
+    ../fdelmodc: Hello world from thread 15, on cnode1. (core affinity = 15)
+    ../fdelmodc: Hello world from thread 10, on cnode1. (core affinity = 10)
+    ../fdelmodc: Hello world from thread 4, on cnode1. (core affinity = 4)
+    ../fdelmodc: Hello world from thread 3, on cnode1. (core affinity = 3)
+    ../fdelmodc: Hello world from thread 2, on cnode1. (core affinity = 2)
+    ../fdelmodc: Hello world from thread 7, on cnode1. (core affinity = 7)
+    ../fdelmodc: Hello world from thread 6, on cnode1. (core affinity = 6)
+    ../fdelmodc: Hello world from thread 5, on cnode1. (core affinity = 5)
+    ../fdelmodc: Hello world from thread 12, on cnode1. (core affinity = 12)
+    ../fdelmodc: Hello world from thread 17, on cnode1. (core affinity = 17)
+    ../fdelmodc: Hello world from thread 0, on cnode1. (core affinity = 0)
+    ../fdelmodc: Hello world from thread 1, on cnode1. (core affinity = 1)
+    ../fdelmodc: Hello world from thread 19, on cnode1. (core affinity = 19)
+    ../fdelmodc: Hello world from thread 11, on cnode1. (core affinity = 11)
+    ../fdelmodc: Hello world from thread 16, on cnode1. (core affinity = 16)
+    ../fdelmodc: Hello world from thread 14, on cnode1. (core affinity = 14)
+    ../fdelmodc: Hello world from thread 18, on cnode1. (core affinity = 18)
+    ../fdelmodc: Estimated compute time = 19.47 s. per shot.
+    ../fdelmodc: Estimated total compute time = 19.55 s.
+    ../fdelmodc: Number of samples written to last file = 4001
+    ../fdelmodc: Total compute time FD modelling = 17.25 s.
+
+real	0m17.253s
+user	5m41.477s
+sys	0m1.470s
+number of threads=24
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************** general info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: tmod    = 4.100000
+    ../fdelmodc: ntsam   = 8201   dt      = 0.000500(5.000000e-04)
+    ../fdelmodc: Acoustic staggered grid, pressure/velocity
+    ../fdelmodc: Forward modelling
+    ../fdelmodc: *******************************************
+    ../fdelmodc: *************** model info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: nz      =      801   nx      =     2401
+    ../fdelmodc: dz      =   2.5000   dx      =   2.5000
+    ../fdelmodc: zmin    =   0.0000   zmax    = 2000.0000
+    ../fdelmodc: xmin    = -3000.0000   xmax    = 3000.0000
+    ../fdelmodc: min(cp) =  2000.000  max(cp) =  2400.000
+    ../fdelmodc: min(ro) =  1000.000  max(ro) =  2000.000
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ******** dispersion and stability *********
+    ../fdelmodc: *******************************************
+    ../fdelmodc: Dispersion criterion is   5 points per wavelength: 
+    ../fdelmodc:  ====> wavelength > 12.500000 m [dx*disp]
+    ../fdelmodc: The maximum frequency in source wavelet must be:
+    ../fdelmodc:  ====> frequency < 160.000000 Hz. [Cmin/dx*disp]
+    ../fdelmodc: Stability criterion for current settings: 
+    ../fdelmodc:  ====> Cp < 3029.999756 m/s [dx*disp/dt]
+    ../fdelmodc:  For wavelet(s) in file_src fmax = 60.546871
+    ../fdelmodc: Optimal discretisation for current model:
+    ../fdelmodc:  With maximum velocity  = 2400.000000 dt <= 6.312500e-04
+    ../fdelmodc:  With maximum frequency = 60.546871 dx <= 6.606452e+00
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* boundary info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ***  1=free 2=pml 3=rigid 4=tapered     ***
+    ../fdelmodc: Top boundary    : 1
+    ../fdelmodc: Left boundary   : 2
+    ../fdelmodc: Right boundary  : 2
+    ../fdelmodc: Bottom boundary : 2
+    ../fdelmodc: taper lenght = 101 points
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* wavelet info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: wav_nt   =   4096   wav_nx      = 1
+    ../fdelmodc: src_type =      7   src_orient  = 1
+    ../fdelmodc: fmax     =    60.55
+    ../fdelmodc: Source type         : Fz 
+    ../fdelmodc: *************** no snapshots **************
+    ../fdelmodc: **************** no beams *****************
+    ../fdelmodc: Total number of linear array receivers: 501
+    ../fdelmodc: Total number of receivers: 501
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* receiver info ***************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ntrcv   = 4101 nrcv    = 501 
+    ../fdelmodc: dtrcv   = 0.001000              
+    ../fdelmodc: dzrcv   = 0.000000 dxrcv   = 10.000000 
+    ../fdelmodc: time-delay = 0.100000 = points = 200
+    ../fdelmodc: Receiver sampling can be => 8.258065e-03
+    ../fdelmodc: Receiver array at coordinates: 
+    ../fdelmodc: zmin    = 0.000000 zmax    = 0.000000 
+    ../fdelmodc: xmin    = -2500.000000 xmax    = 2500.000000 
+    ../fdelmodc: which are gridpoints: 
+    ../fdelmodc: izmin   = 0 izmax   = 0 
+    ../fdelmodc: ixmin   = 200 ixmax   = 2200 
+    ../fdelmodc: Receiver interpolation for P: p->p
+    ../fdelmodc: Receiver interpolation for Vz: vz->vz
+    ../fdelmodc: Receiver types        : Vz p 
+    ../fdelmodc: *******************************************
+    ../fdelmodc: ************* runtime info ****************
+    ../fdelmodc: *******************************************
+    ../fdelmodc: CPU time for intializing arrays and model = 0.048325
+    ../fdelmodc: Modeling source 0 at gridpoints ix=1200 iz=0
+    ../fdelmodc:  which are actual positions x=0.00 z=0.00
+    ../fdelmodc: Receivers at gridpoint x-range ix=200 - 2200
+    ../fdelmodc:  which are actual positions x=-2500.00 - 2500.00
+    ../fdelmodc: Receivers at gridpoint z-range iz=0 - 0
+    ../fdelmodc:  which are actual positions z=0.00 - 0.00
+OMP: Info #204: KMP_AFFINITY: decoding x2APIC ids.
+OMP: Info #202: KMP_AFFINITY: Affinity capable, using global cpuid leaf 11 info
+OMP: Info #154: KMP_AFFINITY: Initial OS proc set respected: {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39}
+OMP: Info #156: KMP_AFFINITY: 40 available OS procs
+OMP: Info #157: KMP_AFFINITY: Uniform topology
+OMP: Info #179: KMP_AFFINITY: 2 packages x 10 cores/pkg x 2 threads/core (20 total cores)
+OMP: Info #206: KMP_AFFINITY: OS proc to physical thread map:
+OMP: Info #171: KMP_AFFINITY: OS proc 0 maps to package 0 core 0 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 20 maps to package 0 core 0 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 1 maps to package 0 core 1 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 21 maps to package 0 core 1 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 2 maps to package 0 core 2 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 22 maps to package 0 core 2 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 3 maps to package 0 core 3 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 23 maps to package 0 core 3 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 4 maps to package 0 core 4 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 24 maps to package 0 core 4 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 5 maps to package 0 core 8 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 25 maps to package 0 core 8 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 6 maps to package 0 core 9 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 26 maps to package 0 core 9 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 7 maps to package 0 core 10 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 27 maps to package 0 core 10 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 8 maps to package 0 core 11 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 28 maps to package 0 core 11 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 9 maps to package 0 core 12 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 29 maps to package 0 core 12 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 10 maps to package 1 core 0 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 30 maps to package 1 core 0 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 11 maps to package 1 core 1 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 31 maps to package 1 core 1 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 12 maps to package 1 core 2 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 32 maps to package 1 core 2 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 13 maps to package 1 core 3 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 33 maps to package 1 core 3 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 14 maps to package 1 core 4 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 34 maps to package 1 core 4 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 15 maps to package 1 core 8 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 35 maps to package 1 core 8 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 16 maps to package 1 core 9 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 36 maps to package 1 core 9 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 17 maps to package 1 core 10 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 37 maps to package 1 core 10 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 18 maps to package 1 core 11 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 38 maps to package 1 core 11 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 19 maps to package 1 core 12 thread 0 
+OMP: Info #171: KMP_AFFINITY: OS proc 39 maps to package 1 core 12 thread 1 
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 0 bound to OS proc set {0}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 1 bound to OS proc set {1}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 4 bound to OS proc set {4}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 2 bound to OS proc set {2}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 3 bound to OS proc set {3}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 6 bound to OS proc set {6}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 5 bound to OS proc set {5}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 7 bound to OS proc set {7}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 8 bound to OS proc set {8}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 10 bound to OS proc set {10}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 9 bound to OS proc set {9}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 11 bound to OS proc set {11}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 12 bound to OS proc set {12}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 13 bound to OS proc set {13}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 14 bound to OS proc set {14}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 16 bound to OS proc set {16}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 17 bound to OS proc set {17}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 15 bound to OS proc set {15}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 18 bound to OS proc set {18}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 19 bound to OS proc set {19}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 20 bound to OS proc set {20}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 21 bound to OS proc set {21}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 22 bound to OS proc set {22}
+OMP: Info #242: KMP_AFFINITY: pid 31563 thread 23 bound to OS proc set {23}
+    ../fdelmodc: Hello world from thread 1, on cnode1. (core affinity = 1)
+    ../fdelmodc: Hello world from thread 0, on cnode1. (core affinity = 0)
+    ../fdelmodc: Hello world from thread 4, on cnode1. (core affinity = 4)
+    ../fdelmodc: Hello world from thread 11, on cnode1. (core affinity = 11)
+    ../fdelmodc: Hello world from thread 8, on cnode1. (core affinity = 8)
+    ../fdelmodc: Hello world from thread 16, on cnode1. (core affinity = 16)
+    ../fdelmodc: Hello world from thread 14, on cnode1. (core affinity = 14)
+    ../fdelmodc: Hello world from thread 12, on cnode1. (core affinity = 12)
+    ../fdelmodc: Hello world from thread 9, on cnode1. (core affinity = 9)
+    ../fdelmodc: Hello world from thread 23, on cnode1. (core affinity = 23)
+    ../fdelmodc: Hello world from thread 7, on cnode1. (core affinity = 7)
+    ../fdelmodc: Hello world from thread 3, on cnode1. (core affinity = 3)
+    ../fdelmodc: Hello world from thread 22, on cnode1. (core affinity = 22)
+    ../fdelmodc: Hello world from thread 20, on cnode1. (core affinity = 20)
+    ../fdelmodc: Hello world from thread 21, on cnode1. (core affinity = 21)
+    ../fdelmodc: Hello world from thread 19, on cnode1. (core affinity = 19)
+    ../fdelmodc: Hello world from thread 2, on cnode1. (core affinity = 2)
+    ../fdelmodc: Hello world from thread 17, on cnode1. (core affinity = 17)
+    ../fdelmodc: Hello world from thread 5, on cnode1. (core affinity = 5)
+    ../fdelmodc: Hello world from thread 13, on cnode1. (core affinity = 13)
+    ../fdelmodc: Hello world from thread 18, on cnode1. (core affinity = 18)
+    ../fdelmodc: Hello world from thread 10, on cnode1. (core affinity = 10)
+    ../fdelmodc: Hello world from thread 6, on cnode1. (core affinity = 6)
+    ../fdelmodc: Hello world from thread 15, on cnode1. (core affinity = 15)
+    ../fdelmodc: Estimated compute time = 19.21 s. per shot.
+    ../fdelmodc: Estimated total compute time = 19.26 s.
+    ../fdelmodc: Number of samples written to last file = 4001
+    ../fdelmodc: Total compute time FD modelling = 17.50 s.
+
+real	0m17.506s
+user	6m56.045s
+sys	0m2.315s

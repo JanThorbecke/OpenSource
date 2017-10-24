@@ -1,7 +1,7 @@
 Description of files:
 1) model.scr computes the model and the 'basis' shot of R => shot5_rp.su
 2) p5all.scr create from basis shot full Reflection response matrix => shotsdx5_rp.su (3.3 GB)
-3) initialFocus.scr model G_d the intitial focusing function => iniFocus_rp.su
+3) initialFocus.scr model G_d the initial focusing function => iniFocus_rp.su
 4) referenceShot.scr creates the reference Green's function at focal point => referenceP_rp.su
 5) marchenko.scr perform the Marchenko scheme => pgreen.su, f1plus0.su, f1min0.su, f2.su
 

@@ -1,0 +1,39 @@
+#!/bin/bash -x
+#PBS -N fdelmod
+#PBS -q verylong
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+
+export PATH=$HOME/bin:$HOME/src/OpenSource/bin:$PATH:
+which makewave
+which makemod
+which fmute
+which syn2d
+export OMP_NUM_THREADS=8
+
+cd /home/thorbcke/data/Kees/MultElim/ModelImageBackprop/Redatum
+
+tmpdir=/tmp/shotI
+mkdir -p $tmpdir
+#for dt=0.004 with modeling at 0.0005
+scale=1.0
+w1=1
+smooth=3
+#smooth=0
+
+fmute file_shot=shots/shotsmonPz1100_0_rp.su file_out=p0plus.su above=-1 shift=-10 verbose=1 check=1 hw=4
+
+suwind itmax=1023 < p0plus.su | \
+suwind key=gx min=-3000000 max=3000000 | \
+sushw key=fldr a=1 > p0plussx.su
+
+#~/bin/marchenko file_shot=../shots/refl_rp.su file_tinv=p0plussx.su nshots=601 file_green=pgreen_1.su verbose=1 tap=0 ntap=0 reci=0 niter=1 hw=8 shift=7 smooth=$smooth w=1 file_gplus=Gplus0.su file_gmin=Gmin0.su  file_f1plus=f1plus0_1.su file_f1min=f1min0_1.su file_pplus=Pplus0_1.su
+#
+#~/bin/marchenko file_shot=../shots/refl_rp.su file_tinv=p0plussx.su nshots=601 file_green=pgreen_4.su verbose=1 tap=0 ntap=0 reci=0 niter=4 hw=8 shift=7 smooth=$smooth w=1 file_gplus=Gplus0.su file_gmin=Gmin0.su  file_f1plus=f1plus0_4.su file_f1min=f1min0_4.su file_pplus=Pplus0_4.su
+
+#for backpropagating pplus in marchenko scheme must be written to file
+~/bin/marchenko file_shot=../shots/refl_rp.su file_tinv=p0plussx.su nshots=601 file_green=pgreen.su verbose=1 tap=0 ntap=10 niter=15 hw=8 shift=7 smooth=$smooth file_gplus=Gplus0.su file_gmin=Gmin0.su  file_f1plus=f1plus0.su file_f1min=f1min0.su file_pplus=Pplus0.su
+
+exit;
+
