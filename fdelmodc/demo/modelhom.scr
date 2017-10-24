@@ -8,7 +8,7 @@
 
 export PATH=:$HOME/src/OpenSource/bin:$HOME/bin64:$PATH:
 
-cd /Users/jan/src/OpenSource/fdelmodc/demo
+cd /vardim/home/thorbcke/src/OpenSource/fdelmodc/demo
 
 dx=2.5
 dt=0.0005
@@ -22,7 +22,7 @@ makemod sizex=6000 sizez=900 dx=$dx dz=$dx cp0=1900  ro0=1200 \
 
 makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3 scale=0 scfft=1
 
-export OMP_NUM_THREADS=2
+export OMP_NUM_THREADS=4
 
 makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=1
 

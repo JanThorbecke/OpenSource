@@ -3,6 +3,7 @@ bin/*
 *.su
 *.bin
 .DS*
+Make_include
 fdelmodc_cuda.tgz
 marchenko/fmute
 marchenko/marchenko

@@ -71,7 +71,13 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
         if (nread != TRCBYTES) { /* no more data in file */
             break;
         }
-
+/* ToDo Don't store the traces that are not in the aperture */
+/*
+        if ( (NINT(sx_shot*scl-fxse) > 0) || (NINT(-fxsb) > 0) ) {
+           vwarn("source positions are outside synthesis aperture");
+           vmess("xsrc = %.2f", xsrc[k], xrcv[k*nx+0], xrcv[k*nx+nx-1]);
+        }
+*/
         sx_shot  = hdr.sx;
         fldr_shot  = hdr.fldr;
         xsrc[igath] = sx_shot*scl;
