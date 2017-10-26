@@ -354,7 +354,7 @@ int getnpar (int n, char *name, char *type, void *ptr)
 				break;
 			case 'a':
 				{ char *tmpstr="";
-				   tmpstr = (char *)calloc(strlen(aval),1);
+				   tmpstr = (char *)calloc(strlen(aval)+1,1);
 
 				   strchop(aval,tmpstr);
 				   *(char**)ptr = tmpstr;

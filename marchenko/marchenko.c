@@ -56,7 +56,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
 *reci_xsrc,  int *reci_xrcv, float *ixmask, int verbose);
 
 void synthesisPosistions(int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nfoc, float *xrcv, float *xsrc, int *xnx,
-float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos, int *npos, int *isxcount, int reci, int verbose);
+float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos, int *npos, int *isxcount, int countmin, int reci, int verbose);
 
 int linearsearch(int *array, size_t N, int value);
 
@@ -91,6 +91,7 @@ char *sdoc[] = {
 "   scale=2 .................. scale factor of R for summation of Ni with G_d",
 "   pad=0 .................... amount of samples to pad the reflection series",
 "   reci=0 ................... 1; add receivers as shots 2; only use receivers as shot positions",
+"   countmin=0 ............... 0.3*nxrcv; minumum number of reciprocal traces for a contribution",
 " OUTPUT DEFINITION ",
 "   file_green= .............. output file with full Green function(s)",
 "   file_gplus= .............. output file with G+ ",
@@ -116,7 +117,7 @@ int main (int argc, char **argv)
     int     i, j, l, ret, nshots, Nfoc, nt, nx, nts, nxs, ngath;
     int     size, n1, n2, ntap, tap, di, ntraces, pad;
     int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
-    int     reci, mode, n2out, verbose, ntfft;
+    int     reci, countmin, mode, n2out, verbose, ntfft;
     int     iter, niter, tracf, *muteW;
     int     hw, smooth, above, shift, *ixpos, npos, ix;
     int     nshots_r, *isxcount, *reci_xsrc, *reci_xrcv;
@@ -196,6 +197,7 @@ int main (int argc, char **argv)
     nw_high = MIN((int)(fmax*ntfft*dt), nfreq-1);
     nw  = nw_high - nw_low + 1;
     scl   = 1.0/((float)ntfft);
+    if (!getparint("countmin", &countmin)) countmin = 0.3*nx;
     
 /*================ Allocating all data arrays ================*/
 
@@ -370,7 +372,7 @@ int main (int argc, char **argv)
 
     /* dry-run of synthesis to get all x-positions calcalated by the integration */
     synthesisPosistions(nx, nt, nxs, nts, dt, xsyn, Nfoc, xrcv, xsrc, xnx, fxse, fxsb, 
-        dxs, dxsrc, dx, nshots, ixpos, &npos, isxcount, reci, verbose);
+        dxs, dxsrc, dx, nshots, ixpos, &npos, isxcount, countmin, reci, verbose);
     if (verbose) {
         vmess("synthesisPosistions: nshots=%d npos=%d", nshots, npos);
     }
@@ -442,12 +444,13 @@ int main (int argc, char **argv)
         /* N_k(x,t) = -N_(k-1)(x,-t) */
         /* p0^-(x,t) += iRN = (R * T_d^inv)(t) */
         for (l = 0; l < Nfoc; l++) {
+			energyNi = 0.0;
             for (i = 0; i < npos; i++) {
                 j = 0;
                 ix = ixpos[i]; 
                 Ni[l*nxs*nts+i*nts+j]    = -iRN[l*nxs*nts+ix*nts+j];
                 pmin[l*nxs*nts+i*nts+j] += iRN[l*nxs*nts+ix*nts+j];
-                energyNi = iRN[l*nxs*nts+ix*nts+j]*iRN[l*nxs*nts+ix*nts+j];
+                energyNi += iRN[l*nxs*nts+ix*nts+j]*iRN[l*nxs*nts+ix*nts+j];
                 for (j = 1; j < nts; j++) {
                     Ni[l*nxs*nts+i*nts+j]    = -iRN[l*nxs*nts+ix*nts+nts-j];
                     pmin[l*nxs*nts+i*nts+j] += iRN[l*nxs*nts+ix*nts+j];
@@ -828,7 +831,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
 #endif
 } /* end of parallel region */
 
-        if (verbose>3) vmess("*** Shot gather %d processed ***", k);
+        if (verbose>4) vmess("*** Shot gather %d processed ***", k);
 
         } /* end of nshots (k) loop */
     }     /* end of if reci
@@ -862,14 +865,14 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
                     for (i = 0; i < inx; i++) {
                         il = reci_xrcv[ixsrc*nxs+i];
                         ik = reci_xsrc[ixsrc*nxs+i];
-                        //ix = ixrcv[ik*nx+ik];
+            			ix = NINT((xsrc[il] - fxsb)/dxs);
 				        //if (j==nw_low) {
-					        //fprintf(stderr,"ixsrc=%d with il=%d and ik=%d and ix=%d mask=%f\n", ixsrc, il, ik, ix, ixmask[ixsrc]);
+					    //    fprintf(stderr,"ixsrc=%d with il=%d and ik=%d and ix=%d mask=%f\n", ixsrc, il, ik, ix, ixmask[ixsrc]);
 				        //}
-                        sum[j].r += Refl[ik*nw*nx+m*nx+il].r*Fop[l*nw*nxs+m*nxs+ik].r -
-                                    Refl[ik*nw*nx+m*nx+il].i*Fop[l*nw*nxs+m*nxs+ik].i;
-                        sum[j].i += Refl[ik*nw*nx+m*nx+il].i*Fop[l*nw*nxs+m*nxs+ik].r +
-                                    Refl[ik*nw*nx+m*nx+il].r*Fop[l*nw*nxs+m*nxs+ik].i;
+                        sum[j].r += Refl[il*nw*nx+m*nx+ik].r*Fop[l*nw*nxs+m*nxs+ix].r -
+                                    Refl[il*nw*nx+m*nx+ik].i*Fop[l*nw*nxs+m*nxs+ix].i;
+                        sum[j].i += Refl[il*nw*nx+m*nx+ik].i*Fop[l*nw*nxs+m*nxs+ix].r +
+                                    Refl[il*nw*nx+m*nx+ik].r*Fop[l*nw*nxs+m*nxs+ix].i;
                     }
                 }
 
@@ -899,7 +902,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
 }
 
 void synthesisPosistions(int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nfoc, float *xrcv, float *xsrc, int *xnx,
-float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos, int *npos, int *isxcount, int reci, int verbose)
+float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos, int *npos, int *isxcount, int countmin, int reci, int verbose)
 {
     int     i, j, l, ixsrc, ixrcv, dosrc, k, *count;
     float   x0, x1;
@@ -951,7 +954,7 @@ float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos
         /* if reci=1 or reci=2 source-receive reciprocity is used and new (reciprocal-)sources are added */
         if (reci != 0) {
             for (k=0; k<nxs; k++) { /* check count in total number of shots added by reciprocity */
-                if (isxcount[k] != 0) {
+                if (isxcount[k] >= countmin) {
 				    j = linearsearch(ixpos, *npos, k);
 				    if (j < *npos) { /* the position (at j) is already included */
 					    count[j] += isxcount[k];
@@ -961,6 +964,9 @@ float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos
 					    count[*npos] += isxcount[k];
                    	    *npos += 1;
 				    }
+                }
+                else {
+                    isxcount[k] = 0;
                 }
             }
    	    } /* end of reci branch */
@@ -974,7 +980,7 @@ float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos
     free(count);
 
 /* sort ixpos into increasing values */
-    qsort(ixpos, *npos, sizeof(int), compareInt);
+//    qsort(ixpos, *npos, sizeof(int), compareInt);
 
 
     return;
