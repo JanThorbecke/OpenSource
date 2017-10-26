@@ -1,0 +1,15 @@
+set style data linespoints
+set mytics 10
+set xlabel 'number of iterations'
+set ylabel 'convergence rate'
+set size 2.0,2.0
+set size ratio 0.6
+set grid
+
+set log y
+set nolog x
+
+set term postscript eps font 'Helvetica,12' linewidth 4 fontscale 3
+set output 'convergence.eps'
+plot 'conv.txt' using  1:($2) lw 3 notitle
+

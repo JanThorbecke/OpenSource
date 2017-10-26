@@ -1,0 +1,37 @@
+#!/bin/bash -x
+#makewave fp=30 dt=0.004 file_out=wave2.su nt=2048 t0=0.0 scale=1
+#PBS -N fdelmod
+#PBS -q verylong
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+
+#export PATH=$HOME/bin64:$HOME/src/OpenSource/utils:$PATH:
+export PATH=$HOME/Marchenko/utils:$PATH:
+which makewave
+which makemod
+which fmute
+which syn2d
+export OMP_NUM_THREADS=8
+
+#cd /vardim/home/bracken/Marchenko/Redatum/Altmod
+
+#raytime file_vel=model10_cp.su xsrc1=0 zsrc1=1550 file_out=rayA.su verbose=1 dxrcv=10
+#q1=0.5
+
+#~/Marchenko/utils/marchenkocost file_shot=../shotsdx_rp.su file_tinv=above.su file_wav=wave2.su file_green=greenA1.su verbose=2 \
+#key=sx tap=1 ntap=0 reci=0 niter=20 hw=5 shift=6 smooth=5 w=1 file_gplus=GplusA1.su file_gmin=GminA1.su  file_f1plus=f1plusA1.su \
+#file_f1min=f1minA1.su file_Gm0=Gm0A1.su file_direct=tinvA1.su file_Udk=UdkA1.su startb=1.0 endb=1.0 nb=0
+
+#~/Marchenko/utils/marchenkocost file_shot=../shotsdx_rp.su file_tinv=above.su file_wav=wave2.su file_green=greenA2.su verbose=2 \
+#key=sx tap=1 ntap=0 reci=0 niter=20 hw=5 shift=6 smooth=5 w=1 file_gplus=GplusA2.su file_gmin=GminA2.su  file_f1plus=f1plusA2.su \
+#file_f1min=f1minA2.su file_Gm0=Gm0A2.su file_direct=tinvA2.su file_Udk=UdkA2.su startb=2.0 endb=2.0 nb=0
+
+#~/Marchenko/utils/marchenkocost file_shot=../shotsdx_rp.su file_tinv=above.su file_wav=wave2.su file_green=greenA05.su verbose=2 \
+#key=sx tap=1 ntap=0 reci=0 niter=20 hw=5 shift=6 smooth=5 w=1 file_gplus=GplusA05.su file_gmin=GminA05.su  file_f1plus=f1plusA05.su \
+#file_f1min=f1minA05.su file_Gm0=Gm0A05.su file_direct=tinvA05.su file_Udk=UdkA05.su startb=0.5 endb=0.5 nb=0
+
+#~bracken/Marchenko/utils/marchenkocost file_shot=shots.su file_tinv=nep.su file_wav=wave2.su file_green=green.su verbose=2 \
+/vardim/home/thorbcke/src/OpenSource/bin/marchenko file_shot=shots.su file_tinv=nep.su file_green=green.su verbose=2 \
+key=sx tap=1 ntap=0 reci=0 niter=30 hw=5 shift=9 smooth=8 w=1 scaling=0 file_gmin=gmin.su \
+file_f1plus=f1plus.su file_gplus=gplus.su 
