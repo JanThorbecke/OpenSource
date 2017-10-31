@@ -142,9 +142,9 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 /* if reci=1 or reci=2 source-receive reciprocity is used and traces are added */
    
 	if (reci != 0) {
+    	for (k=0; k<nxs; k++) ixmask[k] = 1.0;
         for (k=0; k<nshots; k++) {
             ixsrc = NINT((xsrc[k] - fxsb)/dxs);
-			ixmask[ixsrc] = 1.0;
 			nxrk = xnx[k];
         	for (l=0; l<nxrk; l++) {
 				samercv = 0;
