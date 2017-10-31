@@ -793,7 +793,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
  shared(iRN, dx, npe, nw, verbose) \
  shared(Refl, Nfoc, reci, xrcv, xsrc, xsyn, fxsb, fxse, nxs, dxs) \
  shared(nx, dxsrc, inx, k, nfreq, nw_low, nw_high) \
- shared(Fop, size, nts, ntfft, scl, ixrcv, ixsrc, stderr) \
+ shared(Fop, size, nts, ntfft, scl, ixrcv, ixsrc) \
  private(l, ix, j, m, i, sum, rtrace)
 { /* start of parallel region */
             sum   = (complex *)malloc(nfreq*sizeof(complex));
@@ -842,14 +842,13 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
             if (isxcount[k] == 0) continue;
             ixsrc = k;
             inx = isxcount[ixsrc]; /* number of traces per reciprocal shot */
-//		fprintf(stderr,"inx=%d for k=%d ixsrc=%d\n", inx, k, ixsrc);
 
 #pragma omp parallel default(none) \
  shared(iRN, dx, nw, verbose) \
  shared(Refl, Nfoc, reci, xrcv, xsrc, xsyn, fxsb, fxse, nxs, dxs) \
  shared(nx, dxsrc, inx, k, nfreq, nw_low, nw_high) \
  shared(reci_xrcv, reci_xsrc, ixmask) \
- shared(Fop, size, nts, ntfft, scl, ixrcv, ixsrc, stderr) \
+ shared(Fop, size, nts, ntfft, scl, ixrcv, ixsrc) \
  private(l, ix, j, m, i, sum, rtrace, ik, il)
 { /* start of parallel region */
             sum   = (complex *)malloc(nfreq*sizeof(complex));
@@ -866,9 +865,6 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
                         il = reci_xrcv[ixsrc*nxs+i];
                         ik = reci_xsrc[ixsrc*nxs+i];
             			ix = NINT((xsrc[il] - fxsb)/dxs);
-				        //if (j==nw_low) {
-					    //    fprintf(stderr,"ixsrc=%d with il=%d and ik=%d and ix=%d mask=%f\n", ixsrc, il, ik, ix, ixmask[ixsrc]);
-				        //}
                         sum[j].r += Refl[il*nw*nx+m*nx+ik].r*Fop[l*nw*nxs+m*nxs+ix].r -
                                     Refl[il*nw*nx+m*nx+ik].i*Fop[l*nw*nxs+m*nxs+ix].i;
                         sum[j].i += Refl[il*nw*nx+m*nx+ik].i*Fop[l*nw*nxs+m*nxs+ix].r +
@@ -980,7 +976,7 @@ float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos
     free(count);
 
 /* sort ixpos into increasing values */
-//    qsort(ixpos, *npos, sizeof(int), compareInt);
+    qsort(ixpos, *npos, sizeof(int), compareInt);
 
 
     return;
