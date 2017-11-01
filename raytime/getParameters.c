@@ -123,40 +123,50 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparfloat("zsrc",&zsrc)) zsrc=sub_z0;
 //	if (!getparint("nsrc",&nsrc)) nsrc=1;
 
-	if (!getparint("nshot",&shot->n)) shot->n=1;
+	//if (!getparint("nshot",&shot->n)) shot->n=1;
+	if (!getparint("nxshot",&shot->nx)) shot->nx=1;
+	if (!getparint("nzshot",&shot->nz)) shot->nz=1;
 	if (!getparfloat("dxshot",&dxshot)) dxshot=dx;
-	if (!getparfloat("dzshot",&dzshot)) dzshot=0.0;
+	if (!getparfloat("dzshot",&dzshot)) dzshot=dz;
 
-	if (shot->n>1) {
+	shot->n = (shot->nx)*(shot->nz);
+
+	if (shot->nx>1) {
 		idxshot=MAX(0,NINT(dxshot/dx));
-		idzshot=MAX(0,NINT(dzshot/dz));
 	}
 	else {
 		idxshot=0.0;
-		idzshot=0.0;
 	}
-	
+	if (shot->nz>1) {
+        idzshot=MAX(0,NINT(dzshot/dz));
+    }
+    else {
+        idzshot=0.0;
+    }
+
 	/* calculate the shot positions */
 	
 	src_ix0=MAX(0,NINT((xsrc-sub_x0)/dx));
 	src_ix0=MIN(src_ix0,nx);
 	src_iz0=MAX(0,NINT((zsrc-sub_z0)/dz));
 	src_iz0=MIN(src_iz0,nz);
-	srcendx=(shot->n-1)*dxshot+xsrc;
-	srcendz=(shot->n-1)*dzshot+zsrc;
+	srcendx=(shot->nx-1)*dxshot+xsrc;
+	srcendz=(shot->nz-1)*dzshot+zsrc;
 	src_ix1=MAX(0,NINT((srcendx-sub_x0)/dx));
 	src_ix1=MIN(src_ix1,nx);
 	src_iz1=MAX(0,NINT((srcendz-sub_z0)/dz));
 	src_iz1=MIN(src_iz1,nz);
 
-	shot->x = (int *)calloc(shot->n,sizeof(int));
-	shot->z = (int *)calloc(shot->n,sizeof(int));
-	for (is=0; is<shot->n; is++) {
+	shot->x = (int *)calloc(shot->nx,sizeof(int));
+	shot->z = (int *)calloc(shot->nz,sizeof(int));
+	for (is=0; is<shot->nx; is++) {
 		shot->x[is] = src_ix0+is*idxshot;
-		shot->z[is] = src_iz0+is*idzshot;
-		if (shot->x[is] > nx-1) shot->n = is-1;
-		if (shot->z[is] > nz-1) shot->n = is-1;
+		if (shot->x[is] > nx-1) shot->nx = is-1;
 	}
+	for (is=0; is<shot->nz; is++) {
+        shot->z[is] = src_iz0+is*idzshot;
+        if (shot->z[is] > nz-1) shot->nz = is-1;
+    }
 
 	/* check if source array is defined */
 	

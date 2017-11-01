@@ -110,7 +110,7 @@ int getWaveParameter(float *slowness, icoord size, float dgrid, fcoord s, fcoord
     ds = lengthRefRay/(nRayTmp-1);
     J = lengthRefRay;
     dQdPhi = 0;
-    
+
     for (i = 0; i < nRayTmp-1; i++)
     {
         x = 0.5*(rayReference3D[i+1].x + rayReference3D[i].x);
