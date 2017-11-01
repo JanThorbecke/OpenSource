@@ -6,7 +6,8 @@
 #   -3- on Solaris system use RANLIB=ranlib which is defined below
 
 # the current directory (in vi ":r!pwd")
-ROOT=/Users/jan/src/OpenSource
+#ROOT=/Users/jan/src/OpenSource
+ROOT=/vardim/home/bracken/Marchenko/github/OpenSource
 
 ########################################################################
 # C compiler; change this only if you are using a different C-compiler
