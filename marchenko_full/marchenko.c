@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <genfft.h>
 #include "marchenko.h"
+#include "raytime.h"
 
 int omp_get_max_threads(void);
 int omp_get_num_threads(void);
@@ -119,6 +120,80 @@ char *sdoc[] = {
 "   file_iter= ............... output file with -Ni(-t) for each iteration",
 "   verbose=0 ................ silent option; >0 displays info",
 " ",
+" RAYTIME PARAMETERS - Jesper Spetzler ray-trace modeling ",
+" ",
+" IO PARAMETERS:",
+"   file_cp= .......... P (cp) velocity file",
+"   file_src= ......... file with source signature",
+"   file_rcv=recv.su .. base name for receiver files",
+"   dx= ............... read from model file: if dx==0 then dx= can be used to set it",
+"   dz= ............... read from model file: if dz==0 then dz= can be used to set it",
+"   dt= ............... read from file_src: if dt==0 then dt= can be used to set it",
+"" ,
+" RAY TRACING PARAMETERS:",
+"   smoothwindow=0 .... if set lenght of 2/3D smoothing window on slowness",
+"   useT2=0 ........... 1: compute more accurate T2 pertubation correction",
+"   geomspread=1 ...... 1: compute Geometrical Spreading Factor",
+"   nraystep=5 ........ number of points on ray",
+" OPTIONAL PARAMETERS:",
+"   ischeme=3 ......... 1=acoustic, 2=visco-acoustic 3=elastic, 4=visco-elastic",
+"   sinkdepth=0 ....... receiver grid points below topography (defined bij cp=0.0)",
+"   sinkdepth_src=0 ... source grid points below topography (defined bij cp=0.0)",
+"   sinkvel=0 ......... use velocity of first receiver to sink through to next layer",
+"   verbose=0 ......... silent mode; =1: display info",
+" ",
+" SHOT AND GENERAL SOURCE DEFINITION:",
+"   xsrc=middle ....... x-position of (first) shot ",
+"   zsrc=zmin ......... z-position of (first) shot ",
+"   nshot=1 ........... number of shots to model",
+"   dxshot=dx ......... if nshot > 1: x-shift in shot locations",
+"   dzshot=0 .......... if nshot > 1: z-shift in shot locations",
+"   xsrca= ............ defines source array x-positions",
+"   zsrca= ............ defines source array z-positions",
+"   wav_random=1 ...... 1 generates (band limited by fmax) noise signatures ",
+"   src_multiwav=0 .... use traces in file_src as areal source",
+"   src_at_rcv=1 ...... inject wavefield at receiver coordinates (1), inject at source (0)",
+"" ,
+" PLANE WAVE SOURCE DEFINITION:",
+"   plane_wave=0 ...... model plane wave with nsrc= sources",
+"   nsrc=1 ............ number of sources per (plane-wave) shot ",
+"   src_angle=0 ....... angle of plane source array",
+"   src_velo=1500 ..... velocity to use in src_angle definition",
+"   src_window=0 ...... length of taper at edges of source array",
+"",
+" RANDOM SOURCE DEFINITION FOR SEISMIC INTERFEROMTERY:",
+"   src_random=0 ...... 1 enables nsrc random sources positions in one modeling",
+"   nsrc=1 ............ number of sources to use for one shot",
+"   xsrc1=0 ........... left bound for x-position of sources",
+"   xsrc2=0 ........... right bound for x-position of sources",
+"   zsrc1=0 ........... left bound for z-position of sources",
+"   zsrc2=0 ........... right bound for z-position of sources",
+"   tsrc1=0.0 ......... begin time interval for random sources being triggered",
+"   tsrc2=tmod ........ end time interval for random sources being triggered",
+"   tactive=tsrc2 ..... end time for random sources being active",
+"   tlength=tsrc2-tsrc1 average duration of random source signal",
+"   length_random=1 ... duration of source is rand*tlength",
+"   amplitude=0 ....... distribution of source amplitudes",
+"   distribution=0 .... random function for amplitude and tlength 0=flat 1=Gaussian ",
+"   seed=10 ........... seed for start of random sequence ",
+"" ,
+" RECEIVER SELECTION:",
+"   xrcv1=xmin ........ first x-position of linear receiver array(s)",
+"   xrcv2=xmax ........ last x-position of linear receiver array(s)",
+"   dxrcv=dx .......... x-position increment of receivers in linear array(s)",
+"   zrcv1=zmin ........ first z-position of linear receiver array(s)",
+"   zrcv2=zrcv1 ....... last z-position of linear receiver array(s)",
+"   dzrcv=0.0 ......... z-position increment of receivers in linear array(s)",
+"   xrcva= ............ defines receiver array x-positions",
+"   zrcva= ............ defines receiver array z-positions",
+"   rrcv= ............. radius for receivers on a circle ",
+"   arcv= ............. vertical arc-lenght for receivers on a ellipse (rrcv=horizontal)",
+"   oxrcv=0.0 ......... x-center position of circle",
+"   ozrcv=0.0 ......... z-center position of circle",
+"   dphi=2 ............ angle between receivers on circle ",
+"   rcv_txt=........... text file with receiver coordinates. Col 1: x, Col. 2: z",
+"   rec_ntsam=nt ...... maximum number of time samples in file_rcv files",
+" ",
 " ",
 " author  : Jan Thorbecke : 2016 (j.w.thorbecke@tudelft.nl)",
 " ",
@@ -146,6 +221,14 @@ int main (int argc, char **argv)
     char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_pmin, *wavtype;
     segy    *hdrs_out;
 	WavePar WP;
+	modPar mod;
+    recPar rec;
+    snaPar sna;
+    wavPar wav;
+    srcPar src;
+    bndPar bnd;
+    shotPar shot;
+    rayPar ray;
 
     initargs(argc, argv);
     requestdoc(1);
@@ -223,7 +306,34 @@ int main (int argc, char **argv)
 /*================ Reading info about shot and initial operator sizes ================*/
 
     ngath = 0; /* setting ngath=0 scans all traces; n2 contains maximum traces/gather */
-    ret = getFileInfo(file_tinv, &n1, &n2, &ngath, &d1, &d2, &f1, &f2, &xmin, &xmax, &scl, &ntraces);
+	if (file_ray!=NULL && file_tinv==NULL) {
+		vmess("test ray");
+		ret = getFileInfo(file_ray, &n2, &n1, &ngath, &d2, &d1, &f2, &f1, &xmin, &xmax, &scl, &ntraces);
+	}
+	else if (file_ray==NULL && file_tinv==NULL) {
+		vmess("test raytime");
+		getParameters(&mod, &rec, &sna, &wav, &src, &shot, &bnd, &ray, verbose);
+		n1 = rec.nt;
+		n2 = rec.n;
+		ngath = shot.n;
+		d1 = mod.dt;
+		d2 = (rec.x[1]-rec.x[0])*mod.dx;
+		f1 = 0.0;
+		f2 = mod.x0+rec.x[0]*mod.dx;
+		xmin = mod.x0+rec.x[0]*mod.dx;
+		xmax = mod.x0+rec.x[rec.n-1]*mod.dx;
+		scl = 0.0010;
+		ntraces = n2*ngath;
+	}
+	else {
+		vmess("test tinv");
+    	ret = getFileInfo(file_tinv, &n1, &n2, &ngath, &d1, &d2, &f1, &f2, &xmin, &xmax, &scl, &ntraces);
+	}
+
+	vmess("n1:%d n2:%d ngath:%d d1:%.4f d2:%.4f f1:%.4f f2:%.4f",n1,n2,ngath,d1,d2,f1,f2);
+	vmess("xmin:%.4f xmax:%.4f scl:%.4f ntraces:%d",xmin,xmax,scl,ntraces);
+	
+
     Nsyn = ngath;
     nxs = n2; 
     nts = n1;
