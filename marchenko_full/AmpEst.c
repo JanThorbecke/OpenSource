@@ -62,6 +62,7 @@ int AmpEst(float *f1d, float *Gd, float *ampest, int Nsyn, int nxs, int ntfft, i
 		ampest[l] = Wmax/(Amax/((float)ntfft));
 		memset(&Af[0],0.0, sizeof(float)*2*nfreq);
     }
+	free(Gdf);free(f1df);free(Af);free(At);free(wavelet);
 
 	return;
 }

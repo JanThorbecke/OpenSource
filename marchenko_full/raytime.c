@@ -39,91 +39,7 @@ int defineSource(wavPar wav, srcPar src, modPar mod, float **src_nwav, int rever
 
 int writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot);
 
-/* Self documentation */
-char *sdoc[] = {
-" ",
-" raytime - Jesper Spetzler ray-trace modeling ",
-" ",
-" IO PARAMETERS:",
-"   file_cp= .......... P (cp) velocity file",
-"   file_src= ......... file with source signature",
-"   file_rcv=recv.su .. base name for receiver files",
-"   dx= ............... read from model file: if dx==0 then dx= can be used to set it",
-"   dz= ............... read from model file: if dz==0 then dz= can be used to set it",
-"   dt= ............... read from file_src: if dt==0 then dt= can be used to set it",
-"" ,
-" RAY TRACING PARAMETERS:",
-"   smoothwindow=0 .... if set lenght of 2/3D smoothing window on slowness",
-"   useT2=0 ........... 1: compute more accurate T2 pertubation correction",
-"   geomspread=1 ...... 1: compute Geometrical Spreading Factor",
-"   nraystep=5 ........ number of points on ray",
-" OPTIONAL PARAMETERS:",
-"   ischeme=3 ......... 1=acoustic, 2=visco-acoustic 3=elastic, 4=visco-elastic",
-"   sinkdepth=0 ....... receiver grid points below topography (defined bij cp=0.0)",
-"   sinkdepth_src=0 ... source grid points below topography (defined bij cp=0.0)",
-"   sinkvel=0 ......... use velocity of first receiver to sink through to next layer",
-"   verbose=0 ......... silent mode; =1: display info",
-" ",
-" SHOT AND GENERAL SOURCE DEFINITION:",
-"   xsrc=middle ....... x-position of (first) shot ",
-"   zsrc=zmin ......... z-position of (first) shot ",
-"   nshot=1 ........... number of shots to model",
-"   dxshot=dx ......... if nshot > 1: x-shift in shot locations",
-"   dzshot=0 .......... if nshot > 1: z-shift in shot locations",
-"   xsrca= ............ defines source array x-positions",
-"   zsrca= ............ defines source array z-positions",
-"   wav_random=1 ...... 1 generates (band limited by fmax) noise signatures ",
-"   src_multiwav=0 .... use traces in file_src as areal source",
-"   src_at_rcv=1 ...... inject wavefield at receiver coordinates (1), inject at source (0)",
-"" ,
-" PLANE WAVE SOURCE DEFINITION:",
-"   plane_wave=0 ...... model plane wave with nsrc= sources",
-"   nsrc=1 ............ number of sources per (plane-wave) shot ",
-"   src_angle=0 ....... angle of plane source array",
-"   src_velo=1500 ..... velocity to use in src_angle definition",
-"   src_window=0 ...... length of taper at edges of source array",
-"",
-" RANDOM SOURCE DEFINITION FOR SEISMIC INTERFEROMTERY:",
-"   src_random=0 ...... 1 enables nsrc random sources positions in one modeling",
-"   nsrc=1 ............ number of sources to use for one shot",
-"   xsrc1=0 ........... left bound for x-position of sources",
-"   xsrc2=0 ........... right bound for x-position of sources",
-"   zsrc1=0 ........... left bound for z-position of sources",
-"   zsrc2=0 ........... right bound for z-position of sources",
-"   tsrc1=0.0 ......... begin time interval for random sources being triggered",
-"   tsrc2=tmod ........ end time interval for random sources being triggered",
-"   tactive=tsrc2 ..... end time for random sources being active",
-"   tlength=tsrc2-tsrc1 average duration of random source signal",
-"   length_random=1 ... duration of source is rand*tlength",
-"   amplitude=0 ....... distribution of source amplitudes",
-"   distribution=0 .... random function for amplitude and tlength 0=flat 1=Gaussian ",
-"   seed=10 ........... seed for start of random sequence ",
-"" ,
-" RECEIVER SELECTION:",
-"   xrcv1=xmin ........ first x-position of linear receiver array(s)",
-"   xrcv2=xmax ........ last x-position of linear receiver array(s)",
-"   dxrcv=dx .......... x-position increment of receivers in linear array(s)",
-"   zrcv1=zmin ........ first z-position of linear receiver array(s)",
-"   zrcv2=zrcv1 ....... last z-position of linear receiver array(s)",
-"   dzrcv=0.0 ......... z-position increment of receivers in linear array(s)",
-"   xrcva= ............ defines receiver array x-positions",
-"   zrcva= ............ defines receiver array z-positions",
-"   rrcv= ............. radius for receivers on a circle ",
-"   arcv= ............. vertical arc-lenght for receivers on a ellipse (rrcv=horizontal)",
-"   oxrcv=0.0 ......... x-center position of circle",
-"   ozrcv=0.0 ......... z-center position of circle",
-"   dphi=2 ............ angle between receivers on circle ",
-"   rcv_txt=........... text file with receiver coordinates. Col 1: x, Col. 2: z",
-"   rec_ntsam=nt ...... maximum number of time samples in file_rcv files",
-"",
-"      Jan Thorbecke 2017",
-"      TU Delft",
-"      E-mail: janth@xs4all.nl ",
-"",
-NULL};
-
-
-int main(int argc, char **argv)
+int raytime(float *time, float *ampl, int *xnx, float *xrcv, float *xsrc, float *zsrc)
 {
 	modPar mod;
 	recPar rec;
@@ -155,7 +71,7 @@ int main(int argc, char **argv)
     int nRayStep;
     fcoord coordsx, coordgx, Time;
     icoord grid;
-    float Jr, *ampl, *time;
+    float Jr;
     segy hdr;
     char filetime[1024], fileamp[1024];
     size_t  nwrite;
@@ -164,10 +80,10 @@ int main(int argc, char **argv)
     double ddt;
 
 	t0= wallclock_time();
-	initargs(argc,argv);
-	requestdoc(0);
+	//initargs(argc,argv);
+	//requestdoc(0);
 
-	if (!getparint("verbose",&verbose)) verbose=0;
+	//if (!getparint("verbose",&verbose)) verbose=0;
 	getParameters(&mod, &rec, &sna, &wav, &src, &shot, &bnd, &ray, verbose);
 
 	/* allocate arrays for model parameters: the different schemes use different arrays */
@@ -189,8 +105,8 @@ int main(int argc, char **argv)
 	/* allocate arrays for wavefield and receiver arrays */
 
 	size = shot.n*rec.n;
-    time = (float *)calloc(size,sizeof(float));
-    ampl = (float *)calloc(size,sizeof(float));
+    //time = (float *)calloc(size,sizeof(float));
+    //ampl = (float *)calloc(size,sizeof(float));
 
 	t1= wallclock_time();
 	if (verbose) {
@@ -233,7 +149,7 @@ int main(int argc, char **argv)
 	if (verbose>3) writeSrcRecPos(&mod, &rec, &src, &shot);
 
     /* prepare output file and headers */
-    strcpy(filetime, rec.file_rcv);
+    /*strcpy(filetime, rec.file_rcv);
     name_ext(filetime, "_time");
     fpt = fopen(filetime, "w");
     assert(fpt != NULL);
@@ -243,15 +159,15 @@ int main(int argc, char **argv)
         name_ext(fileamp, "_amp");
         fpa = fopen(fileamp, "w");
         assert(fpa != NULL);
-	}
+	}*/
 
-    ddt        = (double)mod.dt;/* to avoid rounding in 32 bit precision */
+    /*ddt        = (double)mod.dt;
     hdr.dt     = (unsigned short)lround((((double)1.0e6*ddt*rec.skipdt)));
     hdr.scalco = -1000;
     hdr.scalel = -1000;
     hdr.trid   = 1;
     hdr.trwf   = shot.n;
-    hdr.ns     = rec.n;
+    hdr.ns     = rec.n;*/
 
 	/* Outer loop over number of shots */
 	for (ishot=0; ishot<shot.n; ishot++) {
@@ -272,6 +188,10 @@ int main(int argc, char **argv)
         grid.z = mod.nz;
         grid.y = 1;
 
+		xnx[ishot]=rec.n;
+        xsrc[ishot] = mod.x0+mod.dx*shot.x[ishot];
+        zsrc[ishot] = mod.z0+mod.dz*shot.z[ishot];
+
         for (irec=0; irec<rec.n; irec++) {
             coordgx.x=mod.x0+rec.xr[irec];
             coordgx.z=mod.z0+rec.zr[irec];
@@ -279,12 +199,13 @@ int main(int argc, char **argv)
 
             getWaveParameter(slowness, grid, mod.dx, coordsx, coordgx, ray, &Time, &Jr);
 
+			xrcv[ishot*rec.n+irec] = (mod.x0+rec.x[0]*mod.dx) + ((rec.x[1]-rec.x[0])*mod.dx*((float)irec));
             time[ishot*rec.n + irec] = Time.x + Time.y + Time.z;
             ampl[ishot*rec.n + irec] = Jr;
             fprintf(stderr,"shot=%f,%f receiver at %f,%f T0=%f T1=%f T2=%f Jr=%f\n",coordsx.x, coordsx.z, coordgx.x, coordgx.z, Time.x, Time.y, Time.z, Jr); 
         }
 
-        hdr.sx     = 1000*(mod.x0+mod.dx*shot.x[ishot]);
+        /*hdr.sx     = 1000*(mod.x0+mod.dx*shot.x[ishot]);
         hdr.sdepth = 1000*(mod.z0+mod.dz*shot.z[ishot]);
         hdr.selev  = (int)(-1000.0*(mod.z0+mod.dz*shot.z[ishot]));
         hdr.fldr   = ishot+1;
@@ -307,11 +228,11 @@ int main(int argc, char **argv)
             nwrite = fwrite( &ampl[ishot*rec.n], sizeof(float), rec.n, fpa);
             assert(nwrite == rec.n);
 	        fflush(fpa);
-        }
+        }*/
     
 	} /* end of loop over number of shots */
-	fclose(fpt);
-	if (ray.geomspread) fclose(fpa);
+	//fclose(fpt);
+	//if (ray.geomspread) fclose(fpa);
 
 	t1= wallclock_time();
 	if (verbose) {
@@ -320,7 +241,7 @@ int main(int argc, char **argv)
 
 	/* free arrays */
 
-	initargs(argc,argv); /* this will free the arg arrays declared */
+	//initargs(argc,argv); /* this will free the arg arrays declared */
 	free(velocity);
 	free(slowness);
 	

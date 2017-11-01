@@ -65,6 +65,7 @@ int Cost(float *f1p, float *f1d, float *Gm, float *Gm0, double *J, int Nsyn, int
             R2L2    = 0.0;
             R20L2   = 0.0;
         }
+	free(f1pf);free(f1df);free(Gmf);free(Gm0f);free(R2f);free(R20f);free(R2);free(R20);
 
 	return;
 }

@@ -37,7 +37,19 @@ SRCH	= marchenko.c \
 		readSnapData.c \
 		Cost.c \
 		AmpEst.c \
-		freqwave.c
+		freqwave.c \
+		getParameters.c \
+		getModelInfo.c \
+		recvPar.c \
+		raytime.c \
+		readModel.c \
+		JespersRayTracer.c \
+		getWaveletHeaders.c \
+		getWaveletInfo.c \
+		writeSrcRecPos.c \
+		writesufile.c \
+		gaussGen.c \
+		threadAffinity.c
 
 OBJJ	= $(SRCJ:%.c=%.o)
 
@@ -46,7 +58,7 @@ fmute:	$(OBJJ)
 
 OBJH	= $(SRCH:%.c=%.o)
 
-marchenko:	$(OBJH) 
+marchenko:	$(OBJH) raytime.h
 	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o marchenko $(OBJH) $(LIBS)
 
 install: fmute marchenko 

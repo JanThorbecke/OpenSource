@@ -23,21 +23,27 @@ typedef struct _complexStruct { /* complex number */
 
 void findShotInMute(float *xrcvMute, float xrcvShot, int nxs, int *imute);
 int readSnapData(char *filename, float *data, segy *hdrs, int nsnaps, int nx, int nz, int sx, int ex, int sz, int ez);
+int raytime(float *amp, float *time, int *xnx, float *xrcv, float *xsrc, float *zsrc);
 
 int readTinvData(char *filename, WavePar WP, char *file_ray, char *file_amp, float dt, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nsyn, int nx, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose)
 {
 	FILE *fp;
 	segy hdr, *hdrs_mute, *hdrs_amp, *hdrs_wav;
 	size_t nread;
+	char *file_cp;
 	int fldr_shot, sx_shot, itrace, one_shot, ig, isyn, i, j;
-	int end_of_file, nt, gx0, gx1, nfreq;
+	int end_of_file, nt, gx0, gx1, nfreq, geosp;
 	int nx1, jmax, imax, tstart, tend, nwav;
 	float xmax, tmax, lmax, *wavelet, *wavelet2;
 	float scl, scel, *trace, dxrcv, *timeval, dw, *amp;
 	complex *cmute, *cwav;
 
+	if (!getparstring("file_cp", &file_cp)) file_cp=NULL;
+	if (!getparint("geomspread",&geosp)) geosp=1;
+	if (file_cp==NULL) geosp=0;
+
 	/*Check wheter the raytime is used or not*/
-	if (file_ray!=NULL) {
+	if (file_ray!=NULL || file_cp!=NULL) {
 		/*Define parameters*/
 		nfreq = ntfft/2+1;	
 		wavelet = (float *)calloc(ntfft,sizeof(float));
@@ -69,40 +75,48 @@ int readTinvData(char *filename, WavePar WP, char *file_ray, char *file_amp, flo
 				}
 			}
 			rc1fft(wavelet,cwav,ntfft,-1);
+			free(wavelet);
 		}
 
-		/* Defining mute window using raytimes */
-		vmess("Using raytime for mutewindow");
-        hdrs_mute = (segy *) calloc(Nsyn,sizeof(segy));
-        timeval = (float *)calloc(Nsyn*nx,sizeof(float));
-		fp = fopen( file_ray, "r" );
-        if ( fp == NULL ) {
-            perror("Error opening file containing wavelet");
-        }
-        fclose(fp);
-        readSnapData(file_ray, timeval, hdrs_mute, Nsyn, 1, nx, 0, 1, 0, nx);
+		timeval = (float *)calloc(Nsyn*nx,sizeof(float));
+		amp = (float *)calloc(Nsyn*nx,sizeof(float));
 
-		/*Check whether the amplitude is also used*/
-		if (file_amp != NULL) {
-			hdrs_amp = (segy *) calloc(Nsyn,sizeof(segy));
-        	amp = (float *)calloc(Nsyn*nx,sizeof(float));
-			fp = fopen( file_amp, "r" );
-            if ( fp == NULL ) {
+		if (file_ray!=NULL) {
+
+			/* Defining mute window using raytimes */
+			vmess("Using raytime for mutewindow");
+        	hdrs_mute = (segy *) calloc(Nsyn,sizeof(segy));
+			fp = fopen( file_ray, "r" );
+        	if ( fp == NULL ) {
             	perror("Error opening file containing wavelet");
-            }
-            fclose(fp);
-        	readSnapData(file_amp, amp, hdrs_amp, Nsyn, 1, nx, 0, 1, 0, nx);
-		}
+        	}
+        	fclose(fp);
+        	readSnapData(file_ray, timeval, hdrs_mute, Nsyn, 1, nx, 0, 1, 0, nx);
+
+			/*Check whether the amplitude is also used*/
+			if (file_amp != NULL) {
+				hdrs_amp = (segy *) calloc(Nsyn,sizeof(segy));
+				fp = fopen( file_amp, "r" );
+            	if ( fp == NULL ) {
+            		perror("Error opening file containing wavelet");
+            	}
+            	fclose(fp);
+        		readSnapData(file_amp, amp, hdrs_amp, Nsyn, 1, nx, 0, 1, 0, nx);
+			}
 		
-		/*Define source and receiver locations from the raytime*/
-		for (isyn=0; isyn<Nsyn; isyn++) {
-           	for (itrace=0; itrace<nx; itrace++) {
-               	xrcv[isyn*nx+itrace] = (hdrs_mute[isyn].f1 + hdrs_mute[isyn].d1*((float)itrace));
-           	}
-           	xnx[isyn]=nx;
-			xsrc[isyn] = hdrs_mute[isyn].sx;
-        	zsrc[isyn] = hdrs_mute[isyn].sdepth;
-        }
+			/*Define source and receiver locations from the raytime*/
+			for (isyn=0; isyn<Nsyn; isyn++) {
+           		for (itrace=0; itrace<nx; itrace++) {
+               		xrcv[isyn*nx+itrace] = (hdrs_mute[isyn].f1 + hdrs_mute[isyn].d1*((float)itrace));
+           		}
+           		xnx[isyn]=nx;
+				xsrc[isyn] = hdrs_mute[isyn].sx;
+        		zsrc[isyn] = hdrs_mute[isyn].sdepth;
+        	}
+		}
+		else {
+			raytime(timeval,amp,xnx,xrcv,xsrc,zsrc);
+		}
 
 		/*Determine the mutewindow*/
 		for (j=0; j<Nsyn; j++) {
@@ -110,7 +124,7 @@ int readTinvData(char *filename, WavePar WP, char *file_ray, char *file_amp, flo
                	maxval[j*nx+i] = (int)roundf(timeval[j*nx+i]/dt);
            		if (maxval[j*nx+i] > ntfft-1) maxval[j*nx+i] = ntfft-1;
 				if (WP.wav) { /*Apply the wavelet to create a first arrival*/
-					if (file_amp != NULL) {
+					if (file_amp != NULL || geosp==1) {
 						for (ig=0; ig<nfreq; ig++) {
                            	cmute[ig].r = (cwav[ig].r*cos(ig*dw*timeval[j*nx+i]-M_PI/4.0)-cwav[ig].i*sin(ig*dw*timeval[j*nx+i]-M_PI/4.0))/amp[j*nx+i];
                            	cmute[ig].i = (cwav[ig].i*cos(ig*dw*timeval[j*nx+i]-M_PI/4.0)+cwav[ig].r*sin(ig*dw*timeval[j*nx+i]-M_PI/4.0))/amp[j*nx+i];
@@ -129,7 +143,7 @@ int readTinvData(char *filename, WavePar WP, char *file_ray, char *file_amp, flo
 		}
     }
 
-	if (!WP.wav) {
+	if (WP.wav == 0 && file_ray==NULL && filename!=NULL) {
 
 		/* Reading first header  */
 
