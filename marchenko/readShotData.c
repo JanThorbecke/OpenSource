@@ -26,12 +26,10 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
     int *isx, *igx, k, l, m, j, nreci;
 	int samercv, samesrc, nxrk, nxrm, maxtraces, ixsrc;
     float scl, scel, *trace, dt;
-	//float fxsb,dxs;
     complex *ctrace;
 
     /* Reading first header  */
 
-	//fxsb = -2250; dxs=5;
     if (filename == NULL) fp = stdin;
     else fp = fopen( filename, "r" );
     if ( fp == NULL ) {
@@ -126,8 +124,7 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
             if ((sx_shot != hdr.sx) || (fldr_shot != hdr.fldr) ) break;
         }
         if (verbose>2) {
-            fprintf(stderr,"finished reading shot %d (%d) with %d traces\n",sx_shot,igath,itrace);
-            //disp_fileinfo(filename, nt, xnx[igath], hdr.f1, xrcv[igath*nxs], d1, d2, &hdr);
+            vmess("finished reading shot %d (%d) with %d traces",sx_shot,igath,itrace);
         }
 
         if (itrace != 0) { /* end of shot record */
@@ -145,6 +142,7 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 /* if reci=1 or reci=2 source-receive reciprocity is used and traces are added */
    
 	if (reci != 0) {
+    	for (k=0; k<nxs; k++) ixmask[k] = 1.0;
         for (k=0; k<nshots; k++) {
             ixsrc = NINT((xsrc[k] - fxsb)/dxs);
 			nxrk = xnx[k];
@@ -152,7 +150,7 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 				samercv = 0;
 				samesrc = 0;
                 for (m=0; m<nshots; m++) {
-			        if (igx[k*nx+l] == isx[m] && reci == 1) { // receiver position already known as source
+			        if (igx[k*nx+l] == isx[m] && reci == 1) { // receiver position already present as source position m
 						nxrm = xnx[m];
         			    for (j=0; j<nxrm; j++) { // check if receiver l with source k is also present in shot m
 			                if (isx[k] == igx[m*nx+j]) { // shot k with receiver l already known as receiver j in shot m: same data
@@ -160,13 +158,13 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 								break;
 							}
 						}
-						if (samercv == 0) { // source k of receiver l -> accept trace as new receiver position for source m
-            				ixsrc = NINT((xsrc[m] - fxsb)/dxs);
+						if (samercv == 0) { // source k of receiver l -> accept trace as new receiver position for source l
+            				ixsrc = NINT((xrcv[k*nx+l] - fxsb)/dxs);
             				if ((ixsrc >= 0) && (ixsrc < nxs)) {
-								reci_xrcv[ixsrc*nxs+isxcount[ixsrc]] = l;
-								reci_xsrc[ixsrc*nxs+isxcount[ixsrc]] = k;
+								reci_xrcv[ixsrc*nxs+isxcount[ixsrc]] = k;
+								reci_xsrc[ixsrc*nxs+isxcount[ixsrc]] = l;
 								isxcount[ixsrc] += 1;
-								ixmask[ixsrc] = 0.5; // traces are added to already existing traces and must be scaled
+								if (reci==1) ixmask[ixsrc] = 0.5; // traces are added to already existing traces and must be scaled
 							}
 						}
 						samesrc = 1;
@@ -177,10 +175,9 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 					//fprintf(stderr,"not a samesrc for receiver l=%d for source k=%d\n", l,k);
             		ixsrc = NINT((xrcv[k*nx+l] - fxsb)/dxs);
             		if ((ixsrc >= 0) && (ixsrc < nxs)) { // is this correct or should k and l be reversed: rcv=l src=k
-						reci_xrcv[ixsrc*nxs+isxcount[ixsrc]] = l;
-						reci_xsrc[ixsrc*nxs+isxcount[ixsrc]] = k;
+						reci_xrcv[ixsrc*nxs+isxcount[ixsrc]] = k;
+						reci_xsrc[ixsrc*nxs+isxcount[ixsrc]] = l;
 						isxcount[ixsrc] += 1;
-						ixmask[ixsrc] = 1.0;
 					}
                 }
 			}
@@ -190,7 +187,7 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 			if (isxcount[k] != 0) {
 				maxtraces = MAX(maxtraces,isxcount[k]);
 				nreci++;
-				vmess("reciprocal receiver at %f (%d) has %d sources contributing", k, k*dxs+fxsb, isxcount[k]);
+				if (verbose>1) vmess("reciprocal receiver at %f (%d) has %d sources contributing", k, k*dxs+fxsb, isxcount[k]);
         	}
     	}
 		*nshots_r = nreci;
