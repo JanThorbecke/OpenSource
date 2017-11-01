@@ -307,11 +307,9 @@ int main (int argc, char **argv)
 
     ngath = 0; /* setting ngath=0 scans all traces; n2 contains maximum traces/gather */
 	if (file_ray!=NULL && file_tinv==NULL) {
-		vmess("test ray");
 		ret = getFileInfo(file_ray, &n2, &n1, &ngath, &d2, &d1, &f2, &f1, &xmin, &xmax, &scl, &ntraces);
 	}
 	else if (file_ray==NULL && file_tinv==NULL) {
-		vmess("test raytime");
 		getParameters(&mod, &rec, &sna, &wav, &src, &shot, &bnd, &ray, verbose);
 		n1 = rec.nt;
 		n2 = rec.n;
@@ -326,13 +324,8 @@ int main (int argc, char **argv)
 		ntraces = n2*ngath;
 	}
 	else {
-		vmess("test tinv");
     	ret = getFileInfo(file_tinv, &n1, &n2, &ngath, &d1, &d2, &f1, &f2, &xmin, &xmax, &scl, &ntraces);
 	}
-
-	vmess("n1:%d n2:%d ngath:%d d1:%.4f d2:%.4f f1:%.4f f2:%.4f",n1,n2,ngath,d1,d2,f1,f2);
-	vmess("xmin:%.4f xmax:%.4f scl:%.4f ntraces:%d",xmin,xmax,scl,ntraces);
-	
 
     Nsyn = ngath;
     nxs = n2; 

@@ -15,12 +15,38 @@ export OMP_NUM_THREADS=2
 
 ./raytime \
     file_cp=syncl_cp.su  \
-    file_rcv=shot_fd.su \
+    file_rcv=z1.su \
     smoothwindow=15 \
-    verbose=2 \
+    verbose=3 \
     dxrcv=10.0 \
     xrcv1=-2500 xrcv2=2500 \
     zrcv1=0 zrcv2=0 \
-    xsrc=0 zsrc=1100 
+    xsrc=0 zsrc=1100 \
+	nxshot=1 dxshot=10 \
+	nzshot=1 dzshot=10
+
+./raytime \
+    file_cp=syncl_cp.su  \
+    file_rcv=z2.su \
+    smoothwindow=15 \
+    verbose=3 \
+    dxrcv=10.0 \
+    xrcv1=-2500 xrcv2=2500 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=1200 \
+    nxshot=1 dxshot=10 \
+    nzshot=1 dzshot=10
+
+./raytime \
+    file_cp=syncl_cp.su  \
+    file_rcv=z0.su \
+    smoothwindow=15 \
+    verbose=3 \
+    dxrcv=10.0 \
+    xrcv1=-2500 xrcv2=2500 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=1100 \
+    nxshot=1 dxshot=10 \
+    nzshot=2 dzshot=100
 
 echo "testJan"
