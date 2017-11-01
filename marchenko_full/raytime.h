@@ -152,6 +152,8 @@ typedef struct _sourcePar { /* Source Array Parameters */
 
 typedef struct _shotPar { /* Shot Parameters */
 	int n;
+	int nx;
+	int nz;
 	int *z;
 	int *x;
 } shotPar;

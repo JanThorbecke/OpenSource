@@ -64,7 +64,7 @@ int raytime(float *time, float *ampl, int *xnx, float *xrcv, float *xsrc, float 
 	float sinkvel;
 	double t0, t1, t2, t3, tt, tinit;
 	size_t size, sizem, nsamp;
-	int n1, ix, iz, ir, ishot, i;
+	int n1, ix, iz, ir, ixshot, izshot, i;
 	int ioPx, ioPz;
 	int it0, it1, its, it, fileno, isam;
 	int ixsrc, izsrc, irec;
@@ -139,11 +139,13 @@ int raytime(float *time, float *ampl, int *xnx, float *xrcv, float *xsrc, float 
 */
 
 /* sink sources to value different than zero */
-	for (ishot=0; ishot<shot.n; ishot++) {
-		iz = shot.z[ishot];
-		ix = shot.x[ishot];
-		while(velocity[(ix)*n1+iz] == 0.0) iz++;
-		shot.z[ishot]=iz+src.sinkdepth; 
+	for (izshot=0; izshot<shot.nz; izshot++) {
+		for (ixshot=0; ixshot<shot.nx; ixshot++) {
+			iz = shot.z[izshot];
+			ix = shot.x[ixshot];
+			while(velocity[(ix)*n1+iz] == 0.0) iz++;
+			shot.z[izshot]=iz+src.sinkdepth; 
+		}
 	}
 
 	if (verbose>3) writeSrcRecPos(&mod, &rec, &src, &shot);
@@ -170,40 +172,41 @@ int raytime(float *time, float *ampl, int *xnx, float *xrcv, float *xsrc, float 
     hdr.ns     = rec.n;*/
 
 	/* Outer loop over number of shots */
-	for (ishot=0; ishot<shot.n; ishot++) {
+	for (izshot=0; izshot<shot.nz; izshot++) {
+		for (ixshot=0; ixshot<shot.nx; ixshot++) {
 
-        if (verbose) {
-            vmess("Modeling source %d at gridpoints ix=%d iz=%d", ishot, shot.x[ishot], shot.z[ishot]);
-            vmess(" which are actual positions x=%.2f z=%.2f", mod.x0+mod.dx*shot.x[ishot], mod.z0+mod.dz*shot.z[ishot]);
-            vmess("Receivers at gridpoint x-range ix=%d - %d", rec.x[0], rec.x[rec.n-1]);
-            vmess(" which are actual positions x=%.2f - %.2f", mod.x0+rec.xr[0], mod.x0+rec.xr[rec.n-1]);
-            vmess("Receivers at gridpoint z-range iz=%d - %d", rec.z[0], rec.z[rec.n-1]);
-            vmess(" which are actual positions z=%.2f - %.2f", mod.z0+rec.zr[0], mod.z0+rec.zr[rec.n-1]);
-        }
+        	if (verbose) {
+				vmess("Modeling source %d at gridpoints ix=%d iz=%d", (izshot*shot.n)+ixshot, shot.x[ixshot], shot.z[izshot]);
+                vmess(" which are actual positions x=%.2f z=%.2f", mod.x0+mod.dx*shot.x[ixshot], mod.z0+mod.dz*shot.z[izshot]);
+            	vmess("Receivers at gridpoint x-range ix=%d - %d", rec.x[0], rec.x[rec.n-1]);
+            	vmess(" which are actual positions x=%.2f - %.2f", mod.x0+rec.xr[0], mod.x0+rec.xr[rec.n-1]);
+            	vmess("Receivers at gridpoint z-range iz=%d - %d", rec.z[0], rec.z[rec.n-1]);
+            	vmess(" which are actual positions z=%.2f - %.2f", mod.z0+rec.zr[0], mod.z0+rec.zr[rec.n-1]);
+        	}
 
-        coordsx.x = mod.x0+shot.x[ishot]*mod.dx;
-        coordsx.z = mod.z0+shot.z[ishot]*mod.dz;
-        coordsx.y = 0;
-        grid.x = mod.nx;
-        grid.z = mod.nz;
-        grid.y = 1;
+        	coordsx.x = mod.x0+shot.x[ixshot]*mod.dx;
+        	coordsx.z = mod.z0+shot.z[izshot]*mod.dz;
+        	coordsx.y = 0;
+        	grid.x = mod.nx;
+        	grid.z = mod.nz;
+        	grid.y = 1;
 
-		xnx[ishot]=rec.n;
-        xsrc[ishot] = mod.x0+mod.dx*shot.x[ishot];
-        zsrc[ishot] = mod.z0+mod.dz*shot.z[ishot];
+			xnx[(izshot*shot.nx)+ixshot]  = rec.n;
+        	xsrc[(izshot*shot.nx)+ixshot] = mod.x0+mod.dx*shot.x[ixshot];
+        	zsrc[(izshot*shot.nx)+ixshot] = mod.z0+mod.dz*shot.z[izshot];
 
-        for (irec=0; irec<rec.n; irec++) {
-            coordgx.x=mod.x0+rec.xr[irec];
-            coordgx.z=mod.z0+rec.zr[irec];
-            coordgx.y = 0;
+        	for (irec=0; irec<rec.n; irec++) {
+            	coordgx.x=mod.x0+rec.xr[irec];
+            	coordgx.z=mod.z0+rec.zr[irec];
+            	coordgx.y = 0;
 
-            getWaveParameter(slowness, grid, mod.dx, coordsx, coordgx, ray, &Time, &Jr);
+            	getWaveParameter(slowness, grid, mod.dx, coordsx, coordgx, ray, &Time, &Jr);
 
-			xrcv[ishot*rec.n+irec] = (mod.x0+rec.x[0]*mod.dx) + ((rec.x[1]-rec.x[0])*mod.dx*((float)irec));
-            time[ishot*rec.n + irec] = Time.x + Time.y + Time.z;
-            ampl[ishot*rec.n + irec] = Jr;
-            fprintf(stderr,"shot=%f,%f receiver at %f,%f T0=%f T1=%f T2=%f Jr=%f\n",coordsx.x, coordsx.z, coordgx.x, coordgx.z, Time.x, Time.y, Time.z, Jr); 
-        }
+				xrcv[((izshot*shot.nx)+ixshot)*rec.n + irec] = (mod.x0+rec.x[0]*mod.dx) + ((rec.x[1]-rec.x[0])*mod.dx*((float)irec));
+            	time[((izshot*shot.nx)+ixshot)*rec.n + irec] = Time.x + Time.y + Time.z;
+            	ampl[((izshot*shot.nx)+ixshot)*rec.n + irec] = Jr;
+            	fprintf(stderr,"shot=%f,%f receiver at %f,%f T0=%f T1=%f T2=%f Jr=%f\n",coordsx.x, coordsx.z, coordgx.x, coordgx.z, Time.x, Time.y, Time.z, Jr); 
+        	}
 
         /*hdr.sx     = 1000*(mod.x0+mod.dx*shot.x[ishot]);
         hdr.sdepth = 1000*(mod.z0+mod.dz*shot.z[ishot]);
@@ -229,7 +232,7 @@ int raytime(float *time, float *ampl, int *xnx, float *xrcv, float *xsrc, float 
             assert(nwrite == rec.n);
 	        fflush(fpa);
         }*/
-    
+    	}
 	} /* end of loop over number of shots */
 	//fclose(fpt);
 	//if (ray.geomspread) fclose(fpa);
