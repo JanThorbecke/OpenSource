@@ -137,7 +137,6 @@ int main(int argc, char **argv)
 	size_t size;
 	int n1, ix, iz, ir, ixshot, izshot;
 	int irec;
-    int nRayStep;
     fcoord coordsx, coordgx, Time;
     icoord grid;
     float Jr, *ampl, *time;
@@ -266,7 +265,7 @@ int main(int argc, char **argv)
 
             	time[((izshot*shot.nx)+ixshot)*rec.n + irec] = Time.x + Time.y + Time.z;
             	ampl[((izshot*shot.nx)+ixshot)*rec.n + irec] = Jr;
-            	fprintf(stderr,"shot=%f,%f receiver at %f,%f T0=%f T1=%f T2=%f Jr=%f\n",coordsx.x, coordsx.z, coordgx.x, coordgx.z, Time.x, Time.y, Time.z, Jr); 
+            	if (verbose>4) vmess("shot=%f,%f receiver at %f,%f T0=%f T1=%f T2=%f Jr=%f",coordsx.x, coordsx.z, coordgx.x, coordgx.z, Time.x, Time.y, Time.z, Jr); 
         	}
 
         	hdr.sx     = 1000*(mod.x0+mod.dx*shot.x[ixshot]);
