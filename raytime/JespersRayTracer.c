@@ -78,15 +78,6 @@ int getWaveParameter(float *slowness, icoord size, float dgrid, fcoord s, fcoord
     J = 1;
     error = 0;
     
-    if ( (ray.smoothwindow) != 0 && first) { /* smooth slowness */ 
-        smooth = (float *)calloc(size.x*size.z,sizeof(float));
-        applyMovingAverageFilter(slowness, size, ray.smoothwindow, 2, smooth);
-        memcpy(slowness,smooth,size.x*size.z*sizeof(float));
-        free(smooth);
-        first = 0;
-	}
-    
-
     nRayTmp = getnRay(size, s, r, dgrid, ray.nray);
     
     //fprintf(stderr,"Calling getnRay gives nRayTmp=%d nRayStep=%d\n", nRayTmp, nRayStep);
