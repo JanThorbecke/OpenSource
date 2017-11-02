@@ -20,17 +20,11 @@
 *           The Netherlands
 **/
 
-float gaussGen();
-
-int optncr(int n);
-
 int getModelInfo(char *file_name, int *n1, int *n2, float *d1, float *d2, float *f1, float *f2, float *min, float *max, int *axis, int zeroch, int verbose);
 
 int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx, int nz);
 
-int writesufile(char *filename, float *data, int n1, int n2, float f1, float f2, float d1, float d2);
-
-int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, shotPar *shot, bndPar *bnd, rayPar *ray, int verbose)
+int getParameters(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar *ray, int verbose)
 {
 	int nx, nz, nsrc, ix, axis, is0;
 	int idzshot, idxshot;
@@ -42,7 +36,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	float dxrcv,dzrcv,dxspread,dzspread;
 	float xmax, zmax;
 	float xsrc1, xsrc2, zsrc1, zsrc2;
-	float *xsrca, *zsrca, rrcv;
+	float *xsrca, *zsrca;
 	float rsrc, oxsrc, ozsrc, dphisrc, ncsrc;
 	size_t nsamp;
 	int nxsrc, nzsrc;
@@ -276,11 +270,6 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	/* calculates the receiver coordinates */
 	
 	recvPar(rec, sub_x0, sub_z0, dx, dz, nx, nz);
-
-	/* receivers are on a circle, use default interpolation to real (not on a grid-point) receiver position */
-	if (getparfloat("rrcv", &rrcv)) { 
-		if (!getparint("rec_int_p",&rec->int_p)) rec->int_p=3;
-	}
 
 	if (verbose) {
 		if (rec->n) {
