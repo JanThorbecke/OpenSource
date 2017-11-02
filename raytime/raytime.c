@@ -33,6 +33,8 @@ int getParameters(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar *
 
 int getWaveParameter(float *slowness, icoord size, float dgrid, fcoord s, fcoord r, rayPar ray, fcoord *T, float *Jr);
 
+void applyMovingAverageFilter(float *slowness, icoord size, int window, int dim, float *averageModel);
+
 int readModel(modPar mod, float *velocity, float *slowness);
 
 int defineSource(wavPar wav, srcPar src, modPar mod, float **src_nwav, int reverse, int verbose);
@@ -120,8 +122,8 @@ int main(int argc, char **argv)
 	srcPar src;
 	shotPar shot;
 	rayPar ray;
-    float *velocity, *slowness;
-	double t0, t1, tinit;
+    float *velocity, *slowness, *smooth;
+	double t0, t1, t2, tinit, tray, tio;
 	size_t size;
 	int n1, ix, iz, ir, ixshot, izshot;
 	int irec;
@@ -162,15 +164,6 @@ int main(int argc, char **argv)
     time = (float *)calloc(size,sizeof(float));
     ampl = (float *)calloc(size,sizeof(float));
 
-	t1= wallclock_time();
-	if (verbose) {
-		tinit = t1-t0;
-		vmess("*******************************************");
-		vmess("************* runtime info ****************");
-		vmess("*******************************************");
-		vmess("CPU time for intializing arrays and model = %f", tinit);
-	}
-
 	/* Sinking source and receiver arrays: 
 	   If P-velocity==0 the source and receiver 
 	   postions are placed deeper until the P-velocity changes. 
@@ -203,6 +196,16 @@ int main(int argc, char **argv)
 
 	if (verbose>3) writeSrcRecPos(&mod, &rec, &src, &shot);
 
+    grid.x = mod.nx;
+    grid.z = mod.nz;
+    grid.y = 1;
+    if ( (ray.smoothwindow) != 0 ) { /* smooth slowness */ 
+        smooth = (float *)calloc(grid.x*grid.z,sizeof(float));
+        applyMovingAverageFilter(slowness, grid, ray.smoothwindow, 2, smooth);
+        memcpy(slowness,smooth,grid.x*grid.z*sizeof(float));
+        free(smooth);
+	}
+
     /* prepare output file and headers */
     strcpy(filetime, rec.file_rcv);
     name_ext(filetime, "_time");
@@ -223,10 +226,16 @@ int main(int argc, char **argv)
     hdr.trwf   = shot.n;
     hdr.ns     = rec.n;
 
+	t1=wallclock_time();
+	tinit = t1-t0;
+    tray=0.0;
+    tio=0.0;
+
 	/* Outer loop over number of shots */
 	for (izshot=0; izshot<shot.nz; izshot++) {
 		for (ixshot=0; ixshot<shot.nx; ixshot++) {
 
+	        t2=wallclock_time();
         	if (verbose) {
             	vmess("Modeling source %d at gridpoints ix=%d iz=%d", (izshot*shot.n)+ixshot, shot.x[ixshot], shot.z[izshot]);
             	vmess(" which are actual positions x=%.2f z=%.2f", mod.x0+mod.dx*shot.x[ixshot], mod.z0+mod.dz*shot.z[izshot]);
@@ -239,13 +248,11 @@ int main(int argc, char **argv)
         	coordsx.x = mod.x0+shot.x[ixshot]*mod.dx;
         	coordsx.z = mod.z0+shot.z[izshot]*mod.dz;
         	coordsx.y = 0;
-        	grid.x = mod.nx;
-        	grid.z = mod.nz;
-        	grid.y = 1;
 
+	        t1=wallclock_time();
+            tio += t1-t2;
 #pragma omp parallel for default(shared) \
-private (coordgx) \
-private (irec,Time,Jr) 
+private (coordgx,irec,Time,Jr) 
         	for (irec=0; irec<rec.n; irec++) {
             	coordgx.x=mod.x0+rec.xr[irec];
             	coordgx.z=mod.z0+rec.zr[irec];
@@ -257,6 +264,8 @@ private (irec,Time,Jr)
             	ampl[((izshot*shot.nx)+ixshot)*rec.n + irec] = Jr;
             	if (verbose>4) vmess("shot=%f,%f receiver at %f,%f T0=%f T1=%f T2=%f Jr=%f",coordsx.x, coordsx.z, coordgx.x, coordgx.z, Time.x, Time.y, Time.z, Jr); 
         	}
+	        t2=wallclock_time();
+            tray += t2-t1;
 
         	hdr.sx     = 1000*(mod.x0+mod.dx*shot.x[ixshot]);
         	hdr.sdepth = 1000*(mod.z0+mod.dz*shot.z[izshot]);
@@ -282,6 +291,8 @@ private (irec,Time,Jr)
             	assert(nwrite == rec.n);
 	        	fflush(fpa);
         	}
+	        t1=wallclock_time();
+            tio += t1-t2;
     	}
 	} /* end of loop over number of shots */
 	fclose(fpt);
@@ -289,7 +300,13 @@ private (irec,Time,Jr)
 
 	t1= wallclock_time();
 	if (verbose) {
-		vmess("Total compute time ray-tracing = %.2f s.", t1-t0);
+		vmess("*******************************************");
+		vmess("************* runtime info ****************");
+		vmess("*******************************************");
+		vmess("Total compute time ray-tracing    = %.2f s.", t1-t0);
+		vmess("   - intializing arrays and model = %.3f", tinit);
+		vmess("   - ray tracing                  = %.3f", tray);
+		vmess("   - writing data to file         = %.3f", tio);
 	}
 
 	/* free arrays */
