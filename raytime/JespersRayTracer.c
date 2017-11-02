@@ -178,10 +178,8 @@ int getWaveParameter(float *slowness, icoord size, float dgrid, fcoord s, fcoord
 
 int getnRay(icoord size, fcoord s, fcoord r, float dx, int nRayStep)
 {
-    float x, y, z;
     int dn, nRayTmp;
     float dl, dr;
-    fcoord position;
     
     H = (size.z-1)*dx;
     L = (size.x-1)*dx;
@@ -230,7 +228,6 @@ int traceTwoPoint(fcoord s, fcoord r, int nRay, fcoord *rayReference3D)
 int calculatePerturbedRay(fcoord *rayPerturbed3D, fcoord s, fcoord r, int nRay, fcoord *rayReference3D, float *slowness, icoord size)
 {
     float si, sl, deltaS, gso, angle, qx, qz;
-    float xTmp, yTmp, zTmp;
     int i;
     
     sl = sqrt(pow((r.x-s.x), 2) + pow((r.y-s.y), 2) + pow((r.z-s.z), 2));

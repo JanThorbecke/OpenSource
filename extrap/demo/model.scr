@@ -1,0 +1,8 @@
+#!/bin/bash
+
+makemod par=syncline.makemod
+
+makewave \
+	fmax=60 db=-30 shift=1 \
+	dt=0.004 nt=512 file_out=ricker.su
+

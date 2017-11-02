@@ -26,43 +26,28 @@ int optncr(int n);
 
 int getModelInfo(char *file_name, int *n1, int *n2, float *d1, float *d2, float *f1, float *f2, float *min, float *max, int *axis, int zeroch, int verbose);
 
-int getWaveletInfo(char *file_src, int *n1, int *n2, float *d1, float *d2, float *f1, float *f2, float *fmax, int *nxm, int verbose);
- 
-int getWaveletHeaders(char *file_src, int n1, int n2, float *gx, float *sx, float *gelev, float *selev, int verbose);
-
-
 int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx, int nz);
 
 int writesufile(char *filename, float *data, int n1, int n2, float f1, float f2, float d1, float d2);
 
 int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, shotPar *shot, bndPar *bnd, rayPar *ray, int verbose)
 {
-	int isnapmax1, isnapmax2, isnapmax, sna_nrsna;
-	int n1, n2, nx, nz, nsrc, ix, axis, ioPz, is0, optn;
+	int nx, nz, nsrc, ix, axis, is0;
 	int idzshot, idxshot;
 	int src_ix0, src_iz0, src_ix1, src_iz1;
-	int disable_check;
-	float cp_min, cp_max, cs_min, cs_max, ro_min, ro_max;
-	float stabfactor,dispfactor, cmin, dt, fmax, scl, wfct, tapfact;
-	float zstart, xstart,d1,d2,f1,f2,sub_x0,sub_z0;
+	float cp_min, cp_max;
+	float sub_x0,sub_z0;
 	float srcendx, srcendz, dx, dz;
-	float xsrc, zsrc, dxshot, dzshot, dtshot;
+	float xsrc, zsrc, dxshot, dzshot;
 	float dxrcv,dzrcv,dxspread,dzspread;
-	float tsnap1, tsnap2, dtsnap, dxsnap, dzsnap, dtrcv;
-	float xsnap1, xsnap2, zsnap1, zsnap2, xmax, zmax;
-	float xsrc1, xsrc2, zsrc1, zsrc2, tsrc1, tsrc2, tlength, tactive;
-	float src_angle, src_velo, p, grad2rad, rdelay, scaledt;
+	float xmax, zmax;
+	float xsrc1, xsrc2, zsrc1, zsrc2;
 	float *xsrca, *zsrca, rrcv;
 	float rsrc, oxsrc, ozsrc, dphisrc, ncsrc;
 	size_t nsamp;
-	int i, j;
-	int cfree;
-	int tapleft,tapright,taptop,tapbottom;
 	int nxsrc, nzsrc;
-	int largeSUfile;
-	int is,ntraces,length_random;
-	float rand;
-	char *src_positions, tmpname[1024];
+	int is;
+	char *src_positions;
 
 	if (!getparint("verbose",&verbose)) verbose=0;
 
@@ -82,15 +67,6 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	mod->nz = nz;
 	mod->nx = nx;
 	
-    if(!getparfloat("dt",&mod->dt)) mod->dt = 0.004;
-	if(!getparfloat("tmod",&mod->tmod)) mod->tmod=1.0;
-
-	assert(mod->dt!=0.0);
-	/* check if receiver delays is defined; option inactive: add delay time to total modeling time */
-	if (!getparfloat("rec_delay",&rdelay)) rdelay=0.0;
-	rec->delay=NINT(rdelay/mod->dt);
-	dt = mod->dt;
-
     /* origin of model in real (non-grid) coordinates */
 	mod->x0 = sub_x0;
 	mod->z0 = sub_z0;
@@ -98,14 +74,6 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	zmax = sub_z0+(nz-1)*dz;
 
 	if (verbose) {
-		vmess("*******************************************");
-		vmess("************** general info ***************");
-		vmess("*******************************************");
-		vmess("tmod    = %f",mod->tmod);
-		vmess("ntsam   = %d   dt      = %f(%e)",mod->nt, mod->dt, mod->dt);
-		if (mod->ischeme == 1) vmess("Acoustic grid pressure");
-		if (mod->grid_dir) vmess("Time reversed modelling");
-		else vmess("Forward modelling");
 		vmess("*******************************************");
 		vmess("*************** model info ****************");
 		vmess("*******************************************");
@@ -121,9 +89,6 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
     
 	if (!getparfloat("xsrc",&xsrc)) xsrc=sub_x0+((nx-1)*dx)/2.0;
 	if (!getparfloat("zsrc",&zsrc)) zsrc=sub_z0;
-//	if (!getparint("nsrc",&nsrc)) nsrc=1;
-
-	//if (!getparint("nshot",&shot->n)) shot->n=1;
 	if (!getparint("nxshot",&shot->nx)) shot->nx=1;
 	if (!getparint("nzshot",&shot->nz)) shot->nz=1;
 	if (!getparfloat("dxshot",&dxshot)) dxshot=dx;
@@ -228,47 +193,19 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	/* number of sources per shot modeling */
 
 	if (!getparint("src_window",&src->window)) src->window=0;
-	if (!getparfloat("src_angle",&src_angle)) src_angle=0.;
-	if (!getparfloat("src_velo",&src_velo)) src_velo=1500.;
 	if (!getparint("distribution",&src->distribution)) src->distribution=0;
 	if (!getparfloat("amplitude", &src->amplitude)) src->amplitude=0.0;
-	if (!getparfloat("tlength", &tlength)) tlength=mod->dt*(mod->nt-1);
 	if (src->random && nxsrc==0) {
 		if (!getparint("nsrc",&nsrc)) nsrc=1;
 		if (!getparfloat("xsrc1", &xsrc1)) xsrc1=sub_x0;
 		if (!getparfloat("xsrc2", &xsrc2)) xsrc2=xmax;
 		if (!getparfloat("zsrc1", &zsrc1)) zsrc1=sub_z0;
 		if (!getparfloat("zsrc2", &zsrc2)) zsrc2=zmax;
-		if (!getparfloat("tsrc1", &tsrc1)) tsrc1=0.0;
-		if (!getparfloat("tsrc2", &tsrc2)) tsrc2=mod->tmod;
-		if (!getparfloat("tactive", &tactive)) tactive=tsrc2;
-		tsrc2  = MIN(tsrc2, mod->tmod);
-		if (!getparfloat("tlength", &tlength)) tlength=tsrc2-tsrc1;
-		if (!getparint("length_random", &length_random)) length_random=1;
 		dxshot = xsrc2-xsrc1;
 		dzshot = zsrc2-zsrc1;
-		dtshot = tsrc2-tsrc1;
-		src->tbeg = (float *)malloc(nsrc*sizeof(float));
-		src->tend = (float *)malloc(nsrc*sizeof(float));
 		src->x = (int *)malloc(nsrc*sizeof(int));
 		src->z = (int *)malloc(nsrc*sizeof(int));
 		nsamp = 0;
-
-/* write time and length of source signals */
-
-		if (verbose>3) {
-			float *dum;
-			dum = (float *)calloc(mod->nt, sizeof(float));
-			for (is=0; is<nsrc; is++) {
-				dum[(int)floor(src->tbeg[is]/mod->dt)] = src->tend[is]-src->tbeg[is];
-			}
-			FILE *fp;
-			sprintf(tmpname,"srcTimeLengthN=%d.bin",mod->nt);
-			fp = fopen(tmpname, "w+");
-			fwrite(dum, sizeof(float), mod->nt, fp);
-			fclose(fp);
-			free(dum);
-		}
 
 	}
 	else if (nxsrc != 0) {
@@ -276,8 +213,6 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		nsrc=nxsrc;
 		src->x = (int *)malloc(nsrc*sizeof(int));
 		src->z = (int *)malloc(nsrc*sizeof(int));
-		src->tbeg = (float *)malloc(nsrc*sizeof(float));
-		src->tend = (float *)malloc(nsrc*sizeof(float));
 		xsrca = (float *)malloc(nsrc*sizeof(float));
 		zsrca = (float *)malloc(nsrc*sizeof(float));
 		getparfloat("xsrca", xsrca);
@@ -285,7 +220,6 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		for (is=0; is<nsrc; is++) {
 			src->x[is] = NINT((xsrca[is]-sub_x0)/dx);
 			src->z[is] = NINT((zsrca[is]-sub_z0)/dz);
-			src->tbeg[is] = 0.0;
 			if (verbose>3) fprintf(stderr,"Source Array: xsrc[%d]=%f zsrc=%f\n", is, xsrca[is], zsrca[is]);
 		}
 		src->random = 1;
@@ -306,24 +240,6 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 
 		src->x = (int *)malloc(nsrc*sizeof(int));
 		src->z = (int *)malloc(nsrc*sizeof(int));
-		src->tbeg = (float *)malloc(nsrc*sizeof(float));
-		src->tend = (float *)malloc(nsrc*sizeof(float));
-		grad2rad = 17.453292e-3;
-		p = sin(src_angle*grad2rad)/src_velo;
-		if (p < 0.0) {
-			for (is=0; is<nsrc; is++) {
-				src->tbeg[is] = fabsf((nsrc-is-1)*dx*p);
-			}
-		}
-		else {
-			for (is=0; is<nsrc; is++) {
-				src->tbeg[is] = is*dx*p;
-			}
-		}
-		for (is=0; is<nsrc; is++) {
-			src->tend[is] = src->tbeg[is] + (wav->nt-1)*wav->dt;
-		}
-		
 		is0 = -1*floor((nsrc-1)/2);
 		for (is=0; is<nsrc; is++) {
 			src->x[is] = is0 + is;
@@ -340,15 +256,11 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			vmess("*********** source array info *************");
 			vmess("*******************************************");
 			vmess("Areal source array is defined with %d sources.",nsrc);
-/*			vmess("Memory requirement for sources = %.2f MB.",sizeof(float)*(wav->nx*(wav->nt/(1024.0*1024.0))));*/
 			vmess("Memory requirement for sources = %.2f MB.",sizeof(float)*(nsamp/(1024.0*1024.0)));
-			if (src->plane) vmess("Computed p-value = %f.",p);
 		}
 		if (src->random) {
 		vmess("Sources are placed at random locations in domain: ");
 		vmess(" x[%.2f : %.2f]  z[%.2f : %.2f] ", xsrc1, xsrc2, zsrc1, zsrc2);
-		vmess(" and all start in time window  t[%.3f : %.3f].", tsrc1, tsrc2);
-		vmess(" after time %.3f the sources will not be active anymore.", tactive);
 		}
 	}
 
@@ -357,47 +269,17 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparint("sinkdepth",&rec->sinkdepth)) rec->sinkdepth=0;
 	if (!getparint("sinkdepth_src",&src->sinkdepth)) src->sinkdepth=0;
 	if (!getparint("sinkvel",&rec->sinkvel)) rec->sinkvel=0;
-	if (!getparfloat("dtrcv",&dtrcv)) dtrcv=0.004;
-	/* TODO check if dtrcv is integer multiple of dt */
-	rec->skipdt=NINT(dtrcv/dt);
-	dtrcv = mod->dt*rec->skipdt;
-	if (!getparfloat("rec_delay",&rdelay)) rdelay=0.0;
-	if (!getparint("rec_ntsam",&rec->nt)) rec->nt=NINT((mod->tmod)/dtrcv)+1;
-	if (!getparint("rec_int_p",&rec->int_p)) rec->int_p=0;
-	if (!getparint("rec_int_vx",&rec->int_vx)) rec->int_vx=0;
-	if (!getparint("rec_int_vz",&rec->int_vz)) rec->int_vz=0;
 	if (!getparint("max_nrec",&rec->max_nrec)) rec->max_nrec=15000;
-	if (!getparint("scale",&rec->scale)) rec->scale=0;
 	if (!getparfloat("dxspread",&dxspread)) dxspread=0;
 	if (!getparfloat("dzspread",&dzspread)) dzspread=0;
-	rec->nt=MIN(rec->nt, NINT((mod->tmod)/dtrcv)+1);
 
-/* allocation of receiver arrays is done in recvPar */
-/*
-	rec->max_nrec += rec->max_nrec+1;
-	rec->x  = (int *)calloc(rec->max_nrec,sizeof(int));
-	rec->z  = (int *)calloc(rec->max_nrec,sizeof(int));
-	rec->xr = (float *)calloc(rec->max_nrec,sizeof(float));
-	rec->zr = (float *)calloc(rec->max_nrec,sizeof(float));
-*/
-	
 	/* calculates the receiver coordinates */
 	
 	recvPar(rec, sub_x0, sub_z0, dx, dz, nx, nz);
 
-	if (!getparint("rec_type_vz", &rec->type.vz)) rec->type.vz=1;
-	if (!getparint("rec_type_vx", &rec->type.vx)) rec->type.vx=0;
-	if (!getparint("rec_type_ud", &rec->type.ud)) rec->type.ud=0;
-
 	/* receivers are on a circle, use default interpolation to real (not on a grid-point) receiver position */
 	if (getparfloat("rrcv", &rrcv)) { 
 		if (!getparint("rec_int_p",&rec->int_p)) rec->int_p=3;
-		if (!getparint("rec_int_vx",&rec->int_vx)) rec->int_vx=3;
-		if (!getparint("rec_int_vz",&rec->int_vz)) rec->int_vz=3;
-	}
-	if (rec->int_p==3) {
-		rec->int_vx=3;
-		rec->int_vz=3;
 	}
 
 	if (verbose) {
@@ -408,65 +290,14 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			vmess("************* receiver info ***************");
 			vmess("*******************************************");
 			vmess("ntrcv   = %d nrcv    = %d ", rec->nt, rec->n);
-			vmess("dtrcv   = %f              ", dtrcv );
 			vmess("dzrcv   = %f dxrcv   = %f ", dzrcv, dxrcv);
-			vmess("time-delay = %f = points = %d",  rdelay, rec->delay);
-			if ( fmax > (1.0/(2.0*dtrcv)) ) {
-				vwarn("Receiver time sampling (dtrcv) is aliased.");
-				vwarn("time sampling should be < %.6f", 1.0/(2.0*fmax) );
-			}
-			vmess("Receiver sampling can be => %.6e", 1.0/(2.0*fmax));
 			vmess("Receiver array at coordinates: ");
 			vmess("zmin    = %f zmax    = %f ", rec->zr[0]+sub_z0, rec->zr[rec->n-1]+sub_z0);
 			vmess("xmin    = %f xmax    = %f ", rec->xr[0]+sub_x0, rec->xr[rec->n-1]+sub_x0);
 			vmess("which are gridpoints: ");
 			vmess("izmin   = %d izmax   = %d ", rec->z[0], rec->z[rec->n-1]);
 			vmess("ixmin   = %d ixmax   = %d ", rec->x[0], rec->x[rec->n-1]);
-			if (rec->type.p) {
-				fprintf(stderr,"    %s: Receiver interpolation for P: ",xargv[0]);
-				if(rec->int_p==0) fprintf(stderr,"p->p\n");
-				if(rec->int_p==1) fprintf(stderr,"p->vz\n");
-				if(rec->int_p==2) fprintf(stderr,"p->vx\n");
-				if(rec->int_p==3) fprintf(stderr,"interpolate to actual (no-grid) position of receiver\n");
-			}
-			if (rec->type.vx) {
-				fprintf(stderr,"    %s: Receiver interpolation for Vx: ",xargv[0]);
-				if(rec->int_vx==0) fprintf(stderr,"vx->vx\n");
-				if(rec->int_vx==1) fprintf(stderr,"vx->vz\n");
-				if(rec->int_vx==2) fprintf(stderr,"vx->txx/tzz\n");
-				if(rec->int_vx==3) fprintf(stderr,"interpolate to real(no-grid) position of receiver\n");
-			}
-			if (rec->type.vz) {
-				fprintf(stderr,"    %s: Receiver interpolation for Vz: ",xargv[0]);
-				if(rec->int_vz==0) fprintf(stderr,"vz->vz\n");
-				if(rec->int_vz==1) fprintf(stderr,"vz->vx\n");
-				if(rec->int_vz==2) fprintf(stderr,"vz->txx/tzz\n");
-				if(rec->int_vz==3) fprintf(stderr,"interpolate to real(no-grid) position of receiver\n");
-			}
-            fprintf(stderr,"    %s: Receiver types        : ",xargv[0]);
-			if (rec->type.vz) fprintf(stderr,"Vz ");
-			if (rec->type.vx) fprintf(stderr,"Vx ");
-			if (rec->type.p) fprintf(stderr,"p ");
-    		if (rec->type.ud) fprintf(stderr,"P+ P- ");
-			if (mod->ischeme>2) {
-				if (rec->type.txx) fprintf(stderr,"Txx ");
-				if (rec->type.tzz) fprintf(stderr,"Tzz ");
-				if (rec->type.txz) fprintf(stderr,"Txz ");
-				if (rec->type.pp) fprintf(stderr,"P ");
-				if (rec->type.ss) fprintf(stderr,"S ");
-			}
 			fprintf(stderr,"\n");
-			if ( ( ((mod->nt*mod->dt-rec->delay)/rec->skipdt)+1) > 16384) {
-				vwarn("Number of samples in receiver file is larger that SU can handle ");
-				vwarn("use the paramater rec_ntsam=nt (with nt < 16384) to avoid this");
-			}
-			if ((mod->nt-rec->delay)*mod->dt > rec->nt*dtrcv) {
-				int nfiles = ceil((mod->nt*mod->dt)/(rec->nt*dtrcv));
-				int lastn = floor((mod->nt)%(rec->nt*rec->skipdt)/rec->skipdt)+1;
-				vmess("Receiver recordings will be written to %d files",nfiles);
-				vmess("Last file will contain %d samples",lastn);
-				
-			}
 		}
 		else {
 		 	vmess("*************** no receivers **************");
