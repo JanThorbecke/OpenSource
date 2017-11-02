@@ -19,11 +19,13 @@ REFERENCES
 
 Finite-difference modeling experiments for seismic interferometry
 Jan Thorbecke and Deyan Draganov
-2011, Geophysics, Vol. 76, no 6 (November-December); p H1--H18, doi: 10.1190/GEO2010-0039.1
+2011, Geophysics, Vol. 76, no. 6 (November-December); p H1--H18, doi: 10.1190/GEO2010-0039.1
 
 -2- If the Machenko code has helped you in your research please refer to our paper in your publications:
 
-Hopefully, a published reference to the paper can be put here.
+Implementation of the Marchenko method
+Jan Thorbecke, Evert Slob, Joeri Brackenhoff, Joost van der Neut, and Kees Wapenaar
+2017, Geophysics, Vol. 82, no. 6 (November-December); p. WB29--WB45, doi: 10.1190/GEO2017-0108.1
 
 These papers can be downloaded from:
 

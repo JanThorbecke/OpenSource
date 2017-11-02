@@ -29,11 +29,11 @@ void name_ext(char *filename, char *extension);
 
 void threadAffinity(void);
 
-int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, shotPar *shot, bndPar *bnd, rayPar *ray, int verbose);
+int getParameters(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar *ray, int verbose);
 
 int getWaveParameter(float *slowness, icoord size, float dgrid, fcoord s, fcoord r, rayPar ray, fcoord *T, float *Jr);
 
-int readModel(modPar mod, bndPar bnd, float *velocity, float *slowness);
+int readModel(modPar mod, float *velocity, float *slowness);
 
 int defineSource(wavPar wav, srcPar src, modPar mod, float **src_nwav, int reverse, int verbose);
 
@@ -72,15 +72,11 @@ char *sdoc[] = {
 "   xsrca= ............ defines source array x-positions",
 "   zsrca= ............ defines source array z-positions",
 "   wav_random=1 ...... 1 generates (band limited by fmax) noise signatures ",
-"   src_multiwav=0 .... use traces in file_src as areal source",
 "   src_at_rcv=1 ...... inject wavefield at receiver coordinates (1), inject at source (0)",
 "" ,
 " PLANE WAVE SOURCE DEFINITION:",
 "   plane_wave=0 ...... model plane wave with nsrc= sources",
 "   nsrc=1 ............ number of sources per (plane-wave) shot ",
-"   src_angle=0 ....... angle of plane source array",
-"   src_velo=1500 ..... velocity to use in src_angle definition",
-"   src_window=0 ...... length of taper at edges of source array",
 "",
 " RANDOM SOURCE DEFINITION FOR SEISMIC INTERFEROMTERY:",
 "   src_random=0 ...... 1 enables nsrc random sources positions in one modeling",
@@ -89,11 +85,6 @@ char *sdoc[] = {
 "   xsrc2=0 ........... right bound for x-position of sources",
 "   zsrc1=0 ........... left bound for z-position of sources",
 "   zsrc2=0 ........... right bound for z-position of sources",
-"   tsrc1=0.0 ......... begin time interval for random sources being triggered",
-"   tsrc2=tmod ........ end time interval for random sources being triggered",
-"   tactive=tsrc2 ..... end time for random sources being active",
-"   tlength=tsrc2-tsrc1 average duration of random source signal",
-"   length_random=1 ... duration of source is rand*tlength",
 "   amplitude=0 ....... distribution of source amplitudes",
 "   distribution=0 .... random function for amplitude and tlength 0=flat 1=Gaussian ",
 "   seed=10 ........... seed for start of random sequence ",
@@ -126,10 +117,7 @@ int main(int argc, char **argv)
 {
 	modPar mod;
 	recPar rec;
-	snaPar sna;
-	wavPar wav;
 	srcPar src;
-	bndPar bnd;
 	shotPar shot;
 	rayPar ray;
     float *velocity, *slowness;
@@ -151,7 +139,7 @@ int main(int argc, char **argv)
 	requestdoc(0);
 
 	if (!getparint("verbose",&verbose)) verbose=0;
-	getParameters(&mod, &rec, &sna, &wav, &src, &shot, &bnd, &ray, verbose);
+	getParameters(&mod, &rec, &src, &shot, &ray, verbose);
 
 	/* allocate arrays for model parameters: the different schemes use different arrays */
 
@@ -162,7 +150,7 @@ int main(int argc, char **argv)
 
 	/* read velocity and density files */
 
-	readModel(mod, bnd, velocity, slowness);
+	readModel(mod, velocity, slowness);
 
 	/* read and/or define source wavelet(s) */
 
@@ -186,7 +174,6 @@ int main(int argc, char **argv)
 	/* Sinking source and receiver arrays: 
 	   If P-velocity==0 the source and receiver 
 	   postions are placed deeper until the P-velocity changes. 
-	   The free-surface position is stored in bnd.surface[ix].
 	   Setting the option rec.sinkvel only sinks the receiver position 
        (not the source) and uses the velocity 
 	   of the first receiver to sink through to the next layer. */
@@ -256,6 +243,9 @@ int main(int argc, char **argv)
         	grid.z = mod.nz;
         	grid.y = 1;
 
+#pragma omp parallel for default(shared) \
+private (coordgx) \
+private (irec,Time,Jr) 
         	for (irec=0; irec<rec.n; irec++) {
             	coordgx.x=mod.x0+rec.xr[irec];
             	coordgx.z=mod.z0+rec.zr[irec];

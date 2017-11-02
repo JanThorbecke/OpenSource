@@ -26,7 +26,7 @@
 **/
 
 
-int readModel(modPar mod, bndPar bnd, float *velocity, float *slowness)
+int readModel(modPar mod, float *velocity, float *slowness)
 {
     FILE    *fpcp;
     size_t  nread;
