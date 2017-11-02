@@ -50,7 +50,6 @@ char *sdoc[] = {
 "   file_rcv=recv.su .. base name for receiver files",
 "   dx= ............... read from model file: if dx==0 then dx= can be used to set it",
 "   dz= ............... read from model file: if dz==0 then dz= can be used to set it",
-"   dt= ............... read from file_src: if dt==0 then dt= can be used to set it",
 "" ,
 " RAY TRACING PARAMETERS:",
 "   smoothwindow=0 .... if set lenght of 2/3D smoothing window on slowness",
@@ -133,25 +132,11 @@ int main(int argc, char **argv)
 	bndPar bnd;
 	shotPar shot;
 	rayPar ray;
-	float **src_nwav;
-	float *rox, *roz, *l2m, *lam, *mul;
-	float *tss, *tes, *tep, *p, *q, *r;
-	float *vx, *vz, *tzz, *txz, *txx;
-	float *rec_vx, *rec_vz, *rec_p;
     float *velocity, *slowness;
-	float *rec_txx, *rec_tzz, *rec_txz;
-	float *rec_pp, *rec_ss;
-	float *rec_udp, *rec_udvz;
-	float *beam_vx, *beam_vz, *beam_p;
-	float *beam_txx, *beam_tzz, *beam_txz;
-	float *beam_pp, *beam_ss;	
-	float sinkvel;
-	double t0, t1, t2, t3, tt, tinit;
-	size_t size, sizem, nsamp;
-	int n1, ix, iz, ir, ixshot, izshot, i;
-	int ioPx, ioPz;
-	int it0, it1, its, it, fileno, isam;
-	int ixsrc, izsrc, irec;
+	double t0, t1, tinit;
+	size_t size;
+	int n1, ix, iz, ir, ixshot, izshot;
+	int irec;
     int nRayStep;
     fcoord coordsx, coordgx, Time;
     icoord grid;
@@ -161,7 +146,6 @@ int main(int argc, char **argv)
     size_t  nwrite;
 	int verbose;
     FILE *fpt, *fpa;
-    double ddt;
 
 	t0= wallclock_time();
 	initargs(argc,argv);
@@ -173,7 +157,6 @@ int main(int argc, char **argv)
 	/* allocate arrays for model parameters: the different schemes use different arrays */
 
 	n1 = mod.nz;
-	sizem=mod.nx*mod.nz;
 
 	velocity = (float *)calloc(mod.nx*mod.nz,sizeof(float));
     slowness = (float *)calloc(mod.nx*mod.nz,sizeof(float));
@@ -247,8 +230,7 @@ int main(int argc, char **argv)
         assert(fpa != NULL);
 	}
 
-    ddt        = (double)mod.dt;/* to avoid rounding in 32 bit precision */
-    hdr.dt     = (unsigned short)lround((((double)1.0e6*ddt*rec.skipdt)));
+    hdr.dt     = (unsigned short)1;
     hdr.scalco = -1000;
     hdr.scalel = -1000;
     hdr.trid   = 1;

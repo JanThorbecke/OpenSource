@@ -31,18 +31,12 @@ int readModel(modPar mod, bndPar bnd, float *velocity, float *slowness)
     FILE    *fpcp;
     size_t  nread;
     int i, tracesToDo, j;
-	int n1, ix, iz, nz, nx;
-    int ixo, izo, ixe, ize;
-	int ioXx, ioXz, ioZz, ioZx, ioPx, ioPz, ioTx, ioTz;
-	float cp2, cs2, cs11, cs12, cs21, cs22, mul, mu, lamda2mu, lamda;
-	float cs2c, cs2b, cs2a, cpx, cpz, bx, bz, fac;
-	float a, b;
+	int nz;
     segy hdr;
     
 
 	/* grid size and start positions for the components */
 	nz = mod.nz;
-	nx = mod.nx;
 
 /* open files and read first header */
 
