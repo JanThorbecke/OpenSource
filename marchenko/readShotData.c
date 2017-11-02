@@ -16,7 +16,8 @@ int optncr(int n);
 void cc1fft(complex *data, int n, int sign);
 void rc1fft(float *rdata, complex *cdata, int n, int sign);
 
-int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int nshots, int nx, int nxs, float fxsb, float dxs, int ntfft, int mode, float scale, float tsq, int reci, int *nshots_r, int *isxcount, int *reci_xsrc,  int *reci_xrcv, float *ixmask, int verbose)
+int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int nshots,
+int nx, int nxs, float fxsb, float dxs, int ntfft, int mode, float scale, float tsq, float Q, float f0, int reci, int *nshots_r, int *isxcount, int *reci_xsrc,  int *reci_xrcv, float *ixmask, int verbose)
 {
     FILE *fp;
     segy hdr;
@@ -99,6 +100,13 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
             if (tsq != 0.0) {
                 for (iw=0; iw<nt; iw++) {
                     trace[iw] *= powf(dt*iw,tsq);
+                }
+            }
+
+            /* Q-correction */
+            if (Q != 0.0 && f0 != 0.0) {
+                for (iw=0; iw<nt; iw++) {
+                    trace[iw] *= expf(((dt*iw)*M_PI*f0)/Q);
                 }
             }
 
