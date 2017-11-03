@@ -964,24 +964,25 @@ void applyMovingAverageFilter(float *slowness, icoord size, int window, int dim,
 {
     float   averageFilter;
     int     nsamp, iAverageX, iAverageY, iAverageZ;
-    int     jWindowX, jWindowZ, jWindowY, ix, iy, iz;
+    int     jWindowX, jWindowZ, jWindowY, ix, iy, iz, nw;
 
+    nw = window;
 	if (dim == 2) {
         for (ix = 0; ix < size.x; ix++) {
             for (iz = 0; iz < size.z; iz++) {
                 averageFilter =  0;
                 nsamp = 0;
-                for (jWindowX = -window; jWindowX <= window; jWindowX++) {
-                    iAverageX = ix + jWindowX;	
+                for (jWindowX = -nw; jWindowX <= nw; jWindowX++) {
+                    iAverageX = nw + ix + jWindowX;	
 
-					if (iAverageX < 0) iAverageX = 0;
-                    if (iAverageX > size.x-1) iAverageX = size.x-1;
+//					if (iAverageX < 0) iAverageX = 0;
+//                    if (iAverageX > size.x-1) iAverageX = size.x-1;
 
-                    for (jWindowZ = -window; jWindowZ <= window; jWindowZ++) {
-                        iAverageZ = iz + jWindowZ;
+                    for (jWindowZ = -nw; jWindowZ <= nw; jWindowZ++) {
+                        iAverageZ = nw + iz + jWindowZ;
 
-                        if (iAverageZ < 0) iAverageZ = 0;
-                        if (iAverageZ > size.z-1) iAverageZ = size.z-1;
+//                        if (iAverageZ < 0) iAverageZ = 0;
+//                        if (iAverageZ > size.z-1) iAverageZ = size.z-1;
 
                         averageFilter += slowness[iAverageX*size.z+iAverageZ];
                         nsamp += 1;
@@ -991,11 +992,12 @@ void applyMovingAverageFilter(float *slowness, icoord size, int window, int dim,
                     averageFilter /= nsamp;
 				    averageModel[ix*size.z+iz] = averageFilter;
                 }
-                else
-				    averageModel[ix*size.z+iz] = slowness[ix*size.z+iz];
+                else 
+				    averageModel[ix*size.z+iz] = slowness[(ix+nw)*size.z+iz+nw];
 			}
 		}
 	}
+/* 3D ray-tracer not yet implemented 
 	else {
 	    for (iz = 0; iz < size.z; iz++) {
 			for (ix = 0; ix < size.x; ix++) {
@@ -1038,6 +1040,7 @@ void applyMovingAverageFilter(float *slowness, icoord size, int window, int dim,
 			}
 		}
 	}	
+*/
 
 	return;
 }
