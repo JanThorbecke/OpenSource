@@ -35,7 +35,7 @@ int getWaveParameter(float *slowness, icoord size, float dgrid, fcoord s, fcoord
 
 void applyMovingAverageFilter(float *slowness, icoord size, int window, int dim, float *averageModel);
 
-int readModel(modPar mod, float *velocity, float *slowness);
+int readModel(modPar mod, float *velocity, float *slowness, int nw);
 
 int defineSource(wavPar wav, srcPar src, modPar mod, float **src_nwav, int reverse, int verbose);
 
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
     float *velocity, *slowness, *smooth;
 	double t0, t1, t2, tinit, tray, tio;
 	size_t size;
-	int n1, ix, iz, ir, ixshot, izshot;
+	int nw, n1, ix, iz, ir, ixshot, izshot;
 	int irec;
     fcoord coordsx, coordgx, Time;
     icoord grid;
@@ -146,17 +146,15 @@ int main(int argc, char **argv)
 	/* allocate arrays for model parameters: the different schemes use different arrays */
 
 	n1 = mod.nz;
+    nw = ray.smoothwindow;
 
 	velocity = (float *)calloc(mod.nx*mod.nz,sizeof(float));
-    slowness = (float *)calloc(mod.nx*mod.nz,sizeof(float));
+	slowness = (float *)calloc((mod.nx+2*nw)*(mod.nz+2*nw),sizeof(float));
+//    slowness = (float *)calloc(mod.nx*mod.nz,sizeof(float));
 
 	/* read velocity and density files */
 
-	readModel(mod, velocity, slowness);
-
-	/* read and/or define source wavelet(s) */
-
-//	defineSource(wav, src, mod, src_nwav, mod.grid_dir, verbose);
+	readModel(mod, velocity, slowness, nw);
 
 	/* allocate arrays for wavefield and receiver arrays */
 
@@ -196,6 +194,7 @@ int main(int argc, char **argv)
 
 	if (verbose>3) writeSrcRecPos(&mod, &rec, &src, &shot);
 
+    /* smooth slowness grid */
     grid.x = mod.nx;
     grid.z = mod.nz;
     grid.y = 1;

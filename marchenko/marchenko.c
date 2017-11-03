@@ -35,7 +35,8 @@ typedef struct _complexStruct { /* complex number */
 } complex;
 #endif/* complex */
 
-int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int nshots, int nx, int nxs, float fxsb, float dxs, int ntfft, int mode, float scale, float tsq, int reci, int *nshots_r, int *isxcount, int *reci_xsrc,  int *reci_xrcv, float *ixmask, int verbose);
+int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int nshots,
+int nx, int nxs, float fxsb, float dxs, int ntfft, int mode, float scale, float tsq, float Q, float f0, int reci, int *nshots_r, int *isxcount, int *reci_xsrc,  int *reci_xrcv, float *ixmask, int verbose);
 int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nfoc, int nx, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose);
 int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, float d2, float f2, int n2out, int Nfoc, float *xsyn,
 float *zsyn, int *ixpos, int npos, int iter);
@@ -88,6 +89,8 @@ char *sdoc[] = {
 "   smooth=5 ................. number of points to smooth mute with cosine window",
 " REFLECTION RESPONSE CORRECTION ",
 "   tsq=0.0 .................. scale factor n for t^n for true amplitude recovery",
+"   Q=0.0 .......,............ Q correction factor",
+"   f0=0.0 ................... ... for Q correction factor",
 "   scale=2 .................. scale factor of R for summation of Ni with G_d",
 "   pad=0 .................... amount of samples to pad the reflection series",
 "   reci=0 ................... 1; add receivers as shots 2; only use receivers as shot positions",
@@ -126,7 +129,7 @@ int main (int argc, char **argv)
     float   d1, d2, f1, f2, fxsb, fxse, ft, fx, *xsyn, dxsrc;
     float   *green, *f2p, *pmin, *G_d, dt, dx, dxs, scl, mem;
     float   *f1plus, *f1min, *iRN, *Ni, *trace, *Gmin, *Gplus;
-    float   xmin, xmax, scale, tsq;
+    float   xmin, xmax, scale, tsq, Q, f0;
     float   *ixmask;
     complex *Refl, *Fop;
     char    *file_tinv, *file_shot, *file_green, *file_iter;
@@ -161,6 +164,8 @@ int main (int argc, char **argv)
     if (!getparint("reci", &reci)) reci = 0;
     if (!getparfloat("scale", &scale)) scale = 2.0;
     if (!getparfloat("tsq", &tsq)) tsq = 0.0;
+    if (!getparfloat("Q", &Q)) Q = 0.0;
+    if (!getparfloat("f0", &f0)) f0 = 0.0;
     if (!getparint("tap", &tap)) tap = 0;
     if (!getparint("ntap", &ntap)) ntap = 0;
     if (!getparint("pad", &pad)) pad = 0;
@@ -279,7 +284,7 @@ int main (int argc, char **argv)
 
     mode=1;
     readShotData(file_shot, xrcv, xsrc, zsrc, xnx, Refl, nw, nw_low, nshots, nx, nxs, fxsb, dxs, ntfft, 
-         mode, scale, tsq, reci, &nshots_r, isxcount, reci_xsrc, reci_xrcv, ixmask, verbose);
+         mode, scale, tsq, Q, f0, reci, &nshots_r, isxcount, reci_xsrc, reci_xrcv, ixmask, verbose);
 
     tapersh = (float *)malloc(nx*sizeof(float));
     if (tap == 2 || tap == 3) {

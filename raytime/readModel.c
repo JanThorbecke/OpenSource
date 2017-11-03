@@ -26,17 +26,18 @@
 **/
 
 
-int readModel(modPar mod, float *velocity, float *slowness)
+int readModel(modPar mod, float *velocity, float *slowness, int nw)
 {
     FILE    *fpcp;
     size_t  nread;
     int i, tracesToDo, j;
-	int nz;
+	int nz, nx;
     segy hdr;
     
 
 	/* grid size and start positions for the components */
 	nz = mod.nz;
+	nx = mod.nx;
 
 /* open files and read first header */
 
@@ -54,14 +55,24 @@ int readModel(modPar mod, float *velocity, float *slowness)
        	assert (nread == hdr.ns);
 	    for (j=0;j<nz;j++) {
 		    if (velocity[i*nz+j]!=0.0) {
-               slowness[i*nz+j] = 1.0/velocity[i*nz+j];
+               slowness[(i+nw)*nz+j+nw] = 1.0/velocity[i*nz+j];
 			}
 		}
+	    for (j=0;j<nw;j++) slowness[(i+nw)*nz+j] = slowness[(i+nw)*nz+nw];
+	    for (j=nz+nw;j<nz+2*nw;j++) slowness[(i+nw)*nz+j] = slowness[(i+nw)*nz+nz+nw-1];
+
        	nread = fread(&hdr, 1, TRCBYTES, fpcp);
        	if (nread==0) break;
 		i++;
 	}
    	fclose(fpcp);
+
+	for (i=0;i<nw;i++) {
+	    for (j=0;j<nz+2*nw;j++) {
+	        slowness[(i)*nz+j]       = slowness[(nw)*nz+j];
+	        slowness[(nx+nw+i)*nz+j] = slowness[(nx+nw-1)*nz+j];
+        }
+    }
 
     return 0;
 }
