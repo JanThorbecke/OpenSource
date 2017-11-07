@@ -1,0 +1,4 @@
+The scripts to reproduce the Figures in the manuscript can be found in the directory oneD. The oneD/README explains how to run the scripts.
+
+A more complicated model can be found in the directory twoD and will takes several hours to model the reflection data. 
+

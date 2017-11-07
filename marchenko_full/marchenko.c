@@ -223,10 +223,7 @@ int main (int argc, char **argv)
 	WavePar WP;
 	modPar mod;
     recPar rec;
-    snaPar sna;
-    wavPar wav;
     srcPar src;
-    bndPar bnd;
     shotPar shot;
     rayPar ray;
 
@@ -310,7 +307,7 @@ int main (int argc, char **argv)
 		ret = getFileInfo(file_ray, &n2, &n1, &ngath, &d2, &d1, &f2, &f1, &xmin, &xmax, &scl, &ntraces);
 	}
 	else if (file_ray==NULL && file_tinv==NULL) {
-		getParameters(&mod, &rec, &sna, &wav, &src, &shot, &bnd, &ray, verbose);
+		getParameters(&mod, &rec, &src, &shot, &ray, verbose);
 		n1 = rec.nt;
 		n2 = rec.n;
 		ngath = shot.n;
@@ -322,6 +319,7 @@ int main (int argc, char **argv)
 		xmax = mod.x0+rec.x[rec.n-1]*mod.dx;
 		scl = 0.0010;
 		ntraces = n2*ngath;
+		WP.wav = 1;
 	}
 	else {
     	ret = getFileInfo(file_tinv, &n1, &n2, &ngath, &d1, &d2, &f1, &f2, &xmin, &xmax, &scl, &ntraces);
@@ -332,7 +330,7 @@ int main (int argc, char **argv)
     nts = n1;
 	nt0 = n1;
     dxs = d2; 
-    fxs = f2; 
+    fxs = f2;
 
     ngath = 0; /* setting ngath=0 scans all traces; nx contains maximum traces/gather */
     ret = getFileInfo(file_shot, &nt, &nx, &ngath, &d1, &dx, &ft, &fx, &xmin, &xmax, &scl, &ntraces);

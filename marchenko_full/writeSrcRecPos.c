@@ -126,12 +126,7 @@ int writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot)
 		dum[rec->x[is]*nz+MIN(nz-1,rec->z[is]+1)] = -1.0;
 
 //		vmess("receiver position %d at grid[ix=%d, iz=%d] = (x=%f z=%f)", ir, ix+ioPx, rec.z[ir]+ioPz, rec.xr[ir]+mod.x0, rec.zr[ir]+mod.z0);
-		if (rec->int_vx==3) {
-			fprintf(fp, "(%f, %f)\n", rec->xr[is]*dx+sub_x0, rec->zr[is]*dz+sub_z0);
-		}
-		else {
-			fprintf(fp, "(%f, %f)\n", rec->x[is]*dx+sub_x0, rec->z[is]*dz+sub_z0);
-		}
+		fprintf(fp, "(%f, %f)\n", rec->x[is]*dx+sub_x0, rec->z[is]*dz+sub_z0);
 	}
 	fclose(fp);
 	writesufile("SrcRecPositions.su", dum, nz, nx, sub_z0, sub_x0, dz, dx);

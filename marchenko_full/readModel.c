@@ -26,17 +26,12 @@
 **/
 
 
-int readModel(modPar mod, bndPar bnd, float *velocity, float *slowness)
+int readModel(modPar mod, float *velocity, float *slowness, int nw)
 {
     FILE    *fpcp;
     size_t  nread;
     int i, tracesToDo, j;
-	int n1, ix, iz, nz, nx;
-    int ixo, izo, ixe, ize;
-	int ioXx, ioXz, ioZz, ioZx, ioPx, ioPz, ioTx, ioTz;
-	float cp2, cs2, cs11, cs12, cs21, cs22, mul, mu, lamda2mu, lamda;
-	float cs2c, cs2b, cs2a, cpx, cpz, bx, bz, fac;
-	float a, b;
+	int nz, nx;
     segy hdr;
     
 
@@ -60,14 +55,24 @@ int readModel(modPar mod, bndPar bnd, float *velocity, float *slowness)
        	assert (nread == hdr.ns);
 	    for (j=0;j<nz;j++) {
 		    if (velocity[i*nz+j]!=0.0) {
-               slowness[i*nz+j] = 1.0/velocity[i*nz+j];
+               slowness[(i+nw)*nz+j+nw] = 1.0/velocity[i*nz+j];
 			}
 		}
+	    for (j=0;j<nw;j++) slowness[(i+nw)*nz+j] = slowness[(i+nw)*nz+nw];
+	    for (j=nz+nw;j<nz+2*nw;j++) slowness[(i+nw)*nz+j] = slowness[(i+nw)*nz+nz+nw-1];
+
        	nread = fread(&hdr, 1, TRCBYTES, fpcp);
        	if (nread==0) break;
 		i++;
 	}
    	fclose(fpcp);
+
+	for (i=0;i<nw;i++) {
+	    for (j=0;j<nz+2*nw;j++) {
+	        slowness[(i)*nz+j]       = slowness[(nw)*nz+j];
+	        slowness[(nx+nw+i)*nz+j] = slowness[(nx+nw-1)*nz+j];
+        }
+    }
 
     return 0;
 }

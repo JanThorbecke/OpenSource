@@ -1,0 +1,198 @@
+Description of files:
+1) model.scr computes the model and the 'basis' shot of R => shot5_rp.su
+2) p5all.scr create from basis shot full Reflection response matrix => shotsdx5_rp.su (3.3 GB)
+3) initialFocus.scr model G_d the intitial focusing function => iniFocus_rp.su
+4) referenceShot.scr creates the reference Green's function at focal point => referenceP_rp.su
+5) marchenko.scr perform the Marchenko scheme => pgreen.su, f1plus0.su, f1min0.su, f2.su
+
+extra scripts
++) marchenkoIter.scr : to make the figure with "Four iterations of the Marchenko method."
++) backpropf2.scr : to make Figure "Snapshots of back-propagation of f_2."
++) eps*.scr : reproduce the postscript files of the manuscript using SU postscript plotting programs.
++) clean : remove all produced files and start with a clean directory
+
+
+To reproduce the Figures in the Manuscript:
+
+--------------------------
+* Figure 2: Wavelet
+* Figure 3: Model + Initial wavefield
+
+==> run model.scr to generate the data .su files: this will take 3-4 minutes. The files generate are:
+	- hom_cp.su, hom_ro.su
+	- model10_cp.su, model10_ro.su
+	- shot5_fd_rp.su
+	- shot5_hom_fd_rp.su
+	- shot5_rp.su
+	- wave.su
+	- wavefw.su
+
+==> run initialFocus.scr to compute the direct arrival of the transmission response G_d. This will take 1-2 minutes.
+	- modelup_cp.su
+	- modelup_ro.su
+	- iniFocus_rp.su
+Note if you model the initial Focusing operator also with a w=fw wavelet the length of the wavelet becomes very long. The
+mute-windows applied in Marchenko will then also mute a big part of this very long fw wavelet and will not converge anymore.  
+
+
+==> run epsModel.scr to generate the postscript files of Figure 2 and 3
+
+wavefw.eps 		=> Figure 2a
+wavefw_freq.eps		=> Figure 2b
+
+model_cp_line.eps 	=> Figure 3a 
+model_ro_line.eps 	=> Figure 3b
+shotx0_rp.eps 		=> Figure 3c
+iniFocus_rp.eps 	=> Figure 3d
+
+
+--------------------------
+* Figure 4: Initialisation
+* Figure 5: first update
+* Figure 6: first 4 iterations
+
+The full R matrix is build up from the the shot record computed with model.scr
+
+==> run p5all.scr to generate the full R matrix for a fixed spread geometry. This will take less than one minute. The file generated is
+	- shotsdx5_rp.su this file has a size of 3.3 GB
+
+This R, together with iniFocus_rp.su, is the input of the Marchenko algorithm
+
+==> run marchenkoIter.scr to compute the first 4 iteration of the Marchenko algorithm. This will take 1-2 minutes. The generated files are:
+	- p0plus.su
+	- pgreen_001.su
+	- f1plus_001.su
+	- f1min_001.su
+	- Gplus_001.su
+	- Gmin_001.su
+	- pgreen_002.su
+	- f1plus_002.su
+	- f1min_002.su
+	- Gplus_002.su
+	- Gmin_002.su
+	- pgreen_003.su
+	- f1plus_003.su
+	- f1min_003.su
+	- Gplus_003.su
+	- Gmin_003.su
+	- pgreen_004.su
+	- f1plus_004.su
+	- f1min_004.su
+	- Gplus_004.su
+	- Gmin_004.su
+
+To Compute the reference Green's function at x=0 z=900 m in the actual model
+==> run referenceShot.scr  This will take 1 minute and generates the file;
+	- referenceP_rp.su
+
+To generate all postscript files for Figure 4, 5 and 6
+
+==> run epsMarchenkoIter.scr
+
+shotx0_rp.eps 		=> Figure 4 R == Figure 3c
+p0plus.eps	 	=> Figure 4 G_d
+iter_001.eps	 	=> Figure 4 N_0
+
+shotx0_rp.eps 		=> Figure 5 R == Figure 3c
+f1min_001.eps	 	=> Figure 5 f^-_1,0
+iter_002.eps	 	=> Figure 5 -N_1
+f1plus_002.eps	 	=> Figure 5 f^+_1,0
+
+-- Figure 6 column 1
+iter_001.eps
+iter_002.eps
+iter_003.eps
+iter_004.eps
+-- Figure 6 column 2
+f1min_001.eps
+f1min_002.eps
+f1min_003.eps
+f1min_004.eps
+-- Figure 6 column 3
+p0plus_flip.eps
+f1plus_002.eps
+f1plus_003.eps
+f1plus_004.eps
+-- Figure 6 column 4
+pgreen_001.eps
+pgreen_002.eps
+pgreen_003.eps
+pgreen_004.eps
+-- Figure 6 column 5
+compare_001.eps
+compare_002.eps
+compare_003.eps
+compare_004.eps
+
+
+Note that the script epsIterwithLabels.scr produces the same figures, but with axis-labels. 
+
+--------------------------
+* Figure 7: Comparison of Marchenko result with reference
+
+To compute the marchenko results for 8 iterations.  
+
+==> run marchenko.scr This will take less than 1 minute. The generated files are:
+	- pgreen.su, pgreen512.su
+	- diffref.su
+	- Gplus0.su
+	- Gmin0.su
+	- f1plus0.su
+	- f1min0.su
+	- f2.su 
+
+
+At the end of the run the script will display in X11 a comparison of the middle trace. 
+
+To make the postscript figure 
+
+==> run epsCompare.scr
+
+mergeGreenRef.eps 	=> Figure 7
+
+--------------------------
+* Figure 8: snapshots of back propagating f2 in actual medium 
+
+To compute the snapshots 
+
+==> run backpropf2.scr This will take about 1 minute. The generated output file is
+	- backpropf2_sp.su
+
+The postscript files of Figure 8 are generated with 
+
+==> run epsBackprop.scr
+
+-- Figure 8 column 1
+backpropf2_-0.30.eps
+backpropf2_-0.15.eps
+backpropf2_-0.03.eps
+backpropf2_-0.02.eps
+backpropf2_0.00.eps
+-- Figure 8 column 2
+backpropf2_0.30.eps
+backpropf2_0.15.eps
+backpropf2_0.03.eps
+backpropf2_0.02.eps
+backpropf2_0.00.eps
+-- Figure 8 column 3
+backpropf2sum_0.30.eps
+backpropf2sum_0.15.eps
+backpropf2sum_0.03.eps
+backpropf2sum_0.02.eps
+backpropf2_0.00.eps
+
+
+The figures in the appendix, to explain the different options in the programs, are reproduced by
+
+==> run figAppendi.scr
+
+-- Figure A-1
+noise_above0.eps
+noise_above1.eps
+noise_above-1.eps
+noise_above2.eps
+noise_above4.eps
+
+-- Figure A-2
+iniFocus_shifts.eps
+
