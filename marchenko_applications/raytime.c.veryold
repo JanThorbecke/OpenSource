@@ -1,0 +1,704 @@
+#include <DELPHI_IOc.h>
+#include <errno.h>
+#include <memory.h>
+#include <time.h>
+#include <raytime.h>
+
+/*  Plane-wave modeling externals */
+void  plane_wave(float *tfinal,float *slowness, char *candidate, struct i_xyz *ndim, float scale, int order);
+
+/*  Vidale modeling externals */
+extern void  vidale(float *ttime, float *slow, struct i_xyz *nm, struct i_xyz *isrc, struct f_xyz *scale, int order);
+
+/*  Graph_Theory modeling externals */
+extern void  dijkstra(float *tfinal, float *slowness, char *candidate, int *raypath, XYZIndex *ndim, int order, int big, struct s_stencil *template);
+
+extern struct s_stencil *make_stencil(int order, XYZIndex *nm, XYZPosition *scale);
+
+extern void getrecpos(int *xi, int *zi, int *nrec, int nx, float h, float ox, float oz, int verbose);
+
+extern float setzsrc(int nb, int *boundary, float **inter, float *slow, int ni, float zsrc1, float dzsrc, float dz, float oz, int nx, int nz, float xsrc, float dx, float ox, int id, int verbose);
+
+void rm_head(float *slow, struct i_xyz *ndim, struct i_xyz *isrc, int mzrcv, struct f_xyz *scale, float **inter, int ni, int *nzm);
+
+extern void draw_rays(char *file_eps, int *raypath, struct i_xyz *ircv, int nx, int nz, float *slow, float dx, float dz, int nrec, float **inter, int ni, int hom, int verbose);
+
+extern void opint(float **data, int nrec, int Ns, int ix, float **dataT, float Tmin, float Tmax, float dT, int nT);
+
+/*********************** self documentation **********************/
+char *sdoc[] = {
+" ",
+" raytime - modeling of one-way traveltime for CFP operators",
+" ",
+" raytime file_vel= xsrc1= zsrc1= [optional parameters]",
+" ",
+" Required parameters:",
+" ",
+"   file_vel= ................ gridded velocity file (DELPHI format)",
+"   file_svel= ............... gridded velocity file (DELPHI format)",
+"   xsrc1= ................... x-position of the source (m)",
+"   zsrc1= ................... z-position of the source (m)",
+" ",
+" Optional parameters:",
+" ",
+" INPUT AND OUTPUT ",
+"   file_out= ................ output file with traveltimes",
+"   file_amp= ................ output file with approximate amplitudes",
+"   file_int= ................ input file describing the interfaces (makemod)",
+"   file_ray= ................ postscript file with rays (only method=graph)",
+"   onegath=0 ................ 1; writes operators in one gather",
+" RAY TRACING ",
+"   method=fd ................ calculation method (fd, plane or graph) ",
+"   sbox=1 ................... radius of inner straight ray (fd method)",
+"   order= ................... accuracy plane(=2)[0-2] and graph(=8)[1-10]",
+"   radius=0 ................. radius in plane method",
+"   dT=0 ..................... put traces on one-way time grid with step dT",
+"   Tmin=0 ................... minimum time of one-way time grid (0 not used)",
+"   Tmax=Tmin ................ maximum time of one-way time grid",
+"   hom=1 .................... 1: draw straight rays in homogeneous layers",
+" SOURCE POSITIONS ",
+"   xsrc2=xsrc1 .............. x-position of last source",
+"   dxsrc=0 .................. step in source x-direction",
+"   zsrc2=zsrc1 .............. z-position of last source",
+"   dzsrc=0 .................. step in source z-direction",
+"   boundary=0 ............... boundary to place the sources (overrules zsrc)",
+"   add=0 .................... 1: adds all defined sources",
+"   head=0 ................... 1: calculate head waves near source position",
+" RECEIVER POSITIONS ",
+"   xrcv=0,(nx-1)*dx ......... x-position's of receivers (array)",
+"   zrcv=0,0 ................. z-position's of receivers (array)",
+"   Rboundary=0 .............. boundary to place the receivers (overrules zrcv)",
+"   dxrcv=dx ................. step in receiver x-direction",
+"   dzrcv=0 .................. step in receiver z-direction",
+"   dxspr=0 .................. step of receiver spread in x-direction",
+"   lint=1 ................... linear interpolate between the rcv points",
+"   verbose=0 ................ verbose option",
+" ",
+"  raytime calculates the first arrival time at the defined receiver array ",
+"  for the defined shots at different depth and lateral positions.",
+"  Note that one output gather consists of shots which are defined at the",
+"  same lateral position but with different depth positions.",
+"  Every new lateral position (with dxsrc) gives a new output gather.",
+"  The parameter dT defines the one-way time between two shot records. The",
+"  defined shot records (at depth) are used to get the interpolated values ",
+"  at time steps of dT. ",
+" ",
+"  PROGRAM TO CALCULATE TRAVEL TIMES IN 2D MEDIA  ",
+"  AUTHOR: Joseph R. Matarese ",
+"  Copyright (c) 1993: Joseph R. Matarese and ",
+"                      Massachusetts Institute of Technology ",
+" ",
+" Translated to DELPHI environment: Jan Thorbecke 16-02-1996",
+" ",
+NULL};
+/**************** end self doc ***********************************/
+
+int main(int argc, char *argv[])
+{
+	float32			*slowness, *slowness_S;
+	uint8			*candidate;
+	float32			*ttime, *ttime_p, slow_src;
+	struct i_xyz	*ndim, *isrc, *ircv;
+	struct f_xyz	scale;
+	int				id, nd, iz, ix, is, ir, ie, i;
+	int				iz_min, iz_max, ix_min, ix_max;
+	int				node_src, idz, idx, idp, sign;
+	int				*raypath;
+	struct s_stencil *stencil;
+
+	intn 	seqnr[MAX_KEYS];
+	int32	type, dom1, dom2;
+	int     error, n1, n2, ret, size, verbose, nkeys, a;
+	int 	k, nx, nz, sbox, Ns, nrec, ni, add, hom, ib, Nb;
+	int		*xi, *zi, j, ispr, ik, nzm, head, nT, mzrcv;
+	int 	Nd, nb, *boundary, onegath, order, radius, Rboundary;
+	float 	xsrc1, xsrc2, dxsrc, zsrc1=0, zsrc2, dzsrc, sx, sz, sl;
+	float   d1, d2, f1, f2, *tmpdata, dx, dz, dxspr, **data;
+	float	xsrc, *zsrc, drcv, dxrcv, dzrcv, t0, t1, t2, x, z, r, signz;
+	float	ox, oz, **inter, dT, Tmin, Tmax, **dataT, *trueslow;
+	char	*file_vel, *file_out, *file_int, *file_amp, *file_svel;
+	char	*keys[MAX_KEYS], *method, *file_ray, file_base[256], *pf;
+	segyhdr	*hdrs, *hdrsT;
+
+	t0 = cputime();
+	initargs(argc, argv);
+	requestdoc(1);
+
+/*---------------------------------------------------------------------------*
+ *  Read input parameters and query for any that are needed but missing.
+ *---------------------------------------------------------------------------*/
+
+	if(!getparint("verbose", &verbose)) verbose = 0;
+	if(!getparstring("file_vel", &file_vel)) saerr("file_vel not defined");
+	if(!getparstring("file_svel", &file_svel)) file_svel=NULL;
+	if(!getparstring("file_out", &file_out)) file_out=NULL;
+	if(!getparstring("file_int", &file_int)) file_int=NULL;
+	if(!getparstring("file_ray", &file_ray)) file_ray=NULL;
+	if(!getparstring("file_amp", &file_amp)) file_amp=NULL;
+	if(!getparstring("method", &method)) method="fd";
+	if(!getparfloat("xsrc1", &xsrc1)) saerr("xsrc1 not defined");
+	if(!getparfloat("xsrc2", &xsrc2)) xsrc2=xsrc1;
+	if(!getparfloat("dxsrc", &dxsrc)) dxsrc=0;
+	if(!getparfloat("Tmin", &Tmin)) Tmin=0;
+	if(!getparint("Rboundary", &Rboundary)) Rboundary=0;
+	if (Rboundary) {
+		if(file_int == NULL) saerr("file_int must be specified for Rboundary");
+	}
+	nb = countparval("boundary");
+	if(nb == 0 && Tmin == 0) {
+		if(!getparfloat("zsrc1", &zsrc1)) 
+			saerr("zsrc1 and boundary not defined, one must be defined");
+	}
+	else if (Tmin == 0) {
+		if(file_int == NULL) saerr("file_int must be specified for boundary");
+		boundary = alloc1int(nb);
+		getparint("boundary", boundary);
+		if (verbose) samess("source definition on boundary");
+	}
+	if(!getparfloat("zsrc2", &zsrc2)) zsrc2=zsrc1;
+	if(!getparfloat("dzsrc", &dzsrc)) dzsrc=0;
+	if(!getparint("head", &head)) head = 0;
+	if(!getparint("sbox", &sbox)) sbox = 1;
+	if(!getparint("onegath", &onegath)) onegath = 0;
+	if(!getparint("add", &add)) add = 0;
+	if(!getparint("hom", &hom)) hom = 1;
+
+	if(equal(method,"fd")) {
+		if (verbose) 
+			samess("finite_difference (Vidale, 1988, BSSA V. 78 #6, p. 2062)");
+	}
+	else if(equal(method,"graph")) {
+		if (verbose) 
+			samess("graph_theory (Moser, 1991, Geophysics V. 56 #1, p. 59)");
+	}
+	else if(equal(method,"plane")) {
+		if (verbose) 
+			samess("plane_wave (Matarese, 1993, Ph.D. Thesis, MIT)");
+	}
+	else {
+		samess("unknown method: %s",method);
+		samess("Possible choices include:\n\n");
+		samess("\tfd      based on Vidale's finite difference method\n");
+		samess("\t        (Vidale, 1988, BSSA V. 78 #6, p. 2062)\n");
+		samess("\tgraph   based on Moser's graph theoretical method\n");
+		samess("\t        (Moser, 1991, Geophysics V. 56 #1, p. 59)\n");
+		samess("\tplane   based on Matarese's plane wave extrapolation\n");
+		samess("\t        (Matarese, 1993, Ph.D. Thesis, MIT)\n");
+		return(0);
+	}
+
+	if (file_ray != NULL) {
+		pf = strrchr(file_ray, '.');
+		*pf = '\0';
+		if(!equal(method,"graph")) {
+			sawarn("If file_ray is defined then method=graph");
+			sawarn("So, method is set to graph");
+			method = "graph";
+		}
+  	}
+
+	if(equal(method,"plane")) {
+		if(!getparint("order", &order)) order = 2;
+		if(order < 0 || order > 2) {
+			sawarn("order must be within [0-2]");
+			sawarn("order set to 2");
+			order = 2;
+		}
+		if(!getparint("radius", &radius)) radius = 0;
+	} 
+	else if(equal(method,"graph")) {
+		if(!getparint("order", &order)) order = 8;
+		if(order < 1) saerr("order must be within [1-10]");
+		if(order > 10) sawarn("Attempting an order > 10.  Good luck!");
+  	}
+
+	if(equal(method,"plane") && add) {
+		if (radius) {
+		sawarn("Plane wave method with non-zero radius requires one source.");
+		samess("Continuing with radius = 0.");
+		}
+		radius = 0;
+	}
+
+	if(add && equal(method,"fd"))
+		saerr("Finite difference methods don't support extended source.");
+
+/*---------------------------------------------------------------------------*
+ *  Input the slowness grid.
+ *  It's gotta be 2-D and the variable is named "slowness".
+ *---------------------------------------------------------------------------*
+ *  Open velocity file
+ *---------------------------------------------------------------------------*/
+
+	error = open_file(file_vel, GUESS_TYPE, DELPHI_READ);
+	if (error < 0 ) saerr("error in opening file %s", file_vel);
+	error = get_dims(file_vel, &n1, &n2, &type);
+	size = n1 * n2;
+	tmpdata = alloc1float(size);
+	hdrs = (segyhdr *) malloc(n2*sizeof(segyhdr));
+	read_data(file_vel,tmpdata,size,&n1,&n2,&f1,&f2,&d1,&d2,&type,hdrs);
+	get_axis(&dom1, &dom2);
+	if (verbose) disp_info(file_vel,n1,n2,f1,f2,d1,d2,type);
+	ret = close_file(file_vel);
+	if (ret < 0) sawarn("err %d on closing input file",ret);
+	slowness = alloc1float(n1*n2);
+
+	if (dom2 == SA_AXIS_X) {
+		nx = n2; nz = n1; 
+		dx = d2; dz = d1;
+		ox = f2; oz = f1;
+		/* look at the coordinates of gx is the f2-axis is not defined */
+		if (dx < 1e-9) {
+			sawarn("f2 and d2 axis not defined, use the gx values");
+			if (hdrs[0].scalco < 0) sl = 1.0/fabs(hdrs[0].scalco);
+			else if (hdrs[0].scalco == 0) sl = 1.0;
+			else sl = hdrs[0].scalco;
+			ox = hdrs[0].gx*sl;
+			dx = (hdrs[1].gx-hdrs[0].gx)*sl;
+		}
+
+		if (verbose) samess("Input model is transposed");
+		for(ix=0; ix<nx; ix++) {
+			for(iz=0; iz<nz; iz++) slowness[iz*nx+ix] = 1.0/tmpdata[ix*nz+iz];
+		}
+	}
+	else {
+		nx = n1; nz = n2; 
+		dx = d1; dz = d2;
+		ox = f1; oz = f2;
+		for(iz=0; iz<nz; iz++) {
+			for(ix=0; ix<nx; ix++) slowness[iz*nx+ix] = 1.0/tmpdata[iz*nx+ix];
+		}
+	}
+	free1float(tmpdata);
+	free(hdrs);
+
+/*---------------------------------------------------------------------------*
+ *  Open S-wave velocity file
+ *---------------------------------------------------------------------------*/
+	if (file_svel!= NULL) {
+		error = open_file(file_svel, GUESS_TYPE, DELPHI_READ);
+		if (error < 0 ) saerr("error in opening file %s", file_svel);
+		error = get_dims(file_svel, &n1, &n2, &type);
+		size = n1 * n2;
+		tmpdata = alloc1float(size);
+		hdrs = (segyhdr *) malloc(n2*sizeof(segyhdr));
+		read_data(file_svel,tmpdata,size,&n1,&n2,&f1,&f2,&d1,&d2,&type,hdrs);
+		get_axis(&dom1, &dom2);
+		if (verbose) disp_info(file_svel,n1,n2,f1,f2,d1,d2,type);
+		ret = close_file(file_svel);
+		if (ret < 0) sawarn("err %d on closing input file",ret);
+		slowness_S = alloc1float(n1*n2);
+	
+		if (dom2 == SA_AXIS_X) {
+			if (n2 != nx) saerr("nx of file %s (%d) != nx of file %s (%d)", file_vel, nx, file_svel, n2);
+			if (n1 != nz) saerr("nz of file %s (%d) != nz of file %s (%d)", file_vel, nz, file_svel, n1);
+	
+			if (verbose) samess("Input S-model is transposed");
+			for(ix=0; ix<nx; ix++) {
+				for(iz=0; iz<nz; iz++) slowness_S[iz*nx+ix] = 1.0/tmpdata[ix*nz+iz];
+			}
+		}
+		else {
+			if (n1 != nx) saerr("nx of file %s (%d) != nx of file %s (%d)", file_vel, nx, file_svel, n1);
+			if (n2 != nz) saerr("nz of file %s (%d) != nz of file %s (%d)", file_vel, nz, file_svel, n2);
+			for(iz=0; iz<nz; iz++) {
+				for(ix=0; ix<nx; ix++) slowness_S[iz*nx+ix] = 1.0/tmpdata[iz*nx+ix];
+			}
+		}
+		free1float(tmpdata);
+		free(hdrs);
+	}
+	else {
+		slowness_S = alloc1float(nx*nz);
+		for(iz=0; iz<nz; iz++) {
+			for(ix=0; ix<nx; ix++) 
+				slowness_S[iz*nx+ix] = slowness[iz*nx+ix];
+		}
+	}
+
+	if (NINT(dx*1000) != NINT(dz*1000)) saerr("dx must be equal to dz");
+	
+/*---------------------------------------------------------------------------*
+ *  Open interface file (if available)
+ *---------------------------------------------------------------------------*/
+
+	if (file_int != NULL) {
+		error = open_file(file_int, GUESS_TYPE, DELPHI_READ);
+		if (error < 0 ) saerr("error in opening file %s", file_int);
+		error = get_dims(file_int, &n1, &n2, &type);
+		size = n1 * n2;
+		tmpdata = alloc1float(size);
+		hdrs = (segyhdr *) malloc(n2*sizeof(segyhdr));
+		read_data(file_int,tmpdata,size,&n1,&n2,&f1,&f2,&d1,&d2,&type,hdrs);
+		if (verbose>=2) disp_info(file_int,n1,n2,f1,f2,d1,d2,type);
+		ret = close_file(file_int);
+		free(hdrs);
+		if (ret < 0) sawarn("err %d on closing input file",ret);
+		ni = n2;
+		if (n1 != nx) saerr("n1 != nx; wrong interface file");
+		
+		inter = alloc2float(nx, ni);
+		for(i=0; i<ni; i++) {
+			for(j=0; j<nx; j++) inter[i][j] = tmpdata[i*nx+j];
+		}
+		free1float(tmpdata);
+	}
+	else ni = 0;
+
+/*================ Read in receiver positions ================*/
+
+	zi = alloc1int(nx+nz);
+	xi = alloc1int(nx+nz);
+	if(Rboundary<=0) {
+		getrecpos(xi, zi, &nrec, nx, dz, ox, oz, verbose);
+	}
+	else {
+		if (verbose) samess("Placing receivers on boundary %d.",Rboundary);
+		if (verbose>=3) samess("receiver positions are:");
+                if(!getparfloat("dxrcv",&dxrcv)) dxrcv = dx;
+                nrec = NINT((nx-1)*dx/dxrcv)+1;
+		for (ir = 0; ir < nrec; ir++) {
+                        xi[ir] = NINT(ir*dxrcv/dx);
+			zi[ir] = NINT(inter[Rboundary-1][xi[ir]]/dz);
+			if (verbose>=3) fprintf(stderr,"x=%f z=%f\n",(ox+xi[ir]*dx),(oz+zi[ir]*dz));
+		}
+	}
+	if(!getparfloat("dxspr",&dxspr)) dxspr= 0;
+	if(verbose) samess("nrec = %d", nrec);
+
+/* ============ Check and set parameters =============== */
+
+	ispr = NINT(dxspr/dx);
+	if (NINT(ispr*dx) != NINT(dxspr)) 
+		saerr("dxspr is not a multiple of dx; this is not allowed");
+
+	mzrcv = 0;
+	for (ir = 0; ir < nrec; ir++) mzrcv = MAX(zi[ir], mzrcv);
+	if (mzrcv > (nz-1)) saerr("deepest receiver outside model");
+
+	if (nb) {dzsrc = 0.0; zsrc1 = inter[boundary[0]-1][0]; Nd = nb;}
+	else if (dzsrc == 0) Nd = 1;
+	else if (dzsrc != 0) Nd = NINT((zsrc2 - zsrc1)/dzsrc) + 1;
+	if (dxsrc == 0) Ns = 1;
+	else if (dxsrc != 0) Ns = NINT((xsrc2 - xsrc1)/dxsrc) + 1;
+
+	if ((zsrc1+(Nd-1)*dzsrc-oz) > nz*dz) {
+		sawarn("Deepest source outside model; last shot(s) not calculated");
+		Nd -= 1;
+		while( (zsrc1+(Nd-1)*dzsrc-oz ) > nz*dz) Nd--;
+	}
+	if (xi[nrec-1]*dx + (Ns-1)*dxspr > nx*dx) 
+		saerr("Moving spread moves outside model");
+
+	if(!getparfloat("Tmin", &Tmin)) Tmin=0;
+	if(!getparfloat("Tmax", &Tmax)) Tmax=Tmin;
+	if(!getparfloat("dT", &dT)) dT=0;
+	if (NINT(1000*dT) != 0) Nd = NINT((Tmax - Tmin)/dT) + 1;
+	else if (Tmin) Nd = 1;
+
+	if (verbose) {
+		samess("Number of shot positions to generate = %d", Ns);
+		samess("For every shot postion %d depth positions", Nd);
+		samess("orig of model (x, z)           = %.2f, %.2f", ox, oz);
+	}
+
+  	ndim = (struct i_xyz *)jm_alloc(1,sizeof(struct i_xyz),1);
+	ndim->z = nz;  ndim->y = 1;  ndim->x = nx;
+	scale.x = dx; scale.y = 0.; scale.z = dz;
+	nd = nz*nx;
+
+/*---------------------------------------------------------------------------*
+ *  If not finite difference method, allocate traveltime mask array(candidate).
+ *---------------------------------------------------------------------------
+ *  Allocate the traveltime asrray.
+ *  If graph method, allocate the raypath and stencil arrays.
+ *---------------------------------------------------------------------------*/
+
+	candidate = (uint8 *)NULL;
+	ttime = (float32 *)jm_alloc(nd, sizeof(float32), 0);
+
+	if(equal(method,"graph")) {
+		candidate = (uint8 *)jm_alloc(nd, sizeof(uint8), 0);
+		raypath = (int *)jm_alloc(nd, sizeof(int), 0);
+		stencil = make_stencil(order, ndim, &scale);
+	}
+  
+/* ============ Initializations =============== */
+
+/*---------------------------------------------------------------------------*
+ *  Input the source locations.
+ *          and
+ *  Initialize the traveltime array.  Place t=0 @ source position.
+ *---------------------------------------------------------------------------*/
+
+	if (add) {
+		data  = alloc2float(nrec, 1);
+		isrc  = (struct i_xyz *)jm_alloc(Ns*Nd+1,sizeof(struct i_xyz),1);
+		zsrc  = alloc1float(Nd);
+		for(id=0, ttime_p=ttime; id<nd; id++, ttime_p++) 
+			*ttime_p = Infinity;
+
+		ie = 0;
+		for (is = 0; is < Ns; is++) {
+			xsrc = xsrc1 + is*dxsrc - ox;
+			for (id = 0; id < Nd; id++) {
+				zsrc[id] = setzsrc(nb,boundary,inter,slowness_S,ni,zsrc1,dzsrc,
+					dz,oz,nx,nz,xsrc,dx,ox,id,verbose);
+
+				isrc[ie].x = NINT(xsrc/dx);
+				isrc[ie].y = 0;
+				isrc[ie].z = NINT(zsrc[id]/dz);
+				node_src = isrc[ie].z*nx + isrc[ie].x;
+				sx = isrc[ie].x*dx-xsrc;
+				sz = isrc[ie].z*dz-zsrc[id];
+				sign = -1;
+				if (sz < 0) sign = 1;
+				ttime[node_src] = sign*sqrt(sx*sx+sz*sz)*slowness[node_src];
+				if((isrc[ie].x > nx-1) || (isrc[ie].x < 0) || 
+				   (isrc[ie].z > nz-1) || (isrc[ie].z < 0))
+						{ saerr("source %d out of bounds ix=%d iz=%d", ie, isrc[ie].x, isrc[ie].z); }
+				ie++;
+			}
+		}
+		Ns = 1;
+		Nd = 1;
+	}
+	else {
+		data  = alloc2float(nrec, Nd);
+		isrc  = (struct i_xyz *)jm_alloc(2,sizeof(struct i_xyz),1);
+		zsrc  = alloc1float(Nd);
+	}  
+
+/* ============ Initializations (2) =============== */
+
+	if(!getparfloat("dxrcv",&dxrcv)) dxrcv = dx;
+	if(!getparfloat("dzrcv",&dzrcv)) dzrcv = 0;
+	drcv = sqrt(dxrcv*dxrcv+dzrcv*dzrcv);
+	keys[0]  = (char *) malloc(MAX_KEY_LENGTH);
+	nkeys    = 1;
+	keys[0]  = SA_OPER;
+	seqnr[0] = 1;
+	type     = SA_TYPE_REAL;
+	dom1     = SA_AXIS_X;
+	if (dT > 0) dom2 = SA_AXIS_TIME;
+	else dom2 = SA_AXIS_Z;
+	if (file_ray != NULL) {
+		ircv = (struct i_xyz *)jm_alloc(nrec+1,sizeof(struct i_xyz),1);
+  	}
+	if (head == 0) {
+		trueslow = alloc1float(nd);
+		for (k = 0; k < nd; k++) trueslow[k] = slowness[k];
+	}
+
+	if (file_amp != NULL) {
+		ret = open_file(file_amp, GUESS_TYPE, DELPHI_CREATE);
+		if (ret < 0 ) saerr("error in creating output file %s", file_amp);
+	}
+	ret = open_file(file_out, GUESS_TYPE, DELPHI_CREATE);
+	if (ret < 0 ) saerr("error in creating output file %s", file_out);
+
+/*---------------------------------------------------------------------------*
+ *  Compute traveltimes and (if applicable) raypaths.
+ *---------------------------------------------------------------------------*/
+
+	for (is = 0; is < Ns; is++) {
+		xsrc = xsrc1 + is*dxsrc - ox;
+		if (verbose) samess("**** gather %d ****",  is+1);
+
+		for (id = 0, ib=0; id < Nd; id++) {
+			if (nb) {
+				if (inter[boundary[id]-1][NINT(xsrc/dx)] == 0) continue;
+			}
+			zsrc[ib] = setzsrc(nb,boundary,inter,slowness_S,ni,zsrc1,dzsrc,dz,
+				oz,nx,nz,xsrc,dx,ox,id,verbose);
+			if (verbose) samess("xsrc = %f zsrc = %f", xsrc+ox, zsrc[ib]+oz);
+
+			if (!add) {
+				for(i=0, ttime_p=ttime; i<nd; i++, ttime_p++) 
+					*ttime_p = Infinity;
+
+				isrc[0].x = NINT(xsrc/dx);
+				isrc[0].y = 0;
+				isrc[0].z = NINT(zsrc[ib]/dz);
+				if((isrc[0].x > nx-1) || (isrc[0].x < 0) || 
+				   (isrc[0].z > nz-1) || (isrc[0].z < 0)) { 
+					{ saerr("source %d out of bounds ix=%d iz=%d", is, isrc[is].x, isrc[is].z); }
+				}
+				node_src = isrc[0].z*nx + isrc[0].x;
+				sx = isrc[0].x*dx-xsrc;
+				sz = isrc[0].z*dz-zsrc[ib];
+				sign = -1;
+				if (sz < 0) sign = 1;
+				ttime[node_src] = sign*sqrt(sx*sx+sz*sz)*slowness[node_src];
+
+				if(equal(method,"plane")) {
+					iz_min = max2(0,isrc[0].z-radius);
+					iz_max = min2(ndim->z-1,isrc[0].z+radius);
+					ix_min = max2(0,isrc[0].x-radius);
+					ix_max = min2(ndim->x-1,isrc[0].x+radius);
+    
+					node_src = isrc[0].z*ndim->x + isrc[0].x;
+					slow_src = slowness[node_src];
+					for(iz=iz_min;iz<=iz_max;iz++) {
+						idz = iz - isrc[0].z;
+						for(ix=ix_min;ix<=ix_max;ix++) {
+							idx = ix - isrc[0].x;
+							idp = iz*ndim->x + ix;
+							ttime[idp] = 0.5 * scale.x * sqrt(1.*idx*idx +
+								idz*idz) * (slow_src + slowness[idp]);
+						}
+					}
+				}
+
+				/*=== avoid calculation of head waves from below zsrc ===*/
+				if (head == 0) {
+					ndim->z = nz;
+					for (k = 0; k < nd; k++) slowness[k] = trueslow[k];
+					rm_head(slowness,ndim,isrc,mzrcv,&scale,inter,ni,&nzm);
+					ndim->z = MAX(nzm,2);
+				}
+
+			}
+
+			t1 = cputime();
+
+			if(equal(method,"plane")) {
+				plane_wave(ttime,slowness,(char *)candidate,ndim,
+					scale.x,order);
+			}
+			else if(equal(method,"fd")) {
+				vidale(ttime,slowness,ndim,isrc,&scale,sbox);
+			}
+			else if(equal(method,"graph")) {
+				dijkstra(ttime,slowness,(char *)candidate,raypath,ndim,
+					order,0,stencil);
+			}
+
+			t2 = cputime();
+			if (verbose>=3) 
+				samess("CPU-time computing traveltimes = %.2f s",t2-t1);
+
+			for (ir = 0; ir < nrec; ir++) {
+				ik = xi[ir] + is*ispr;
+				data[ib][ir] = ttime[zi[ir]*nx+ik];
+			}
+
+			if(equal(method,"graph") && (file_ray != NULL)) {
+				sprintf(file_base, "%s_s%02dd%02d.eps", file_ray, is+1, id+1);
+
+  				for(ir=0;ir<nrec;ir++) {
+					ircv[ir].x = xi[ir];
+					ircv[ir].y = 0;
+					ircv[ir].z = zi[ir];
+				}
+				draw_rays(file_base,raypath,ircv,nx,nz,slowness,dx,dz,nrec,
+					inter,ni,hom,verbose);
+				if(verbose>=2) 
+					samess("finished plotting raypaths in postscript file %s", file_base);
+			}
+			ib++;
+  		}
+		Nb = ib;
+
+/* ================ write to output file ================*/
+
+		hdrs = (segyhdr *) malloc(Nd*sizeof(segyhdr));
+		f1   = xi[0]*dx + ox;
+		f2   = zsrc1;
+		d2   = dxsrc;
+		if (nb) f2 = 1.0;
+		if (onegath) seqnr[0] = 1;
+		else seqnr[0] = is+1;
+
+		gen_hdrs(hdrs,nrec,Nd,f1,f2,drcv,dzsrc,TRID_ZX);
+		for (i = 0; i < Nb; i++) {
+			hdrs[i].scalco = -1000;
+			hdrs[i].scalel = -1000;
+			hdrs[i].offset = NINT(xi[0]*dx + is*ispr*dx - xsrc);
+			hdrs[i].sx     = NINT((xsrc+ox)*1000.0);
+			hdrs[i].sdepth = NINT((zsrc[i]+oz)*1000.0);
+			if (onegath) {
+				hdrs[i].fldr   = 1;
+				hdrs[i].trwf   = Ns*Nd;
+			}
+			else {
+				hdrs[i].fldr   = is+1;
+				hdrs[i].trwf   = Nd;
+			}
+		}
+
+		ret = set_keys(keys, seqnr, nkeys);
+		if (ret < 0 ) sawarn("error on writing keys.");
+		ret = set_axis(dom1, dom2);
+		if (ret < 0 ) saerr("error on writing axis.");
+
+		if (verbose>1) disp_info(file_out,nrec,Nb,f1,f2,drcv,dzsrc,type);
+		ret = write_data(file_out,*data,nrec,Nb,f1,f2,
+			drcv,dzsrc,type,hdrs);
+		if (ret < 0 ) saerr("error on writing output file.");
+	
+		free(hdrs);
+		
+		if (file_amp != NULL) {
+			hdrs = (segyhdr *) malloc(Nd*sizeof(segyhdr));
+			f1   = xi[0]*dx + ox;
+			f2   = zsrc1;
+			d2   = dxsrc;
+			if (nb) f2 = 1.0;
+			if (onegath) seqnr[0] = 1;
+			else seqnr[0] = is+1;
+
+			gen_hdrs(hdrs,nrec,Nd,f1,f2,drcv,dzsrc,TRID_ZX);
+			for (i = 0; i < Nb; i++) {
+				hdrs[i].scalco = -1000;
+				hdrs[i].scalel = -1000;
+				hdrs[i].offset = NINT(xi[0]*dx + is*ispr*dx - xsrc);
+				hdrs[i].sx     = NINT((xsrc+ox)*1000.0);
+				hdrs[i].sdepth = NINT((zsrc[i]+oz)*1000.0);
+				if (onegath) {
+					hdrs[i].fldr   = 1;
+					hdrs[i].trwf   = Ns*Nd;
+				}
+				else {
+					hdrs[i].fldr   = is+1;
+					hdrs[i].trwf   = Nd;
+				}
+				for (ir = 0; ir < nrec; ir++) {
+					x = xsrc - (xi[ir] + is*ispr)*dx;
+					z = zsrc[i] - (zi[ir] + is*ispr)*dzrcv;
+					r = sqrt(x*x+z*z); /* cos(phi) = z/r */
+					if (r != 0) data[i][ir] = fabs(z)/(r*sqrt(r));
+					else data[i][ir] = 1.0;
+				}
+
+			}
+
+			ret = set_keys(keys, seqnr, nkeys);
+			if (ret < 0 ) sawarn("error on writing keys.");
+			ret = set_axis(dom1, dom2);
+			if (ret < 0 ) saerr("error on writing axis.");
+			ret = write_data(file_amp,*data,nrec,Nb,f1,f2,
+				drcv,dzsrc,type,hdrs);
+			if (ret < 0 ) saerr("error on writing output file.");
+
+			free(hdrs);
+		}
+	}
+
+/*---------------------------------------------------------------------------*
+ *  Output traveltime array to a file.
+ *---------------------------------------------------------------------------*/
+
+	ret = close_file(file_out);
+	if (ret < 0) saerr("err %d on closing output file",ret);
+	if (file_amp != NULL) {
+		ret = close_file(file_amp);
+		if (ret < 0) saerr("err %d on closing output file",ret);
+	}
+
+	t1 = cputime();
+	if (verbose) samess("Total CPU-time = %f",t1-t0);
+
+  return(0);
+}
