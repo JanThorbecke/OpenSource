@@ -1,0 +1,92 @@
+#!/bin/bash
+#PBS -N fdelmod
+#PBS -q verylong
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+
+export PATH=$HOME/bin:$HOME/src/OpenSource/bin:$PATH:
+
+cd /home/thorbcke/data/Kees/MultElim/ModelImageBackprop/Redatum
+
+dx=2.5
+dt=0.0005
+
+makemod sizex=6000 sizez=2000 dx=$dx dz=$dx cp0=1900  ro0=1200 \
+        orig=-3000,0 file_base=synclDown.su verbose=2 \
+        intt=def x=-3000,500,3000 z=195,195,195 poly=1 cp=1950 ro=3700 \
+        intt=def x=-3000,3000 z=600,600 poly=0 cp=2050 ro=1750 \
+        intt=def x=-3000,3000 z=680,680 poly=0 cp=2150 ro=2220 \
+        intt=def x=-3000,3000 z=780,780 poly=0 cp=2230 ro=1700 \
+        intt=def x=-3000,-2200,-1500,0,1300,2100,3000 z=520,580,680,840,680,600,500 poly=2 cp=2400 ro=2800 \
+
+#        intt=def x=-3000,0,3000 z=1110,1110,1110 poly=0 cp=2300 ro=1950 \
+#        intt=def x=-3000,3000 z=1180,1180 poly=0 cp=2480 ro=1820 \
+#        intt=def x=-3000,0,3000 z=1290,1290,1370 poly=0 cp=2600 ro=2000 \
+#        intt=def x=-3000,3000 z=1380,1380 poly=0 cp=2720 ro=2050 \
+#        intt=def x=-3000,3000 z=1480,1480 poly=0 cp=2800 ro=1850
+
+makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=1
+
+#smooth file_in=synclDown_cp.su power=-1.0 ntsm=29 nxsm=29 niter=15 file_out=syncls_cp.su
+#smooth file_in=synclDown_ro.su power=-1.0 ntsm=29 nxsm=29 niter=15 file_out=syncls_ro.su
+
+dxshot=10
+ishot=300
+nshots=301
+
+export OMP_NUM_THREADS=1
+mkdir -p shots
+mkdir -p jobs
+
+while (( ishot < nshots ))
+do
+
+		(( xsrc = -3000 + ${ishot}*${dxshot} ))
+#		(( xsrc = -1100 + ${ishot}*${dxshot} ))
+		echo xsrc=$xsrc
+		file_rcv=shots/shotsmonPz1100_${xsrc}.su
+
+  cat << EOF > jobs/pbs_$ishot.job 
+#!/bin/bash
+#
+#PBS -q medium
+#PBS -N mod_${xsrc}
+#PBS -j eo 
+#PBS -m n 
+#PBS -l nodes=1
+#PBS -V
+
+cd /home/thorbcke/data/Kees/MultElim/ModelImageBackprop/Redatum
+export OMP_NUM_THREADS=1
+	
+		$HOME/bin64/fdelmodc \
+			file_cp=synclDown_cp.su ischeme=1 iorder=4 \
+   			file_den=synclDown_ro.su \
+   			file_src=wave.su \
+   			file_rcv=$file_rcv \
+   			src_type=1 \
+			src_orient=1 \
+			src_injectionrate=1 \
+   			rec_type_vz=0 \
+   			rec_type_p=1 \
+   			rec_int_vz=2 \
+			rec_delay=0.1 \
+   			dtrcv=0.004 \
+   			verbose=2 \
+   			tmod=2.100 \
+   			dxrcv=10.0 \
+   			xrcv1=-3000 xrcv2=3000 \
+   			zrcv1=0 zrcv2=0 \
+   			xsrc=$xsrc zsrc=1100 \
+   			ntaper=300 \
+   			left=4 right=4 top=4 bottom=4
+EOF
+
+        qsub jobs/pbs_$ishot.job 
+
+			(( ishot = $ishot + 1))
+done
+
+
+

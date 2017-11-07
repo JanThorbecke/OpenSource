@@ -78,6 +78,15 @@ int getWaveParameter(float *slowness, icoord size, float dgrid, fcoord s, fcoord
     J = 1;
     error = 0;
     
+    if ( (ray.smoothwindow) != 0 && first) { /* smooth slowness */ 
+        smooth = (float *)calloc(size.x*size.z,sizeof(float));
+        applyMovingAverageFilter(slowness, size, ray.smoothwindow, 2, smooth);
+        memcpy(slowness,smooth,size.x*size.z*sizeof(float));
+        free(smooth);
+        first = 0;
+	}
+    
+
     nRayTmp = getnRay(size, s, r, dgrid, ray.nray);
     
     //fprintf(stderr,"Calling getnRay gives nRayTmp=%d nRayStep=%d\n", nRayTmp, nRayStep);
@@ -101,7 +110,7 @@ int getWaveParameter(float *slowness, icoord size, float dgrid, fcoord s, fcoord
     ds = lengthRefRay/(nRayTmp-1);
     J = lengthRefRay;
     dQdPhi = 0;
-
+    
     for (i = 0; i < nRayTmp-1; i++)
     {
         x = 0.5*(rayReference3D[i+1].x + rayReference3D[i].x);
@@ -169,8 +178,10 @@ int getWaveParameter(float *slowness, icoord size, float dgrid, fcoord s, fcoord
 
 int getnRay(icoord size, fcoord s, fcoord r, float dx, int nRayStep)
 {
+    float x, y, z;
     int dn, nRayTmp;
     float dl, dr;
+    fcoord position;
     
     H = (size.z-1)*dx;
     L = (size.x-1)*dx;
@@ -219,6 +230,7 @@ int traceTwoPoint(fcoord s, fcoord r, int nRay, fcoord *rayReference3D)
 int calculatePerturbedRay(fcoord *rayPerturbed3D, fcoord s, fcoord r, int nRay, fcoord *rayReference3D, float *slowness, icoord size)
 {
     float si, sl, deltaS, gso, angle, qx, qz;
+    float xTmp, yTmp, zTmp;
     int i;
     
     sl = sqrt(pow((r.x-s.x), 2) + pow((r.y-s.y), 2) + pow((r.z-s.z), 2));
@@ -964,25 +976,24 @@ void applyMovingAverageFilter(float *slowness, icoord size, int window, int dim,
 {
     float   averageFilter;
     int     nsamp, iAverageX, iAverageY, iAverageZ;
-    int     jWindowX, jWindowZ, jWindowY, ix, iy, iz, nw;
+    int     jWindowX, jWindowZ, jWindowY, ix, iy, iz;
 
-    nw = window;
 	if (dim == 2) {
         for (ix = 0; ix < size.x; ix++) {
             for (iz = 0; iz < size.z; iz++) {
                 averageFilter =  0;
                 nsamp = 0;
-                for (jWindowX = -nw; jWindowX <= nw; jWindowX++) {
-                    iAverageX = nw + ix + jWindowX;	
+                for (jWindowX = -window; jWindowX <= window; jWindowX++) {
+                    iAverageX = ix + jWindowX;	
 
-//					if (iAverageX < 0) iAverageX = 0;
-//                    if (iAverageX > size.x-1) iAverageX = size.x-1;
+					if (iAverageX < 0) iAverageX = 0;
+                    if (iAverageX > size.x-1) iAverageX = size.x-1;
 
-                    for (jWindowZ = -nw; jWindowZ <= nw; jWindowZ++) {
-                        iAverageZ = nw + iz + jWindowZ;
+                    for (jWindowZ = -window; jWindowZ <= window; jWindowZ++) {
+                        iAverageZ = iz + jWindowZ;
 
-//                        if (iAverageZ < 0) iAverageZ = 0;
-//                        if (iAverageZ > size.z-1) iAverageZ = size.z-1;
+                        if (iAverageZ < 0) iAverageZ = 0;
+                        if (iAverageZ > size.z-1) iAverageZ = size.z-1;
 
                         averageFilter += slowness[iAverageX*size.z+iAverageZ];
                         nsamp += 1;
@@ -992,12 +1003,11 @@ void applyMovingAverageFilter(float *slowness, icoord size, int window, int dim,
                     averageFilter /= nsamp;
 				    averageModel[ix*size.z+iz] = averageFilter;
                 }
-                else 
-				    averageModel[ix*size.z+iz] = slowness[(ix+nw)*size.z+iz+nw];
+                else
+				    averageModel[ix*size.z+iz] = slowness[ix*size.z+iz];
 			}
 		}
 	}
-/* 3D ray-tracer not yet implemented 
 	else {
 	    for (iz = 0; iz < size.z; iz++) {
 			for (ix = 0; ix < size.x; ix++) {
@@ -1040,7 +1050,6 @@ void applyMovingAverageFilter(float *slowness, icoord size, int window, int dim,
 			}
 		}
 	}	
-*/
 
 	return;
 }
