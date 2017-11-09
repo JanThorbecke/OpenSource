@@ -370,16 +370,16 @@ int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx,
 
     if (ntrcv) {
 		/* Allocate arrays */
-		xrcva = (float *)malloc(nrcv*sizeof(float));
-		zrcva = (float *)malloc(nrcv*sizeof(float));
+		xrcva = (float *)malloc(ntrcv*sizeof(float));
+		zrcva = (float *)malloc(ntrcv*sizeof(float));
 		/* Read in receiver coordinates */
-		for (i=0;i<nrcv;i++) {
+		for (i=0;i<ntrcv;i++) {
 			if (fscanf(fp,"%e %e\n",&xrcva[i],&zrcva[i])!=2) vmess("Receiver Text File: Can not parse coordinates on line %d.",i);
 		}
 		/* Close file */
 		fclose(fp);
 		/* Process coordinates */
-		for (ix=0; ix<nrcv; ix++) {
+		for (ix=0; ix<ntrcv; ix++) {
 			rec->xr[nrec+ix] = xrcva[ix]-sub_x0;
 			rec->zr[nrec+ix] = zrcva[ix]-sub_z0;
 			rec->x[nrec+ix] = NINT((xrcva[ix]-sub_x0)/dx);

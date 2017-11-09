@@ -1163,7 +1163,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 				fprintf(stderr,"    %s: Receiver interpolation for Vz: ",xargv[0]);
 				if(rec->int_vz==0) fprintf(stderr,"vz->vz\n");
 				if(rec->int_vz==1) fprintf(stderr,"vz->vx\n");
-				if(rec->int_vz==2) fprintf(stderr,"vz->txx/tzz\n");
+				if(rec->int_vz==2) fprintf(stderr,"vz->txx/tzz(P)\n");
 				if(rec->int_vz==3) fprintf(stderr,"interpolate to real(no-grid) position of receiver\n");
 			}
             fprintf(stderr,"    %s: Receiver types        : ",xargv[0]);
