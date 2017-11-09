@@ -114,6 +114,7 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 		if (verbose>=4 && itime==0) {
 			vmess("Source %d positioned at grid ix=%d iz=%d",isrc, ix, iz);
 		}
+
 		/* cosine squared windowing to reduce edge effects on shot arrays */
 		if ( (src.n>1) && src.window) {
             scl = 1.0;
@@ -138,7 +139,6 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 		if (verbose>5) {
 			vmess("Source %d at grid [ix=%d,iz=%d] at itime %d has value %e",isrc, ix,iz, itime, src_ampl);
 		}
-
 
 		/* Force source */
 
