@@ -37,7 +37,7 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, int ixsrc, int izsrc, int
 	static int first=1;
 	int n1, ibndx, ibndz, ixs, izs, ize, i, j;
 	int ix, iz, ix2;
-	float *snap, sdx;
+	float *snap, sdx, stime;
 	segy hdr;
 
 	if (sna.nsnap==0) return 0;
@@ -65,7 +65,10 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, int ixsrc, int izsrc, int
 		  (itime <= sna.delay+(sna.nsnap-1)*sna.skipdt) ) {
 
 		isnap = NINT((itime-sna.delay)/sna.skipdt);
-		if (verbose) vmess("Writing snapshot(%d) at time=%.4f", isnap+1, itime*mod.dt);
+
+        if (mod.grid_dir)  stime = (-mod.nt+1+itime)*mod.dt;  /* reverse time modeling */
+        else  stime = itime*mod.dt;
+		if (verbose) vmess("Writing snapshot(%d) at time=%.4f", isnap+1, stime);
 	
 		if (first) {
 			append=0;
