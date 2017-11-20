@@ -175,7 +175,7 @@ int raytime(float *time, float *ampl, int *xnx, float *xrcv, float *xsrc, float 
         	coordsx.z = mod.z0+shot.z[izshot]*mod.dz;
         	coordsx.y = 0;
 
-			xnx[(izshot*shot.nx)+ixshot]  = rec.n;
+			xnx[ (izshot*shot.nx)+ixshot] = rec.n;
             xsrc[(izshot*shot.nx)+ixshot] = mod.x0+mod.dx*shot.x[ixshot];
             zsrc[(izshot*shot.nx)+ixshot] = mod.z0+mod.dz*shot.z[izshot];
 
