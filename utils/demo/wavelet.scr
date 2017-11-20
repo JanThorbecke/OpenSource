@@ -44,11 +44,11 @@ sufft < sG2.su | suamp | supsgraph hbox=2 wbox=4 style=normal \
 	labelsize=10 label2='amplitude' label1='frequency' x1end=100 \
 	titlesize=-1 x2end=25 d1num=10 > sg2_ampl.eps
 
-../makewave w=fw fmin=0 flef=0 frig=80 fmax=100 dt=$dt file_out=fw.su nt=4096 t0=0.0 scale=0  t0=0.1 
+../makewave w=fw fmin=0 flef=10 frig=70 fmax=90 dt=$dt file_out=fw.su nt=4096 t0=0.0 scale=0 t0=0.1 scfft=1
 supsgraph < fw.su hbox=2 wbox=4 style=normal \
 	labelsize=10 label2='amplitude' label1='time' \
 	titlesize=-1 d1num=1 d1num=0.05 x1end=0.2 > fw_time.eps
-sufft < fw.su | suamp | supsgraph hbox=2 wbox=4 style=normal \
+sufft < fw.su | suamp | sugain scale=$dt | supsgraph hbox=2 wbox=4 style=normal \
 	labelsize=10 label2='amplitude' label1='frequency' x1end=100 \
 	titlesize=-1 x2end=1.1 d1num=10 > fw_ampl.eps
 

@@ -36,7 +36,7 @@ INSTALLATION
 -------------
 
 1) To compile and link the code you first have to set the ROOT variable in the Make_include file which can be found in the directory where you have found this README.
- You can use Make_include_template as a first start: cp Make_include_template Make_include
+You can use Make_include_template as a first start: cp Make_include_template Make_include
 
 2) Check the compiler and CFLAGS options in the file Make_include and adapt to the system you are using. The default options are set for a the GNU C-compiler on a Linux system. A Fortran or C++ compiler are not needed to compile the code. The Makefile has been tested with GNU make. 
 

@@ -90,7 +90,7 @@ char *sdoc[] = {
 "   file_beam=beam.su . base name for beam fields ",
 "   dx= ............... read from model file: if dx==0 then dx= can be used to set it",
 "   dz= ............... read from model file: if dz==0 then dz= can be used to set it",
-"   dt= ............... read from file_src: if dt==0 then dt= can be used to set it",
+"   dt= ............... read from file_src: if dt is set it will interpolate file_src to dt sampling",
 "" ,
 " OPTIONAL PARAMETERS:",
 "   ischeme=3 ......... 1=acoustic, 2=visco-acoustic 3=elastic, 4=visco-elastic",
