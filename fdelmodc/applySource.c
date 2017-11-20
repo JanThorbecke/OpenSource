@@ -114,12 +114,10 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 		if (verbose>=4 && itime==0) {
 			vmess("Source %d positioned at grid ix=%d iz=%d",isrc, ix, iz);
 		}
-		if (verbose>5) {
-			vmess("Source %d at grid [ix=%d,iz=%d] at itime %d has value %e",isrc, ix,iz, itime, src_ampl);
-		}
 
 		/* cosine squared windowing to reduce edge effects on shot arrays */
 		if ( (src.n>1) && src.window) {
+            scl = 1.0;
 			if (isrc < src.window) {
 				scl = cos(0.5*M_PI*(src.window - isrc)/src.window);
 			}
@@ -137,6 +135,10 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 /* in older version added factor 2.0 to be compliant with defined Green's functions in Marchenko algorithm */
 /* this is now set to 1.0 */
 		src_ampl *= (1.0/mod.dx)*l2m[ix*n1+iz];
+
+		if (verbose>5) {
+			vmess("Source %d at grid [ix=%d,iz=%d] at itime %d has value %e",isrc, ix,iz, itime, src_ampl);
+		}
 
 		/* Force source */
 

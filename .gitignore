@@ -2,6 +2,8 @@
 bin/*
 *.su
 *.bin
+*/.DS*
+*/*/.DS*
 .DS*
 Make_include
 fdelmodc_cuda.tgz

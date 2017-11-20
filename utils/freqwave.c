@@ -33,7 +33,7 @@ void hilbertTrans(float *data, int nsam);
 
 void freqwave(float *wave, int nt, float dt, float fp, float fmin, float flef, float frig, float fmax, float t0, float db, int shift, int cm, int cn, char *w, float scale, int scfft, int inverse, float eps, int verbose)
 {
-	int    	iof, nfreq, nf, i, j, sign, optn, stored;
+	int    	it, iof, nfreq, nf, i, j, sign, optn, stored;
 	int		ifmin1, ifmin2, ifmax1, ifmax2;
 	float  	df, fact, alfa, f, max, freq, att, ampl, phase;
 	float  	tt, dum;
@@ -181,6 +181,26 @@ void freqwave(float *wave, int nt, float dt, float fp, float fmin, float flef, f
 		for (j = ifmax1; j < nfreq; j++) {
 			cwave[j].r = 0.0;
 			cwave[j].i = 0.0;
+		}
+		if (shift == 1) {
+		    sign = 1;
+		    cr1fft(cwave, rwave, optn, sign);
+            max = rwave[0]*rwave[0];
+			for (i = 1; i < optn; i++) {
+                if (rwave[i] < 0.0) { it=i; break;}
+            }
+            it = it;
+            dum = 0.0;
+			for (j = 0; j < it; j++) 
+                dum += fabs(rwave[j]);
+            max = dum;
+			for (i = 1; i < optn/2; i++) {
+                dum = dum - fabs(rwave[i-1]) + fabs(rwave[i+it-1]);
+                //fprintf(stderr,"dum=%f i=%d\n", dum, i);
+				if ((dum)>(0.03*max*att/it)) {
+					t0 = (float)i*dt;
+				}
+			}
 		}
 		for (iof = 0; iof < nfreq; iof++) {
 			f = iof*df;
