@@ -49,6 +49,8 @@ int readData(FILE *fp, float *data, segy *hdrs, int n1);
 int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 int disp_fileinfo(char *file, int n1, int n2, float f1, float f2, float d1, float d2, segy *hdrs);
 double wallclock_time(void);
+void iterations (complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int verbose);
+void imaging (float *Image, float *Gmin, complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *synpos, int verbose);
 
 void synthesis(complex *Refl, complex *Fop, float *Top, float *iRN, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, double *tfft, int verbose);
 
@@ -206,21 +208,21 @@ int main (int argc, char **argv)
     FILE    *fp_gmin, *fp_gplus, *fp_f2, *fp_pmin;
     int     i, j, l, ret, nshots, Nsyn, nt, nx, nts, nxs, ngath;
     int     size, n1, n2, ntap, tap, di, ntraces, nb, ib;
-    int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
+    int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn, *synpos;
     int     reci, mode, ixa, ixb, n2out, verbose, ntfft;
     int     iter, niter, tracf, *muteW, pad, nt0, ampest;
     int     hw, smooth, above, shift, *ixpossyn, npossyn, ix;
     float   fmin, fmax, *tapersh, *tapersy, fxf, dxf, fxs2, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
     double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, energyNi, *J;
     float   d1, d2, f1, f2, fxs, ft, fx, *xsyn, dxsrc, Q, f0, *Costdet;
-    float   *green, *f2p, *pmin, *G_d, dt, dx, dxs, scl, mem;
+    float   *green, *f2p, *pmin, *G_d, dt, dx, dxs, scl, mem, *Image, *Image2;
     float   *f1plus, *f1min, *iRN, *Ni, *trace, *Gmin, *Gplus, *Gm0;
     float   xmin, xmax, weight, tsq, *Gd, *amp, bstart, bend, db, *bdet, bp, b, bmin;
     complex *Refl, *Fop;
-    char    *file_tinv, *file_shot, *file_green, *file_iter, *file_wav, *file_ray, *file_amp;
-    char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_pmin, *wavtype;
-    segy    *hdrs_out;
-	WavePar WP;
+    char    *file_tinv, *file_shot, *file_green, *file_iter, *file_wav, *file_ray, *file_amp, *file_img;
+    char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_pmin, *wavtype, *wavtype2;
+    segy    *hdrs_out, *hdrs_out2;
+	WavePar WP,WPs;
 	modPar mod;
     recPar rec;
     srcPar src;
@@ -233,6 +235,7 @@ int main (int argc, char **argv)
     tsyn = tread = tfft = tcopy = 0.0;
     t0   = wallclock_time();
 
+	if (!getparstring("file_img", &file_img)) file_img = "out.su";
     if (!getparstring("file_shot", &file_shot)) file_shot = NULL;
     if (!getparstring("file_tinv", &file_tinv)) file_tinv = NULL;
     if (!getparstring("file_f1plus", &file_f1plus)) file_f1plus = NULL;
@@ -300,6 +303,26 @@ int main (int argc, char **argv)
     if(!getparstring("w", &wavtype)) strcpy(WP.w, "g2");
     else strcpy(WP.w, wavtype);
 
+	if(!getparfloat("fpws", &WPs.fp)) WPs.fp = -1.0;
+    if(!getparfloat("fminws", &WPs.fmin)) WPs.fmin = 10.0;
+    if(!getparfloat("flefws", &WPs.flef)) WPs.flef = 20.0;
+    if(!getparfloat("frigws", &WPs.frig)) WPs.frig = 50.0;
+    if(!getparfloat("fmaxws", &WPs.fmax)) WPs.fmax = 60.0;
+    else WPs.fp = -1;
+    if(!getparfloat("dbw", &WPs.db)) WPs.db = -20.0;
+    if(!getparfloat("t0ws", &WPs.t0)) WPs.t0 = 0.0;
+    if(!getparint("shiftws", &WPs.shift)) WPs.shift = 0;
+    if(!getparint("invws", &WPs.inv)) WPs.inv = 0;
+    if(!getparfloat("epsws", &WPs.eps)) WPs.eps = 1.0;
+    if(!getparfloat("scalews", &WPs.scale)) WPs.scale = 1.0;
+    if(!getparint("scfftws", &WPs.scfft)) WPs.scfft = 1;
+    if(!getparint("cmws", &WPs.cm)) WPs.cm = 10;
+    if(!getparint("cnws", &WPs.cn)) WPs.cn = 1;
+    if(!getparint("wavs", &WPs.wav)) WPs.wav = 0;
+    if(!getparstring("file_wavs", &WPs.file_wav)) WPs.file_wav=NULL;
+    if(!getparstring("ws", &wavtype2)) strcpy(WPs.w, "g2");
+    else strcpy(WPs.w, wavtype2);
+
 /*================ Reading info about shot and initial operator sizes ================*/
 
     ngath = 0; /* setting ngath=0 scans all traces; n2 contains maximum traces/gather */
@@ -308,7 +331,7 @@ int main (int argc, char **argv)
 	}
 	else if (file_ray==NULL && file_tinv==NULL) {
 		getParameters(&mod, &rec, &src, &shot, &ray, verbose);
-		n1 = rec.nt;
+		n1 = 1;
 		n2 = rec.n;
 		ngath = shot.n;
 		d1 = mod.dt;
@@ -319,7 +342,14 @@ int main (int argc, char **argv)
 		xmax = mod.x0+rec.x[rec.n-1]*mod.dx;
 		scl = 0.0010;
 		ntraces = n2*ngath;
+		WPs.wav = 1;
 		WP.wav = 1;
+		synpos = (int *)calloc(ngath,sizeof(int));
+		for (l=0; l<shot.nz; l++) {
+			for (j=0; j<shot.nx; j++) {
+				synpos[l*shot.nx+j] = j*shot.nz+l;
+			}
+		}
 	}
 	else {
     	ret = getFileInfo(file_tinv, &n1, &n2, &ngath, &d1, &d2, &f1, &f2, &xmin, &xmax, &scl, &ntraces);
@@ -357,14 +387,11 @@ int main (int argc, char **argv)
     
 /*================ Allocating all data arrays ================*/
 
-    Fop     = (complex *)calloc(nxs*nw*Nsyn,sizeof(complex));
     green   = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
     f2p     = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
     pmin    = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
     f1plus  = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
     f1min   = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
-    iRN     = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
-    Ni      = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
     G_d     = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
     muteW   = (int *)calloc(Nsyn*nxs,sizeof(int));
     trace   = (float *)malloc(ntfft*sizeof(float));
@@ -385,15 +412,17 @@ int main (int argc, char **argv)
 /*================ Read and define mute window based on focusing operator(s) ================*/
 /* G_d = p_0^+ = G_d (-t) ~ Tinv */
 
+	WPs.nt = ntfft;
+	WPs.dt = dt;
 	WP.nt = ntfft;
 	WP.dt = dt;
 
     mode=-1; /* apply complex conjugate to read in data */
-    readTinvData(file_tinv, WP, file_ray, file_amp, dt, xrcvsyn, xsyn, zsyn, xnxsyn, 
+    readTinvData(file_tinv, WPs, file_ray, file_amp, dt, xrcvsyn, xsyn, zsyn, xnxsyn, 
 		 Nsyn, nxs, ntfft, mode, muteW, G_d, hw, verbose);
 	/* reading data added zero's to the number of time samples to be the same as ntfft */
     nts   = ntfft;
-                             
+                         
 	/* define tapers to taper edges of acquisition */
     if (tap == 1 || tap == 3) {
         for (j = 0; j < ntap; j++)
@@ -524,7 +553,7 @@ int main (int argc, char **argv)
         vmess("Size of output data/file       = %.1f MB", mem);
     }
 
-    memcpy(Ni, G_d, Nsyn*nxs*ntfft*sizeof(float));
+    //memcpy(Ni, G_d, Nsyn*nxs*ntfft*sizeof(float));
 
     /* dry-run of synthesis to get all x-positions calcalated by the integration */
     synthesisPosistions(nx, nt, nxs, nts, dt, xsyn, Nsyn, xrcv, xsrc, fxs2, fxs, 
@@ -542,405 +571,81 @@ int main (int argc, char **argv)
     else if (reci == 1) d2 = dxs;
     else if (reci == 2) d2 = dx;
 
-    hdrs_out = (segy *) calloc(n2,sizeof(segy));
+    hdrs_out2 = (segy *) calloc(n2,sizeof(segy));
+    hdrs_out = (segy *) calloc(shot.nx,sizeof(segy));
     if (hdrs_out == NULL) verr("allocation for hdrs_out");
     size  = nxs*nts;
 
     for (i = 0; i < n2; i++) {
-        hdrs_out[i].ns     = n1;
-        hdrs_out[i].trid   = 1;
-        hdrs_out[i].dt     = dt*1000000;
-        hdrs_out[i].f1     = f1;
-        hdrs_out[i].f2     = f2;
-        hdrs_out[i].d1     = d1;
-        hdrs_out[i].d2     = d2;
-        hdrs_out[i].trwf   = n2out;
-        hdrs_out[i].scalco = -1000;
-        hdrs_out[i].gx = NINT(1000*(f2+i*d2));
-        hdrs_out[i].scalel = -1000;
-        hdrs_out[i].tracl = i+1;
+        hdrs_out2[i].ns     = n1;
+        hdrs_out2[i].trid   = 1;
+        hdrs_out2[i].dt     = dt*1000000;
+        hdrs_out2[i].f1     = f1;
+        hdrs_out2[i].f2     = f2;
+        hdrs_out2[i].d1     = d1;
+        hdrs_out2[i].d2     = d2;
+        hdrs_out2[i].trwf   = n2out;
+        hdrs_out2[i].scalco = -1000;
+        hdrs_out2[i].gx = NINT(1000*(f2+i*d2));
+        hdrs_out2[i].scalel = -1000;
+        hdrs_out2[i].tracl = i+1;
     }
     t1    = wallclock_time();
     tread = t1-t0;
 
-/*================ Loop over different values of b ================*/
+	iterations(Refl,nx,nt,nxs,nts,dt,xsyn,Nsyn,xrcv,xsrc,fxs2,fxs,dxs,dxsrc,dx,ixa,ixb,
+		ntfft,nw,nw_low,nw_high,mode,reci,nshots,ixpossyn,npossyn,pmin,f1min,f1plus,
+		f2p,G_d,muteW,smooth,shift,above,pad,nt0,verbose);
 
-for (ib=0; ib<=nb; ib++) {
+	Image   = (float *)malloc(Nsyn*sizeof(float));
+	Gmin    = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
 
-	if (nb > 1) {
-		if (ib==0) {
-			b = bstart + db*((float)ib);
-			for (l=0; l<nw*nx*nshots; l++) {
-				Refl[l].r *= b;
-				Refl[l].i *= b;
-			}
-			if (verbose) vmess("Testing b-value: %.4f, number %d out of %d",b,ib+1,nb);
-		}
-		else if (ib==nb) {
-			bmin = 0;
-			for (l=0; l<Nsyn; l++) {
-				bmin += bdet[l]/((float)Nsyn);
-			}
-			for (l=0; l<nw*nx*nshots; l++) {
-            	Refl[l].r *= bmin/b;
-            	Refl[l].i *= bmin/b;
-        	}
-			if (verbose) vmess("Final estimated b-value equal to: %.4f",bmin);
-		}
-		else {
-			bp = b;
-			b = bstart + db*((float)ib);
-			for (l=0; l<nw*nx*nshots; l++) {
-            	Refl[l].r *= b/bp;
-            	Refl[l].i *= b/bp;
-        	}
-			if (verbose) vmess("Testing b-value: %.4f, number %d out of %d",b,ib+1,nb);
-		}
-	}
-	else if (nb==1) {
-		if (ib == 0) {
-			for (l=0; l<nw*nx*nshots; l++) {
-        		Refl[l].r *= bstart;
-            	Refl[l].i *= bstart;
-        	}
-			if (verbose) vmess("Applying single b-value equal to: %.4f",bstart);
-		}
-	}
-	else {
-		if (verbose) vmess("No b-value estimated or applied");
-	}
+	imaging(Image,Gmin,Refl,nx,nt,nxs,nts,dt,xsyn,Nsyn,xrcv,xsrc,fxs2,fxs,dxs,dxsrc,dx,ixa,ixb,
+        ntfft,nw,nw_low,nw_high,mode,reci,nshots,ixpossyn,npossyn,pmin,f1min,f1plus,
+        f2p,G_d,muteW,smooth,shift,above,pad,nt0,synpos,verbose);
 
-/*================ number of Marchenko iterations ================*/
+/*============= write output files ================*/
 
-    for (iter=0; iter<niter; iter++) {
+	fp_out = fopen(file_img, "w+");
 
-        t2    = wallclock_time();
-    
-/*================ construction of Ni(-t) = - \int R(x,t) Ni(t)  ================*/
-
-        synthesis(Refl, Fop, Ni, iRN, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
-            xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, mode,
-            reci, nshots, ixpossyn, npossyn, &tfft, verbose);
-
-        t3 = wallclock_time();
-        tsyn +=  t3 - t2;
-
-        if (file_iter != NULL) {
-            writeDataIter(file_iter, iRN, hdrs_out, ntfft, nxs, d2, f2, n2out, Nsyn, xsyn, zsyn, iter);
-        }
-        /* N_k(x,t) = -N_(k-1)(x,-t) */
-        /* p0^-(x,t) += iRN = (R * T_d^inv)(t) */
-        for (l = 0; l < Nsyn; l++) {
-            for (i = 0; i < npossyn; i++) {
-                j = 0;
-                Ni[l*nxs*nts+i*nts+j]    = -iRN[l*nxs*nts+i*nts+j];
-                pmin[l*nxs*nts+i*nts+j] += iRN[l*nxs*nts+i*nts+j];
-				energyNi = sqrt(iRN[l*nxs*nts+i*nts+j]*iRN[l*nxs*nts+i*nts+j]);
-                for (j = 1; j < nts; j++) {
-                    Ni[l*nxs*nts+i*nts+j]    = -iRN[l*nxs*nts+i*nts+nts-j];
-                    pmin[l*nxs*nts+i*nts+j] += iRN[l*nxs*nts+i*nts+j];
-					energyNi += sqrt(iRN[l*nxs*nts+i*nts+j]*iRN[l*nxs*nts+i*nts+j]);
-                }
-            }
-			vmess("    - operator %d at iteration %d has energy %e", l, iter, energyNi);
-        }
-
-		/* apply mute window based on times of direct arrival (in muteW) */
-        applyMute(Ni, muteW, smooth, above, Nsyn, nxs, nts, ixpossyn, npossyn, shift, pad, nt0);
-
-        /* initialization */
-        if (iter==0) {
-            /* N_0(t) = M_0(t) = -p0^-(x,-t)  = -(R * T_d^inv)(-t) */
-
-            /* zero iteration:  =>  f_1^-(t) = windowed(iRN = -(Ni(-t)) */
-            for (l = 0; l < Nsyn; l++) {
-                for (i = 0; i < npossyn; i++) {
-                    j = 0;
-                    f1min[l*nxs*nts+i*nts+j] = -Ni[l*nxs*nts+i*nts+j];
-                    for (j = 1; j < nts; j++) {
-                        f1min[l*nxs*nts+i*nts+j] = -Ni[l*nxs*nts+i*nts+nts-j];
-                    }
-                }
-            }
-
-            /* Initialize f2 */
-            for (l = 0; l < Nsyn; l++) {
-                for (i = 0; i < npossyn; i++) {
-                    j = 0;
-                    ix = ixpossyn[i];
-                    f2p[l*nxs*nts+i*nts+j] = G_d[l*nxs*nts+ix*nts+j] + Ni[l*nxs*nts+i*nts+j];
-                    for (j = 1; j < nts; j++) {
-                        f2p[l*nxs*nts+i*nts+j] = G_d[l*nxs*nts+ix*nts+j] + Ni[l*nxs*nts+i*nts+j];
-                    }
-                }
-            }
-			if (nb > 0) {
-        		if (ib==0) Gm0    = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
-
-        		/* compute upgoing Green's G^-,+ */
-        		for (l = 0; l < Nsyn; l++) {
-            		for (i = 0; i < npossyn; i++) {
-                	j=0;
-                	Gm0[l*nxs*nts+i*nts+j] = iRN[l*nxs*nts+i*nts+j] - f1min[l*nxs*nts+i*nts+j];
-                	for (j = 1; j < nts; j++) {
-                    	Gm0[l*nxs*nts+i*nts+j] = iRN[l*nxs*nts+i*nts+j] - f1min[l*nxs*nts+i*nts+j];
-                	}
-            	}
-        	}
-        	/* Apply mute with window for Gmin */
-        	applyMute(Gm0, muteW, smooth, 4, Nsyn, nxs, nts, ixpossyn, npossyn, shift, pad, nt0);
-    		} /* end if nb */
-
-        }
-        else if (iter==1) {
-            /* Ni(x,t) = -\int R(x,t) M_0(x,-t) dxdt*/
-
-            /* Update f2 */
-            for (l = 0; l < Nsyn; l++) {
-                for (i = 0; i < npossyn; i++) {
-                    j = 0;
-                    f2p[l*nxs*nts+i*nts+j] += Ni[l*nxs*nts+i*nts+j];
-                    for (j = 1; j < nts; j++) {
-                        f2p[l*nxs*nts+i*nts+j] += Ni[l*nxs*nts+i*nts+j];
-                    }
-                }
-            }
-
-            /* first iteration:  => f_1^+(t) = G_d + windowed(iRN) */
-            for (l = 0; l < Nsyn; l++) {
-                for (i = 0; i < npossyn; i++) {
-                    j = 0;
-                    ix = ixpossyn[i];
-                    f1plus[l*nxs*nts+i*nts+j] = G_d[l*nxs*nts+ix*nts+j] + Ni[l*nxs*nts+i*nts+j];
-                    for (j = 1; j < nts; j++) {
-                        f1plus[l*nxs*nts+i*nts+j] = G_d[l*nxs*nts+ix*nts+j] + Ni[l*nxs*nts+i*nts+j];
-                    }
-                }
-            }
-        }
-        else {
-            /* next iterations  */
-            /* N_k(x,t) = -N_(k-1)(x,-t) */
-
-            /* update f2 */
-            for (l = 0; l < Nsyn; l++) {
-                for (i = 0; i < npossyn; i++) {
-                    j = 0;
-                    f2p[l*nxs*nts+i*nts+j] += Ni[l*nxs*nts+i*nts+j];
-                    for (j = 1; j < nts; j++) {
-                        f2p[l*nxs*nts+i*nts+j] += Ni[l*nxs*nts+i*nts+j];
-                    }
-                }
-            }
-
-            if (iter % 2 == 0) { /* even iterations: => f_1^-(t) */
-                for (l = 0; l < Nsyn; l++) {
-                    for (i = 0; i < npossyn; i++) {
-                        j = 0;
-                        f1min[l*nxs*nts+i*nts+j] -= Ni[l*nxs*nts+i*nts+j];
-                        for (j = 1; j < nts; j++) {
-                            f1min[l*nxs*nts+i*nts+j] -= Ni[l*nxs*nts+i*nts+nts-j];
-                        }
-                    }
-                }
-            }
-            else {/* odd iterations: => f_1^+(t)  */
-                for (l = 0; l < Nsyn; l++) {
-                    for (i = 0; i < npossyn; i++) {
-                        j = 0;
-                        f1plus[l*nxs*nts+i*nts+j] += Ni[l*nxs*nts+i*nts+j];
-                        for (j = 1; j < nts; j++) {
-                            f1plus[l*nxs*nts+i*nts+j] += Ni[l*nxs*nts+i*nts+j];
-                        }
-                    }
-                }
-            }
-
-        } /* end else (iter!=0) branch */
-
-
-        t2 = wallclock_time();
-        tcopy +=  t2 - t3;
-
-        if (verbose) vmess("*** Iteration %d finished ***", iter);
-
-    } /* end of iterations */
-    if (ib == nb) free(Ni);
-	if (ampest == 0 && nb == 0) free(G_d);
-
-    /* compute full Green's function G = int R * f2(t) + f2(-t) */
-	if (ib==nb) {
-    	for (l = 0; l < Nsyn; l++) {
-        	for (i = 0; i < npossyn; i++) {
-            	j = 0;
-				/* set green to zero if mute-window exceeds nt/2 */
-            	if (muteW[l*nxs+ixpossyn[i]] >= nts/2) {
-                	memset(&green[l*nxs*nts+i*nts],0, sizeof(float)*nt);
-                	continue;
-            	}
-            	green[l*nxs*nts+i*nts+j] = f2p[l*nxs*nts+i*nts+j] + pmin[l*nxs*nts+i*nts+j];
-            	for (j = 1; j < nts; j++) {
-                	green[l*nxs*nts+i*nts+j] = f2p[l*nxs*nts+i*nts+nts-j] + pmin[l*nxs*nts+i*nts+j];
-            	}
-        	}
-    	}
-	}
-
-    /* compute upgoing Green's function G^+,- */
-    if (file_gmin != NULL || nb>0) {
-        if (ib == 0) Gmin    = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
-
-        /* use f1+ as operator on R in frequency domain */
-		mode=1;
-        synthesis(Refl, Fop, f1plus, iRN, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
-            xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, mode,
-            reci, nshots, ixpossyn, npossyn, &tfft, verbose);
-
-        /* compute upgoing Green's G^-,+ */
-        for (l = 0; l < Nsyn; l++) {
-            for (i = 0; i < npossyn; i++) {
-                j=0;
-                Gmin[l*nxs*nts+i*nts+j] = iRN[l*nxs*nts+i*nts+j] - f1min[l*nxs*nts+i*nts+j];
-                for (j = 1; j < nts; j++) {
-                    Gmin[l*nxs*nts+i*nts+j] = iRN[l*nxs*nts+i*nts+j] - f1min[l*nxs*nts+i*nts+j];
-                }
-            }
-        }
-        /* Apply mute with window for Gmin */
-        applyMute(Gmin, muteW, smooth, 4, Nsyn, nxs, nts, ixpossyn, npossyn, shift, pad, nt0);
-    } /* end if Gmin */
-
-    /* compute downgoing Green's function G^+,+ */
-	if (ib==nb) {
-    	if (file_gplus != NULL || ampest>0) {
-        	Gplus   = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
-
-        	/* use f1-(*) as operator on R in frequency domain */
-			mode=-1;
-        	synthesis(Refl, Fop, f1min, iRN, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
-            	xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, mode,
-            	reci, nshots, ixpossyn, npossyn, &tfft, verbose);
-
-        	/* compute downgoing Green's G^+,+ */
-        	for (l = 0; l < Nsyn; l++) {
-            	for (i = 0; i < npossyn; i++) {
-                	j=0;
-                	Gplus[l*nxs*nts+i*nts+j] = -iRN[l*nxs*nts+i*nts+j] + f1plus[l*nxs*nts+i*nts+j];
-                	for (j = 1; j < nts; j++) {
-                    	Gplus[l*nxs*nts+i*nts+j] = -iRN[l*nxs*nts+i*nts+j] + f1plus[l*nxs*nts+i*nts+nts-j];
-                	}
-            	}
-        	}
-			/* Apply mute with window for Gplus */
-        	applyMute(Gplus, muteW, smooth, 4, Nsyn, nxs, nts, ixpossyn, npossyn, shift, pad, nt0);
-    	} /* end if Gplus */
-	}
-
-	/* Estimate the amplitude of the Marchenko Redatuming */
-	if (ampest>0 && ib == nb ) {
-		Gd		= (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
-		memcpy(Gd,Gplus,sizeof(float)*Nsyn*nxs*ntfft);
-		applyMute(Gd, muteW, smooth, 2, Nsyn, nxs, nts, ixpossyn, npossyn, shift, pad, nt0);
-		amp		= (float *)calloc(Nsyn,sizeof(float));
-		AmpEst(G_d,Gd,amp,Nsyn,nxs,ntfft,ixpossyn,npossyn,NULL);
-		for (l=0; l<Nsyn; l++) {
-			for (j=0; j<nxs*nts; j++) {
-				green[l*nxs*nts+j] *= amp[l];
-				if (file_gplus != NULL) Gplus[l*nxs*nts+j] *= amp[l];
-    			if (file_gmin != NULL) Gmin[l*nxs*nts+j] *= amp[l];
-    			if (file_f2 != NULL) f2p[l*nxs*nts+j] *= amp[l];
-    			if (file_pmin != NULL) pmin[l*nxs*nts+j] *= amp[l];
-    			if (file_f1plus != NULL) f1plus[l*nxs*nts+j] *= amp[l];
-    			if (file_f1min != NULL) f1min[l*nxs*nts+j] *= amp[l];
-			}
-		}
-	}
-
-	/* Evaluate the cost function */
-	if (nb > 0 && ib != nb) {
-		if (ib==0) {
-			J	= (double *)malloc(Nsyn*sizeof(double));
-			bdet= (float *)malloc(Nsyn*sizeof(float));
-			Costdet = (float *)malloc(Nsyn*sizeof(float));
-			for (l=0; l<Nsyn; l++) {
-                Costdet[l] = 1E6;
-            }
-		}
-		Cost(f1plus,G_d,Gmin,Gm0,J,Nsyn,nxs,ntfft,ixpossyn,npossyn);
-		vmess("J:%.8f",J[0]);
-		for (l = 0; l < Nsyn; l++) {
-        	if (J[l]<Costdet[l]) {
-            	if (isnan(J[l]) == 0 ) {
-                	bdet[l] = b;
-                    Costdet[l] = J[l];
-                }
-            }
-        }
-		/* Set certain arrays to zero for the loop */
-		memset(&pmin[0], 0, Nsyn*nxs*ntfft*sizeof(float));
-		memset(&f1min[0], 0, Nsyn*nxs*ntfft*sizeof(float));
-		memset(&f2p[0], 0, Nsyn*nxs*ntfft*sizeof(float));
-        memset(&f1plus[0], 0, Nsyn*nxs*ntfft*sizeof(float));
-		memcpy(Ni, G_d, Nsyn*nxs*ntfft*sizeof(float));
-		energyNi = 0;
-	}
-
-}
-
-    t2 = wallclock_time();
-    if (verbose) {
-        vmess("Total CPU-time marchenko = %.3f", t2-t0);
-        vmess("with CPU-time synthesis  = %.3f", tsyn);
-        vmess("with CPU-time copy array = %.3f", tcopy);
-        vmess("     CPU-time fft data   = %.3f", tfft);
-        vmess("and CPU-time read data   = %.3f", tread);
+    for (i = 0; i < shot.nx; i++) {
+            hdrs_out[i].fldr    = 1;
+            hdrs_out[i].tracl   = 1;
+            hdrs_out[i].tracf   = i+1;
+            hdrs_out[i].scalco  = -1000;
+            hdrs_out[i].scalel  = -1000;
+            hdrs_out[i].sdepth  = 0;
+            hdrs_out[i].trid    = 1;
+            hdrs_out[i].ns      = shot.nz;
+            hdrs_out[i].trwf    = shot.nx;
+            hdrs_out[i].ntr     = hdrs_out[i].fldr*hdrs_out[i].trwf;
+            hdrs_out[i].f1      = zsyn[0];
+            hdrs_out[i].f2      = xsyn[0];
+            hdrs_out[i].dt      = dt*(1E6);
+            hdrs_out[i].d1      = (float)zsyn[shot.nx]-zsyn[0];
+            hdrs_out[i].d2      = (float)xsyn[1]-xsyn[0];
+            hdrs_out[i].sx      = (int)roundf(xsyn[0] + (i*hdrs_out[i].d2)*1000.0);
+            hdrs_out[i].gx      = (int)roundf(xsyn[0] + (i*hdrs_out[i].d2)*1000.0);
+            hdrs_out[i].offset  = (hdrs_out[i].gx - hdrs_out[i].sx)/1000.0;
     }
+    ret = writeData(fp_out, &Image[0], hdrs_out, shot.nz, shot.nx);
+    if (ret < 0 ) verr("error on writing output file.");
 
-/*================ write output files ================*/
+    fclose(fp_out);
 
-/*
-    n1 = nts; n2 = n2out;
-    f1 = ft; f2 = fxs;
-    d1 = dt;
-    if (reci == 0) d2 = dxsrc;
-    else if (reci == 1) d2 = dxs;
-    else if (reci == 2) d2 = dx;
-
-    hdrs_out = (segy *) calloc(n2,sizeof(segy));
-    if (hdrs_out == NULL) verr("allocation for hdrs_out");
-    size  = nxs*nts;
-*/
-
-    fp_out = fopen(file_green, "w+");
-    if (fp_out==NULL) verr("error on creating output file %s", file_green);
-    if (file_gmin != NULL) {
+	if (file_gmin != NULL) {
         fp_gmin = fopen(file_gmin, "w+");
         if (fp_gmin==NULL) verr("error on creating output file %s", file_gmin);
     }
-    if (file_gplus != NULL) {
-        fp_gplus = fopen(file_gplus, "w+");
-        if (fp_gplus==NULL) verr("error on creating output file %s", file_gplus);
-    }
-    if (file_f2 != NULL) {
-        fp_f2 = fopen(file_f2, "w+");
-        if (fp_f2==NULL) verr("error on creating output file %s", file_f2);
-    }
-    if (file_pmin != NULL) {
-        fp_pmin = fopen(file_pmin, "w+");
-        if (fp_pmin==NULL) verr("error on creating output file %s", file_pmin);
-    }
-    if (file_f1plus != NULL) {
+	if (file_f1plus != NULL) {
         fp_f1plus = fopen(file_f1plus, "w+");
         if (fp_f1plus==NULL) verr("error on creating output file %s", file_f1plus);
     }
-    if (file_f1min != NULL) {
-        fp_f1min = fopen(file_f1min, "w+");
-        if (fp_f1min==NULL) verr("error on creating output file %s", file_f1min);
-    }
 
-
-    tracf = 1;
-    for (l = 0; l < Nsyn; l++) {
+	tracf = 1;
+    for (j = 0; j < Nsyn; j++) {
+		//l = synpos[j];
+		l = j;
         if (ixa || ixb) f2 = xsyn[l]-ixb*d2;
         else {
             if (reci) f2 = fxs;
@@ -948,72 +653,27 @@ for (ib=0; ib<=nb; ib++) {
         }
 
         for (i = 0; i < n2; i++) {
-            hdrs_out[i].fldr   = l+1;
-            hdrs_out[i].sx     = NINT(xsyn[l]*1000);
-            hdrs_out[i].offset = (long)NINT((f2+i*d2) - xsyn[l]);
-            hdrs_out[i].tracf  = tracf++;
-            hdrs_out[i].selev  = NINT(zsyn[l]*1000);
-            hdrs_out[i].sdepth = NINT(-zsyn[l]*1000);
-        	hdrs_out[i].f1     = f1;
+            hdrs_out2[i].fldr   = l+1;
+            hdrs_out2[i].sx     = NINT(xsyn[l]*1000);
+            hdrs_out2[i].offset = (long)NINT((f2+i*d2) - xsyn[l]);
+            hdrs_out2[i].tracf  = tracf++;
+            hdrs_out2[i].selev  = NINT(zsyn[l]*1000);
+            hdrs_out2[i].sdepth = NINT(-zsyn[l]*1000);
+            hdrs_out2[i].f1     = f1;
         }
-
-        ret = writeData(fp_out, (float *)&green[l*size], hdrs_out, n1, n2);
-        if (ret < 0 ) verr("error on writing output file.");
 
         if (file_gmin != NULL) {
-            ret = writeData(fp_gmin, (float *)&Gmin[l*size], hdrs_out, n1, n2);
-            if (ret < 0 ) verr("error on writing output file.");
-        }
-        if (file_gplus != NULL) {
-            ret = writeData(fp_gplus, (float *)&Gplus[l*size], hdrs_out, n1, n2);
-            if (ret < 0 ) verr("error on writing output file.");
-        }
-        if (file_f2 != NULL) {
-            ret = writeData(fp_f2, (float *)&f2p[l*size], hdrs_out, n1, n2);
-            if (ret < 0 ) verr("error on writing output file.");
-        }
-        if (file_pmin != NULL) {
-            ret = writeData(fp_pmin, (float *)&pmin[l*size], hdrs_out, n1, n2);
+            ret = writeData(fp_gmin, (float *)&Gmin[l*size], hdrs_out2, n1, n2);
             if (ret < 0 ) verr("error on writing output file.");
         }
         if (file_f1plus != NULL) {
-            /* rotate to get t=0 in the middle */
-            for (i = 0; i < n2; i++) {
-                hdrs_out[i].f1     = -n1*0.5*dt;
-                memcpy(&trace[0],&f1plus[l*size+i*nts],nts*sizeof(float));
-                for (j = 0; j < n1/2; j++) {
-                    f1plus[l*size+i*nts+n1/2+j] = trace[j];
-                }
-                for (j = n1/2; j < n1; j++) {
-                    f1plus[l*size+i*nts+j-n1/2] = trace[j];
-                }
-            }
-            ret = writeData(fp_f1plus, (float *)&f1plus[l*size], hdrs_out, n1, n2);
+            ret = writeData(fp_f1plus, (float *)&f1plus[l*size], hdrs_out2, n1, n2);
             if (ret < 0 ) verr("error on writing output file.");
         }
-        if (file_f1min != NULL) {
-            /* rotate to get t=0 in the middle */
-            for (i = 0; i < n2; i++) {
-                hdrs_out[i].f1     = -n1*0.5*dt;
-                memcpy(&trace[0],&f1min[l*size+i*nts],nts*sizeof(float));
-                for (j = 0; j < n1/2; j++) {
-                    f1min[l*size+i*nts+n1/2+j] = trace[j];
-                }
-                for (j = n1/2; j < n1; j++) {
-                    f1min[l*size+i*nts+j-n1/2] = trace[j];
-                }
-            }
-            ret = writeData(fp_f1min, (float *)&f1min[l*size], hdrs_out, n1, n2);
-            if (ret < 0 ) verr("error on writing output file.");
-        }
-    }
-    ret = fclose(fp_out);
-    if (file_gplus != NULL) {ret += fclose(fp_gplus);}
+	}
+    ret = 0;
     if (file_gmin != NULL) {ret += fclose(fp_gmin);}
-    if (file_f2 != NULL) {ret += fclose(fp_f2);}
-    if (file_pmin != NULL) {ret += fclose(fp_pmin);}
     if (file_f1plus != NULL) {ret += fclose(fp_f1plus);}
-    if (file_f1min != NULL) {ret += fclose(fp_f1min);}
     if (ret < 0) verr("err %d on closing output file",ret);
 
     if (verbose) {
@@ -1021,7 +681,6 @@ for (ib=0; ib<=nb; ib++) {
         vmess("and CPU-time write data  = %.3f", t1-t2);
     }
 
-/*================ free memory ================*/
 
     free(hdrs_out);
     free(tapersy);
