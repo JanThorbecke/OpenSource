@@ -49,6 +49,8 @@ SRCH	= marchenko.c \
 		writeSrcRecPos.c \
 		writesufile.c \
 		gaussGen.c \
+		iterations.c \
+		imaging.c \
 		threadAffinity.c
 
 OBJJ	= $(SRCJ:%.c=%.o)
