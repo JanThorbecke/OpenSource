@@ -5,7 +5,6 @@
  *   GEOPHYSICS, VOL. 63, NO. 4 (JULY-AUGUST 1998); P. 1795–1798
  *
  *  Created by Jan Thorbecke on 17/03/2014.
- *  Copyright 2014 TU Delft. All rights reserved.
  *
  */
 
