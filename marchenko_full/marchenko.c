@@ -308,7 +308,7 @@ int main (int argc, char **argv)
 	}
 	else if (file_ray==NULL && file_tinv==NULL) {
 		getParameters(&mod, &rec, &src, &shot, &ray, verbose);
-		n1 = rec.nt;
+		n1 = 1;
 		n2 = rec.n;
 		ngath = shot.n;
 		d1 = mod.dt;
