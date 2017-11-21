@@ -23,3 +23,7 @@ utils/syn2d
 fdelmodc/fdelmodc
 include/genfft.h
 Make_include
+marchenko_applications/fmute
+marchenko_applications/marchenko
+marchenko_full/fmute
+marchenko_full/marchenko
