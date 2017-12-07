@@ -19,6 +19,7 @@ void read_sutrace_at_position(FILE *fp, int itrace, complex *tracedata, complex 
 
 int optncr(int n);
 void cr1fft(complex *cdata, float *data, int n, int sign);
+void rc1fft(float *rdata, complex *cdata, int n, int sign);
 
 int getFileInfo(char *file_name, int *n1, int *n2, float *d1, float *d2, int verbose);
 
