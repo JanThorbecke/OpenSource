@@ -39,7 +39,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 {
 	int isnapmax1, isnapmax2, isnapmax, sna_nrsna;
 	int n1, n2, nx, nz, nsrc, ix, axis, ioPz, is0, optn;
-	int idzshot, idxshot;
+	int idzshot, idxshot, nsrctext;
 	int src_ix0, src_iz0, src_ix1, src_iz1;
 	int disable_check;
 	float cp_min, cp_max, cs_min, cs_max, ro_min, ro_max;
@@ -63,6 +63,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	int is,ntraces,length_random;
 	float rand;
 	char *src_positions, tmpname[1024];
+	char* src_txt;
+	FILE *fp;
 
 	if (!getparint("verbose",&verbose)) verbose=0;
 	if (!getparint("disable_check",&disable_check)) disable_check=0;
@@ -584,6 +586,9 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		verr("Number of sources in array xsrca (%d), zsrca(%d) are not equal",nxsrc, nzsrc);
 	}
 
+	/* source positions defined through txt file */
+   	if (!getparstring("src_txt",&src_txt)) src_txt=NULL;
+
 	/* check if sources on a circle are defined */
 	
 	if (getparfloat("rsrc", &rsrc)) {
@@ -729,17 +734,45 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		}
 
 	}
-	else if (nxsrc != 0) {
+	else if ( (nxsrc != 0) || (src_txt != NULL) ) {
 		/* source array is defined */
-		nsrc=nxsrc;
+	    if (src_txt!=NULL) {
+    	    /* Sources from a Text File */
+            /* Open text file */
+		    nsrctext=0;
+            fp=fopen(src_txt,"r");
+            assert(fp!=NULL);
+            /* Get number of lines */
+            while (!feof(fp)) if (fgetc(fp)=='\n') nsrctext++;
+            fseek(fp,-1,SEEK_CUR);
+            if (fgetc(fp)!='\n') nsrctext++; /* Checks if last line terminated by /n */
+            if (verbose) vmess("Number of sources in src_txt file: %d",nsrctext);
+            rewind(fp);
+		    nsrc=nsrctext;
+        }
+        else {
+		    nsrc=nxsrc;
+        }
+		/* Allocate arrays */
 		src->x = (int *)malloc(nsrc*sizeof(int));
 		src->z = (int *)malloc(nsrc*sizeof(int));
 		src->tbeg = (float *)malloc(nsrc*sizeof(float));
 		src->tend = (float *)malloc(nsrc*sizeof(float));
 		xsrca = (float *)malloc(nsrc*sizeof(float));
 		zsrca = (float *)malloc(nsrc*sizeof(float));
-		getparfloat("xsrca", xsrca);
-		getparfloat("zsrca", zsrca);
+	    if (src_txt!=NULL) {
+			/* Read in source coordinates */
+			for (i=0;i<nsrc;i++) {
+				if (fscanf(fp,"%e %e\n",&xsrca[i],&zsrca[i])!=2) vmess("Source Text File: Can not parse coordinates on line %d.",i);
+			}
+			/* Close file */
+			fclose(fp);
+        }
+		else {
+			getparfloat("xsrca", xsrca);
+			getparfloat("zsrca", zsrca);
+        }
+		/* Process coordinates */
 		for (is=0; is<nsrc; is++) {
 			src->x[is] = NINT((xsrca[is]-sub_x0)/dx);
 			src->z[is] = NINT((zsrca[is]-sub_z0)/dz);
@@ -747,6 +780,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			src->tend[is] = (wav->nt-1)*wav->dt;
 			if (verbose>3) fprintf(stderr,"Source Array: xsrc[%d]=%f zsrc=%f\n", is, xsrca[is], zsrca[is]);
 		}
+
 		src->random = 1;
 		wav->nsamp = (size_t *)malloc((nsrc+1)*sizeof(size_t));
 		if (wav->random) {
@@ -1064,7 +1098,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	rec->skipdt=NINT(dtrcv/dt);
 	dtrcv = mod->dt*rec->skipdt;
 	if (!getparfloat("rec_delay",&rdelay)) rdelay=0.0;
-	if (!getparint("rec_ntsam",&rec->nt)) rec->nt=NINT((mod->tmod)/dtrcv)+1;
+	if (!getparint("rec_ntsam",&rec->nt)) rec->nt=NINT((mod->tmod-rdelay)/dtrcv)+1;
 	if (!getparint("rec_int_p",&rec->int_p)) rec->int_p=0;
 	if (!getparint("rec_int_vx",&rec->int_vx)) rec->int_vx=0;
 	if (!getparint("rec_int_vz",&rec->int_vz)) rec->int_vz=0;
@@ -1072,7 +1106,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparint("scale",&rec->scale)) rec->scale=0;
 	if (!getparfloat("dxspread",&dxspread)) dxspread=0;
 	if (!getparfloat("dzspread",&dzspread)) dzspread=0;
-	rec->nt=MIN(rec->nt, NINT((mod->tmod)/dtrcv)+1);
+	rec->nt=MIN(rec->nt, NINT((mod->tmod-rdelay)/dtrcv)+1);
 
 /* allocation of receiver arrays is done in recvPar */
 /*

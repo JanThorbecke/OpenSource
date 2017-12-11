@@ -138,6 +138,7 @@ char *sdoc[] = {
 "   dzshot=0 .......... if nshot > 1: z-shift in shot locations",
 "   xsrca= ............ defines source array x-positions",
 "   zsrca= ............ defines source array z-positions",
+"   src_txt=........... text file with source coordinates. Col 1: x, Col. 2: z",
 "   wav_random=1 ...... 1 generates (band limited by fmax) noise signatures ",
 "   fmax=from_src ..... maximum frequency in wavelet",
 "   src_multiwav=0 .... use traces in file_src as areal source",
