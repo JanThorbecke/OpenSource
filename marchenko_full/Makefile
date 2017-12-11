@@ -7,7 +7,7 @@ OPTC += -g -O0 -Wall
 
 #ALL: fmute marchenko marchenko2
 
-ALL: fmute marchenko
+ALL: fmute marchenko_full
 
 SRCJ	= fmute.c \
 		getFileInfo.c  \
@@ -58,20 +58,20 @@ fmute:	$(OBJJ)
 
 OBJH	= $(SRCH:%.c=%.o)
 
-marchenko:	$(OBJH) raytime.h
-	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o marchenko $(OBJH) $(LIBS)
+marchenko_full:	$(OBJH) raytime.h
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o marchenko_full $(OBJH) $(LIBS)
 
-install: fmute marchenko 
+install: fmute marchenko_full
 	cp fmute $B
-	cp marchenko $B
+	cp marchenko_full $B
 
 #	cp marchenko2 $B
 
 clean:
-		rm -f core fmute $(OBJJ) marchenko $(OBJH)
+		rm -f core fmute $(OBJJ) marchenko_full $(OBJH)
 
 realclean: clean
-		rm -f $B/fmute $B/marchenko
+		rm -f $B/fmute $B/marchenko_full
 
 
 

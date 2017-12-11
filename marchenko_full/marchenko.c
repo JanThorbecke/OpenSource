@@ -49,6 +49,7 @@ int readData(FILE *fp, float *data, segy *hdrs, int n1);
 int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 int disp_fileinfo(char *file, int n1, int n2, float f1, float f2, float d1, float d2, segy *hdrs);
 double wallclock_time(void);
+int getParameters(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar *ray, int verbose);
 
 void synthesis(complex *Refl, complex *Fop, float *Top, float *iRN, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, double *tfft, int verbose);
 
@@ -214,7 +215,7 @@ int main (int argc, char **argv)
     double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, energyNi, *J;
     float   d1, d2, f1, f2, fxs, ft, fx, *xsyn, dxsrc, Q, f0, *Costdet;
     float   *green, *f2p, *pmin, *G_d, dt, dx, dxs, scl, mem;
-    float   *f1plus, *f1min, *iRN, *Ni, *trace, *Gmin, *Gplus, *Gm0;
+    float   *f1plus, *f1min, *iRN, *Ni, *Gmin, *Gplus, *Gm0;
     float   xmin, xmax, weight, tsq, *Gd, *amp, bstart, bend, db, *bdet, bp, b, bmin;
     complex *Refl, *Fop;
     char    *file_tinv, *file_shot, *file_green, *file_iter, *file_wav, *file_ray, *file_amp;
@@ -367,7 +368,6 @@ int main (int argc, char **argv)
     Ni      = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
     G_d     = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
     muteW   = (int *)calloc(Nsyn*nxs,sizeof(int));
-    trace   = (float *)malloc(ntfft*sizeof(float));
     ixpossyn = (int *)malloc(nxs*sizeof(int));
     xrcvsyn = (float *)calloc(Nsyn*nxs,sizeof(float));
     xsyn    = (float *)malloc(Nsyn*sizeof(float));
@@ -978,7 +978,7 @@ for (ib=0; ib<=nb; ib++) {
         }
         if (file_f1plus != NULL) {
             /* rotate to get t=0 in the middle */
-            for (i = 0; i < n2; i++) {
+            /*for (i = 0; i < n2; i++) {
                 hdrs_out[i].f1     = -n1*0.5*dt;
                 memcpy(&trace[0],&f1plus[l*size+i*nts],nts*sizeof(float));
                 for (j = 0; j < n1/2; j++) {
@@ -987,13 +987,13 @@ for (ib=0; ib<=nb; ib++) {
                 for (j = n1/2; j < n1; j++) {
                     f1plus[l*size+i*nts+j-n1/2] = trace[j];
                 }
-            }
+            }*/
             ret = writeData(fp_f1plus, (float *)&f1plus[l*size], hdrs_out, n1, n2);
             if (ret < 0 ) verr("error on writing output file.");
         }
         if (file_f1min != NULL) {
             /* rotate to get t=0 in the middle */
-            for (i = 0; i < n2; i++) {
+            /*for (i = 0; i < n2; i++) {
                 hdrs_out[i].f1     = -n1*0.5*dt;
                 memcpy(&trace[0],&f1min[l*size+i*nts],nts*sizeof(float));
                 for (j = 0; j < n1/2; j++) {
@@ -1002,7 +1002,7 @@ for (ib=0; ib<=nb; ib++) {
                 for (j = n1/2; j < n1; j++) {
                     f1min[l*size+i*nts+j-n1/2] = trace[j];
                 }
-            }
+            }*/
             ret = writeData(fp_f1min, (float *)&f1min[l*size], hdrs_out, n1, n2);
             if (ret < 0 ) verr("error on writing output file.");
         }

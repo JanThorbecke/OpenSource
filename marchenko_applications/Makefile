@@ -7,7 +7,7 @@ LIBS    += -L$L -lgenfft -lm $(LIBSM)
 
 #ALL: fmute marchenko marchenko2
 
-ALL: fmute marchenko
+ALL: fmute marchenko_app combine
 
 SRCJ	= fmute.c \
 		getFileInfo.c  \
@@ -51,7 +51,19 @@ SRCH	= marchenko.c \
 		gaussGen.c \
 		iterations.c \
 		imaging.c \
-		threadAffinity.c
+		threadAffinity.c \
+		makeWindow.c \
+		homogeneousg.c
+
+SRCC	= combine.c \
+		getFileInfo.c \
+		writeData.c \
+		wallclock_time.c \
+		getpars.c \
+		verbosepkg.c \
+		atopkge.c \
+        docpkge.c \
+		readSnapData.c 
 
 OBJJ	= $(SRCJ:%.c=%.o)
 
@@ -60,20 +72,26 @@ fmute:	$(OBJJ)
 
 OBJH	= $(SRCH:%.c=%.o)
 
-marchenko:	$(OBJH) raytime.h
-	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o marchenko $(OBJH) $(LIBS)
+marchenko_app:	$(OBJH) raytime.h
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o marchenko_app $(OBJH) $(LIBS)
 
-install: fmute marchenko 
+OBJC	= $(SRCC:%.c=%.o)
+
+combine:  $(OBJC)
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o combine $(OBJC) $(LIBS)
+
+install: fmute marchenko_app combine
 	cp fmute $B
-	cp marchenko $B
+	cp marchenko_app $B
+	cp combine $B
 
 #	cp marchenko2 $B
 
 clean:
-		rm -f core fmute $(OBJJ) marchenko $(OBJH)
+		rm -f core fmute $(OBJJ) marchenko_app $(OBJH) combine $(OBJC)
 
 realclean: clean
-		rm -f $B/fmute $B/marchenko
+		rm -f $B/fmute $B/marchenko_app $B/combine
 
 
 
