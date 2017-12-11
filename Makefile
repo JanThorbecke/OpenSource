@@ -5,6 +5,7 @@ all: mkdirs
 	cd fdelmodc		; $(MAKE) install
 	cd utils		; $(MAKE) install
 	cd marchenko	; $(MAKE) install
+	cd corrvir		; $(MAKE) install
 
 mkdirs:
 	-mkdir -p lib
@@ -16,12 +17,14 @@ clean:
 	cd fdelmodc		; $(MAKE) $@
 	cd utils		; $(MAKE) $@
 	cd marchenko	; $(MAKE) $@
+	cd corrvir		; $(MAKE) $@
 
 realclean:
 	cd FFTlib 		; $(MAKE) $@
 	cd fdelmodc		; $(MAKE) $@
 	cd utils		; $(MAKE) $@
 	cd marchenko	; $(MAKE) $@
+	cd corrvir		; $(MAKE) $@
 	rm -f lib/*
 	rm -f include/*
 	rm -f bin/*
