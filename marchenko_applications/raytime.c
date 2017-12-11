@@ -42,7 +42,7 @@ int defineSource(wavPar wav, srcPar src, modPar mod, float **src_nwav, int rever
 int writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot);
 
 
-int raytime(float *time, float *ampl, int *xnx, float *xrcv, float *xsrc, float *zsrc)
+int raytime(float *time, float *ampl, int *xnx, float *xrcv, float *xsrc, float *zsrc, float xloc, float zloc)
 {
 	modPar mod;
 	recPar rec;
@@ -69,6 +69,15 @@ int raytime(float *time, float *ampl, int *xnx, float *xrcv, float *xsrc, float 
 
 	if (!getparint("verbose",&verbose)) verbose=0;
 	getParameters(&mod, &rec, &src, &shot, &ray, verbose);
+
+	if (xloc!=-123456.0 && zloc!=-123456.0) {
+		if (verbose > 3) vmess("Setting source ray to x = %.3f, z = %.3f",xloc,zloc);
+		shot.nx 	= 1;
+		shot.nz 	= 1;
+		shot.n 		= 1;
+		shot.x[0]	= NINT((xloc-mod.x0)/mod.dx);
+		shot.z[0]	= NINT((zloc-mod.z0)/mod.dz);
+	}
 
 	/* allocate arrays for model parameters: the different schemes use different arrays */
 
