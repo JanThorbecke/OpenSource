@@ -1,0 +1,131 @@
+#!/bin/bash
+
+export PATH=:$HOME/src/OpenSource/bin:$HOME/bin:$PATH:
+
+dx=0.5
+file_snap_all=snapinj_planevzvxsum_sp.su
+file_snap_surf=snapinj_surf_sp.su
+file_snap_f2=snapinj_f2_sp.su
+
+
+sumax < ${file_snap_all} mode=abs outpar=nep
+clip_all=`cat nep | awk '{print $1/25}'`
+clip_t0all=`cat nep | awk '{print $1/10}'`
+sumax < ${file_snap_surf} mode=abs outpar=nep
+clip_surf=`cat nep | awk '{print $1/10}'`
+clip_t0surf=`cat nep | awk '{print $1/4}'`
+sumax < ${file_snap_f2} mode=abs outpar=nep
+clip_f2=`cat nep | awk '{print $1/10}'`
+clip_t0f2=`cat nep | awk '{print $1/4}'`
+echo $clip_all $clip_surf $clip_f2
+
+#131 => t=0
+for file_snap in $file_snap_all $file_snap_surf $file_snap_f2
+do
+  if [ $file_snap == $file_snap_all ]; then clip=$clip_all; fi;
+  if [ $file_snap == $file_snap_surf ]; then clip=$clip_surf; fi;
+  if [ $file_snap == $file_snap_f2 ]; then clip=$clip_f2; fi;
+  echo $clip
+  file_base=${file_snap%_sp.su}
+  suwind key=fldr min=61 max=201 < $file_snap | sugain scale=-1 | sustrip > $file_base.bin
+  for fldr in 71 101 128 131 134 161 191;
+  do
+    if [ $fldr == 131 ]; 
+    then 
+       clipt=$(echo "scale=2; ${clip}*4.0" | bc -l); 
+    else 
+       clipt=$clip;
+    fi;
+    echo clip=$clip clipt=$clipt
+    times=$(echo "scale=2; 0.01*(${fldr}-131)" | bc -l)
+    atime=`printf "%4.2f" $times`
+    suwind key=fldr min=$fldr max=$fldr < ${file_snap} | \
+        supsimage hbox=2.5 wbox=4 labelsize=-1 \
+        x1beg=0 x1end=1250.0 clip=$clipt \
+        curve=curve1,curve2,curve3 npair=25,25,25 curvecolor=black,black,black curvedash=3,3,3 \
+        n1tic=5 x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > ${file_base}_$atime.eps
+  done
+done
+
+file_base=${file_snap_f2%_sp.su}
+rm ${file_base}sum.su
+for shot in `seq 61 1 131`;
+do
+  suwind key=fldr min=$shot max=$shot < ${file_snap_f2} > neg.su
+  (( a = 131+(131-$shot) ))
+  echo $shot $a
+  suwind key=fldr min=$a max=$a < ${file_snap_f2} > pos.su
+  susum neg.su pos.su | sushw key=fldr a=$shot >> ${file_base}sum.su
+done
+
+for shot in `seq 132 1 201`;
+do
+  suwind key=fldr min=$shot max=$shot < ${file_snap_f2}> pos.su
+  (( a = 131+(131-$shot) ))
+  echo $shot $a
+  suwind key=fldr min=$a max=$a < ${file_snap_f2} > neg.su
+  susum neg.su pos.su | sushw key=fldr a=$fldr >> ${file_base}sum.su
+done
+
+sugain scale=-1 < ${file_base}sum.su | sustrip > ${file_base}sum.bin
+
+exit
+
+#select files for snapshot between -0.7 => 0 <= +0.07 (fldr 31-101-171)
+#add pos and negative times to get response of homogenoeus Green's function
+
+file_base=${file_snap%_sp.su}
+for fldr in 71 101 128 131;
+do
+  times=$(echo "scale=2; 0.01*(131-${fldr})" | bc -l)
+  atime=`printf "%4.2f" $times`
+  suwind key=fldr min=$fldr max=$fldr < ${file_snap_f2} > neg.su
+  (( fldr = 131+(131-$fldr) ))
+  suwind key=fldr min=$fldr max=$fldr < ${file_snap_f2}> pos.su
+  susum neg.su pos.su | \
+    supsimage hbox=2.5 wbox=4 labelsize=-1 \
+    x1beg=0 x1end=1250.0 clip=$clip_f2 \
+    curve=curve1,curve2,curve3 npair=25,25,25 curvecolor=black,black,black curvedash=3,3,3 \
+    n1tic=5 x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > ${file_base}sum_$atime.eps
+done
+
+#supsgraph < wave.su hbox=6 wbox=2 labelsize=10 f1=0 x1end=0.4 > wave.eps
+#basop file_in=wave.su choice=15 | supsgraph  hbox=6 wbox=2 labelsize=10 f1=0 x1end=0.4 > wavesjom.eps
+
+file=inj_rate_surf_dx${dx}_rvz.su
+file_base=${file%.su}
+sumax < ${file} mode=abs outpar=nep
+clip=`cat nep | awk '{print $1/5}'`
+
+ns=`surange < $file | grep ns | awk '{print $2}'`
+dtrcv=`surange < $file | grep dt | awk '{print $2/1000000.0}'`
+shift=$(echo "scale=6; ($dtrcv*($ns/2.0-1))" | bc -l)
+skip=$(echo "scale=0; (10/${dx})" | bc -l)
+echo $shift $skip
+basop choice=shift shift=$shift file_in=$file verbose=1 | suwind s=1 j=$skip | sushw key=d2,tracl a=10,1 b=0,1 > nep.su
+supsimage hbox=2.5 wbox=4 labelsize=-1 < nep.su \
+    x1beg=-0.6 x1end=1.5 clip=$clip grid1=dot \
+    n1tic=5 x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > ${file_base}.eps
+
+suwind s=1 j=10 < nep.su | \
+    supswigp hbox=2.5 wbox=4 labelsize=-1 d2=100 \
+    x1beg=-1.5 x1end=1.5 xcur=1.5 grid1=dot n1tic=1 d1num=2.145 \
+	f2=-3000 x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > ${file_base}_wiggle.eps
+
+file=pplus.su
+file_base=${file%.su}
+sumax < ${file} mode=abs outpar=nep
+clip=`cat nep | awk '{print $1/5}'`
+
+suflip flip=3 < $file | \
+    supsimage hbox=2.5 wbox=4 labelsize=-1 x2beg=-1000 x2end=1000 \
+    x1beg=-0.6 x1end=1.5 clip=$clip grid1=dot \
+    n1tic=5 x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > ${file_base}.eps
+
+suflip flip=3 < $file | suwind s=1 j=10 | \
+    supswigp hbox=2.5 wbox=4 labelsize=-1 d2=100 \
+    x1beg=-1.5 x1end=1.5 xcur=1.5 grid1=dot n1tic=1 d1num=2.044 \
+    f2=-3000 x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > ${file_base}_wiggle.eps
+
+
+

@@ -1,0 +1,86 @@
+#!/bin/bash
+#PBS -N fdelmod
+#PBS -q verylong
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+
+export PATH=$HOME/bin64:$HOME/src/OpenSource/utils:$PATH:
+which makewave
+which makemod
+
+dx=2.5
+dt=0.0005
+dx=0.5
+dt=0.0001
+
+makemod sizex=6000 sizez=810 dx=$dx dz=$dx cp0=1500  ro0=1000 \
+        orig=-3000,0 file_base=tutodeldown.su verbose=2 \
+        intt=def x=-3000,-2000,-1000,0,1000,2000,3000 z=240,130,250,300,350,380,320 poly=2 cp=1950 ro=4500 grad=0 \
+        intt=def x=-3000,-2200,-1500,0,1300,2100,3000 z=620,640,590,600,740,700,600 poly=2 cp=2000 ro=1400 grad=0
+
+file_cp=tutodeldown_cp.su
+file_ro=tutodeldown_cp.su
+
+makewave fp=30 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=1
+
+dxshot=10
+ishot=300
+nshots=301
+
+export OMP_NUM_THREADS=1
+mkdir -p shots${fast}
+mkdir -p jobs
+
+while (( ishot < nshots ))
+do
+
+		(( xsrc = -3000 + ${ishot}*${dxshot} ))
+		echo xsrc=$xsrc
+		file_rcv=iniFocusz800x${xsrc}.su
+
+  cat << EOF > jobs/job_$ishot.slurm 
+#!/bin/bash
+#
+#SBATCH -J marchenko46
+#SBATCH --cpus-per-task=8
+#SBATCH --ntasks=1
+#SBATCH --time=0:45:00
+#SBATCH -o iniFocus-%A.out
+
+cd \$SLURM_SUBMIT_DIR
+
+export OMP_NUM_THREADS=8
+	
+		fdelmodc \
+			file_cp=$file_cp ischeme=1 iorder=4 \
+   			file_den=$file_ro \
+   			file_src=wave.su \
+   			file_rcv=$file_rcv \
+   			src_type=1 \
+			src_orient=1 \
+			src_injectionrate=1 \
+   			rec_type_vz=0 \
+   			rec_type_p=1 \
+   			rec_int_vz=2 \
+			rec_delay=0.1 \
+   			dtrcv=0.004 \
+   			verbose=2 \
+   			tmod=4.192 \
+   			dxrcv=10.0 \
+   			xrcv1=-3000 xrcv2=3000 \
+   			zrcv1=0 zrcv2=0 \
+   			xsrc=$xsrc zsrc=800 \
+   			ntaper=200 \
+   			left=2 right=2 top=2 bottom=2
+EOF
+
+		chmod +x jobs/job_$ishot.slurm
+        jobs/job_$ishot.slurm
+        #sbatch jobs/job_$ishot.slurm 
+
+			(( ishot = $ishot + 1))
+done
+
+
+

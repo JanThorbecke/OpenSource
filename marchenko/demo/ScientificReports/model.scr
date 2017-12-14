@@ -1,0 +1,98 @@
+#!/bin/bash -x
+
+#cd /vardim/home/thorbcke/data/Kees/Marchenko/Nature_SAGA
+
+if [ -n "$1" ]
+then
+ dx=$1
+else
+ dx=2.5
+fi
+
+makemod sizex=6000 sizez=1250 dx=$dx dz=$dx cp0=1500 ro0=1000 \
+        orig=-3000,0 file_base=tutodel_dx$dx.su rayfile=1 skip=100 verbose=2 \
+        intt=def x=-3000,-2000,-1000,0,1000,2000,3000 z=240,130,250,300,350,380,320 poly=2 cp=1950 ro=4500  \
+        intt=def x=-3000,-2200,-1500,0,1300,2100,3000 z=620,640,590,600,740,700,600 poly=2 cp=2000 ro=1400  \
+        intt=def x=-3000,-1800,0,2200,3000 z=920,1000,900,1000,1010 poly=2 cp=2300 ro=1600 
+
+suwind key=gx min=0 max=0 < tutodel_dx${dx}_cp.su > tracemodel.su
+
+supsgraph < tracemodel.su hbox=6 wbox=3 labelsize=10 style=seismic \
+    x1beg=0 d1=$dx f1=0 d2num=100 label1="depth (m)" label2="velocity (m/s)"> tracemodel_x_0.eps
+
+supsimage hbox=4 wbox=6 labelsize=10 < tutodel_dx2.5_cp.su \
+	x1beg=0 x1end=1200.0 legend=1 threecolor=1  \
+	d1s=1.0 d2s=1.0 \
+	wrgb=1.0,.5,0 grgb=0,.7,1.0 brgb=0,1.0,0 \
+	bps=24  bclip=2300 wclip=1800 \
+	curve=curve1,curve2,curve3 npair=25,25,25 curvecolor=black,black,black curvedash=3,3,3 \
+	n1tic=5 x2beg=-3000 f2num=-3000 d2num=1000 x2end=3000 > tutodel_cp.eps
+
+#itmax=$(echo "scale=0; (1250/${dx}+1)" | bc -l)
+suwind key=gx min=-1000000 max=1000000 < tutodel_dx${dx}_cp.su | sugain scale=-1 dt=1 | sustrip > tutodelsnap_cp.bin
+
+exit;
+#model reference for SI results
+makewave fp=30 dt=$dt file_out=wave${dx}.su nt=4096 t0=0.1 scale=1
+
+dx=0.5
+file_cp=tutodelbelow_dx${dx}_cp.su
+file_ro=tutodelbelow_dx${dx}_ro.su
+
+fdelmodc \
+    file_cp=$file_cp ischeme=1 iorder=4 \
+    file_den=$file_ro \
+    file_src=wave${dx}.su \
+    file_rcv=reference_${dx}Z800.su \
+    src_type=1 \
+    src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_p=0 \
+    dtrcv=0.004 \
+    dxrcv=2.5 \
+    rec_delay=0.1 \
+    verbose=1 \
+    tmod=1.104 \
+    xrcv1=-3000 xrcv2=3000 zrcv1=800 zrcv2=800 \
+    xsrc=0 zsrc=800  \
+    ntaper=400 \
+    left=4 right=4 top=4 bottom=4
+
+sumax < reference_${dx}Z800_rp.su mode=abs outpar=nep
+clip=`cat nep | awk '{print $1/30}'`
+sugain epow=0.8 < reference_${dx}Z800_rp.su | \
+        supsimage hbox=4 wbox=8 labelsize=10 linewidth=0.0 \
+        n1tic=2 d2=2.5 f1=0.0 x1beg=0.0 x1end=1.004 \
+        f2=-3000 f2num=-3000 d2num=1000 clip=$clip > reference_${dx}Z800_rp.eps
+
+file_cp=tutodel_dx${dx}_cp.su
+file_ro=tutodel_dx${dx}_ro.su
+
+fdelmodc \
+    file_cp=$file_cp ischeme=1 iorder=4 \
+    file_den=$file_ro \
+    file_src=wave${dx}.su \
+    file_rcv=green_${dx}Z800.su \
+    src_type=1 \
+    src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_p=0 \
+    dtrcv=0.004 \
+    dxrcv=2.5 \
+    rec_delay=0.1 \
+    verbose=1 \
+    tmod=1.104 \
+    xrcv1=-3000 xrcv2=3000 zrcv1=800 zrcv2=800 \
+    xsrc=0 zsrc=800  \
+    ntaper=400 \
+    left=4 right=4 top=4 bottom=4
+
+sumax < green_${dx}Z800_rp.su mode=abs outpar=nep
+clip=`cat nep | awk '{print $1/30}'`
+sugain epow=0.8 < green_${dx}Z800_rp.su | \
+        supsimage hbox=4 wbox=8 labelsize=10 linewidth=0.0 \
+        n1tic=2 d2=2.5 f1=0.0 x1beg=0.0 x1end=1.004 \
+        f2=-3000 f2num=-3000 d2num=1000 clip=$clip > green_${dx}Z800_rp.eps
+
