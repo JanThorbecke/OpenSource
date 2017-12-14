@@ -10,7 +10,7 @@
 #define WAVEPAR
 typedef struct WaveParameters {
     int nt, shift, inv, scfft, cm, cn, wav;
-    float dt, fp, fmin, flef, frig, fmax, t0, db, scale, eps;
+    float dt, fp, fmin, flef, frig, fmax, t0, db, scale, eps, xloc, zloc;
     char w[10], *file_wav;
 } WavePar;
 #endif
