@@ -302,8 +302,13 @@ float angle2qz(const float _angle)
 float qatso(const float _so, const float _angle, int nRay, fcoord s, fcoord r, fcoord *rayReference3D, float *slowness, icoord size)
 {
     float slow, sl, deltaS, x, z;
-    float qatsol;
+    float qatsol, uo;
+    float greenTwoP = 0;
     int i;
+    float qMulGradU1;
+    fcoord slownessGradient;
+    float gradu1x, gradu1z;
+    float qx, qz;
     
     sl = sqrt(pow((r.x-s.x),2) + pow((r.z-s.z),2) + pow((r.y-s.y),2));
     
@@ -313,16 +318,43 @@ float qatso(const float _so, const float _angle, int nRay, fcoord s, fcoord r, f
     }
     
     deltaS = sl/(nRay-1);
-    
+    uo = referenceSlowness(slowness, size, nRay, r, s);
+
     qatsol = 0;
     for (i = 0; i < nRay; i++)
     {
         slow = i*deltaS;
         x = rayReference3D[i].x;
         z = rayReference3D[i].z;
-//        fprintf(stderr,"qatso: calling greenTwoP for iray %d (/%d)\n",i,nRay);
+        
+        if (slow <= _so)
+            greenTwoP = -(1 - _so/sl)*slow/uo;
+        else
+            greenTwoP = -_so*(1-slow/sl)/uo;
+        
+        slownessGradient = getSlownessGradient(x, z, slowness, size);
+        gradu1x = slownessGradient.x;
+        gradu1z = slownessGradient.z;
+        
+        if ((_angle >= 0) && (_angle < PI/2)) {
+            qx = -cos(_angle);
+            qz = sin(_angle);
+        }
+        else if ((_angle >= PI/2) && (_angle < PI)) {
+            qx = sin(_angle - PI/2);
+            qz = cos(_angle - PI/2);
+        }
+        else if ((_angle >= PI) && (_angle < 3*PI/2)) {
+            qx = cos(_angle - PI);
+            qz = -sin(_angle - PI);
+        }
+        else if ((_angle >= 3*PI/2) && (_angle <= 2*PI)) {
+            qx = -sin(_angle - 3*PI/2);
+            qz = -cos(_angle - 3*PI/2);
+        }
 
-        qatsol += greenTwoP(_so, slow, sl, nRay, s, r, slowness, size)*qMulGradU1(x, z, _angle, slowness, size)*deltaS;
+        qMulGradU1 = qx*gradu1x + qz*gradu1z;
+        qatsol += greenTwoP*qMulGradU1*deltaS;
     }
 
     return(qatsol);
