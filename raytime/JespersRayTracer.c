@@ -16,7 +16,7 @@
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
-static float H, L, W;
+static float H, L, W, iH, iL, iW;
 
 typedef struct _icoord { /* 3D coordinate integer */
     int z;
@@ -177,6 +177,10 @@ int getnRay(icoord size, fcoord s, fcoord r, float dx, int nRayStep)
     L = (size.x-1)*dx;
     W = (size.y-1)*dx;
     
+    if (H!=0.0) iH = 1.0/H;
+    if (L!=0.0) iL = 1.0/L;
+    if (W!=0.0) iW = 1.0/W;
+
     if (size.y == 1) { // 2D model
         dn = (size.x + size.z)/2;
         dl = sqrt(pow(L, 2) + pow(H, 2))/dn;
@@ -523,7 +527,7 @@ int xPointIndex(const float _x, int nx, float L)
     else
     {
         if (0 < L)
-            i = _x*nx/L;
+            i = _x*nx*iL;
         else
             i = 0;
     }
@@ -542,7 +546,7 @@ int zPointIndex(const float _z, int nz, float H)
     else
     {
         if (0 < H)
-            i = _z*nz/H;
+            i = _z*nz*iH;
         else
             i = 0;
     }
@@ -562,7 +566,7 @@ int yPointIndex(const float _y, int ny, float W)
     else
     {
         if (0 < W)
-            i = ny*(_y/W + 0.5);
+            i = ny*(_y*iW + 0.5);
         else
             i = 0;
     }
@@ -584,14 +588,11 @@ float ModelInterpolation_slowness2D(float *slowness, icoord size, const float _x
     nx = size.x;
     nz = size.z;
     
-    ixCoordinate = (int) _x*nx/L;
-
-    if (ixCoordinate >= nx)
-        ixCoordinate = nx;
+    ixCoordinate = (int)(_x*nx)*iL;
     
-    if (ixCoordinate == nx)
+    if (ixCoordinate >= nx)
     {
-        x1 = (float) L*(ixCoordinate-1)/nx;
+        x1 = (float) L*(nx-1)/nx;
         x2 = (float) L;
     }
     else if (ixCoordinate <= 0)
@@ -605,26 +606,11 @@ float ModelInterpolation_slowness2D(float *slowness, icoord size, const float _x
         x2 = (float) L*(ixCoordinate+1)/nx;
     }
     
-    if (x1 < 0)
-        x1 = 0;
-    
-    if (x1 > L)
-        x1 = L;
-    
-    if (x2 < 0)
-        x2 = 0;
-    
-    if (x2 > L)
-        x2 = L;
-    
-    izCoordinate = (int) _z*nz/H;
+    izCoordinate = (int) _z*nz*iH;
     
     if (izCoordinate >= nz)
-        izCoordinate = nz;
-    
-    if (izCoordinate == nz)
     {
-        z1 = (float) H*(izCoordinate-1)/nz;
+        z1 = (float) H*(nz-1)/nz;
         z2 = (float) H;
     }
     else if (izCoordinate <= 0)
@@ -638,20 +624,8 @@ float ModelInterpolation_slowness2D(float *slowness, icoord size, const float _x
         z2 = (float) H*(izCoordinate+1)/nz;
     }
     
-    if (z1 < 0)
-        z1 = 0;
-    
-    if (z1 > H)
-        z1 = H;
-    
-    if (z2 < 0)
-        z2 = 0;
-    
-    if (z2 > H)
-        z2 = H;
-    
-    ix = xPointIndex(_x, size.x, L);
-    iz = zPointIndex(_z, size.z, H);
+    ix = xPointIndex(_x, nx, L);
+    iz = zPointIndex(_z, nz, H);
     
     if (ix == 0)
     {
@@ -718,7 +692,7 @@ float ModelInterpolation_slowness3D(float *slowness, icoord size, const float _x
 
     slow = f111 = f112 = f212 = f211 = f121 = f122 = f222 = f221 = 0;
     
-    ixCoordinate = _x*nx/L;
+    ixCoordinate = _x*nx*iL;
     
     if (ixCoordinate >= nx)
         ixCoordinate =  nx;
@@ -751,7 +725,7 @@ float ModelInterpolation_slowness3D(float *slowness, icoord size, const float _x
     if (x2 > L)
         x2 = L;
     
-    izCoordinate = _z*nz/H;
+    izCoordinate = _z*nz*iH;
     
     if (izCoordinate >= nz)
         izCoordinate = nz;
@@ -784,7 +758,7 @@ float ModelInterpolation_slowness3D(float *slowness, icoord size, const float _x
     if (z2 > H)
         z2 = H;
     
-    iyCoordinate = ny*(_y/W + 0.5);
+    iyCoordinate = ny*(_y*iW + 0.5);
     
     if (iyCoordinate >= ny)
         iyCoordinate = ny;
