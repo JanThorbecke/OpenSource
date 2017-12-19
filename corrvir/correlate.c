@@ -64,7 +64,6 @@ int coherence(complex *cmaster, complex *cslaves, int nfreq, int ncor, float rep
 			den[j+icc] = am1*am2;
 		}
 	}
-    leps = reps*maxden;
 
 	for (istation=0; istation<ncor; istation++) {
 		icc = istation*nfreq;

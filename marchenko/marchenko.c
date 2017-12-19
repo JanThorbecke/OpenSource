@@ -839,7 +839,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
         if (verbose>4) vmess("*** Shot gather %d processed ***", k);
 
         } /* end of nshots (k) loop */
-    }     /* end of if reci
+    }     /* end of if reci */
 
 /* if reciprocal traces are enabled start a new loop over reciprocal shot positions */
     if (reci != 0) {
