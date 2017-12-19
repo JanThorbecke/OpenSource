@@ -40,12 +40,12 @@ int yPointIndex(const float _y, int ny, float W);
 fcoord getSlownessGradient(const float _x, const float _z, float *slowness, icoord size);
 float qMulGradU1(const float _x, const float _z, const float _angle, float *slowness, icoord size);
 float greenTwoP(const float _so, const float _slow, const float _sL, int nRay, fcoord s, fcoord r, float *slowness, icoord size);
-float qatso(const float _so, const float _angle, int nRay, fcoord s, fcoord r, fcoord *rayReference3D, float *slowness, icoord size);
+float qatso(const float _so, const float _angle, int nRay, fcoord s, fcoord r, fcoord *rayReference3D, float *slowness, icoord size, float uo);
 float slownessA(float *slowness, icoord size, float _x, float _y, float _z);
-float getdT2(const float _x, const float _z, const float so, const float _angle, const float _ds, int nRay, fcoord s, fcoord r, fcoord *rayReference3D, float *slowness, icoord size);
+float getdT2(const float _x, const float _z, const float so, const float _angle, const float _ds, int nRay, fcoord s, fcoord r, fcoord *rayReference3D, float *slowness, icoord size, float uo);
 float greenIntP(const float _so, const float _s, const float _sL, float *slowness, icoord size, int nRay, fcoord r, fcoord s);
 float secondDerivativeU1(float *slowness, icoord size, const float _x, const float _z, const float _angle, fcoord s, fcoord r);
-int calculatePerturbedRay(fcoord *rayPerturbed3D, fcoord s, fcoord r, int nRay, fcoord *rayReference3D, float *slowness, icoord size);
+int calculatePerturbedRay(fcoord *rayPerturbed3D, fcoord s, fcoord r, int nRay, fcoord *rayReference3D, float *slowness, icoord size, float uo);
 float angle2qx(const float _angle);
 float angle2qz(const float _angle);
 float ModelInterpolation_slowness2D(float *slowness, icoord size, const float _x, const float _z);
@@ -96,7 +96,7 @@ int getWaveParameter(float *slowness, icoord size, float dgrid, fcoord s, fcoord
         return(-1);
     
     uo = referenceSlowness(slowness, size, nRayTmp, r, s);
-    
+
     T0 = lengthRefRay*uo;
     ds = lengthRefRay/(nRayTmp-1);
     J = lengthRefRay;
@@ -121,14 +121,15 @@ int getWaveParameter(float *slowness, icoord size, float dgrid, fcoord s, fcoord
         so = i*ds;
         
         if (ray.useT2 != 0)
-            T2 += getdT2(x, z, so, angle, ds, nRayTmp, s, r, rayReference3D, slowness, size);
+            T2 += getdT2(x, z, so, angle, ds, nRayTmp, s, r, rayReference3D, slowness, size, uo);
 
         if (ray.geomspread != 0) {
             if (so <= 0) {
                 dQdPhi = 0;
             }
             else {
-                greentmp = greenIntP(lengthRefRay, so, lengthRefRay, slowness, size, nRayTmp, r, s);
+                greentmp = 0;
+                if (so <= lengthRefRay) greentmp = (lengthRefRay - so)/uo;
                 dQdPhi += greentmp*secondDerivativeU1(slowness, size, x, z, angle, r, s)*ds/so;
             }
         }
@@ -216,7 +217,7 @@ int traceTwoPoint(fcoord s, fcoord r, int nRay, fcoord *rayReference3D)
 }
 
 
-int calculatePerturbedRay(fcoord *rayPerturbed3D, fcoord s, fcoord r, int nRay, fcoord *rayReference3D, float *slowness, icoord size)
+int calculatePerturbedRay(fcoord *rayPerturbed3D, fcoord s, fcoord r, int nRay, fcoord *rayReference3D, float *slowness, icoord size, float uo)
 {
     float si, sl, deltaS, gso, angle, qx, qz;
     int i;
@@ -236,7 +237,7 @@ int calculatePerturbedRay(fcoord *rayPerturbed3D, fcoord s, fcoord r, int nRay, 
     {
         si = i*deltaS;
         
-        gso = qatso(si, angle, nRay, s, r, rayReference3D, slowness, size);
+        gso = qatso(si, angle, nRay, s, r, rayReference3D, slowness, size, uo);
         
         rayPerturbed3D[i].x = rayReference3D[i].x + qx*gso;
         rayPerturbed3D[i].z = rayReference3D[i].z + qz*gso;
@@ -299,10 +300,10 @@ float angle2qz(const float _angle)
 
 // Sofar used in 2D only
 
-float qatso(const float _so, const float _angle, int nRay, fcoord s, fcoord r, fcoord *rayReference3D, float *slowness, icoord size)
+float qatso(const float _so, const float _angle, int nRay, fcoord s, fcoord r, fcoord *rayReference3D, float *slowness, icoord size, float uo)
 {
     float slow, sl, deltaS, x, z;
-    float qatsol, uo;
+    float qatsol;
     float greenTwoP = 0;
     int i;
     float qMulGradU1;
@@ -318,7 +319,7 @@ float qatso(const float _so, const float _angle, int nRay, fcoord s, fcoord r, f
     }
     
     deltaS = sl/(nRay-1);
-    uo = referenceSlowness(slowness, size, nRay, r, s);
+//    uo = referenceSlowness(slowness, size, nRay, r, s);
 
     qatsol = 0;
     for (i = 0; i < nRay; i++)
@@ -360,7 +361,7 @@ float qatso(const float _so, const float _angle, int nRay, fcoord s, fcoord r, f
     return(qatsol);
 }
 
-float getdT2(const float _x, const float _z, const float _so, const float _angle, const float _ds, int nRay, fcoord s, fcoord r, fcoord *rayReference3D, float *slowness, icoord size)
+float getdT2(const float _x, const float _z, const float _so, const float _angle, const float _ds, int nRay, fcoord s, fcoord r, fcoord *rayReference3D, float *slowness, icoord size, float uo)
 {
     float T2 = 0;
     float qatsol;
@@ -368,7 +369,7 @@ float getdT2(const float _x, const float _z, const float _so, const float _angle
 
  //   fprintf(stderr,"getdT2: calling qatso nRay=%d\n",nRay);
 
-    qatsol = qatso(_so, _angle, nRay, s, r, rayReference3D, slowness, size);
+    qatsol = qatso(_so, _angle, nRay, s, r, rayReference3D, slowness, size, uo);
     
 //    fprintf(stderr,"getdT2: calling qMulGradU1\n");
 
