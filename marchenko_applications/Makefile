@@ -3,11 +3,11 @@
 include ../Make_include
 
 LIBS    += -L$L -lgenfft -lm $(LIBSM)
-#OPTC += -g -O0 -Wall 
+#OPTC += -g -Wall
 
 #ALL: fmute marchenko marchenko2
 
-ALL: fmute marchenko_app combine
+ALL: fmute marchenko_app combine gmshift
 
 SRCJ	= fmute.c \
 		getFileInfo.c  \
@@ -65,6 +65,16 @@ SRCC	= combine.c \
         docpkge.c \
 		readSnapData.c 
 
+SRCG    = gmshift.c \
+        getFileInfo.c \
+        writeData.c \
+        wallclock_time.c \
+        getpars.c \
+        verbosepkg.c \
+        atopkge.c \
+        docpkge.c \
+        readSnapData.c
+
 OBJJ	= $(SRCJ:%.c=%.o)
 
 fmute:	$(OBJJ) 
@@ -80,18 +90,24 @@ OBJC	= $(SRCC:%.c=%.o)
 combine:  $(OBJC)
 	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o combine $(OBJC) $(LIBS)
 
-install: fmute marchenko_app combine
+OBJG	= $(SRCG:%.c=%.o)
+
+gmshift:  $(OBJG)
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o gmshift $(OBJG) $(LIBS)
+
+install: fmute marchenko_app combine gmshift
 	cp fmute $B
 	cp marchenko_app $B
 	cp combine $B
+	cp gmshift $B
 
 #	cp marchenko2 $B
 
 clean:
-		rm -f core fmute $(OBJJ) marchenko_app $(OBJH) combine $(OBJC)
+		rm -f core fmute $(OBJJ) marchenko_app $(OBJH) combine $(OBJC) gmshift $(OBJG)
 
 realclean: clean
-		rm -f $B/fmute $B/marchenko_app $B/combine
+		rm -f $B/fmute $B/marchenko_app $B/combine $B/gmshift
 
 
 

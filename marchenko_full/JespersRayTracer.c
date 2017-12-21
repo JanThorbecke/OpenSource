@@ -123,7 +123,7 @@ int getWaveParameter(float *slowness, icoord size, float dgrid, fcoord s, fcoord
         if (ray.useT2 != 0)
             T2 += getdT2(x, z, so, angle, ds, nRayTmp, s, r, rayReference3D, slowness, size);
 
-        if (ray.geomspread != 0) {
+        /*if (ray.geomspread != 0) {
             if (so <= 0) {
                 dQdPhi = 0;
             }
@@ -131,7 +131,7 @@ int getWaveParameter(float *slowness, icoord size, float dgrid, fcoord s, fcoord
                 greentmp = greenIntP(lengthRefRay, so, lengthRefRay, slowness, size, nRayTmp, r, s);
                 dQdPhi += greentmp*secondDerivativeU1(slowness, size, x, z, angle, r, s)*ds/so;
             }
-        }
+        }*/
     }
 
     if (ray.useT2)

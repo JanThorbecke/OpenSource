@@ -19,7 +19,7 @@ int optncr(int n);
 int maxest(float *data, int nt);
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
 
-int AmpEst(float *f1d, float *Gd, float *ampest, int Nsyn, int nxs, int ntfft, int *ixpossyn, int npossyn, char *file_wav)
+void AmpEst(float *f1d, float *Gd, float *ampest, int Nsyn, int nxs, int ntfft, int *ixpossyn, int npossyn, char *file_wav)
 {
 	
 	int 	l, i, ix, iw, nfreq;

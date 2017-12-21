@@ -41,17 +41,17 @@ int readSnapData(char *filename, float *data, segy *hdrs, int nsnaps, int nx, in
 int readTinvData(char *filename, float dt, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nsyn, int nx, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose);
 int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, float d2, float f2, int n2out, int Nsyn, float *xsyn, float *zsyn, int iter);
 void name_ext(char *filename, char *extension);
-int Cost(float *f1p, float *f1d, float *Gm, float *Gm0, double *J, int Nsyn, int nxs, int ntfft, int *ixpossyn, int npossyn);
+void Cost(float *f1p, float *f1d, float *Gm, float *Gm0, double *J, int Nsyn, int nxs, int ntfft, int *ixpossyn, int npossyn);
 void applyMute( float *data, int *mute, int smooth, int above, int Nsyn, int nxs, int nt, int *xrcvsyn, int npossyn, int shift, int pad, int nt0);
-int AmpEst(float *f1d, float *Gd, float *ampest, int Nsyn, int nxs, int ntfft, int *ixpossyn, int npossyn, char *file_wav);
+void AmpEst(float *f1d, float *Gd, float *ampest, int Nsyn, int nxs, int ntfft, int *ixpossyn, int npossyn, char *file_wav);
 int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *nxm);
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
 int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 int disp_fileinfo(char *file, int n1, int n2, float f1, float f2, float d1, float d2, segy *hdrs);
 double wallclock_time(void);
-int makeWindow(WavePar WP, char *file_ray, char *file_amp, float dt, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nsyn, int nx, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose);
+void makeWindow(WavePar WP, char *file_ray, char *file_amp, float dt, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nsyn, int nx, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose);
 void iterations (complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *first, int verbose);
-void imaging (float *Image, WavePar WP, complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *synpos, int *first, int verbose);
+void imaging (float *Image, WavePar WP, complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *synpos, int verbose);
 void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *synpos, int verbose);
 
 void synthesis(complex *Refl, complex *Fop, float *Top, float *iRN, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, double *tfft, int *first, int verbose);
@@ -659,6 +659,7 @@ int main (int argc, char **argv)
                 	f2p[l*nxs*nts+i*nts+j] = G_d[l*nxs*nts+ix*nts+j];
 					f1plus[l*nxs*nts+i*nts+j] = G_d[l*nxs*nts+ix*nts+j];
 					green[i*nts+j] = hG_d[ix*nts+nts-j];
+					//vmess("%.8f",f1plus[l*nxs*nts+i*nts+j]);
                 }
             }
     	}
@@ -675,7 +676,7 @@ int main (int argc, char **argv)
 		first=0;
 		imaging(Image,WPs,Refl,nx,nt,nxs,nts,dt,xsyn,Nsyn,xrcv,xsrc,fxs2,fxs,dxs,dxsrc,dx,ixa,ixb,
        		ntfft,nw,nw_low,nw_high,mode,reci,nshots,ixpossyn,npossyn,pmin,f1min,f1plus,
-       		f2p,G_d,muteW,smooth,shift,above,pad,nt0,synpos,&first,verbose);
+       		f2p,G_d,muteW,smooth,shift,above,pad,nt0,synpos,verbose);
 
 		/*============= write output files ================*/
 
@@ -797,8 +798,17 @@ void synthesis(complex *Refl, complex *Fop, float *Top, float *iRN, int nx, int 
     /* reset output data to zero */
     memset(&iRN[0], 0, Nsyn*nxs*nts*sizeof(float));
 
+	idxs = 1.0/dxs;
+	if (ixrcv == NULL) {
+		ixrcv = (int *)malloc(nshots*nx*sizeof(int));
+	}
+   	for (k=0; k<nshots; k++) {
+           for (i = 0; i < nx; i++) {
+               ixrcv[k*nx+i] = NINT((xrcv[k*nx+i]-fxs)*idxs);
+		}
+	}
 	ctrace = (complex *)calloc(ntfft,sizeof(complex));
-	if (!first) {
+	if (!*first) {
     /* transform muted Ni (Top) to frequency domain, input for next iteration  */
     	for (l = 0; l < Nsyn; l++) {
         	/* set Fop to zero, so new operator can be defined within ixpossyn points */
@@ -815,7 +825,7 @@ void synthesis(complex *Refl, complex *Fop, float *Top, float *iRN, int nx, int 
 	}
 	else { /* only for first call to synthesis */
     /* transform G_d to frequency domain, over all nxs traces */
-		first=0;
+		*first=0;
     	for (l = 0; l < Nsyn; l++) {
         	/* set Fop to zero, so new operator can be defined within all ix points */
             memset(&Fop[l*nxs*nw].r, 0, nxs*nw*2*sizeof(float));
@@ -826,13 +836,6 @@ void synthesis(complex *Refl, complex *Fop, float *Top, float *iRN, int nx, int 
                    	Fop[l*nxs*nw+iw*nxs+i].i = mode*ctrace[nw_low+iw].i;
                	}
             }
-		}
-		idxs = 1.0/dxs;
-		ixrcv = (int *)malloc(nshots*nx*sizeof(int));
-    	for (k=0; k<nshots; k++) {
-            for (i = 0; i < nx; i++) {
-                ixrcv[k*nx+i] = NINT((xrcv[k*nx+i]-fxs)*idxs);
-			}
 		}
 	}
 	free(ctrace);
