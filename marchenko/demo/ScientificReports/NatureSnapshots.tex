@@ -1,0 +1,194 @@
+\documentclass[10pt]{article}
+\usepackage{graphpap, epsfig, amssymb, rotating, graphpap, pifont}
+\usepackage{amsmath}
+\usepackage{pstricks,placeins,pstricks-add}
+\usepackage{hyperref}
+%\usepackage{pst-node, pst-plot}
+\usepackage{afterpage}
+\usepackage{psfrag}
+\usepackage[text={16cm,24cm},centering]{geometry}
+
+\pagenumbering{gobble}% Remove page numbers (and reset to 1)
+
+% don't complain about overfull vboxes less than 5 points
+\vfuzz = 5pt
+\sloppy
+
+% now define realbold and undertilde
+\def\realbold#1{{\mbox{\boldmath $\bf #1$}}}
+\def\realboldcal#1{{\mbox{\boldmath $\bf \cal #1$}}}
+\def\@undertilde#1{\oalign{{\realbold{#1}}\crcr\hidewidth
+\vbox to .2ex{\hbox{\bf\char126}\vss}\hidewidth}}
+
+%Define helvetica bold for discrete vectors and matrices
+\DeclareMathAlphabet{\mathhelb}{OT1}{phv}{b}{n}
+\DeclareMathAlphabet{\mathhelbo}{OT1}{phv}{b}{sl}
+
+\def\vector#1{{\mbox{\boldmath $#1$}}}%
+\def\tensor#1{\realbold{#1}}%
+\def\op#1{\mathcal{#1}}%
+
+\def\dvector#1{\mathhelbo{#1}}%
+\def\dtensor#1{\mathhelb{#1}}%
+\def\dop#1{\mathhelb{#1}}%
+
+\let\BM\realbold
+
+\definecolor{LightBlue}{rgb}{0.10,0.55,1.0}
+\definecolor{LightBlue}{rgb}{0.0,1.0,1.0}
+
+% set unitlength to 1cm for picture environments
+\setlength{\unitlength}{1cm}
+
+% spacing between lines
+\renewcommand{\baselinestretch}{1.08}
+
+%Jan's definitions
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\x}{\vector x}
+\newcommand{\dA}{\dd^2\x}
+\newcommand{\dV}{\dd^3\x}
+\newcommand{\pD}{\partial D}
+\newcommand{\bx}{\mathbf{x}}
+
+
+\begin{document}
+
+\title{Note: Snapshots for article}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Figure with different time axis annotation 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure}[ht]
+\begin{pspicture}(16,22)(0,0)
+%time axis top row
+%\put(-1.2, 17.5){$+t$}
+%\put(-1.2, 16.1){$-t$}
+\put(-1.5, 16.88){$t=0$}
+\psline{->}(-1.7,15.8)(-1.7,17.8) \rput{L}(-1.9, 16.6){ time}
+% time axis gray-scales
+\put(-1.2, 14.0){$-t_2$}
+\put(-1.2, 11.5){$-t_1$}
+\put(-1.5, 9.0){$t=0$}
+\put(-1.2, 6.5){$+t_1$}
+\put(-1.2, 4.0){$+t_2$}
+\psline{->}(-1.7,14.5)(-1.7,3.5)  \rput{L}(-1.9, 8.8){ time}
+%
+%frame wiggle traces
+\psframe(-0.5,15.60)(3.45,18.2)
+\psframe(3.6,15.60)(7.55,18.2)
+\psframe(7.7,15.60)(11.65,18.2)
+%\psframe(11.8,15.60)(15.75,18.2)
+%
+% blue background on wiggles
+\pscurve[linecolor=LightBlue,linewidth=4pt]{c-c}(-0.4,16.3)(1.5,16.55)(3.4,16.3)
+\pscurve[linecolor=LightBlue,linewidth=4pt]{c-c}(3.7,16.3)(5.6,16.55)(7.5,16.3)
+\pscurve[linecolor=LightBlue,linewidth=4pt]{c-c}(7.8,16.3)(9.7,16.55)(11.6,16.3)
+%\pscurve[linecolor=LightBlue,linewidth=4pt]{c-c}(11.9,16.3)(13.8,16.55)(15.7,16.3)
+%
+\put(-0.57, 14.8){\epsfig{file={inj_rate_surf_dx0.5_rvz_wiggle}.eps, width=4.09cm }}
+\put(3.53, 14.8){\epsfig{file={inj_rate_surf_dx0.5_rvz_wiggle}.eps, width=4.09cm }}
+\put(7.63, 14.8){\epsfig{file={pplus_wiggle}.eps, width=4.09cm }}
+%\put(11.73, 14.8){\epsfig{file={pplus_wiggle}.eps, width=4.09cm }}
+%
+\put(-0.5, 12.0){\epsfig{file={snapinj_planevzvxsum_-0.60}.eps, width=3.9cm }}
+\put(3.6, 12.0){\epsfig{file={snapinj_surf_-0.60}.eps, width=3.9cm }}
+\put(7.7, 12.0){\epsfig{file={snapinj_f2_-0.60}.eps, width=3.9cm }}
+\put(11.8, 12.0){\epsfig{file={snapinj_f2sum_0.60}.eps, width=3.9cm }}
+%
+\put(-0.5, 9.5){\epsfig{file={snapinj_planevzvxsum_-0.30}.eps, width=3.9cm }}
+\put(3.6, 9.5){\epsfig{file={snapinj_surf_-0.30}.eps, width=3.9cm }}
+\put(7.7, 9.5){\epsfig{file={snapinj_f2_-0.30}.eps, width=3.9cm }}
+\put(11.8, 9.5){\epsfig{file={snapinj_f2sum_0.30}.eps, width=3.9cm }}
+%
+\put(-0.5, 7.0){\epsfig{file={snapinj_planevzvxsum_0.00}.eps, width=3.9cm }}
+\put(3.6, 7.0){\epsfig{file={snapinj_surf_0.00}.eps, width=3.9cm }}
+\put(7.7, 7.0){\epsfig{file={snapinj_f2_0.00}.eps, width=3.9cm }}
+\put(11.8, 7.0){\epsfig{file={snapinj_f2_0.00}.eps, width=3.9cm }}
+%
+\put(-0.5, 4.5){\epsfig{file={snapinj_planevzvxsum_0.30}.eps, width=3.9cm }}
+\put(3.6, 4.5){\epsfig{file={snapinj_surf_0.30}.eps, width=3.9cm }}
+\put(7.7, 4.5){\epsfig{file={snapinj_f2_0.30}.eps, width=3.9cm }}
+\put(11.8, 4.5){\epsfig{file={snapinj_f2sum_0.30}.eps, width=3.9cm }}
+%
+\put(-0.5, 2.0){\epsfig{file={snapinj_planevzvxsum_0.60}.eps, width=3.9cm }}
+\put(3.6, 2.0){\epsfig{file={snapinj_surf_0.60}.eps, width=3.9cm }}
+\put(7.7, 2.0){\epsfig{file={snapinj_f2_0.60}.eps, width=3.9cm }}
+\put(11.8, 2.0){\epsfig{file={snapinj_f2sum_0.60}.eps, width=3.9cm }}
+%
+% source position
+\multirput(1.44,13.75)(4.1,0){4}{\psdot[linecolor=yellow,fillcolor=yellow,dotstyle=o,dotsize=4pt](0,0)\put(0.1,0.0){${\bf s}$}}
+\multirput(1.44,11.25)(4.1,0){4}{\psdot[linecolor=yellow,fillcolor=yellow,dotstyle=o,dotsize=4pt](0,0)\put(0.1,0.0){${\bf s}$}}
+\multirput(1.44,8.75)(4.1,0){4}{\put(0.1,0.0){${\bf s}$}}
+\multirput(1.44,6.25)(4.1,0){4}{\psdot[linecolor=yellow,fillcolor=yellow,dotstyle=o,dotsize=4pt](0,0)\put(0.1,0.0){${\bf s}$}}
+\multirput(1.44,3.75)(4.1,0){4}{\psdot[linecolor=yellow,fillcolor=yellow,dotstyle=o,dotsize=4pt](0,0)\put(0.1,0.0){${\bf s}$}}
+%
+%source function
+\rput(1.44, 17.9){\psframebox[fillstyle=solid]{$V({\bf x},{\bf s},-t)$}}
+\rput(5.54, 17.9){\psframebox[fillstyle=solid]{$V({\bf x},{\bf s},-t)$}}
+\rput(9.64, 17.9){\psframebox[fillstyle=solid]{$F({\bf x},{\bf s},t)$}}
+%\rput(13.74, 17.9){\psframebox[fillstyle=solid]{$F({\bf x},{\bf s},t)$}}
+%
+%times in snapshots
+%\multirput(2.78,13.03)(4.1,0){4}{\put(0.0,0.0){$-t_2$}}
+%\multirput(2.78,10.53)(4.1,0){4}{\put(0.0,0.0){$-t_1$}}
+%\multirput(2.78,8.03)(4.1,0){4}{\put(-0.3,0.0){$t=0$}}
+%\multirput(2.78,5.53)(4.1,0){4}{\put(0.2,0.0){$t_1$}}
+%\multirput(2.78,3.03)(4.1,0){4}{\put(0.2,0.0){$t_2$}} 
+%
+% Source postions (red dots) at top snapshots
+\psset{arrowscale=1.1,ArrowFill=true,linecolor=red,linestyle=none}
+\psline[ArrowInside=-*,ArrowInsidePos=0.0,ArrowInsideNo=13]{-}(3.4,15.4)(3.4,12.7)
+\psline[ArrowInside=-*,ArrowInsidePos=0.0,ArrowInsideNo=13]{-}(-0.5,15.4)(-0.5,12.7)
+\psline[ArrowInside=-*,ArrowInsidePos=0.0,ArrowInsideNo=21]{-}(-0.67,15.22)(3.5,15.22)
+\psline[ArrowInside=-*,ArrowInsidePos=0.0,ArrowInsideNo=21]{-}(-0.67,12.80)(3.5,12.80)
+%
+\psline[ArrowInside=-*,ArrowInsidePos=0.0,ArrowInsideNo=21]{-}(3.43,15.22)(7.6,15.22)
+\psline[ArrowInside=-*,ArrowInsidePos=0.0,ArrowInsideNo=21]{-}(7.53,15.22)(11.7,15.22)
+%\psline[ArrowInside=-*,ArrowInsidePos=0.0,ArrowInsideNo=21]{-}(11.63,15.22)(15.8,15.22)
+%
+% source arrows 
+\psset{arrowscale=1.0,ArrowFill=true,linecolor=black,linestyle=solid}
+\multirput(-0.37,15.6)(0.184,0){21}{\psline{->}(0.0,0.0)(0.0,-0.36)}
+\multirput(3.73,15.6)(0.184,0){21}{\psline{->}(0.0,0.0)(0.0,-0.36)}
+\multirput(7.83,15.6)(0.184,0){21}{\psline{->}(0.0,0.0)(0.0,-0.36)}
+%\multirput(11.93,15.6)(0.184,0){21}{\psline{->}(0.0,0.0)(0.0,-0.36)}
+%
+%bottom labels
+\put(0.3, 2.0){omnidirectional}
+\put(0.4, 1.6){time reversal}
+\put(1.3, 0.8){(a)}
+\put(4.6, 2.0){single-sided}
+\put(4.5, 1.6){time reversal}
+\put(5.4, 0.8){(b)}
+\put(8.6, 2.0){single-sided}
+\put(8.8, 1.6){focusing}
+\put(9.5, 0.8){(c)}
+\put(12.8, 2.0){symmetrized}
+\put(12.9, 1.6){single-sided}
+\put(13.1, 1.2){focusing}
+\put(13.6, 0.8){(d)}
+%
+% x-axis top row
+\multirput(2.6,18.35)(4.1,0.0){3}{\psline{->}(0.0,0.0)(0.5,0.0) \put(0.5,-0.05){$x$}}
+% x-axis snapshots
+\multirput(2.6,15.05)(0,-2.5){5}{\psline{->}(0.0,0.0)(0.5,0.0) \put(0.5,-0.05){$x$}}
+\multirput(6.7,15.05)(0,-2.5){5}{\psline{->}(0.0,0.0)(0.5,0.0) \put(0.5,-0.05){$x$}}
+\multirput(10.8,15.05)(0,-2.5){5}{\psline{->}(0.0,0.0)(0.5,0.0) \put(0.5,-0.05){$x$}}
+\multirput(14.9,15.05)(0,-2.5){5}{\psline{->}(0.0,0.0)(0.5,0.0) \put(0.5,-0.05){$x$}}
+%
+% z-axis snapshots
+\multirput(-0.3,13.2)(0,-2.5){5}{\psline{->}(0.0,0.0)(0.0,-0.5) \put(-0.1,-0.7){$z$}}
+\multirput(3.8,13.2)(0,-2.5){5}{\psline{->}(0.0,0.0)(0.0,-0.5) \put(-0.1,-0.7){$z$}}
+\multirput(7.9,13.2)(0,-2.5){5}{\psline{->}(0.0,0.0)(0.0,-0.5) \put(-0.1,-0.7){$z$}}
+\multirput(12.0,13.2)(0,-2.5){5}{\psline{->}(0.0,0.0)(0.0,-0.5) \put(-0.1,-0.7){$z$}}
+%
+%\psgrid
+\end{pspicture}
+%\caption{Different... }\label{model}
+\end{figure}
+
+
+
+\end{document}
+
