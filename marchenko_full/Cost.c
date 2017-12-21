@@ -15,7 +15,7 @@ typedef struct _complexStruct { /* complex number */
 
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
-int Cost(float *f1p, float *f1d, float *Gm, float *Gm0, double *J, int Nsyn, int nxs, int ntfft, int *ixpossyn, int npossyn)
+void Cost(float *f1p, float *f1d, float *Gm, float *Gm0, double *J, int Nsyn, int nxs, int ntfft, int *ixpossyn, int npossyn)
 {
 	
 	int 	l, i, ix, iw, nfreq;
