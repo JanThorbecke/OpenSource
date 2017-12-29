@@ -10,7 +10,7 @@
 #include <float.h>
 #include <assert.h>
 
-#if defined(OPENMP)
+#ifdef _OPENMP
 #include <omp.h>
 #endif
 

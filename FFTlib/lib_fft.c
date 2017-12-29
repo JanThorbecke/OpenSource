@@ -7,11 +7,13 @@
 #include <float.h>
 #include <assert.h>
 #include "genfft.h"
+#include "kiss_fft.h"
 
-void fft(int n, double *real, double *imag);
-void ifft(int n, double *real, double *imag);
-void realifft(int n, double *real);
-void realfft(int n, double *real);
+
+void fft(int n, REAL *real, REAL *imag);
+void ifft(int n, REAL *real, REAL *imag);
+void realifft(int n, REAL *real);
+void realfft(int n, REAL *real);
 
 void ccdft(complex *cdata, int n, int sign);
 void rcdft(REAL *rdata, complex *cdata, int n, int sign);
@@ -62,17 +64,17 @@ void pfamcc (int isign, int n, int nt, int k, int kt, complex z[]);
 void rc1_fft(REAL *data, complex *cdata, int n, int sign)
 {
 	int    j;
-	double *datft;
+	REAL *datft;
 
 	if (NINT(pow(2.0, (double)NINT(log((double)n)/log(2.0)))) != n) {
 		if (npfar(n) == n) pfarc(sign,n,data,cdata);
 		else rcdft(data,cdata,n,sign);
 	}
 	else {
-		datft = (double *)malloc(n*sizeof(double));
+		datft = (REAL *)malloc(n*sizeof(REAL));
 		if (datft == NULL) fprintf(stderr,"rc1_fft: memory allocation error\n");
 	
-		for (j = 0; j < n; j++) datft[j] = (double)data[j];
+		for (j = 0; j < n; j++) datft[j] = (REAL)data[j];
 		realfft(n, datft);
 		cdata[0].i = 0.0;
 		for (j = 0; j < n/2; j++) {
@@ -91,7 +93,7 @@ void rc1_fft(REAL *data, complex *cdata, int n, int sign)
 void rcm_fft(REAL *data, complex *cdata, int n1, int n2, int ldr, int ldc, int sign)
 {
 	int    j, i;
-	double *datft;
+	REAL *datft;
 
 	if (NINT(pow(2.0, (double)NINT(log((double)n1)/log(2.0)))) != n1) {
 		if (npfar(n1) == n1) {
@@ -111,11 +113,11 @@ void rcm_fft(REAL *data, complex *cdata, int n1, int n2, int ldr, int ldc, int s
 		}
 	}
 	else {
-		datft = (double *)malloc(n1*sizeof(double));
+		datft = (REAL *)malloc(n1*sizeof(REAL));
 		if (datft == NULL) fprintf(stderr,"rcm_fft: memory allocation error\n");
 	
 		for (i = 0; i < n2; i++) {
-			for (j = 0; j < n1; j++) datft[j] = (double)data[i*ldr+j];
+			for (j = 0; j < n1; j++) datft[j] = (REAL)data[i*ldr+j];
 			realfft(n1, datft);
 			cdata[i*ldc].i = 0.0;
 			for (j = 0; j < n1/2; j++) {
@@ -135,21 +137,21 @@ void rcm_fft(REAL *data, complex *cdata, int n1, int n2, int ldr, int ldc, int s
 void cr1_fft(complex *cdata, REAL *data, int n, int sign)
 {
 	int    j;
-	double *datft;
+	REAL *datft;
 
 	if (NINT(pow(2.0, (double)NINT(log((double)n)/log(2.0)))) != n) {
 		if (npfar(n) == n) pfacr(sign,n,cdata,data);
 		else crdft(cdata,data,n,sign);
 	}
 	else {
-		datft = (double *)malloc(n*sizeof(double));
+		datft = (REAL *)malloc(n*sizeof(REAL));
 		if (datft == NULL) fprintf(stderr,"cr1_fft: memory allocation error\n");
 
 		for (j = 0; j < n/2; j++) {
-			datft[j] = (double)cdata[j].r;
-			datft[n-1-j] = (double)cdata[j+1].i;
+			datft[j] = (REAL)cdata[j].r;
+			datft[n-1-j] = (REAL)cdata[j+1].i;
 		}
-		datft[n/2] = (double)cdata[n/2].r;
+		datft[n/2] = (REAL)cdata[n/2].r;
 
 		realifft(n, datft);
 	
@@ -170,8 +172,9 @@ void cr1_fft(complex *cdata, REAL *data, int n, int sign)
 void crm_fft(complex *cdata, REAL *data, int n1, int n2, int ldc, int ldr, int sign)
 {
 	int    j, i;
-	double *datft;
+	REAL *datft;
 
+	/* non-power of 2 uses FFT from SU for prime numbers or default fft */
 	if (NINT(pow(2.0, (double)NINT(log((double)n1)/log(2.0)))) != n1) {
 		if (npfar(n1) == n1) {
 			if (ldr == n1 && ldc == n2) {
@@ -190,15 +193,15 @@ void crm_fft(complex *cdata, REAL *data, int n1, int n2, int ldc, int ldr, int s
 		}
 	}
 	else {
-		datft = (double *)malloc(n1*sizeof(double));
+		datft = (REAL *)malloc(n1*sizeof(REAL));
 		if (datft == NULL) fprintf(stderr,"crm_fft: memory allocation error\n");
 	
 		for (i = 0; i < n2; i++) {
 			for (j = 0; j < n1/2; j++) {
-				datft[j] = (double)cdata[i*ldc+j].r;
-				datft[n1-1-j] = (double)cdata[i*ldc+j+1].i;
+				datft[j] = (REAL)cdata[i*ldc+j].r;
+				datft[n1-1-j] = (REAL)cdata[i*ldc+j+1].i;
 			}
-			datft[n1/2] = (double)cdata[i*ldc+n1/2].r;
+			datft[n1/2] = (REAL)cdata[i*ldc+n1/2].r;
 	
 			realifft(n1, datft);
 	
@@ -220,17 +223,43 @@ void crm_fft(complex *cdata, REAL *data, int n1, int n2, int ldc, int ldr, int s
 
 void cc1_fft(complex *cdata, int n, int sign)
 {
-	int    j;
-	double  *real, *imag;
+	int    j, id, max_threads;
+	REAL  *real, *imag;
+	static kiss_fft_cfg st[MAX_NUMTHREADS]; 
+    static int nprev[MAX_NUMTHREADS];
+
+#ifdef _OPENMP
+    //max_threads = omp_get_max_threads();
+    id = omp_get_thread_num();
+#else 
+    //max_threads = 1;
+    id = 0;
+#endif  
+
 
 	if (NINT(pow(2.0, (double)NINT(log((double)n)/log(2.0)))) != n) {
 		if (npfa(n) == n) pfacc(sign, n, cdata);
-		else ccdft(cdata,n,sign);
+		else { /* use kiss_fft */
+    		if (n != nprev[id]) {
+        		if (nprev[id] != 0) free(st[id]);
+				st[id] = kiss_fft_alloc( n ,0 ,0, 0);
+        		nprev[id] = n;
+			}
+    		kiss_fft(st[id] ,cdata, n, sign);
+		}
 	}
 	else {
-		real = (double *)malloc(n*sizeof(double));
+    	if (n != nprev[id]) {
+        	if (nprev[id] != 0) free(st[id]);
+			st[id] = kiss_fft_alloc( n ,0 ,0, 0);
+        	nprev[id] = n;
+		}
+    	kiss_fft(st[id] ,cdata, n, sign);
+
+/*
+		real = (REAL *)malloc(n*sizeof(REAL));
 		if (real == NULL) fprintf(stderr,"cc1_fft: memory allocation error\n");
-		imag = (double *)malloc(n*sizeof(double));
+		imag = (REAL *)malloc(n*sizeof(REAL));
 		if (imag == NULL) fprintf(stderr,"cc1_fft: memory allocation error\n");
 	
 		for (j = 0; j < n; j++) {
@@ -248,6 +277,7 @@ void cc1_fft(complex *cdata, int n, int sign)
 
 		free(real);
 		free(imag);
+*/
 	}
 
 	return;
@@ -256,24 +286,26 @@ void cc1_fft(complex *cdata, int n, int sign)
 void ccm_fft(complex *cdata, int n1, int n2, int ld1, int sign)
 {
 	int    i, j;
-	double  *real, *imag;
+	REAL  *real, *imag;
 
 	if (NINT(pow(2.0, (double)NINT(log((double)n1)/log(2.0)))) != n1) {
 		if (npfa(n1) == n1) pfamcc(sign, n1, n2, 1, ld1, cdata);
 		else {
-			for (i = 0; i < n2; i++) ccdft(&cdata[i*ld1],n1,sign);
+			for (i = 0; i < n2; i++) cc1_fft(&cdata[i*ld1],n1,sign);
 		}
 	}
 	else {
-		real = (double *)malloc(n1*sizeof(double));
+		for (i = 0; i < n2; i++) cc1_fft(&cdata[i*ld1],n1,sign);
+/*
+		real = (REAL *)malloc(n1*sizeof(REAL));
 		if (real == NULL) fprintf(stderr,"ccm_fft: memory allocation error\n");
-		imag = (double *)malloc(n1*sizeof(double));
+		imag = (REAL *)malloc(n1*sizeof(REAL));
 		if (imag == NULL) fprintf(stderr,"ccm_fft: memory allocation error\n");
 	
 		for (i = 0; i < n2; i++) {
 			for (j = 0; j < n1; j++) {
-				real[j] = (double)cdata[i*ld1+j].r;
-				imag[j] = (double)cdata[i*ld1+j].i;
+				real[j] = (REAL)cdata[i*ld1+j].r;
+				imag[j] = (REAL)cdata[i*ld1+j].i;
 			}
 	
 			if (sign < 0) fft(n1, real, imag);
@@ -288,6 +320,7 @@ void ccm_fft(complex *cdata, int n1, int n2, int ld1, int sign)
 
 		free(real);
 		free(imag);
+*/
 	}
 
 	return;
@@ -333,32 +366,44 @@ void ccdft(complex *cdata, int n, int sign)
 
 void rcdft(REAL *rdata, complex *cdata, int n, int sign)
 {
-	int i, j, k, nc; 
-	REAL scl, sumr, sumi;
-	static REAL *csval;
-	static int nprev=0;
+	int i, j, k, nc, id, max_threads; 
+	double scl, sumr, sumi;
+	static double *csval[MAX_NUMTHREADS];
+    static int nprev[MAX_NUMTHREADS];
 
-	if (nprev != n) {
-		scl = 2.0*M_PI/(REAL)n;
-		if (csval) free(csval);
-		csval = (REAL *) malloc(2*n*sizeof(REAL));
-		for (i=0; i<n; i++) {
-			csval[2*i] = cos(scl*i);
-			csval[2*i+1] = sin(scl*i);
+#ifdef _OPENMP
+    //max_threads = omp_get_max_threads();
+    id = omp_get_thread_num();
+#else 
+    //max_threads = 1;
+    id = 0;
+#endif  
+
+	if (nprev[id] != n) {
+		scl = (2.0*M_PI)/((double)n);
+		if (csval[id]) free(csval[id]);
+		nc = (n+2)/2;
+		csval[id] = (double *) malloc(2*n*nc*sizeof(double));
+		for (i=0; i<nc; i++) {
+	    	#pragma ivdep
+			for (j=0; j<n; j++) {
+				csval[id][2*i*j] = cos(scl*(i*j));
+				csval[id][2*i*j+1] = sin(scl*(i*j));
+			}
 		}
-		nprev = n;
+		nprev[id] = n;
 	}
 
 	nc = (n+2)/2;
 	for (i=0; i<nc; i++) {
 		sumr = sumi = 0.0;
+	    #pragma ivdep
 		for (j=0; j<n; j++) {
-			k = 2*((i*j)%n);
-			sumr += rdata[j]*csval[k];
-			sumi += sign*rdata[j]*csval[k+1];
+			sumr += rdata[j]*csval[id][2*i*j];
+			sumi += sign*rdata[j]*csval[id][2*i*j+1];
 		}
-		cdata[i].r = sumr;
-		cdata[i].i = sumi;
+		cdata[i].r = (REAL)sumr;
+		cdata[i].i = (REAL)sumi;
 	}
 
 	return;
@@ -366,48 +411,49 @@ void rcdft(REAL *rdata, complex *cdata, int n, int sign)
 
 void crdft(complex *cdata, REAL *rdata, int n, int sign)
 {
-	int i, j, k, nc; 
+	int i, j, k, nc, id, max_threads; 
 	double scl, sumr;
-	static REAL *csval;
-	static int nprev=0;
+	static double *csval[MAX_NUMTHREADS];
+    static int nprev[MAX_NUMTHREADS];
 
-	if (nprev != n) {
-		scl = 2.0*M_PI/((REAL)n);
-		if (csval) free(csval);
-		csval = (REAL *) malloc(2*n*sizeof(REAL));
+	if (nprev[id] != n) {
+		scl = (2.0*M_PI)/((double)n);
+		if (csval[id]) free(csval[id]);
+		nc = (n+2)/2;
+		csval[id] = (double *) malloc(2*n*nc*sizeof(double));
 		for (i=0; i<n; i++) {
-			csval[2*i] = cos(scl*i);
-			csval[2*i+1] = sin(scl*i);
+	    	#pragma ivdep
+			for (j=0; j<nc; j++) {
+				csval[id][2*i*j] = cos(scl*(i*j));
+				csval[id][2*i*j+1] = sin(scl*(i*j));
+			}
 		}
-		nprev = n;
+		nprev[id] = n;
 	}
 
 	nc = (n+2)/2;
-	scl = 2.0*M_PI/((REAL)n);
+	scl = (2.0*M_PI)/((double)n);
 	#pragma ivdep
 	for (i=0; i<n; i++) {
 		sumr = 0.0;
 		#pragma ivdep
 		for (j=0; j<nc; j++) {
-			k = 2*((i*j)%n);
-			sumr += cdata[j].r*csval[k]-sign*cdata[j].i*csval[k+1];
-			//sumr += cdata[j].r*cos(scl*i*j)-sign*cdata[j].i*sin(scl*i*j);
+			sumr += cdata[j].r*csval[id][2*i*j]-sign*cdata[j].i*csval[id][2*i*j+1];
+//            sumr += cdata[j].r*cos(scl*i*j)-sign*cdata[j].i*sin(scl*i*j);
+
 		}
 		rdata[i] = (REAL)2.0*sumr-cdata[0].r;
-		//rdata[i] = sumr;
 	}
 
 /* there is something strange here but adding these values for even
    transformation numbers solves it ??? */
-/*
-	if (!(n & 01)) {
-		scl = n*0.25;
-		for (i=0; i<nc-1; i++) {
-			rdata[2*i] -= scl;
-			rdata[2*i+1] += scl;
-		}
-	}
-*/
+    if (!(n & 01)) {
+        scl = n*0.25;
+        for (i=0; i<nc-1; i++) {
+            rdata[2*i] -= scl;
+            rdata[2*i+1] += scl;
+        }
+    }
 
 	return;
 }

@@ -4,7 +4,7 @@ include ../../Make_include
 
 LIBS    += -L$L -lgenfft -lm
 
-ALL: cc1test cc2dtest ccmtest rc1test rc2dtest rcmtest 
+ALL: cc1test cc2dtest ccmtest rc1test rc2dtest rcmtest rc1loop cc1loop
 
 cc1test: cc1test.o
 	$(CC) $(OPTC) $(CFLAGS) -o cc1test cc1test.o $(LIBS)
@@ -24,8 +24,15 @@ rc2dtest: rc2dtest.o
 rcmtest: rcmtest.o
 	$(CC) $(OPTC) $(CFLAGS) -o rcmtest rcmtest.o $(LIBS)
 
+rc1loop: rc1loop.o
+	$(CC) $(OPTC) $(CFLAGS) -o rc1loop rc1loop.o $(LIBS)
+
+cc1loop: cc1loop.o
+	$(CC) $(OPTC) $(CFLAGS) -o cc1loop cc1loop.o $(LIBS)
+
+
 clean:
-		rm -f core *.o cc1test cc2dtest ccmtest rc1test rc2dtest rcmtest 
+		rm -f core *.o cc1test cc2dtest ccmtest rc1test rc2dtest rcmtest rc1loop cc1loop
 
 realclean: clean
 

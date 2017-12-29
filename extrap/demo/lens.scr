@@ -1,0 +1,36 @@
+#!/bin/bash
+
+makemod \
+            file_base=lens.su \
+            dx=5 \
+            dz=2 \
+            back=1500,1.2 \
+            sizex=3000 \
+            sizez=1800 \
+            \
+            cp=2000   \
+            ro=4 \
+            grad=0 \
+            poly=2 \
+            intt=def \
+            x=400,650,850,1050,1250,1450,1650,1850,2050,2250,2450,2600 \
+            z=450,350,300,290,285,290,300,290,293,296,350,450 \
+            \
+            cp=1500 \
+            ro=1.6 \
+            grad=0 \
+            poly=2 \
+            intt=def \
+            x=400,650,850,1050,1250,1450,1650,1850,2050,2250,2450,2600 \
+            z=450,500,495,475,450,450,460,470,475,460,455,450   \
+           verbose=2 
+
+
+makewave file_out=ricker.su verbose=1 nt=512 dt=0.004
+sushw key=gx,scalco a=1500000,-1000 < ricker.su > nep.su ; mv nep.su ricker.su
+
+
+../../bin/extrap file_in=ricker.su file_vel=lens_cp.su verbose=1 zrcv1=0 zstart=0 mode=1 verbose=2 file_out=lens_extrap.su \
+ select=4 
+
+

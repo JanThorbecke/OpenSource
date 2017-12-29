@@ -22,6 +22,7 @@ CSRC =			\
 	wkx2xt.c	\
 	wx2xt.c	\
 	pfafft.c \
+	kiss_fft.c \
 	fft_mayer.c \
 	wallclock_time.c \
 	optnumber.c \

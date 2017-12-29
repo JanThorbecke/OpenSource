@@ -6,7 +6,11 @@
 **   Ron Mayer
 */
 
+#if defined(DOUBLE)
 #define REAL double
+#else
+#define REAL float
+#endif
 
 #ifdef GOOD_TRIG
 #else
