@@ -82,14 +82,11 @@ To reproduce the Figures shown in the GEOPHYICS manuscript "Finite-difference mo
 
 Marchenko method : MARCHENKO
 ----------------------------
-If the compilation has finished without errors and produced an executable called bin/marchenko you can run one of the demo programs by running
+If the compilation has finished without errors and produced an executable called bin/marchenko you can run one of the demo programs by running a set of scripts that are explained in a README in one of the directories marchenko/demo/*
 
-> ./
+To reproduce the Figures shown in the GEOPHYICS paper "Implementation of the Marchenko method" the scripts in marchenko/demo/oneD directory can be used. The README in this directory gives more instructions and guidelines. 
 
-in the directory marchenko/demo/oneD
-
-To reproduce the Figures shown in the GEOPHYICS manuscript "Implementation of the Marchenko method" the scripts in marchenko/demo/oneD directory can be used. Please read the README in the FiguresPaper directory for more instructions and guidelines. 
-
+To reproduce the Figures shown in the Scientific Reports paper "Virtual acoustics in inhomogeneous media with single-sided access" the scripts in marchenko/demo/ScientificReports directory can be used. The README in this directory gives more instructions and guidelines. 
 
 MISC
 ----
