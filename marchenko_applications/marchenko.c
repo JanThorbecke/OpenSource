@@ -50,7 +50,7 @@ int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 int disp_fileinfo(char *file, int n1, int n2, float f1, float f2, float d1, float d2, segy *hdrs);
 double wallclock_time(void);
 void makeWindow(WavePar WP, char *file_ray, char *file_amp, float dt, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nsyn, int nx, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose);
-void iterations (complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *first, int verbose);
+void iterations (complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *first, int niter, int verbose);
 void imaging (float *Image, WavePar WP, complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *synpos, int verbose);
 void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *synpos, int verbose);
 
@@ -212,7 +212,7 @@ int main (int argc, char **argv)
     int     size, n1, n2, ntap, tap, di, ntraces, nb, ib;
     int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn, *synpos;
     int     reci, mode, ixa, ixb, n2out, verbose, ntfft;
-    int     iter, niter, tracf, *muteW, pad, nt0, ampest, *hmuteW, *hxnxsyn;
+    int     iter, niter, niterh, tracf, *muteW, pad, nt0, ampest, *hmuteW, *hxnxsyn;
     int     hw, smooth, above, shift, *ixpossyn, npossyn, ix, first=1;
     float   fmin, fmax, *tapersh, *tapersy, fxf, dxf, fxs2, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
 	float	*hzsyn, *hxsyn, *hxrcvsyn, *hG_d, xloc, zloc, *HomG;
@@ -222,8 +222,8 @@ int main (int argc, char **argv)
     float   *f1plus, *f1min, *iRN, *Ni, *trace, *Gmin, *Gplus, *Gm0;
     float   xmin, xmax, weight, tsq, *Gd, *amp, bstart, bend, db, *bdet, bp, b, bmin;
     complex *Refl, *Fop, *cshot;
-    char    *file_tinv, *file_shot, *file_green, *file_iter, *file_wav, *file_ray, *file_amp, *file_img, *file_cp;
-    char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_pmin, *wavtype, *wavtype2, *file_homg;
+    char    *file_tinv, *file_shot, *file_green, *file_iter, *file_wav, *file_ray, *file_amp, *file_img, *file_cp, *file_rays, *file_amps;
+    char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_pmin, *wavtype, *wavtype2, *file_homg, *file_tinvs;
     segy    *hdrs_im, *hdrs_homg;
 	WavePar WP,WPs;
 	modPar mod;
@@ -242,6 +242,7 @@ int main (int argc, char **argv)
 	if (!getparstring("file_homg", &file_homg)) file_homg = NULL;
     if (!getparstring("file_shot", &file_shot)) file_shot = NULL;
     if (!getparstring("file_tinv", &file_tinv)) file_tinv = NULL;
+	if (!getparstring("file_tinvs", &file_tinvs)) file_tinvs = NULL;
     if (!getparstring("file_f1plus", &file_f1plus)) file_f1plus = NULL;
     if (!getparstring("file_f1min", &file_f1min)) file_f1min = NULL;
     if (!getparstring("file_gplus", &file_gplus)) file_gplus = NULL;
@@ -253,6 +254,8 @@ int main (int argc, char **argv)
 	if (!getparstring("file_wav", &file_wav)) file_wav=NULL;
 	if (!getparstring("file_ray", &file_ray)) file_ray=NULL;
 	if (!getparstring("file_amp", &file_amp)) file_amp=NULL;
+	if (!getparstring("file_rays", &file_rays)) file_rays=NULL;
+    if (!getparstring("file_amps", &file_amps)) file_amps=NULL;
 	if (!getparstring("file_cp", &file_cp)) file_cp = NULL;
     if (!getparint("verbose", &verbose)) verbose = 0;
     if (file_tinv == NULL && file_shot == NULL) 
@@ -275,7 +278,6 @@ int main (int argc, char **argv)
     if (!getparint("ntap", &ntap)) ntap = 0;
 	if (!getparint("pad", &pad)) pad = 0;
 
-    if(!getparint("niter", &niter)) niter = 10;
     if(!getparint("hw", &hw)) hw = 15;
     if(!getparint("smooth", &smooth)) smooth = 5;
     if(!getparint("above", &above)) above = 0;
@@ -327,12 +329,32 @@ int main (int argc, char **argv)
     if(!getparstring("file_wavs", &WPs.file_wav)) WPs.file_wav=NULL;
     if(!getparstring("ws", &wavtype2)) strcpy(WPs.w, "g2");
     else strcpy(WPs.w, wavtype2);
+	if(!getparint("niter", &niter)) niter = 10;
+	if(!getparint("niterh", &niterh)) niterh = niter;
 
 /*================ Reading info about shot and initial operator sizes ================*/
 
     ngath = 0; /* setting ngath=0 scans all traces; n2 contains maximum traces/gather */
 	if (file_ray!=NULL && file_tinv==NULL) {
 		ret = getFileInfo(file_ray, &n2, &n1, &ngath, &d2, &d1, &f2, &f1, &xmin, &xmax, &scl, &ntraces);
+		n1 = 1;
+		ntraces = n2*ngath;
+		scl = 0.0010;
+		d1 = -1.0*xmin;
+		xmin = -1.0*xmax;
+		xmax = d1;
+		WP.wav = 1;
+        WP.xloc = -123456.0;
+        WP.zloc = -123456.0;
+		synpos = (int *)calloc(ngath,sizeof(int));
+		shot.nz = 1;
+		shot.nx = ngath;
+		shot.n = shot.nx*shot.nz;
+		for (l=0; l<shot.nz; l++) {
+            for (j=0; j<shot.nx; j++) {
+                synpos[l*shot.nx+j] = j*shot.nz+l;
+            }
+        }
 	}
 	else if (file_ray==NULL && file_tinv==NULL) {
 		getParameters(&mod, &rec, &src, &shot, &ray, verbose);
@@ -576,13 +598,24 @@ int main (int argc, char **argv)
 		hxnxsyn  = (int *)calloc(1,sizeof(int));
 		cshot 	 = (complex *)calloc(nxs*nfreq,sizeof(complex));
 
-		if(!getparfloat("xloc", &WPs.xloc)) WPs.xloc = 0;
-    	if(!getparfloat("zloc", &WPs.zloc)) WPs.zloc = 0;
+		if(!getparfloat("xloc", &WPs.xloc)) WPs.xloc = -123456.0;
+    	if(!getparfloat("zloc", &WPs.zloc)) WPs.zloc = -123456.0;
+		if (WPs.xloc == -123456.0 && WPs.zloc == -123456.0) file_cp = NULL;
+		if (WPs.xloc == -123456.0) WPs.xloc = 0.0;
+		if (WPs.zloc == -123456.0) WPs.zloc = 0.0;
 		xloc = WPs.xloc;
 		zloc = WPs.zloc;
 		ngath = 1;
 
-		makeWindow(WPs, file_ray, file_amp, dt, hxrcvsyn, hxsyn, hzsyn, hxnxsyn, ngath, nxs, ntfft, mode, hmuteW, hG_d, hw, verbose);
+		if (file_rays!=NULL || file_cp!=NULL) {
+			vmess("check");
+			makeWindow(WPs, file_rays, file_amps, dt, hxrcvsyn, hxsyn, hzsyn, hxnxsyn, ngath, nxs, ntfft, mode, hmuteW, hG_d, hw, verbose);
+    	}
+    	else {
+        	mode=-1; /* apply complex conjugate to read in data */
+        	readTinvData(file_tinvs, dt, hxrcvsyn, hxsyn, hzsyn, hxnxsyn,
+            	ngath, nxs, ntfft, mode, hmuteW, hG_d, hw, verbose);
+    	}
 
 		WPs.xloc = -123456.0;
 		WPs.zloc = -123456.0;
@@ -603,7 +636,7 @@ int main (int argc, char **argv)
 
 		iterations(Refl,nx,nt,nxs,nts,dt,hxsyn,1,xrcv,xsrc,fxs2,fxs,dxs,dxsrc,dx,ixa,ixb,
         	ntfft,nw,nw_low,nw_high,mode,reci,nshots,ixpossyn,npossyn,pmin,f1min,f1plus,
-        	f2p,hG_d,hmuteW,smooth,shift,above,pad,nt0,&first,verbose);
+        	f2p,hG_d,hmuteW,smooth,shift,above,pad,nt0,&first,niterh,verbose);
 
 		/* compute full Green's function G = int R * f2(t) + f2(-t) = Pplus + Pmin */
         for (i = 0; i < npossyn; i++) {
@@ -645,25 +678,35 @@ int main (int argc, char **argv)
 
 	iterations(Refl,nx,nt,nxs,nts,dt,xsyn,Nsyn,xrcv,xsrc,fxs2,fxs,dxs,dxsrc,dx,ixa,ixb,
 		ntfft,nw,nw_low,nw_high,mode,reci,nshots,ixpossyn,npossyn,pmin,f1min,f1plus,
-		f2p,G_d,muteW,smooth,shift,above,pad,nt0,&first,verbose);
+		f2p,G_d,muteW,smooth,shift,above,pad,nt0,&first,niter,verbose);
 
-	if (niter==0) {
+	/*if (niter==0) {
 		for (l = 0; l < Nsyn; l++) {
         	for (i = 0; i < npossyn; i++) {
             	j = 0;
                 ix = ixpossyn[i];
                 f2p[l*nxs*nts+i*nts+j] = G_d[l*nxs*nts+ix*nts+j];
 				f1plus[l*nxs*nts+i*nts+j] = G_d[l*nxs*nts+ix*nts+j];
-				green[i*nts+j] = hG_d[ix*nts+j];
                 for (j = 1; j < nts; j++) {
                 	f2p[l*nxs*nts+i*nts+j] = G_d[l*nxs*nts+ix*nts+j];
 					f1plus[l*nxs*nts+i*nts+j] = G_d[l*nxs*nts+ix*nts+j];
-					green[i*nts+j] = hG_d[ix*nts+nts-j];
-					//vmess("%.8f",f1plus[l*nxs*nts+i*nts+j]);
                 }
             }
     	}
-	}
+	}*/
+
+	if (niterh==0) {
+        for (l = 0; l < Nsyn; l++) {
+            for (i = 0; i < npossyn; i++) {
+                j = 0;
+                ix = ixpossyn[i];
+                green[i*nts+j] = hG_d[ix*nts+j];
+                for (j = 1; j < nts; j++) {
+                    green[i*nts+j] = hG_d[ix*nts+nts-j];
+                }
+            }
+        }
+    }
 
 	if (file_img!=NULL) {
 	
@@ -784,6 +827,7 @@ void synthesis(complex *Refl, complex *Fop, float *Top, float *iRN, int nx, int 
      * scale dx (or dxsrc) for integration over receiver (or shot) coordinates */
     scl   = 1.0*dt/((float)ntfft);
 
+fprintf(stderr,"synthesis nxs=%d Nsyn=%d nw=%d\n", nxs, Nsyn, nw);
 #ifdef _OPENMP
     npe   = omp_get_max_threads();
     /* parallelisation is over number of virtual source positions (Nsyn) */
@@ -812,7 +856,8 @@ void synthesis(complex *Refl, complex *Fop, float *Top, float *iRN, int nx, int 
     /* transform muted Ni (Top) to frequency domain, input for next iteration  */
     	for (l = 0; l < Nsyn; l++) {
         	/* set Fop to zero, so new operator can be defined within ixpossyn points */
-            memset(&Fop[l*nxs*nw].r, 0, nxs*nw*2*sizeof(float));
+            //memset(&Fop[l*nxs*nw].r, 0, nxs*nw*2*sizeof(float));
+            bzero(&Fop[l*nxs*nw].r, nxs*nw*2*sizeof(float));
             for (i = 0; i < npossyn; i++) {
                	rc1fft(&Top[l*size+i*nts],ctrace,ntfft,-1);
                	ix = ixpossyn[i];
@@ -828,7 +873,8 @@ void synthesis(complex *Refl, complex *Fop, float *Top, float *iRN, int nx, int 
 		*first=0;
     	for (l = 0; l < Nsyn; l++) {
         	/* set Fop to zero, so new operator can be defined within all ix points */
-            memset(&Fop[l*nxs*nw].r, 0, nxs*nw*2*sizeof(float));
+            //memset(&Fop[l*nxs*nw].r, 0, nxs*nw*2*sizeof(float));
+            bzero(&Fop[l*nxs*nw].r, nxs*nw*2*sizeof(float));
             for (i = 0; i < nxs; i++) {
                	rc1fft(&Top[l*size+i*nts],ctrace,ntfft,-1);
                	for (iw=0; iw<nw; iw++) {

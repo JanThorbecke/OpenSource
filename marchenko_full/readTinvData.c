@@ -95,6 +95,7 @@ int readTinvData(char *filename, WavePar WP, char *file_ray, char *file_amp, flo
 
 			/*Check whether the amplitude is also used*/
 			if (file_amp != NULL) {
+				vmess("Using amplitude file");
 				hdrs_amp = (segy *) calloc(Nsyn,sizeof(segy));
 				fp = fopen( file_amp, "r" );
             	if ( fp == NULL ) {
