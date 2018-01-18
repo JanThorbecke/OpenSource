@@ -11,18 +11,6 @@
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
-typedef struct _icoord { /* 3D coordinate integer */
-    int z;
-    int x;
-    int y;
-} icoord;
-
-typedef struct _fcoord { /* 3D coordinate float */
-    float z;
-    float x;
-    float y;
-} fcoord;
-
 double wallclock_time(void);
 
 void name_ext(char *filename, char *extension);
@@ -41,6 +29,8 @@ int defineSource(wavPar wav, srcPar src, modPar mod, float **src_nwav, int rever
 
 int writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot);
 
+void vidale(float *ttime, float *slow, icoord *isrc, icoord grid, float dx, int order, int mzrcv);
+
 /* Self documentation */
 char *sdoc[] = {
 " ",
@@ -54,12 +44,13 @@ char *sdoc[] = {
 "   dz= ............... read from model file: if dz==0 then dz= can be used to set it",
 "" ,
 " RAY TRACING PARAMETERS:",
+"   method=jesper ..... calculation method (jesper, fd) ",
 "   smoothwindow=0 .... if set lenght of 2/3D smoothing window on slowness",
 "   useT2=0 ........... 1: compute more accurate T2 pertubation correction",
 "   geomspread=1 ...... 1: compute Geometrical Spreading Factor",
 "   nraystep=5 ........ number of points on ray",
+"   sbox=1 ............ radius of inner straight ray (fd method)",
 " OPTIONAL PARAMETERS:",
-"   ischeme=3 ......... 1=acoustic, 2=visco-acoustic 3=elastic, 4=visco-elastic",
 "   sinkdepth=0 ....... receiver grid points below topography (defined bij cp=0.0)",
 "   sinkdepth_src=0 ... source grid points below topography (defined bij cp=0.0)",
 "   sinkvel=0 ......... use velocity of first receiver to sink through to next layer",
@@ -122,16 +113,17 @@ int main(int argc, char **argv)
 	srcPar src;
 	shotPar shot;
 	rayPar ray;
-    float *velocity, *slowness, *smooth;
+    float *velocity, *slowness, *smooth, *trueslow, **inter;
 	double t0, t1, t2, tinit, tray, tio;
 	size_t size;
 	int nw, n1, ix, iz, ir, ixshot, izshot;
-	int irec;
+	int irec, sbox, ipos;
     fcoord coordsx, coordgx, Time;
-    icoord grid;
-    float Jr, *ampl, *time;
+    icoord grid, isrc; 
+    float Jr, *ampl, *time, *ttime, *ttime_p;
+	float dxrcv, dzrcv;
     segy hdr;
-    char filetime[1024], fileamp[1024];
+    char filetime[1024], fileamp[1024], *method;
     size_t  nwrite;
 	int verbose;
     FILE *fpt, *fpa;
@@ -141,19 +133,27 @@ int main(int argc, char **argv)
 	requestdoc(0);
 
 	if (!getparint("verbose",&verbose)) verbose=0;
+    if(!getparint("sbox", &sbox)) sbox = 1;
+    if(!getparstring("method", &method)) method="jesper";
 	getParameters(&mod, &rec, &src, &shot, &ray, verbose);
 
 	/* allocate arrays for model parameters: the different schemes use different arrays */
 
 	n1 = mod.nz;
-    nw = ray.smoothwindow;
+    if(!strcmp(method,"fd")) nw = 0;
+    else nw = ray.smoothwindow;
 
 	velocity = (float *)calloc(mod.nx*mod.nz,sizeof(float));
 	slowness = (float *)calloc((mod.nx+2*nw)*(mod.nz+2*nw),sizeof(float));
-//    slowness = (float *)calloc(mod.nx*mod.nz,sizeof(float));
+    trueslow = (float *)calloc(mod.nx*mod.nz,sizeof(float));
+
+    if(!strcmp(method,"fd")) {
+		ttime = (float *)calloc(mod.nx*mod.nz,sizeof(float));
+        for(ir=0, ttime_p=ttime; ir<mod.nx*mod.nz; ir++, ttime_p++)
+            *ttime_p = Infinity;
+	}
 
 	/* read velocity and density files */
-
 	readModel(mod, velocity, slowness, nw);
 
 	/* allocate arrays for wavefield and receiver arrays */
@@ -198,9 +198,9 @@ int main(int argc, char **argv)
     grid.x = mod.nx;
     grid.z = mod.nz;
     grid.y = 1;
-    if ( (ray.smoothwindow) != 0 ) { /* smooth slowness */ 
+    if ( nw != 0 ) { /* smooth slowness */ 
         smooth = (float *)calloc(grid.x*grid.z,sizeof(float));
-        applyMovingAverageFilter(slowness, grid, ray.smoothwindow, 2, smooth);
+        applyMovingAverageFilter(slowness, grid, nw, 2, smooth);
         memcpy(slowness,smooth,grid.x*grid.z*sizeof(float));
         free(smooth);
 	}
@@ -218,6 +218,7 @@ int main(int argc, char **argv)
         assert(fpa != NULL);
 	}
 
+    memset(&hdr,0,sizeof(hdr));
     hdr.dt     = (unsigned short)1;
     hdr.scalco = -1000;
     hdr.scalel = -1000;
@@ -244,25 +245,50 @@ int main(int argc, char **argv)
             	vmess(" which are actual positions z=%.2f - %.2f", mod.z0+rec.zr[0], mod.z0+rec.zr[rec.n-1]);
         	}
 
-        	coordsx.x = mod.x0+shot.x[ixshot]*mod.dx;
-        	coordsx.z = mod.z0+shot.z[izshot]*mod.dz;
+        	coordsx.x = shot.x[ixshot]*mod.dx;
+        	coordsx.z = shot.z[izshot]*mod.dz;
         	coordsx.y = 0;
 
 	        t1=wallclock_time();
             tio += t1-t2;
+
+            if (!strcmp(method,"jesper")) {
 #pragma omp parallel for default(shared) \
 private (coordgx,irec,Time,Jr) 
-        	for (irec=0; irec<rec.n; irec++) {
-            	coordgx.x=mod.x0+rec.xr[irec];
-            	coordgx.z=mod.z0+rec.zr[irec];
-            	coordgx.y = 0;
+        		for (irec=0; irec<rec.n; irec++) {
+            		coordgx.x=rec.xr[irec];
+            		coordgx.z=rec.zr[irec];
+            		coordgx.y = 0;
+		
+            		getWaveParameter(slowness, grid, mod.dx, coordsx, coordgx, ray, &Time, &Jr);
 	
-            	getWaveParameter(slowness, grid, mod.dx, coordsx, coordgx, ray, &Time, &Jr);
+            		time[((izshot*shot.nx)+ixshot)*rec.n + irec] = Time.x + Time.y + Time.z;
+            		ampl[((izshot*shot.nx)+ixshot)*rec.n + irec] = Jr;
+            		if (verbose>4) vmess("JS: shot=%f,%f receiver at %f,%f T0=%f T1=%f T2=%f Jr=%f",coordsx.x, coordsx.z, coordgx.x, coordgx.z, Time.x, Time.y, Time.z, Jr); 
+        		}
+			}
+            else if(!strcmp(method,"fd")) {
+	            int mzrcv;
 
-            	time[((izshot*shot.nx)+ixshot)*rec.n + irec] = Time.x + Time.y + Time.z;
-            	ampl[((izshot*shot.nx)+ixshot)*rec.n + irec] = Jr;
-            	if (verbose>4) vmess("shot=%f,%f receiver at %f,%f T0=%f T1=%f T2=%f Jr=%f",coordsx.x, coordsx.z, coordgx.x, coordgx.z, Time.x, Time.y, Time.z, Jr); 
-        	}
+                isrc.x = shot.x[ixshot];
+                isrc.y = 0;
+                isrc.z = shot.z[izshot];
+
+                mzrcv = 0;
+                for (irec = 0; irec < rec.n; irec++) mzrcv = MAX(rec.z[irec], mzrcv);
+
+                vidale(ttime,slowness,&isrc,grid,mod.dx,sbox, mzrcv);
+        		for (irec=0; irec<rec.n; irec++) {
+            		coordgx.x=mod.x0+rec.xr[irec];
+            		coordgx.z=mod.z0+rec.zr[irec];
+            		coordgx.y = 0;
+					ipos = ((izshot*shot.nx)+ixshot)*rec.n + irec;
+	
+            		time[ipos] = ttime[rec.z[irec]*mod.nx+rec.x[irec]];
+            		ampl[ipos] = sqrt(time[ipos]);
+            		if (verbose>4) vmess("FD: shot=%f,%f receiver at %f(%d),%f(%d) T=%e Ampl=%f",coordsx.x, coordsx.z, coordgx.x, rec.x[irec], coordgx.z, rec.z[irec], time[ipos], ampl[ipos]); 
+        		}
+            }
 	        t2=wallclock_time();
             tray += t2-t1;
 
@@ -273,9 +299,10 @@ private (coordgx,irec,Time,Jr)
         	hdr.tracl  = ((izshot*shot.nx)+ixshot)+1;
         	hdr.tracf  = ((izshot*shot.nx)+ixshot)+1;
         	hdr.ntr    = shot.n;
-        	hdr.d1     = (rec.x[1]-rec.x[0])*mod.dx;
+        	//hdr.d1     = (rec.x[1]-rec.x[0])*mod.dx; // discrete
+        	hdr.d1     = (rec.xr[1]-rec.xr[0]);
         	hdr.f1     = mod.x0+rec.x[0]*mod.dx;
-        	hdr.d2     = (shot.x[1]-shot.x[0])*mod.dx;
+        	hdr.d2     = (shot.x[MIN(shot.n-1,1)]-shot.x[0])*mod.dx;
         	hdr.f2     = mod.x0+shot.x[0]*mod.dx;
     
         	nwrite = fwrite( &hdr, 1, TRCBYTES, fpt);
