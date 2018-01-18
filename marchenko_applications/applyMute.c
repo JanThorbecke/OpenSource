@@ -12,7 +12,7 @@
 #endif
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
-void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift)
+void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift, int pad, int nt0)
 {
      int i, j, l, isyn;
     float *costaper, scl;

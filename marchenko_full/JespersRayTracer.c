@@ -16,7 +16,7 @@
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
-static float H, L, W;
+static float H, L, W, iH, iL, iW;
 
 typedef struct _icoord { /* 3D coordinate integer */
     int z;
@@ -40,12 +40,12 @@ int yPointIndex(const float _y, int ny, float W);
 fcoord getSlownessGradient(const float _x, const float _z, float *slowness, icoord size);
 float qMulGradU1(const float _x, const float _z, const float _angle, float *slowness, icoord size);
 float greenTwoP(const float _so, const float _slow, const float _sL, int nRay, fcoord s, fcoord r, float *slowness, icoord size);
-float qatso(const float _so, const float _angle, int nRay, fcoord s, fcoord r, fcoord *rayReference3D, float *slowness, icoord size);
+float qatso(const float _so, const float _angle, int nRay, fcoord s, fcoord r, fcoord *rayReference3D, float *slowness, icoord size, float uo);
 float slownessA(float *slowness, icoord size, float _x, float _y, float _z);
-float getdT2(const float _x, const float _z, const float so, const float _angle, const float _ds, int nRay, fcoord s, fcoord r, fcoord *rayReference3D, float *slowness, icoord size);
+float getdT2(const float _x, const float _z, const float so, const float _angle, const float _ds, int nRay, fcoord s, fcoord r, fcoord *rayReference3D, float *slowness, icoord size, float uo);
 float greenIntP(const float _so, const float _s, const float _sL, float *slowness, icoord size, int nRay, fcoord r, fcoord s);
 float secondDerivativeU1(float *slowness, icoord size, const float _x, const float _z, const float _angle, fcoord s, fcoord r);
-int calculatePerturbedRay(fcoord *rayPerturbed3D, fcoord s, fcoord r, int nRay, fcoord *rayReference3D, float *slowness, icoord size);
+int calculatePerturbedRay(fcoord *rayPerturbed3D, fcoord s, fcoord r, int nRay, fcoord *rayReference3D, float *slowness, icoord size, float uo);
 float angle2qx(const float _angle);
 float angle2qz(const float _angle);
 float ModelInterpolation_slowness2D(float *slowness, icoord size, const float _x, const float _z);
@@ -96,7 +96,7 @@ int getWaveParameter(float *slowness, icoord size, float dgrid, fcoord s, fcoord
         return(-1);
     
     uo = referenceSlowness(slowness, size, nRayTmp, r, s);
-    
+
     T0 = lengthRefRay*uo;
     ds = lengthRefRay/(nRayTmp-1);
     J = lengthRefRay;
@@ -121,14 +121,15 @@ int getWaveParameter(float *slowness, icoord size, float dgrid, fcoord s, fcoord
         so = i*ds;
         
         if (ray.useT2 != 0)
-            T2 += getdT2(x, z, so, angle, ds, nRayTmp, s, r, rayReference3D, slowness, size);
+            T2 += getdT2(x, z, so, angle, ds, nRayTmp, s, r, rayReference3D, slowness, size, uo);
 
         /*if (ray.geomspread != 0) {
             if (so <= 0) {
                 dQdPhi = 0;
             }
             else {
-                greentmp = greenIntP(lengthRefRay, so, lengthRefRay, slowness, size, nRayTmp, r, s);
+                greentmp = 0;
+                if (so <= lengthRefRay) greentmp = (lengthRefRay - so)/uo;
                 dQdPhi += greentmp*secondDerivativeU1(slowness, size, x, z, angle, r, s)*ds/so;
             }
         }*/
@@ -176,6 +177,10 @@ int getnRay(icoord size, fcoord s, fcoord r, float dx, int nRayStep)
     L = (size.x-1)*dx;
     W = (size.y-1)*dx;
     
+    if (H!=0.0) iH = 1.0/H;
+    if (L!=0.0) iL = 1.0/L;
+    if (W!=0.0) iW = 1.0/W;
+
     if (size.y == 1) { // 2D model
         dn = (size.x + size.z)/2;
         dl = sqrt(pow(L, 2) + pow(H, 2))/dn;
@@ -216,7 +221,7 @@ int traceTwoPoint(fcoord s, fcoord r, int nRay, fcoord *rayReference3D)
 }
 
 
-int calculatePerturbedRay(fcoord *rayPerturbed3D, fcoord s, fcoord r, int nRay, fcoord *rayReference3D, float *slowness, icoord size)
+int calculatePerturbedRay(fcoord *rayPerturbed3D, fcoord s, fcoord r, int nRay, fcoord *rayReference3D, float *slowness, icoord size, float uo)
 {
     float si, sl, deltaS, gso, angle, qx, qz;
     int i;
@@ -236,7 +241,7 @@ int calculatePerturbedRay(fcoord *rayPerturbed3D, fcoord s, fcoord r, int nRay, 
     {
         si = i*deltaS;
         
-        gso = qatso(si, angle, nRay, s, r, rayReference3D, slowness, size);
+        gso = qatso(si, angle, nRay, s, r, rayReference3D, slowness, size, uo);
         
         rayPerturbed3D[i].x = rayReference3D[i].x + qx*gso;
         rayPerturbed3D[i].z = rayReference3D[i].z + qz*gso;
@@ -299,11 +304,16 @@ float angle2qz(const float _angle)
 
 // Sofar used in 2D only
 
-float qatso(const float _so, const float _angle, int nRay, fcoord s, fcoord r, fcoord *rayReference3D, float *slowness, icoord size)
+float qatso(const float _so, const float _angle, int nRay, fcoord s, fcoord r, fcoord *rayReference3D, float *slowness, icoord size, float uo)
 {
     float slow, sl, deltaS, x, z;
     float qatsol;
+    float greenTwoP = 0;
     int i;
+    float qMulGradU1;
+    fcoord slownessGradient;
+    float gradu1x, gradu1z;
+    float qx, qz;
     
     sl = sqrt(pow((r.x-s.x),2) + pow((r.z-s.z),2) + pow((r.y-s.y),2));
     
@@ -313,22 +323,49 @@ float qatso(const float _so, const float _angle, int nRay, fcoord s, fcoord r, f
     }
     
     deltaS = sl/(nRay-1);
-    
+//    uo = referenceSlowness(slowness, size, nRay, r, s);
+
     qatsol = 0;
     for (i = 0; i < nRay; i++)
     {
         slow = i*deltaS;
         x = rayReference3D[i].x;
         z = rayReference3D[i].z;
-//        fprintf(stderr,"qatso: calling greenTwoP for iray %d (/%d)\n",i,nRay);
+        
+        if (slow <= _so)
+            greenTwoP = -(1 - _so/sl)*slow/uo;
+        else
+            greenTwoP = -_so*(1-slow/sl)/uo;
+        
+        slownessGradient = getSlownessGradient(x, z, slowness, size);
+        gradu1x = slownessGradient.x;
+        gradu1z = slownessGradient.z;
+        
+        if ((_angle >= 0) && (_angle < PI/2)) {
+            qx = -cos(_angle);
+            qz = sin(_angle);
+        }
+        else if ((_angle >= PI/2) && (_angle < PI)) {
+            qx = sin(_angle - PI/2);
+            qz = cos(_angle - PI/2);
+        }
+        else if ((_angle >= PI) && (_angle < 3*PI/2)) {
+            qx = cos(_angle - PI);
+            qz = -sin(_angle - PI);
+        }
+        else if ((_angle >= 3*PI/2) && (_angle <= 2*PI)) {
+            qx = -sin(_angle - 3*PI/2);
+            qz = -cos(_angle - 3*PI/2);
+        }
 
-        qatsol += greenTwoP(_so, slow, sl, nRay, s, r, slowness, size)*qMulGradU1(x, z, _angle, slowness, size)*deltaS;
+        qMulGradU1 = qx*gradu1x + qz*gradu1z;
+        qatsol += greenTwoP*qMulGradU1*deltaS;
     }
 
     return(qatsol);
 }
 
-float getdT2(const float _x, const float _z, const float _so, const float _angle, const float _ds, int nRay, fcoord s, fcoord r, fcoord *rayReference3D, float *slowness, icoord size)
+float getdT2(const float _x, const float _z, const float _so, const float _angle, const float _ds, int nRay, fcoord s, fcoord r, fcoord *rayReference3D, float *slowness, icoord size, float uo)
 {
     float T2 = 0;
     float qatsol;
@@ -336,7 +373,7 @@ float getdT2(const float _x, const float _z, const float _so, const float _angle
 
  //   fprintf(stderr,"getdT2: calling qatso nRay=%d\n",nRay);
 
-    qatsol = qatso(_so, _angle, nRay, s, r, rayReference3D, slowness, size);
+    qatsol = qatso(_so, _angle, nRay, s, r, rayReference3D, slowness, size, uo);
     
 //    fprintf(stderr,"getdT2: calling qMulGradU1\n");
 
@@ -490,7 +527,7 @@ int xPointIndex(const float _x, int nx, float L)
     else
     {
         if (0 < L)
-            i = _x*nx/L;
+            i = _x*nx*iL;
         else
             i = 0;
     }
@@ -509,7 +546,7 @@ int zPointIndex(const float _z, int nz, float H)
     else
     {
         if (0 < H)
-            i = _z*nz/H;
+            i = _z*nz*iH;
         else
             i = 0;
     }
@@ -529,7 +566,7 @@ int yPointIndex(const float _y, int ny, float W)
     else
     {
         if (0 < W)
-            i = ny*(_y/W + 0.5);
+            i = ny*(_y*iW + 0.5);
         else
             i = 0;
     }
@@ -551,14 +588,11 @@ float ModelInterpolation_slowness2D(float *slowness, icoord size, const float _x
     nx = size.x;
     nz = size.z;
     
-    ixCoordinate = (int) _x*nx/L;
-
-    if (ixCoordinate >= nx)
-        ixCoordinate = nx;
+    ixCoordinate = (int)(_x*nx)*iL;
     
-    if (ixCoordinate == nx)
+    if (ixCoordinate >= nx)
     {
-        x1 = (float) L*(ixCoordinate-1)/nx;
+        x1 = (float) L*(nx-1)/nx;
         x2 = (float) L;
     }
     else if (ixCoordinate <= 0)
@@ -572,26 +606,11 @@ float ModelInterpolation_slowness2D(float *slowness, icoord size, const float _x
         x2 = (float) L*(ixCoordinate+1)/nx;
     }
     
-    if (x1 < 0)
-        x1 = 0;
-    
-    if (x1 > L)
-        x1 = L;
-    
-    if (x2 < 0)
-        x2 = 0;
-    
-    if (x2 > L)
-        x2 = L;
-    
-    izCoordinate = (int) _z*nz/H;
+    izCoordinate = (int) _z*nz*iH;
     
     if (izCoordinate >= nz)
-        izCoordinate = nz;
-    
-    if (izCoordinate == nz)
     {
-        z1 = (float) H*(izCoordinate-1)/nz;
+        z1 = (float) H*(nz-1)/nz;
         z2 = (float) H;
     }
     else if (izCoordinate <= 0)
@@ -605,20 +624,8 @@ float ModelInterpolation_slowness2D(float *slowness, icoord size, const float _x
         z2 = (float) H*(izCoordinate+1)/nz;
     }
     
-    if (z1 < 0)
-        z1 = 0;
-    
-    if (z1 > H)
-        z1 = H;
-    
-    if (z2 < 0)
-        z2 = 0;
-    
-    if (z2 > H)
-        z2 = H;
-    
-    ix = xPointIndex(_x, size.x, L);
-    iz = zPointIndex(_z, size.z, H);
+    ix = xPointIndex(_x, nx, L);
+    iz = zPointIndex(_z, nz, H);
     
     if (ix == 0)
     {
@@ -685,7 +692,7 @@ float ModelInterpolation_slowness3D(float *slowness, icoord size, const float _x
 
     slow = f111 = f112 = f212 = f211 = f121 = f122 = f222 = f221 = 0;
     
-    ixCoordinate = _x*nx/L;
+    ixCoordinate = _x*nx*iL;
     
     if (ixCoordinate >= nx)
         ixCoordinate =  nx;
@@ -718,7 +725,7 @@ float ModelInterpolation_slowness3D(float *slowness, icoord size, const float _x
     if (x2 > L)
         x2 = L;
     
-    izCoordinate = _z*nz/H;
+    izCoordinate = _z*nz*iH;
     
     if (izCoordinate >= nz)
         izCoordinate = nz;
@@ -751,7 +758,7 @@ float ModelInterpolation_slowness3D(float *slowness, icoord size, const float _x
     if (z2 > H)
         z2 = H;
     
-    iyCoordinate = ny*(_y/W + 0.5);
+    iyCoordinate = ny*(_y*iW + 0.5);
     
     if (iyCoordinate >= ny)
         iyCoordinate = ny;
