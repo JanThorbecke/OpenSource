@@ -1,6 +1,24 @@
 #include<stdlib.h>
 #include<stdio.h>
+#include<limits.h>
+#include<float.h>
 #include<math.h>
+
+typedef struct _icoord { /* 3D coordinate integer */
+    int z;
+    int x;
+    int y;
+} icoord;
+
+typedef struct _fcoord { /* 3D coordinate float */
+    float z;
+    float x;
+    float y;
+} fcoord;
+
+struct s_ecount {
+  int       corner,corner_min,side;
+};
 
 typedef struct _receiverPar { /* Receiver Parameters */
 	char *file_rcv;
@@ -84,6 +102,20 @@ typedef struct _raypar { /* ray-tracing parameters */
     int geomspread;
     int nray;
 } rayPar;
+
+#ifndef TRUE
+#  define TRUE 1
+#endif
+
+#ifndef FALSE
+#  define FALSE 0
+#endif
+
+#define equal(x,y) !strcmp(x,y)
+#define min2(a,b) (((a) < (b)) ? (a) : (b))
+#define max2(a,b) (((a) > (b)) ? (a) : (b))
+
+#define Infinity FLT_MAX
 
 #if __STDC_VERSION__ >= 199901L
   /* "restrict" is a keyword */

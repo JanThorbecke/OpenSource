@@ -18,18 +18,6 @@
 
 static float H, L, W, iH, iL, iW;
 
-typedef struct _icoord { /* 3D coordinate integer */
-    int z;
-    int x;
-    int y;
-} icoord;
-
-typedef struct _fcoord { /* 3D coordinate float */
-    float z;
-    float x;
-    float y;
-} fcoord;
-
 int getnRay(icoord size, fcoord s, fcoord r, float dx, int nRayStep);
 int traceTwoPoint(fcoord s, fcoord r, int nRay, fcoord *rayReference3D);
 float takeOffAngle(fcoord s, fcoord r);
