@@ -827,7 +827,6 @@ void synthesis(complex *Refl, complex *Fop, float *Top, float *iRN, int nx, int 
      * scale dx (or dxsrc) for integration over receiver (or shot) coordinates */
     scl   = 1.0*dt/((float)ntfft);
 
-fprintf(stderr,"synthesis nxs=%d Nsyn=%d nw=%d\n", nxs, Nsyn, nw);
 #ifdef _OPENMP
     npe   = omp_get_max_threads();
     /* parallelisation is over number of virtual source positions (Nsyn) */
