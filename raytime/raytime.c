@@ -117,10 +117,10 @@ int main(int argc, char **argv)
 	double t0, t1, t2, tinit, tray, tio;
 	size_t size;
 	int nw, n1, ix, iz, ir, ixshot, izshot;
-	int irec, sbox, ipos;
+	int irec, sbox, ipos, nrx, nrz, nr;
     fcoord coordsx, coordgx, Time;
     icoord grid, isrc; 
-    float Jr, *ampl, *time, *ttime, *ttime_p;
+    float Jr, *ampl, *time, *ttime, *ttime_p, cp_average;
 	float dxrcv, dzrcv;
     segy hdr;
     char filetime[1024], fileamp[1024], *method;
@@ -285,8 +285,20 @@ private (coordgx,irec,Time,Jr)
 					ipos = ((izshot*shot.nx)+ixshot)*rec.n + irec;
 	
             		time[ipos] = ttime[rec.z[irec]*mod.nx+rec.x[irec]];
-            		ampl[ipos] = sqrt(time[ipos]);
-            		if (verbose>4) vmess("FD: shot=%f,%f receiver at %f(%d),%f(%d) T=%e Ampl=%f",coordsx.x, coordsx.z, coordgx.x, rec.x[irec], coordgx.z, rec.z[irec], time[ipos], ampl[ipos]); 
+					/* compute average velocity between source and receiver */
+ 					nrx = (rec.x[irec]-isrc.x);
+ 					nrz = (rec.z[irec]-isrc.z);
+ 					nr = abs(nrx) + abs(nrz);
+					cp_average = 0.0;
+        			for (ir=0; ir<nr; ir++) {
+						ix = isrc.x + floor((ir*nrx)/nr);
+						iz = isrc.z + floor((ir*nrz)/nr);
+						//fprintf(stderr,"ir=%d ix=%d iz=%d velocity=%f\n", ir, ix, iz, velocity[ix*mod.nz+iz]);
+						cp_average += velocity[ix*mod.nz+iz];
+					}
+					cp_average = cp_average/((float)nr);
+            		ampl[ipos] = sqrt(time[ipos]*cp_average);
+            		if (verbose>4) vmess("FD: shot=%f,%f receiver at %f(%d),%f(%d) T=%e V=%f Ampl=%f",coordsx.x, coordsx.z, coordgx.x, rec.x[irec], coordgx.z, rec.z[irec], time[ipos], cp_average, ampl[ipos]); 
         		}
             }
 	        t2=wallclock_time();

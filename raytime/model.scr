@@ -17,13 +17,13 @@ export OMP_NUM_THREADS=4
     file_cp=syncl_cp.su  \
     file_rcv=z1.su \
     smoothwindow=15 \
-    verbose=3 \
+    verbose=5 \
     dxrcv=10.0 \
     xrcv1=-2500 xrcv2=2500 \
     zrcv1=0 zrcv2=0 \
     xsrc=0 zsrc=1100 \
 	nxshot=1 dxshot=10 \
-	nzshot=1 dzshot=10 useT2=1
+	nzshot=1 dzshot=10 useT2=1 method=fd
 
 exit
 
