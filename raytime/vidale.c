@@ -11,8 +11,8 @@
  *
  */
 
-//#include <raytime2.h>
 #include <raytime.h>
+#include <par.h>
 
 extern void  near_source(float *ttime, float *slow, icoord *nm, icoord *isrc, fcoord *scale, int order);
 
