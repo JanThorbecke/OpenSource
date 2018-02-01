@@ -610,6 +610,19 @@ for (ib=0; ib<=nb; ib++) {
 		if (verbose) vmess("No b-value estimated or applied");
 	}
 
+	for (l = 0; l < Nsyn; l++) {
+        for (i = 0; i < npossyn; i++) {
+            j = 0;
+            ix = ixpossyn[i]; /* select the traces that have an output trace after integration */
+            f2p[l*nxs*nts+i*nts+j] = G_d[l*nxs*nts+ix*nts+j];
+            f1plus[l*nxs*nts+i*nts+j] = G_d[l*nxs*nts+ix*nts+j];
+            for (j = 1; j < nts; j++) {
+                f2p[l*nxs*nts+i*nts+j] = G_d[l*nxs*nts+ix*nts+j];
+                f1plus[l*nxs*nts+i*nts+j] = G_d[l*nxs*nts+ix*nts+j];
+            }
+        }
+    }
+
 /*================ number of Marchenko iterations ================*/
 
     for (iter=0; iter<niter; iter++) {
