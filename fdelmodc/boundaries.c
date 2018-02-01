@@ -1433,6 +1433,9 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			for (ix=mod.ioPx; ix<mod.iePx; ix++) {
 				iz = bnd.surface[ix];
 				tzz[ix*n1+iz] = 0.0;
+                //vz[ix*n1+iz] = -vz[ix*n1+iz+1];
+                //vz[ix*n1+iz-1] = -vz[ix*n1+iz+2];
+
 			}
 		}
 		if (bnd.rig==1) { /* free surface at right */
