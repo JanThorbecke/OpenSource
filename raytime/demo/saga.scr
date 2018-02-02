@@ -1,0 +1,12 @@
+#!/bin/bash
+
+#../raytime     nshots=851 verbose=1 useT2=1 geomspread=1 file_rcv=Jray0.su \
+#zsrc=1200.000 xrcv1=0 xrcv2=20000 dxrcv=25 file_cp=saga_cp.su zrcv1=0 zrcv2=0  \
+#xsrc=7000 nxshot=641 nzshot=1 dxshot=9.375 \
+#dzshot=9.375 nraystep=25 method=jesper
+
+../raytime     nshots=851 verbose=1 useT2=1 geomspread=1 file_rcv=pray0.su \
+zsrc=1200.000 xrcv1=0 xrcv2=20000 dxrcv=25 file_cp=saga_cp.su zrcv1=0 zrcv2=0  \
+xsrc=7000 nxshot=641 nzshot=1 dxshot=9.375 \
+dzshot=9.375 nraystep=25 method=fd
+
