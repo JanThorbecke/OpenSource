@@ -36,6 +36,9 @@ void vidale(float *ttime, float *slow1, icoord *isrc, icoord grid, float dx, int
   scale = &dscale;
   dnm.x = grid.x; dnm.y = 1; dnm.z = grid.z;
   nm = &dnm;
+/* Intialize ttime with maximum value */
+  for(ix=0; ix<grid.x*grid.z; ix++)
+        ttime[ix] = Infinity;
 
 /* transpose slowness field for usage in vidale */
   trueslow = (float *)calloc(grid.x*grid.z,sizeof(float));

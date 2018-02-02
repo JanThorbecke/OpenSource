@@ -149,8 +149,6 @@ int main(int argc, char **argv)
 
     if(!strcmp(method,"fd")) {
 		ttime = (float *)calloc(mod.nx*mod.nz,sizeof(float));
-        for(ir=0, ttime_p=ttime; ir<mod.nx*mod.nz; ir++, ttime_p++)
-            *ttime_p = Infinity;
 	}
 
 	/* read velocity and density files */
