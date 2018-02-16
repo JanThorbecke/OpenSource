@@ -3,7 +3,7 @@
 include ../Make_include
 
 ALLINC  = -I.
-LIBS    += -L$L -lgenfft -lm 
+LIBS    += -L$L -lgenfft
 #OPTC += -g
 
 all: corrvir
@@ -14,6 +14,7 @@ SRCC	= $(PRG).c \
 		getFileInfo.c \
 		correlate.c \
 		atopkge.c \
+		verbosepkg.c \
 		docpkge.c \
 		wallclock_time.c  \
 		getpars.c
