@@ -4,6 +4,16 @@
 #include<float.h>
 #include<math.h>
 
+#ifndef COMPLEX
+typedef struct _complexStruct { /* complex number */
+    float r,i;
+} complex;
+typedef struct _dcomplexStruct { /* complex number */
+    double r,i;
+} dcomplex;
+#endif/* complex */
+
+
 typedef struct _icoord { /* 3D coordinate integer */
     int z;
     int x;
