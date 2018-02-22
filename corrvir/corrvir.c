@@ -15,11 +15,12 @@ typedef struct { /* complex number */
         float r,i;
 } complex;
 
-void read_sutrace_at_position(FILE *fp, int itrace, complex *tracedata, complex *tracebuffer, int *trace_in_buffer, size_t *nbuffer, int ntfft, int nt, int nfreq, size_t nbufmax, size_t trace_sz, double *tread, double *tfft);
+void read_sutrace_at_position(FILE *fp, int itrace, int ircvnum, int isrcnum, complex *tracedata, complex *tracebuffer, int *trace_in_buffer, size_t *nbuffer, int ntfft, int nt, int nfreq, size_t nbufmax, size_t trace_sz, double *tread, double *tfft, double *tmemcpy);
+
+void get_sutrace_at_position(FILE *fp, size_t itrace, complex *tracedata, complex *tracebuffer, int ntfft, int nt, int nfreq, size_t nbufmax, size_t trace_sz, double *tread, double *tfft, double *tmemcpy);
 
 int optncr(int n);
-void cr1fft(complex *cdata, float *data, int n, int sign);
-void rc1fft(float *rdata, complex *cdata, int n, int sign);
+void cr1_fft(complex *cdata, float *data, int n, int sign);
 
 int getFileInfo(char *file_name, int *n1, int *n2, float *d1, float *d2, int verbose);
 
@@ -52,7 +53,7 @@ char *sdoc[] = {
 " ",
 " Optional parameters: ",
 " ",
-"   derr = 0 ............ maximum tolerated error distance (m) between defined virtual-source position and receiver positions",
+"   dtolerr = 0.1 ....... tolerated error distance (in m) between above requested virtual-source position and actual receiver positions",
 "   fmax = 70 ........... maximum frequency to use in correlation",
 "   nbm = 4 ............. amount of memory (in GB) to buffer traces for reusage",
 "   nsrc_ctr = 1 ...... . minumum number of sources to contribute to Fresnel stack",
@@ -85,7 +86,7 @@ NULL};
 int main (int argc, char **argv)
 {
 	int	i, j, k, ret, nshots, maxnfiles, nfiles;
-	int	size, n1, n2, ntfft, nf, ifreq, nfreq;
+	int	size, n1, n2, ntfft, nf, ifreq;
 	int     verbose, causal;
 	int     nt, nstation, ntc, nb, istation, jstation;
 	int     pgsz, istep, nsrc_ctr, nsrc, nsrcMaster, nsrcSlave;
@@ -103,25 +104,26 @@ int main (int argc, char **argv)
 	int	xmin, xmax, ymin, ymax;
 	int     *trace_in_buffer;
 	size_t  nbuffer, nbufmax, nbufmemory;
-	size_t ntrace;
+	size_t ntrace, bufsize, nsamp, ipos, nfreq;
 	int nbm;
 	crgPos *rcvSrc;
 	int ircv, *isrc, *nsrc_crg, *vsrc;
 	float	dx, fmax, df, d1, d2, scl, fscalco, sclfft;
 	float   dt, reps, epsmax;
-	float 	derr;
+	float 	dtolerr;
 	float	*r, *vtrace;
-	float 	diffx, diffy, dd, ddmin, ddtol;
+	float 	diffx, diffy, dd, ddmin;
 	float   *xsrcv, *ysrcv;
 	float   rms2, sclrms;
 	complex tmpcc; 
 	int     nxsrcv, nysrcv, nvsrc;
 	int	 	scalco;
 	complex *c, *cmaster, *cslaves, *tracebuffer;
-	double  t0, t1, t2, t3, tinit, tread, tfft, tcorr, twrite, tlogic, trdloc, tftloc, tcorrloc;
-	double  tread_ivs, tfft_ivs, tcorr_ivs, twrite_ivs, tlogic_ivs;
+	double  t0, t1, t2, t3, ttotal, tinit, tread, tfft, tcorr, twrite, tlogic, trdloc, tftloc, tcorrloc, tmemcpy, tselect, tmemset, tloop, troutine0, troutine;
+	double  tread_ivs, tfft_ivs, tcorr_ivs, twrite_ivs, tlogic_ivs, t1_ivs, t3_ivs, t1_ivs_ivr, t2_ivs_ivr, t3_ivs_ivr, t4_ivs_ivr, t5_ivs_ivr;
 	char	*file_shots, *file_out, filename[1024], basename[1200], base[1200], *pbase;
 	int     pe=0, root_pe=0, npes=1, ipe, size_s;
+	float *trace;
 	FILE *fpin, *fpout;
 	segy hdr;
 	segy *segy_hdrs;
@@ -140,8 +142,6 @@ int main (int argc, char **argv)
 	assert(nsources!=0);
 	if (!getparint("nreceivers", &nreceivers)) nreceivers = 0;
 	assert(nreceivers!=0);
-	if (!getparint("nbm", &nbm)) nbm = 4;
-	nbufmemory=nbm;
 	if (!getparint("nsrc_ctr", &nsrc_ctr)) nsrc_ctr = 1;
 	if (!getparint("normsrc", &normsrc)) normsrc = 0;
 	if (!getparint("causal", &causal)) causal = 1;
@@ -149,11 +149,12 @@ int main (int argc, char **argv)
 	if (!getparint("cohr", &cohr)) cohr = 0;
 	if (!getparint("src_sel", &src_sel)) src_sel = 0;
 	if (!getparint("bmin", &bmin)) bmin = 1;
+	if (!getparint("nbm", &nbm)) nbm = 0;
 	if (!getparint("bmax", &bmax)) bmax = 4;
 	if (!getparfloat("reps", &reps)) reps = 0.0;
 	if (!getparfloat("epsmax", &epsmax)) epsmax = 0.1;
 	if (!getparfloat("fmax", &fmax)) fmax = 70;
-	if (!getparfloat("derr", &derr)) derr = 0;
+	if (!getparfloat("dtolerr", &dtolerr)) dtolerr = 0.1;
 	nxsrcv = countparval("xsrcv");
 	nysrcv = countparval("ysrcv");
 	if (nxsrcv != nysrcv) {
@@ -176,20 +177,63 @@ int main (int argc, char **argv)
 	fpout = fopen(file_out, "w+");
 
 	fprintf(stderr,"nt=%d dt=%f ntrace=%ld\n",nt, dt, (long) ntrace);
+
+    ntfft = optncr(2*nt);
+	nf    = ntfft/2+1;
+	df    = 1.0/(ntfft*dt);
+	nfreq = MIN(nf,(int)(fmax/df)+1);
+	sclfft= 1.0/((float)ntfft);
+	trace_sz = sizeof(float)*(n1)+TRCBYTES;
+	segy_hdrs = (segy *)calloc(ntrace,sizeof(segy));
+	assert(segy_hdrs != NULL);
+	ret = fseeko(fpin , 0, SEEK_SET);
+
 	t1 = wallclock_time();
 	tinit += t1-t0;
 
-	/*================ Read geometry of all traces in file_shots ================*/
+	/* check if data is fully buffered */
+	if (nbm==0) { /* read only headers */
+		nbufmax = 0;
+		for (i=0; i<ntrace; i++) {
+			if(i % 100000 == 0) fprintf(stderr,"i=%d out of %d\n", i, ntrace);
+			offset = i*trace_sz;
+			ret = fseeko(fpin , offset, SEEK_SET);
+			if (ret<0) perror("fseeko");
+   			nread = fread( &segy_hdrs[i], 1, TRCBYTES, fpin );
+		}
+	} 
+	else { /* buffer is allocated to store all data traces */
+        bufsize = (size_t)(ntrace*nfreq*sizeof(complex));
+		nbufmax = ntrace;
+		fprintf(stderr,"memory allocated to buffer all traces = %.2f GB\n", (float)(bufsize/(1024*1024*1024)));
+		tracebuffer = (complex *)malloc(bufsize);
+		assert (tracebuffer != NULL);
 
-    	trace_sz = sizeof(float)*(n1)+TRCBYTES;
-	segy_hdrs = (segy *)calloc(ntrace,sizeof(segy));
-	assert(segy_hdrs != NULL);
-	for (i=0; i<ntrace; i++) {
-		offset = i*trace_sz;
-		ret = fseeko(fpin , offset, SEEK_SET);
-		if (ret<0) perror("fseeko");
-    		nread = fread( &segy_hdrs[i], 1, TRCBYTES, fpin );
-		assert(nread == TRCBYTES);
+		/*================ Read geometry of all traces in file_shots ================*/
+
+		//trace = (float *)calloc(nt, sizeof(float));
+		r = (float *)calloc(ntfft,sizeof(float));
+		c = (complex *)calloc((nf),sizeof(complex));
+		for (i=0; i<ntrace; i++) {
+			if(i % 100000 == 0) fprintf(stderr,"i=%d out of %d\n", i, ntrace);
+			offset = i*trace_sz;
+			ret = fseeko(fpin , offset, SEEK_SET);
+			if (ret<0) perror("fseeko");
+   			nread = fread( &segy_hdrs[i], 1, TRCBYTES, fpin );
+			assert(nread == TRCBYTES);
+			
+			nsamp =  segy_hdrs[i].ns;
+			memset(r,0,ntfft*sizeof(float));
+       		nread = fread( r, sizeof(float), nt, fpin );
+       		assert(nread == nt);
+        	//memcpy(r,&trace[0],nt*sizeof(float));
+        	rc1_fft(r,c,ntfft,-1);
+	//		for (j=0; j<nfreq; j++) tracebuffer[i*nfreq+j] = c[j];
+        	memcpy(&tracebuffer[i*nfreq],&c[0],nfreq*sizeof(complex));
+		}
+		//free(trace);
+		free(r);
+		free(c);
 	}
 	t2 = wallclock_time();
 	tread += t2-t1;
@@ -280,7 +324,6 @@ int main (int argc, char **argv)
 	if (nxsrcv) {
 		nvsrc = nxsrcv;
 		vsrc = (int *)malloc(nvsrc*sizeof(int));
-		ddtol= derr*derr;
 		for (j=0; j<nxsrcv; j++) {
 			diffx = xsrcv[j]- rcvSrc[0].gx*fscalco;
 			diffy = ysrcv[j]- rcvSrc[0].gy*fscalco;
@@ -296,13 +339,13 @@ int main (int argc, char **argv)
 				}
 			}
 			fprintf(stderr,"ddmin for requested vsrc position (%.2f,%.2f) = %.2f\n",xsrcv[j],ysrcv[j],ddmin);
-			if (ddmin <= ddtol) {
+			if (ddmin <= dtolerr) {
 				xsrcv[j]=rcvSrc[vsrc[j]].gx*fscalco;
 				ysrcv[j]=rcvSrc[vsrc[j]].gy*fscalco;
-				fprintf(stderr,"Found vsrc position: (%.2f,%.2f)\n",xsrcv[j],ysrcv[j]);		 	
+				fprintf(stderr,"Requested vsrc position coincide with rcv position (%.2f,%.2f)\n",xsrcv[j],ysrcv[j]);		 	
 			}
 			else {
-			fprintf(stderr,"Error: Requested vsrc position (%.2f,%.2f) do not coincide with a rcv position\n",xsrcv[j],ysrcv[j]);
+			fprintf(stderr,"Error: Requested vsrc position do not coincide with a rcv position\n");
 			}
 		}
 	}
@@ -314,41 +357,49 @@ int main (int argc, char **argv)
 		}
 	}
 
-	
 	/*================ initializations ================*/
 
-	ntfft = optncr(2*nt);
-	nf    = ntfft/2+1;
-	df    = 1.0/(ntfft*dt);
-	nfreq = MIN(nf,(int)(fmax/df)+1);
-	sclfft= 1.0/((float)ntfft);
+	
 
-//	for (j=0; j<MIN(rcvSrc[0].nsrc,rcvSrc[1].nsrc); j++) fprintf(stderr,"before allocs sx=%d sy=%d +1 sx=%d sx=%d\n",rcvSrc[0].src[j].x, rcvSrc[0].src[j].y, rcvSrc[1].src[j].x, rcvSrc[1].src[j].y);
+	//for (j=0; j<MIN(rcvSrc[0].nsrc,rcvSrc[1].nsrc); j++) fprintf(stderr,"before allocs sx=%d sy=%d +1 sx=%d sx=%d\n",rcvSrc[0].src[j].x, rcvSrc[0].src[j].y, rcvSrc[1].src[j].x, rcvSrc[1].src[j].y);
 
-	nbuffer = 0;
-	nbufmax = (nbufmemory*1024*1024*1024/(nfreq*sizeof(complex))); /* number of traces in buffer */
-	tracebuffer = (complex *)malloc(nbufmax*nfreq*sizeof(complex));
-	trace_in_buffer = (int *)malloc(nbufmax*sizeof(int));
-	for (i=0; i<nbufmax; i++) trace_in_buffer[i] = -1;
+	//nbuffer = 0;
+	////nbufmax = (1024*1024*1024/(nfreq*sizeof(complex)));
+	//if (nbufmax !=0 ) {
+	//	tracebuffer = (complex *)malloc(nbufmax*nfreq*sizeof(complex));
+	//	trace_in_buffer = (int *)malloc(nbufmax*sizeof(int));
+	//	for (i=0; i<nbufmax; i++) trace_in_buffer[i] = -1;
+	//}
+	//fprintf(stderr,"nfreq=%d, nbufmax=%d\n", nfreq, nbufmax);
 
 	
 	/*================ for nvirtual shots find suitable receivers ================*/
-
-	cmaster = (complex *)malloc(nsources*nfreq*sizeof(complex));
-	cslaves = (complex *)malloc(nsources*nfreq*sizeof(complex));
-
-	vtrace = (float *)malloc(nt*sizeof(float));
-	r = (float *)malloc(ntfft*sizeof(float));
-	c = (complex *)malloc(nf*sizeof(complex));
-
 	t1 = wallclock_time();
 	tinit += t1-t2;
 
-	itrace_out=0;
-	for (ivs=0; ivs<nvsrc; ivs++) {/* loop over the number of virtual source positions to be created */
+	#pragma omp parallel default(shared) \
+	private(cmaster,cslaves,vtrace,r,c) \
+ 	private(t1, tread_ivs, tfft_ivs, tcorr_ivs, twrite_ivs, tlogic_ivs, t1_ivs_ivr, t2_ivs_ivr, t3_ivs_ivr, t4_ivs_ivr, t5_ivs_ivr) \
+	private(ivrcv, gxv, gyv, vrpeg, gelev, nsrcSlave) \
+	private(xmin,ymin,xmax,ymax, cx1, cy1, cx2, cy2, cx3, cy3, distmc2, distsc2min, distsc2max, distsc2) \
+	private(nsrc, trdloc, tftloc, tcorrloc) \
+	private(isrcm, isrcs, sxm, sym, sxs, sys, read_trace) \
+	private(jsource, rms2, ifreq, tmpcc, sclrms, scl) \
+	private(j, outputhdr, itrace_out, nwrite)
+{
 
-		t1 = wallclock_time();
-		tread_ivs = tfft_ivs = tcorr_ivs = twrite_ivs = tlogic_ivs = 0.0;
+	cmaster = (complex *)malloc(nsources*nfreq*sizeof(complex));
+	cslaves = (complex *)malloc(nsources*nfreq*sizeof(complex));
+	vtrace = (float *)malloc(nt*sizeof(float));
+	r = (float *)malloc(ntfft*sizeof(float));
+	c = (complex *)malloc((ntfft/2+1)*sizeof(complex));
+	itrace_out=0;
+	
+	for (ivs=0; ivs<nvsrc; ivs++) {/* loop over the number of virtual source positions to be created */
+		fprintf(stderr,"ivs = %d \n",ivs);
+
+		t1_ivs = wallclock_time();
+		tread_ivs = tfft_ivs = tcorr_ivs = twrite_ivs = tlogic_ivs = tmemcpy = tselect = tmemset = tloop = troutine = 0.0;
 		
 		ivsrc=vsrc[ivs];
 		sxv = rcvSrc[ivsrc].gx;
@@ -357,7 +408,11 @@ int main (int argc, char **argv)
 		svelev = rcvSrc[ivsrc].gelev;
 		nsrcMaster = nsrc_crg[ivsrc];
 
+		#pragma omp for
 		for (ivrcv=0; ivrcv<nreceivers; ivrcv++) {
+			
+			//t1_ivs_ivr = wallclock_time();
+			
 			gxv = rcvSrc[ivrcv].gx;
 			gyv = rcvSrc[ivrcv].gy;
 			vrpeg = rcvSrc[ivrcv].rpeg;
@@ -388,7 +443,11 @@ int main (int argc, char **argv)
 			
 			nsrc = 0;
 			memset(cslaves,0,nfreq*nsources*sizeof(complex));
-			trdloc = tftloc = tcorrloc = 0.0;
+			memset(cmaster,0,nfreq*nsources*sizeof(complex));
+			//t0 = wallclock_time();
+			//tmemset += t0-t1_ivs_ivr;
+
+			//trdloc = tftloc = tcorrloc = 0.0;
 			for (isrcm=0; isrcm<nsrcMaster; isrcm++) { /* for all traces find which traces are recorded by both virtual source and receiver position */
 				sxm = rcvSrc[ivsrc].src[isrcm].x;
 				sym = rcvSrc[ivsrc].src[isrcm].y;
@@ -462,25 +521,33 @@ int main (int argc, char **argv)
 									read_trace = 1;
 								}
 							}
-							
 						}
-						/* read data from file for sources that passed the tests above */
-						if (read_trace) {
+						if (read_trace) { /* read data from file for sources that passed the tests above */
+//#pragma omp critical
+//{
+							//troutine0 = wallclock_time();
 							/* read master trace */
-							read_sutrace_at_position(fpin, rcvSrc[ivsrc].src[isrcm].fpos, &cmaster[nsrc*nfreq], tracebuffer, trace_in_buffer, &nbuffer, ntfft, nt, nfreq, nbufmax, trace_sz, &trdloc, &tftloc);
+							//memcpy(&cmaster[nsrc*nfreq], &tracebuffer[rcvSrc[ivsrc].src[isrcm].fpos*nfreq],nfreq*sizeof(complex));
+							get_sutrace_at_position(fpin, rcvSrc[ivsrc].src[isrcm].fpos, &cmaster[nsrc*nfreq], tracebuffer, ntfft, nt, nfreq, nbufmax, trace_sz, &tread, &tfft, &tmemcpy);
+							//read_sutrace_at_position(fpin, rcvSrc[ivsrc].src[isrcm].fpos, ivsrc, isrcm, &cmaster[nsrc*nfreq], tracebuffer, trace_in_buffer, &nbuffer, ntfft, nt, nfreq, nbufmax, trace_sz, &trdloc, &tftloc, &tmemcpy);
 
 							/* read slave trace */
-							read_sutrace_at_position(fpin, rcvSrc[ivrcv].src[isrcs].fpos, &cslaves[nsrc*nfreq], tracebuffer, trace_in_buffer, &nbuffer, ntfft, nt, nfreq, nbufmax, trace_sz, &trdloc, &tftloc);
+							//ipos = (rcvSrc[ivrcv].src[isrcs].fpos)*nfreq;
+							//memcpy(&cslaves[nsrc*nfreq], &tracebuffer[ipos],nfreq*sizeof(complex));
+							get_sutrace_at_position(fpin, rcvSrc[ivrcv].src[isrcs].fpos, &cslaves[nsrc*nfreq], tracebuffer, ntfft, nt, nfreq, nbufmax, trace_sz, &tread, &tfft, &tmemcpy);
+							//read_sutrace_at_position(fpin, rcvSrc[ivrcv].src[isrcs].fpos, ivrcv, isrcs, &cslaves[nsrc*nfreq], tracebuffer, trace_in_buffer, &nbuffer, ntfft, nt, nfreq, nbufmax, trace_sz, &trdloc, &tftloc, &tmemcpy);
+							//troutine += wallclock_time()-troutine0;
+//}
 							nsrc++;
 						}
-
 					} /* end of if test that slave and master have same contributing source */
 				} /* end of nsrcSlave loop */
 			} /* end of nsrcMaster loop */
-			tread_ivs += trdloc;
-			tread += trdloc;
-			tfft_ivs += tftloc;
-			tfft += tftloc;
+			//tread_ivs += trdloc;
+			//tfft_ivs += tftloc;
+			//tloop += wallclock_time()-t0;
+			t1 = wallclock_time();
+			fprintf(stderr,"ivrcv = %d out of %d\n",ivrcv, nreceivers);
 
 			if (nsrc < nsrc_ctr) nsrc = -1; /* only compute virtual receiver when there are sufficient active sources contributing */
 
@@ -491,8 +558,7 @@ int main (int argc, char **argv)
 			else {
 				correlate(cmaster, cslaves, nfreq, nsrc, &tcorrloc, verbose);
 			}
-			tcorr_ivs += tcorrloc;
-			tcorr += tcorrloc;
+			tcorr_ivs += wallclock_time()-t1;
 			
 			/* summation over the contributing sources */
 			memset(c,0,nf*sizeof(complex));
@@ -512,14 +578,13 @@ int main (int argc, char **argv)
 					c[ifreq].i += cslaves[jsource*nfreq+ifreq].i*sclrms;
 				}
 			}
-			
-			t2 = wallclock_time();
+		
+			//t2_ivs_ivr = wallclock_time();
 
-			cr1fft(&c[0],r,ntfft,1); /* transform virtual trace back to time */
+			cr1_fft(&c[0],r,ntfft,1); /* transform virtual trace back to time */
 			
-			t3 = wallclock_time();
-			tfft_ivs += t3-t2;
-			tfft += t3-t2;
+			//t3_ivs_ivr = wallclock_time();
+			//tfft_ivs += t3_ivs_ivr-t2_ivs_ivr;
 			
 			if (normalize && nsrc>0) scl=sclfft/nsrc; /* normalize by the number of contributing sources */
 			else scl = sclfft;
@@ -548,13 +613,15 @@ int main (int argc, char **argv)
 				for (j=1;j<nt; j++) {
 					vtrace[j] = 0.5*(r[ntfft-j] + r[j])*scl;
 				}
-			} /* one virtual source and virtual receiver are now calculated; write the common virtual shot gather to disk */
+			} /* one virtual trace (virtual source and virtualreceiver) is now calculated and is written to disk below */
 			
-			t2 = wallclock_time();
+			//t4_ivs_ivr = wallclock_time();
+			//tselect += t4_ivs_ivr-t3_ivs_ivr;
 			
 			memcpy(&outputhdr,&segy_hdrs[(rcvSrc[ivrcv].src[0].fpos)],TRCBYTES);
 			outputhdr.fldr = ivsrc+1;
-			outputhdr.tracl = itrace_out+1;
+			itrace_out=ivsrc*nreceivers+ivrcv+1;
+			outputhdr.tracl = itrace_out; // wrong value in principle
 			outputhdr.tracf = ivrcv+1;
 			outputhdr.sx = sxv;
 			outputhdr.sy = syv;
@@ -566,139 +633,206 @@ int main (int argc, char **argv)
 			outputhdr.gelev = gvelev;
 			outputhdr.ns = nt;
 			// outputhdr.offset = (gxv - sxv)/1000;
+			#pragma omp critical
+{
 			nwrite = fwrite( &outputhdr, 1, TRCBYTES, fpout );
 			assert (nwrite == TRCBYTES);
 			nwrite = fwrite( &vtrace[0], sizeof(float), nt, fpout );
 			assert (nwrite == nt);
 			fflush(fpout);
-
-			t3 = wallclock_time();
-			twrite_ivs += t3-t2;
-			twrite += t3-t2;
-			
-			itrace_out++;
+}
+			//t5_ivs_ivr = wallclock_time();
+			//twrite_ivs += t5_ivs_ivr-t4_ivs_ivr;
 		} /* end of virtual receiver loop */
-
+		
+			#pragma omp single
+{
 		if (verbose>=3) {
-			t3 = wallclock_time();
-			tlogic_ivs = ((t3-t1)-tread_ivs-tfft_ivs-tcorr_ivs-twrite_ivs);
-			fprintf(stderr,"************* Timings ************* vshot= %.d \n", vspeg);
-			fprintf(stderr,"CPU-time read data         = %.3f\n", tread_ivs);
-			fprintf(stderr,"CPU-time FFT's             = %.3f\n", tfft_ivs);
-			fprintf(stderr,"CPU-time correlation       = %.3f\n", tcorr_ivs);
-			fprintf(stderr,"CPU-time write data        = %.3f\n", twrite_ivs);
-			fprintf(stderr,"CPU-time logic             = %.3f\n", tlogic_ivs);
-			fprintf(stderr,"Total CPU-time this shot   = %.3f\n", t3-t1);
+			t3_ivs = wallclock_time();
+			//tlogic_ivs = ((t3_ivs-t1_ivs)-tread_ivs-tfft_ivs-tcorr_ivs-twrite_ivs-tmemcpy);
+			fprintf(stderr,"************* Timings ************* vshot= %d (ivs = %d)\n", vspeg, ivs);
+			//fprintf(stderr,"CPU-time read data         = %.3f\n", tread_ivs);
+			//fprintf(stderr,"CPU-time FFT's             = %.3f\n", tfft_ivs);
+			//fprintf(stderr,"CPU-time memcpy            = %.3f\n", tmemcpy);
+			//fprintf(stderr,"CPU-time memset            = %.3f\n", tmemset);
+			//fprintf(stderr,"CPU-time select            = %.3f\n", tselect);
+			//fprintf(stderr,"CPU-time loop              = %.3f\n", tloop);
+			//fprintf(stderr,"CPU-time routine           = %.3f\n", troutine);
+			//fprintf(stderr,"CPU-time correlation       = %.3f\n", tcorr_ivs);
+			//fprintf(stderr,"CPU-time write data        = %.3f\n", twrite_ivs);
+			//fprintf(stderr,"CPU-time logic             = %.3f\n", tlogic_ivs);
+			fprintf(stderr,"Total CPU-time this shot   = %.3f\n", t3_ivs-t1_ivs);
 		}
-	} /* end of virtual source loop */
+}
+		//tread+=tread_ivs;
+		//tfft+=tfft_ivs;
+		//tcorr+=tcorr_ivs;
+		//twrite+=twrite_ivs;
 
+	} /* end of virtual source loop */
+	free(cmaster);
+	free(cslaves);
+	free(vtrace);
+	free(r);
+	free(c);
+
+} /* end of parallel region */
 	fclose(fpin);
 	fclose(fpout);
 
 	if (verbose) {
 		t3 = wallclock_time();
-		tlogic = ((t3-t0)-tread-tfft-tcorr-twrite);
+		//tlogic = ((t3-t1)-tread-tfft-tcorr-twrite);
+		ttotal = t3-t1;
 		fprintf(stderr,"************* Total Timings ************* \n");
-		fprintf(stderr,"CPU-time initilization     = %.3f\n", tinit);
-		fprintf(stderr,"CPU-time read data         = %.3f\n", tread);
-		fprintf(stderr,"CPU-time FFT's             = %.3f\n", tfft);
-		fprintf(stderr,"CPU-time correlation       = %.3f\n", tcorr);
-		fprintf(stderr,"CPU-time write data        = %.3f\n", twrite);
-		fprintf(stderr,"CPU-time logic             = %.3f\n", tlogic);
-		fprintf(stderr,"Total CPU-time             = %.3f\n", t3-t0);
+		//fprintf(stderr,"CPU-time initilization     = %.3f\n", tinit);
+		//fprintf(stderr,"CPU-time read data         = %.3f\n", tread);
+		//fprintf(stderr,"CPU-time FFT's             = %.3f\n", tfft);
+		//fprintf(stderr,"CPU-time correlation       = %.3f\n", tcorr);
+		//fprintf(stderr,"CPU-time write data        = %.3f\n", twrite);
+		//fprintf(stderr,"CPU-time logic             = %.3f\n", tlogic);
+		fprintf(stderr,"Total CPU-time             = %.3f\n", ttotal);
 	}
-
-	free(cmaster);
-	free(cslaves);
-	free(vtrace);
-	free(c);
-	free(r);
-
 /*================ end ================*/
-
 	return 0;
 }
 
-
-void read_sutrace_at_position(FILE *fp, int itrace, complex *tracedata, complex *tracebuffer, int *trace_in_buffer, size_t *nbuffer,
-int ntfft, int nt, int nfreq, size_t nbufmax, size_t trace_sz, double *tread, double *tfft)
+void get_sutrace_at_position(FILE *fp, size_t itrace, complex *tracedata, complex *tracebuffer, int ntfft, int nt, int nfreq, size_t nbufmax, size_t trace_sz, double *tread, double *tfft, double *tmemcpy)
 {
 	static size_t freebuffer=0;
 	size_t i, inbuffer, offset, nread, nwrite;
 	int ret;
 	float *trace;
-	float	*r;
-	double  t0, t1, t2, t3;
+	float *r;
+	double t0, t1, t2, t3, t0_t, t1_t;
+	complex *c;
+	FILE *fpt;
+	char filename[1024];
+
+	if (nbufmax == 0) {
+		t0_t = wallclock_time();	
+		//trace = (float *)calloc(nt, sizeof(float));
+		r = (float *)malloc(ntfft*sizeof(float));
+		c = (complex *)malloc((ntfft/2+1)*sizeof(complex));
+
+		/***** read trace from file *****/
+       	offset = itrace*trace_sz+TRCBYTES;
+       	ret = fseeko(fp, offset, SEEK_SET);
+       	if (ret<0) perror("fseeko");
+		memset(r,0,ntfft*sizeof(float));
+       	nread = fread(r, sizeof(float), nt, fp);
+       	assert(nread == nt);
+		t1_t = wallclock_time();
+		*tread += t1_t-t0_t;
+
+		/***** transform to frequency domain *****/
+
+		//memcpy(r,&trace[0],nt*sizeof(float)); /* might not be needed if segy_read_traces_c is nice */
+		rc1_fft(r,c,ntfft,-1);
+		memcpy(&tracedata[0].r,&c[0].r,nfreq*sizeof(complex));
+
+		t2 = wallclock_time();
+		*tfft += t2-t1_t;
+
+		//free(trace);
+		free(r);
+		free(c);
+	}
+	else {  /**** point to trace from buffer *****/
+		t0 = wallclock_time();
+		//tracedata = (complex *)&tracebuffer[itrace*nfreq]; 
+		memcpy(tracedata,&tracebuffer[itrace*nfreq],nfreq*sizeof(complex));
+		t1 = wallclock_time();
+		*tmemcpy += t1-t0;
+	}
+	return;
+}
+
+void read_sutrace_at_position_old(FILE *fp, int itrace, int ircvnum, int isrcnum, complex *tracedata, complex *tracebuffer, int *trace_in_buffer, size_t *nbuffer, int ntfft, int nt, int nfreq, size_t nbufmax, size_t trace_sz, double *tread, double *tfft, double *tmemcpy)
+{
+	static size_t freebuffer=0;
+	size_t i, inbuffer, offset, nread, nwrite;
+	int ret;
+	float *trace;
+	float *r;
+	double t0, t1, t2, t3, t0_t, t1_t;
 	complex *c;
 	FILE *fpt;
 	char filename[1024];
 
 	inbuffer = -1;
-//	fprintf(stderr,"reading trace %d\n", itrace);
+	//fprintf(stderr,"reading trace %d\n", itrace);
 
+	t0_t = wallclock_time();	
 	for (i=0; i<nbufmax; i++) {
 		if (itrace == trace_in_buffer[i]) {
 			inbuffer = i;
 			break;
 		}
 	}
+	t1_t = wallclock_time();
+	*tread += t1_t-t0_t;
+	//fprintf(stderr,"itrace=%8d inbuffer=%8d nbufmax=%d ircvnum=%8d isrcnum=%8d time=%f\n", itrace, inbuffer, nbufmax, ircvnum, isrcnum, t1_t-t0_t);
 
-//	fprintf(stderr,"inbuffer = %d bufmax=%d\n", inbuffer,nbufmax);
 	if (inbuffer == -1) {
 		t0 = wallclock_time();
 		trace = (float *)calloc(nt, sizeof(float));
 		r = (float *)malloc(ntfft*sizeof(float));
 		c = (complex *)malloc((ntfft/2+1)*sizeof(complex));
 
-	/* read trace from file */
-        offset = itrace*trace_sz+TRCBYTES;
-        ret = fseeko(fp , offset, SEEK_SET);
-        if (ret<0) perror("fseeko");
-        nread = fread( trace, sizeof(float), nt, fp );
-        assert(nread == nt);
+		/***** read trace from file *****/
+        	offset = itrace*trace_sz+TRCBYTES;
+        	ret = fseeko(fp, offset, SEEK_SET);
+        	if (ret<0) perror("fseeko");
+        	nread = fread(trace, sizeof(float), nt, fp);
+        	assert(nread == nt);
 
-		/* transform to frequency domain */
+		/***** transform to frequency domain *****/
 		memset(r,0,ntfft*sizeof(float));
 		memcpy(r,&trace[0],nt*sizeof(float)); /* might not be needed if segy_read_traces_c is nice */
 		t1 = wallclock_time();
 		*tread += t1-t0;
 
-		rc1fft(r,c,ntfft,-1);
+		rc1_fft(r,c,ntfft,-1);
 
 		t2 = wallclock_time();
 		*tfft += t2-t1;
 
-		/* reset buffer counter when buffer is full */
-		if (freebuffer<nbufmax-1) {
-			freebuffer++;
-		}
-		else freebuffer=0;
+		memcpy(&tracedata[0].r,&c[0].r,nfreq*sizeof(complex));
 
-//	fprintf(stderr,"freebuffer = %d\n", freebuffer);
-//	fprintf(stderr,"nbuffer = %d\n", *nbuffer);
-		memcpy(&tracebuffer[freebuffer*nfreq].r,&c[0].r,nfreq*sizeof(complex));
-		memcpy(&tracedata[0].r,&tracebuffer[freebuffer*nfreq].r,nfreq*sizeof(complex));
-		trace_in_buffer[freebuffer]=itrace;
+		/***** reset buffer counter when buffer is full *****/
+		if (nbufmax != 0) {
+			t1 = wallclock_time();
+			if (freebuffer<nbufmax-1) {
+				freebuffer++;
+			}
+			else freebuffer=0;
+		//fprintf(stderr,"freebuffer = %d\n", freebuffer);
+		//fprintf(stderr,"nbuffer = %d\n", *nbuffer);
+
+			memcpy(&tracebuffer[freebuffer*nfreq].r,&c[0].r,nfreq*sizeof(complex));
+			trace_in_buffer[freebuffer]=itrace;
+			t2 = wallclock_time();
+			*tmemcpy += t2-t1;
+		}
 
 		free(trace);
 		free(r);
 		free(c);
+
 		t1 = wallclock_time();
 		*tread += t1-t2;
-
 	}
-	else {
-		/* read trace from buffer */
+	else {  /**** read trace from buffer *****/
 		t0 = wallclock_time();
-//		tracedata = (complex *)&tracebuffer[inbuffer*nfreq]; /* this is better, but need some more changes TODO */
+		tracedata = (complex *)&tracebuffer[inbuffer*nfreq]; /* this is better, but need some more changes TODO */
+		//fprintf(stderr,"read from inbuffer=%d nbufmax=%d\n", inbuffer,nbufmax);
 
-//	fprintf(stderr,"read from inbuffer = %d bufmax=%d\n", inbuffer,nbufmax);
-
-		memcpy(&tracedata[0].r,&tracebuffer[inbuffer*nfreq].r,nfreq*sizeof(complex));
+		//memcpy(&tracedata[0].r,&tracebuffer[inbuffer*nfreq].r,nfreq*sizeof(complex));
+		
 		t1 = wallclock_time();
 		*tread += t1-t0;
 	}
-
 	return;
 }
 
