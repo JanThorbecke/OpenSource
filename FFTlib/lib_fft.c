@@ -423,7 +423,6 @@ void crdft(complex *cdata, REAL *rdata, int n, int sign)
     //max_threads = 1;
     id = 0;
 #endif  
-`
 	if (nprev[id] != n) {
 		scl = (2.0*M_PI)/((double)n);
 		if (csval[id]) free(csval[id]);
