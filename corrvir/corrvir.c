@@ -375,11 +375,10 @@ int main (int argc, char **argv)
 	
 	/*================ for nvirtual shots find suitable receivers ================*/
 	t1 = wallclock_time();
-	tinit += t1-t2;
+	tinit += t1-t2;	
 
 	#pragma omp parallel default(shared) \
-	private(cmaster,cslaves,vtrace,r,c) \
- 	private(t1, tread_ivs, tfft_ivs, tcorr_ivs, twrite_ivs, tlogic_ivs, t1_ivs_ivr, t2_ivs_ivr, t3_ivs_ivr, t4_ivs_ivr, t5_ivs_ivr) \
+	private(cmaster,cslaves,vtrace,r,c, t1_ivs, t3_ivs) \
 	private(ivrcv, gxv, gyv, vrpeg, gelev, nsrcSlave) \
 	private(xmin,ymin,xmax,ymax, cx1, cy1, cx2, cy2, cx3, cy3, distmc2, distsc2min, distsc2max, distsc2) \
 	private(nsrc, trdloc, tftloc, tcorrloc) \
@@ -393,14 +392,16 @@ int main (int argc, char **argv)
 	vtrace = (float *)malloc(nt*sizeof(float));
 	r = (float *)malloc(ntfft*sizeof(float));
 	c = (complex *)malloc((ntfft/2+1)*sizeof(complex));
-	itrace_out=0;
-	
-	for (ivs=0; ivs<nvsrc; ivs++) {/* loop over the number of virtual source positions to be created */
-		fprintf(stderr,"ivs = %d \n",ivs);
+	//itrace_out=0;
 
-		t1_ivs = wallclock_time();
-		tread_ivs = tfft_ivs = tcorr_ivs = twrite_ivs = tlogic_ivs = tmemcpy = tselect = tmemset = tloop = troutine = 0.0;
+        fprintf(stderr,"Number of OpenMP threads set  = %d number=%d\n", omp_get_max_threads(), omp_get_thread_num());
+
+	ivs = 0;
+	while (ivs<nvsrc) {/* loop over the number of virtual source positions to be created */
 		
+		t1_ivs = wallclock_time();
+		//tread_ivs = tfft_ivs = tcorr_ivs = twrite_ivs = tlogic_ivs = tmemcpy = tselect = tmemset = tloop = troutine = 0.0;
+
 		ivsrc=vsrc[ivs];
 		sxv = rcvSrc[ivsrc].gx;
 		syv = rcvSrc[ivsrc].gy;
@@ -546,8 +547,8 @@ int main (int argc, char **argv)
 			//tread_ivs += trdloc;
 			//tfft_ivs += tftloc;
 			//tloop += wallclock_time()-t0;
-			t1 = wallclock_time();
-			fprintf(stderr,"ivrcv = %d out of %d\n",ivrcv, nreceivers);
+			//t1 = wallclock_time();
+			//fprintf(stderr,"ivrcv = %d out of %d\n",ivrcv, nreceivers);
 
 			if (nsrc < nsrc_ctr) nsrc = -1; /* only compute virtual receiver when there are sufficient active sources contributing */
 
@@ -641,14 +642,13 @@ int main (int argc, char **argv)
 			assert (nwrite == nt);
 			fflush(fpout);
 }
-			//t5_ivs_ivr = wallclock_time();
-			//twrite_ivs += t5_ivs_ivr-t4_ivs_ivr;
 		} /* end of virtual receiver loop */
-		
-			#pragma omp single
+
+		#pragma omp master
 {
 		if (verbose>=3) {
 			t3_ivs = wallclock_time();
+        		fprintf(stderr,"Number of OpenMP threads set  = %d number=%d\n", omp_get_max_threads(), omp_get_thread_num());
 			//tlogic_ivs = ((t3_ivs-t1_ivs)-tread_ivs-tfft_ivs-tcorr_ivs-twrite_ivs-tmemcpy);
 			fprintf(stderr,"************* Timings ************* vshot= %d (ivs = %d)\n", vspeg, ivs);
 			//fprintf(stderr,"CPU-time read data         = %.3f\n", tread_ivs);
@@ -662,14 +662,13 @@ int main (int argc, char **argv)
 			//fprintf(stderr,"CPU-time write data        = %.3f\n", twrite_ivs);
 			//fprintf(stderr,"CPU-time logic             = %.3f\n", tlogic_ivs);
 			fprintf(stderr,"Total CPU-time this shot   = %.3f\n", t3_ivs-t1_ivs);
+			fflush(stderr);
 		}
+		ivs++;
 }
-		//tread+=tread_ivs;
-		//tfft+=tfft_ivs;
-		//tcorr+=tcorr_ivs;
-		//twrite+=twrite_ivs;
-
+		#pragma omp barrier
 	} /* end of virtual source loop */
+
 	free(cmaster);
 	free(cslaves);
 	free(vtrace);
@@ -677,6 +676,7 @@ int main (int argc, char **argv)
 	free(c);
 
 } /* end of parallel region */
+
 	fclose(fpin);
 	fclose(fpout);
 
