@@ -11,6 +11,11 @@
 
 double wallclock_time(void);
 
+int omp_get_max_threads(void);
+int omp_get_num_threads(void);
+int omp_get_thread_num(void);
+void omp_set_num_threads(int num_threads);
+
 typedef struct { /* complex number */
         float r,i;
 } complex;
@@ -21,6 +26,7 @@ void get_sutrace_at_position(FILE *fp, size_t itrace, complex *tracedata, comple
 
 int optncr(int n);
 void cr1_fft(complex *cdata, float *data, int n, int sign);
+void rc1_fft(float *rdata, complex *cdata, int n, int sign);
 
 int getFileInfo(char *file_name, int *n1, int *n2, float *d1, float *d2, int verbose);
 
@@ -211,7 +217,6 @@ int main (int argc, char **argv)
 
 		/*================ Read geometry of all traces in file_shots ================*/
 
-		//trace = (float *)calloc(nt, sizeof(float));
 		r = (float *)calloc(ntfft,sizeof(float));
 		c = (complex *)calloc((nf),sizeof(complex));
 		for (i=0; i<ntrace; i++) {
@@ -226,12 +231,9 @@ int main (int argc, char **argv)
 			memset(r,0,ntfft*sizeof(float));
        		nread = fread( r, sizeof(float), nt, fpin );
        		assert(nread == nt);
-        	//memcpy(r,&trace[0],nt*sizeof(float));
         	rc1_fft(r,c,ntfft,-1);
-	//		for (j=0; j<nfreq; j++) tracebuffer[i*nfreq+j] = c[j];
         	memcpy(&tracebuffer[i*nfreq],&c[0],nfreq*sizeof(complex));
 		}
-		//free(trace);
 		free(r);
 		free(c);
 	}
@@ -358,19 +360,6 @@ int main (int argc, char **argv)
 	}
 
 	/*================ initializations ================*/
-
-	
-
-	//for (j=0; j<MIN(rcvSrc[0].nsrc,rcvSrc[1].nsrc); j++) fprintf(stderr,"before allocs sx=%d sy=%d +1 sx=%d sx=%d\n",rcvSrc[0].src[j].x, rcvSrc[0].src[j].y, rcvSrc[1].src[j].x, rcvSrc[1].src[j].y);
-
-	//nbuffer = 0;
-	////nbufmax = (1024*1024*1024/(nfreq*sizeof(complex)));
-	//if (nbufmax !=0 ) {
-	//	tracebuffer = (complex *)malloc(nbufmax*nfreq*sizeof(complex));
-	//	trace_in_buffer = (int *)malloc(nbufmax*sizeof(int));
-	//	for (i=0; i<nbufmax; i++) trace_in_buffer[i] = -1;
-	//}
-	//fprintf(stderr,"nfreq=%d, nbufmax=%d\n", nfreq, nbufmax);
 
 	
 	/*================ for nvirtual shots find suitable receivers ================*/
@@ -747,6 +736,8 @@ void get_sutrace_at_position(FILE *fp, size_t itrace, complex *tracedata, comple
 	}
 	return;
 }
+
+/* older implementation when part od traces is kept in memory buffer */
 
 void read_sutrace_at_position_old(FILE *fp, int itrace, int ircvnum, int isrcnum, complex *tracedata, complex *tracebuffer, int *trace_in_buffer, size_t *nbuffer, int ntfft, int nt, int nfreq, size_t nbufmax, size_t trace_sz, double *tread, double *tfft, double *tmemcpy)
 {
