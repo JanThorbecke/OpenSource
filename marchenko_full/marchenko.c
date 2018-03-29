@@ -305,7 +305,17 @@ int main (int argc, char **argv)
 
     ngath = 0; /* setting ngath=0 scans all traces; n2 contains maximum traces/gather */
 	if (file_ray!=NULL && file_tinv==NULL) {
-		ret = getFileInfo(file_ray, &n2, &n1, &ngath, &d2, &d1, &f2, &f1, &xmin, &xmax, &scl, &ntraces);
+		ret = getFileInfo(file_ray, &n2, &n1, &ngath, &d1, &d2, &f2, &f1, &xmin, &xmax, &scl, &ntraces);
+        n1 = 1;
+        ntraces = n2*ngath;
+        scl = 0.0010;
+        d1 = -1.0*xmin;
+        xmin = -1.0*xmax;
+        xmax = d1;
+        WP.wav = 1;
+        shot.nz = 1;
+        shot.nx = ngath;
+        shot.n = shot.nx*shot.nz;
 	}
 	else if (file_ray==NULL && file_tinv==NULL) {
 		getParameters(&mod, &rec, &src, &shot, &ray, verbose);
@@ -418,14 +428,14 @@ int main (int argc, char **argv)
     }
 
 	/* check consistency of header values */
-    if (xrcvsyn[0] != 0 || xrcvsyn[1] != 0 ) fxs = xrcvsyn[0];
-    fxs2 = fxs + (float)(nxs-1)*dxs;
     dxf = (xrcvsyn[nxs-1] - xrcvsyn[0])/(float)(nxs-1);
     if (NINT(dxs*1e3) != NINT(fabs(dxf)*1e3)) {
         vmess("dx in hdr.d1 (%.3f) and hdr.gx (%.3f) not equal",d2, dxf);
         if (dxf != 0) dxs = fabs(dxf);
         vmess("dx in operator => %f", dxs);
     }
+    if (xrcvsyn[0] != 0 || xrcvsyn[1] != 0 ) fxs = xrcvsyn[0];
+    fxs2 = fxs + (float)(nxs-1)*dxs;
 
 /*================ Reading shot records ================*/
 

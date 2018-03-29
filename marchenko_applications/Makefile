@@ -36,7 +36,6 @@ SRCH	= marchenko.c \
 		getpars.c \
 		readSnapData.c \
 		Cost.c \
-		AmpEst.c \
 		freqwave.c \
 		getParameters.c \
 		getModelInfo.c \
@@ -53,7 +52,8 @@ SRCH	= marchenko.c \
 		imaging.c \
 		threadAffinity.c \
 		makeWindow.c \
-		homogeneousg.c
+		homogeneousg.c \
+		AmpEstApp.c
 
 SRCC	= combine.c \
 		getFileInfo.c \
