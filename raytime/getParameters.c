@@ -266,6 +266,7 @@ int getParameters(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar *
 	if (!getparint("max_nrec",&rec->max_nrec)) rec->max_nrec=15000;
 	if (!getparfloat("dxspread",&dxspread)) dxspread=0;
 	if (!getparfloat("dzspread",&dzspread)) dzspread=0;
+    if (!getparint("nt",&rec->nt)) rec->nt=1024;
 
 	/* calculates the receiver coordinates */
 	

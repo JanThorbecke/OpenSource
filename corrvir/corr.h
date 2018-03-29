@@ -12,7 +12,7 @@ typedef struct _traceCoord { /* Type */
 	int x;
 	int y;
 	int peg;
-	int fpos;
+	size_t fpos;
 } traceCoord;
 
 typedef struct _crgPos { /* Type */
