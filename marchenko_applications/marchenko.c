@@ -43,7 +43,6 @@ int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, floa
 void name_ext(char *filename, char *extension);
 void Cost(float *f1p, float *f1d, float *Gm, float *Gm0, double *J, int Nsyn, int nxs, int ntfft, int *ixpossyn, int npossyn);
 void applyMute( float *data, int *mute, int smooth, int above, int Nsyn, int nxs, int nt, int *xrcvsyn, int npossyn, int shift, int pad, int nt0);
-void AmpEst(float *f1d, float *Gd, float *ampest, int Nsyn, int nxs, int ntfft, int *ixpossyn, int npossyn, char *file_wav);
 int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *nxm);
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
 int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
@@ -53,6 +52,8 @@ void makeWindow(WavePar WP, char *file_ray, char *file_amp, float dt, float *xrc
 void iterations (complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *first, int niter, int verbose);
 void imaging (float *Image, WavePar WP, complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *synpos, int verbose);
 void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *synpos, int verbose);
+
+void AmpEst(float *amp, WavePar WP, complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *synpos, int verbose);
 
 void synthesis(complex *Refl, complex *Fop, float *Top, float *iRN, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, double *tfft, int *first, int verbose);
 
@@ -209,10 +210,10 @@ int main (int argc, char **argv)
     FILE    *fp_out, *fp_f1plus, *fp_f1min;
     FILE    *fp_gmin, *fp_gplus, *fp_f2, *fp_pmin;
     int     i, j, l, ret, nshots, Nsyn, nt, nx, nts, nxs, ngath;
-    int     size, n1, n2, ntap, tap, di, ntraces, nb, ib;
+    int     size, n1, n2, ntap, tap, di, ntraces, nb, ib, ampest;
     int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn, *synpos;
     int     reci, mode, ixa, ixb, n2out, verbose, ntfft;
-    int     iter, niter, niterh, tracf, *muteW, pad, nt0, ampest, *hmuteW, *hxnxsyn;
+    int     iter, niter, niterh, tracf, *muteW, pad, nt0, *hmuteW, *hxnxsyn;
     int     hw, smooth, above, shift, *ixpossyn, npossyn, ix, first=1;
     float   fmin, fmax, *tapersh, *tapersy, fxf, dxf, fxs2, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
 	float	*hzsyn, *hxsyn, *hxrcvsyn, *hG_d, xloc, zloc, *HomG;
@@ -268,6 +269,7 @@ int main (int argc, char **argv)
     if (!getparfloat("fmax", &fmax)) fmax = 70.0;
     if (!getparint("ixa", &ixa)) ixa = 0;
     if (!getparint("ixb", &ixb)) ixb = ixa;
+	if (!getparint("ampest",&ampest)) ampest = 0;
 //    if (!getparint("reci", &reci)) reci = 0;
 	reci=0; // source-receiver reciprocity is not yet fully build into the code
     if (!getparfloat("weight", &weight)) weight = 1.0;
@@ -282,7 +284,6 @@ int main (int argc, char **argv)
     if(!getparint("smooth", &smooth)) smooth = 5;
     if(!getparint("above", &above)) above = 0;
     if(!getparint("shift", &shift)) shift=12;
-	if(!getparint("ampest", &ampest)) ampest=0;
 	if(!getparint("nb", &nb)) nb=0;
 	if (!getparfloat("bstart", &bstart)) bstart = 1.0;
     if (!getparfloat("bend", &bend)) bend = 1.0;
@@ -336,7 +337,7 @@ int main (int argc, char **argv)
 
     ngath = 0; /* setting ngath=0 scans all traces; n2 contains maximum traces/gather */
 	if (file_ray!=NULL && file_tinv==NULL) {
-		ret = getFileInfo(file_ray, &n2, &n1, &ngath, &d2, &d1, &f2, &f1, &xmin, &xmax, &scl, &ntraces);
+		ret = getFileInfo(file_ray, &n2, &n1, &ngath, &d1, &d2, &f2, &f1, &xmin, &xmax, &scl, &ntraces);
 		n1 = 1;
 		ntraces = n2*ngath;
 		scl = 0.0010;
@@ -481,14 +482,14 @@ int main (int argc, char **argv)
     }
 
 	/* check consistency of header values */
-    if (xrcvsyn[0] != 0 || xrcvsyn[1] != 0 ) fxs = xrcvsyn[0];
-    fxs2 = fxs + (float)(nxs-1)*dxs;
     dxf = (xrcvsyn[nxs-1] - xrcvsyn[0])/(float)(nxs-1);
     if (NINT(dxs*1e3) != NINT(fabs(dxf)*1e3)) {
         vmess("dx in hdr.d1 (%.3f) and hdr.gx (%.3f) not equal",d2, dxf);
         if (dxf != 0) dxs = fabs(dxf);
         vmess("dx in operator => %f", dxs);
     }
+    if (xrcvsyn[0] != 0 || xrcvsyn[1] != 0 ) fxs = xrcvsyn[0];
+    fxs2 = fxs + (float)(nxs-1)*dxs;
 
 /*================ Reading shot records ================*/
 
@@ -608,7 +609,7 @@ int main (int argc, char **argv)
 		ngath = 1;
 
 		if (file_rays!=NULL || file_cp!=NULL) {
-			vmess("check");
+			WPs.wav=1;
 			makeWindow(WPs, file_rays, file_amps, dt, hxrcvsyn, hxsyn, hzsyn, hxnxsyn, ngath, nxs, ntfft, mode, hmuteW, hG_d, hw, verbose);
     	}
     	else {
@@ -694,6 +695,24 @@ int main (int argc, char **argv)
             }
     	}
 	}*/
+
+    /* compute downgoing Green's function G^+,+ */
+	if (ampest==1) {
+		amp		= (float *)calloc(Nsyn,sizeof(float));
+		AmpEst(amp,WP,Refl,nx,nt,nxs,nts,dt,xsyn,Nsyn,xrcv,xsrc,fxs2,fxs,dxs,dxsrc,dx,ixa,ixb,
+            ntfft,nw,nw_low,nw_high,mode,reci,nshots,ixpossyn,npossyn,pmin,f1min,f1plus,
+            f2p,G_d,muteW,smooth,shift,above,pad,nt0,synpos,verbose);
+		for (l = 0; l < Nsyn; l++) {
+            for (i = 0; i < nxs*nts; i++) {
+                G_d[l*nxs*nts+i] 	*= amp[l];
+				f2p[l*nxs*nts+i] 	*= amp[l];
+				f1plus[l*nxs*nts+i] *= amp[l];
+				f1min[l*nxs*nts+i] 	*= amp[l];
+				pmin[l*nxs*nts+i] 	*= amp[l];
+            }
+        }
+	}
+	
 
 	if (niterh==0) {
         for (l = 0; l < Nsyn; l++) {

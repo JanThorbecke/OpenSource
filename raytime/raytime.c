@@ -121,7 +121,7 @@ int main(int argc, char **argv)
     fcoord coordsx, coordgx, Time;
     icoord grid, isrc; 
     float Jr, *ampl, *time, *ttime, *ttime_p, cp_average;
-	float dxrcv, dzrcv;
+	float dxrcv, dzrcv, dt_tmp;
     segy hdr;
     char filetime[1024], fileamp[1024], *method;
     size_t  nwrite;
@@ -314,6 +314,8 @@ private (coordgx,irec,Time,Jr)
         	hdr.f1     = mod.x0+rec.x[0]*mod.dx;
         	hdr.d2     = (shot.x[MIN(shot.n-1,1)]-shot.x[0])*mod.dx;
         	hdr.f2     = mod.x0+shot.x[0]*mod.dx;
+			dt_tmp = (fabs(hdr.d1*((float)hdr.scalco)));
+			hdr.dt	   = (unsigned short)dt_tmp;
     
         	nwrite = fwrite( &hdr, 1, TRCBYTES, fpt);
         	assert(nwrite == TRCBYTES);

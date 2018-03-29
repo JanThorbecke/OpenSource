@@ -110,9 +110,11 @@ int readTinvData(char *filename, WavePar WP, char *file_ray, char *file_amp, flo
            		for (itrace=0; itrace<nx; itrace++) {
                		xrcv[isyn*nx+itrace] = (hdrs_mute[isyn].f1 + hdrs_mute[isyn].d1*((float)itrace));
            		}
-           		xnx[isyn]=nx;
-				xsrc[isyn] = hdrs_mute[isyn].sx;
-        		zsrc[isyn] = hdrs_mute[isyn].sdepth;
+				xnx[isyn]=hdrs_mute[isyn].ns;
+            	if (hdrs_mute[isyn].scalco < 0) scl=-1.0/hdrs_mute[isyn].scalco;
+            	else scl=hdrs_mute[isyn].scalco;
+            	xsrc[isyn] = hdrs_mute[isyn].sx*scl;
+            	zsrc[isyn] = hdrs_mute[isyn].sdepth*scl;
         	}
 		}
 		else {
