@@ -3,6 +3,7 @@
 #include<math.h>
 #include<assert.h>
 #include<string.h>
+#include <genfft.h>
 #include"par.h"
 #include"raytime.h"
 #include "segy.h"
@@ -40,8 +41,10 @@ char *sdoc[] = {
 "   file_cp= .......... P (cp) velocity file",
 "   file_src= ......... file with source signature",
 "   file_rcv=recv.su .. base name for receiver files",
+"   file_rcvtime= ..... receiver file in x-t",
 "   dx= ............... read from model file: if dx==0 then dx= can be used to set it",
 "   dz= ............... read from model file: if dz==0 then dz= can be used to set it",
+"   nt=1024 ........... number of time-samples in file_rcvtime",
 "" ,
 " RAY TRACING PARAMETERS:",
 "   method=jesper ..... calculation method (jesper, fd) ",
@@ -64,8 +67,6 @@ char *sdoc[] = {
 "   dzshot=0 .......... if nshot > 1: z-shift in shot locations",
 "   xsrca= ............ defines source array x-positions",
 "   zsrca= ............ defines source array z-positions",
-"   wav_random=1 ...... 1 generates (band limited by fmax) noise signatures ",
-"   src_at_rcv=1 ...... inject wavefield at receiver coordinates (1), inject at source (0)",
 "" ,
 " PLANE WAVE SOURCE DEFINITION:",
 "   plane_wave=0 ...... model plane wave with nsrc= sources",
@@ -117,25 +118,60 @@ int main(int argc, char **argv)
 	double t0, t1, t2, tinit, tray, tio;
 	size_t size;
 	int nw, n1, ix, iz, ir, ixshot, izshot;
+	int nt, ntfft, nfreq, ig;
 	int irec, sbox, ipos, nrx, nrz, nr;
     fcoord coordsx, coordgx, Time;
     icoord grid, isrc; 
-    float Jr, *ampl, *time, *ttime, *ttime_p, cp_average;
-	float dxrcv, dzrcv, dt_tmp;
+    float Jr, *ampl, *time, *ttime, *ttime_p, cp_average, *wavelet, dw, dt;
+	float dxrcv, dzrcv, rdelay, tr;
     segy hdr;
-    char filetime[1024], fileamp[1024], *method;
-    size_t  nwrite;
+    char filetime[1024], fileamp[1024], *method, *file_rcvtime, *file_src;
+    size_t  nwrite, nread;
 	int verbose;
-    FILE *fpt, *fpa;
+    complex *cmute, *cwav;
+    FILE *fpt, *fpa, *fpwav, *fprcv;
 
 	t0= wallclock_time();
 	initargs(argc,argv);
 	requestdoc(0);
 
-	if (!getparint("verbose",&verbose)) verbose=0;
+	if(!getparint("verbose",&verbose)) verbose=0;
     if(!getparint("sbox", &sbox)) sbox = 1;
     if(!getparstring("method", &method)) method="jesper";
+	if (!getparfloat("rec_delay",&rdelay)) rdelay=0.0;
+
 	getParameters(&mod, &rec, &src, &shot, &ray, verbose);
+
+    /* read file_src if file_rcvtime is defined */
+
+    if (!getparstring("file_rcvtime",&file_rcvtime)) file_rcvtime=NULL;
+
+	if (file_rcvtime != NULL) {
+    	if (!getparstring("file_src",&file_src)) file_src=NULL;
+		if (!getparfloat("dt",&dt)) dt=0.004;
+		if (file_src != NULL ) {
+        	fpwav = fopen( file_src, "r" );
+        	assert( fpwav != NULL);
+        	nread = fread( &hdr, 1, TRCBYTES, fpwav );
+        	assert(nread == TRCBYTES);
+			ntfft = optncr(MAX(hdr.ns, rec.nt));
+ 			wavelet = (float *)calloc(ntfft,sizeof(float));
+			/* read first trace */
+        	nread = fread(wavelet, sizeof(float), hdr.ns, fpwav);
+        	assert (nread == hdr.ns);
+        	fclose(fpwav);
+		}
+		else {
+			ntfft = optncr(rec.nt);
+ 			wavelet = (float *)calloc(ntfft,sizeof(float));
+			wavelet[0] = 1.0;
+		}
+    	nfreq = ntfft/2+1;
+    	cwav    = (complex *)calloc(nfreq,sizeof(complex));
+    	cmute   = (complex *)calloc(nfreq,sizeof(complex));
+        rc1fft(wavelet,cwav,ntfft,-1);
+    	dw      = 2*M_PI/(ntfft*dt);
+	}
 
 	/* allocate arrays for model parameters: the different schemes use different arrays */
 
@@ -177,6 +213,7 @@ int main(int argc, char **argv)
 //		rec.zr[ir]=rec.z[ir]*mod.dz;
 		if (verbose>3) vmess("receiver position %d at grid[ix=%d, iz=%d] = (x=%f z=%f)", ir, ix, rec.z[ir], rec.xr[ir]+mod.x0, rec.zr[ir]+mod.z0);
 	}
+		vmess("   - method for ray-tracing       = %s", method);
 /*
 */
 
@@ -215,14 +252,15 @@ int main(int argc, char **argv)
         fpa = fopen(fileamp, "w");
         assert(fpa != NULL);
 	}
+	if (file_rcvtime != NULL) {
+        fprcv = fopen(file_rcvtime, "w");
+        assert(fprcv != NULL);
+	}
 
     memset(&hdr,0,sizeof(hdr));
-    hdr.dt     = (unsigned short)1;
     hdr.scalco = -1000;
     hdr.scalel = -1000;
     hdr.trid   = 1;
-    hdr.trwf   = shot.n;
-    hdr.ns     = rec.n;
 
 	t1=wallclock_time();
 	tinit = t1-t0;
@@ -260,7 +298,7 @@ private (coordgx,irec,Time,Jr)
 		
             		getWaveParameter(slowness, grid, mod.dx, coordsx, coordgx, ray, &Time, &Jr);
 	
-            		time[((izshot*shot.nx)+ixshot)*rec.n + irec] = Time.x + Time.y + Time.z;
+            		time[((izshot*shot.nx)+ixshot)*rec.n + irec] = Time.x + Time.y + 0.5*Time.z;
             		ampl[((izshot*shot.nx)+ixshot)*rec.n + irec] = Jr;
             		if (verbose>4) vmess("JS: shot=%f,%f receiver at %f,%f T0=%f T1=%f T2=%f Jr=%f",coordsx.x, coordsx.z, coordgx.x, coordgx.z, Time.x, Time.y, Time.z, Jr); 
         		}
@@ -309,6 +347,9 @@ private (coordgx,irec,Time,Jr)
         	hdr.tracl  = ((izshot*shot.nx)+ixshot)+1;
         	hdr.tracf  = ((izshot*shot.nx)+ixshot)+1;
         	hdr.ntr    = shot.n;
+    		hdr.dt     = (unsigned short)1;
+    		hdr.trwf   = shot.n;
+    		hdr.ns     = rec.n;
         	//hdr.d1     = (rec.x[1]-rec.x[0])*mod.dx; // discrete
         	hdr.d1     = (rec.xr[1]-rec.xr[0]);
         	hdr.f1     = mod.x0+rec.x[0]*mod.dx;
@@ -329,11 +370,40 @@ private (coordgx,irec,Time,Jr)
             	assert(nwrite == rec.n);
 	        	fflush(fpa);
         	}
+			if (file_rcvtime != NULL) {
+    			hdr.ns     = rec.nt;
+    			hdr.trwf   = rec.n;
+    			hdr.ntr    = ((izshot*shot.nx)+ixshot+1)*rec.n;
+    			hdr.dt     = dt*1000000;
+    			hdr.d1     = dt;
+        		hdr.f1     = 0.0;
+        		hdr.d2     = (rec.xr[1]-rec.xr[0]);
+    			hdr.f2     = mod.x0+rec.x[0]*mod.dx;
+
+        		for (irec=0; irec<rec.n; irec++) {
+					ipos = ((izshot*shot.nx)+ixshot)*rec.n + irec;
+        			hdr.tracf  = irec+1;
+        			hdr.tracl  = ((izshot*shot.nx)+ixshot*shot.nz)+irec+1;
+        			hdr.gx     = 1000*(mod.x0+rec.xr[irec]);
+        			hdr.offset = (rec.xr[irec]-shot.x[ixshot]*mod.dx);
+        			hdr.gelev  = (int)(-1000*(mod.z0+rec.zr[irec]));
+
+					tr = time[ipos]+rdelay;
+                    for (ig=0; ig<nfreq; ig++) {
+                        cmute[ig].r = (cwav[ig].r*cos(ig*dw*tr-M_PI/4.0)-cwav[ig].i*sin(ig*dw*tr-M_PI/4.0))/(ntfft*ampl[ipos]);
+                        cmute[ig].i = (cwav[ig].i*cos(ig*dw*tr-M_PI/4.0)+cwav[ig].r*sin(ig*dw*tr-M_PI/4.0))/(ntfft*ampl[ipos]);
+                    }
+                	cr1fft(cmute,wavelet,ntfft,-1);
+        			nwrite = fwrite( &hdr, 1, TRCBYTES, fprcv);
+        			nwrite = fwrite( wavelet, sizeof(float), rec.nt, fprcv );
+				}
+			}
 	        t1=wallclock_time();
             tio += t1-t2;
-    	}
+    	} /* end of ixshot loop */
 	} /* end of loop over number of shots */
 	fclose(fpt);
+	if (file_rcvtime != NULL) fclose(fprcv);
 	if (ray.geomspread) fclose(fpa);
 
 	t1= wallclock_time();

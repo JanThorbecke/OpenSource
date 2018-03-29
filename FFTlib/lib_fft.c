@@ -416,6 +416,13 @@ void crdft(complex *cdata, REAL *rdata, int n, int sign)
 	static double *csval[MAX_NUMTHREADS];
     static int nprev[MAX_NUMTHREADS];
 
+#ifdef _OPENMP
+    //max_threads = omp_get_max_threads();
+    id = omp_get_thread_num();
+#else 
+    //max_threads = 1;
+    id = 0;
+#endif  
 	if (nprev[id] != n) {
 		scl = (2.0*M_PI)/((double)n);
 		if (csval[id]) free(csval[id]);
