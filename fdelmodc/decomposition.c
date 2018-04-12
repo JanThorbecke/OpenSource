@@ -31,10 +31,13 @@ typedef struct _dcomplexStruct { /* complex number */
 
 void vmess(char *fmt, ...);
 complex firoot(float x, float stab);
+complex froot(float x);
 complex ciroot(complex x, float stab);
 complex cwp_csqrt(complex z);
 
-void decud(float om, float rho, float cp, float dx, int nkx, float kangle, float alpha, float eps, complex *pu);
+void decudP(float om, float rho, float cp, float dx, int nkx, float kangle, float alpha, float eps, complex *pu);
+void decudVz(float om, float rho, float cp, float dx, int nkx, float kangle, float alpha, float eps, complex *pu);
+
 int writesufile(char *filename, float *data, int n1, int n2, float f1, float f2, float d1, float d2);
 
 void kxwfilter(complex *data, float k, float dx, int nkx, 
@@ -42,7 +45,7 @@ void kxwfilter(complex *data, float k, float dx, int nkx,
 
 void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
                int nkx, float dx, int nt, float dt, float fmin, float fmax,
-               float cp, float rho, int verbose)
+               float cp, float rho, int vznorm, int verbose)
 {
 	int      iom, iomin, iomax, ikx, nfreq, a, av;
 	float    omin, omax, deltom, om, df, dkx;
@@ -126,27 +129,48 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 	if(!getparfloat("kangle",&kangle)) kangle=fangle;
 	if (verbose>=2) vmess("Up-down going: maximum angle in decomposition= %f", kangle);
 
-	for (iom = iomin; iom <= iomax; iom++) {
-		om  = iom*deltom;
+    if (vznorm) { /* Vz normalised decompostion */
+        for (iom = iomin; iom <= iomax; iom++) {
+            om  = iom*deltom;
+            
+            decudVz(om, rho, cp, dx, nkx, kangle, alpha, eps, pu);
+            /*
+             kxwfilter(dpux, kp, dx, nkx, alfa1, alfa2, perc);
+             kxwfilter(dpuz, kp, dx, nkx, alfa1, alfa2, perc);
+             */
+            for (ikx = 0; ikx < nkx; ikx++) {
+                ax.r = 0.5*rvz[iom*nkx+ikx].r;
+                ax.i = 0.5*rvz[iom*nkx+ikx].i;
+                az.r = 0.5*(rp[iom*nkx+ikx].r*pu[ikx].r - rp[iom*nkx+ikx].i*pu[ikx].i);
+                az.i = 0.5*(rp[iom*nkx+ikx].i*pu[ikx].r + rp[iom*nkx+ikx].r*pu[ikx].i);
+                
+                down[iom*nkx+ikx].r = ax.r + az.r;
+                down[iom*nkx+ikx].i = ax.i + az.i;
+                up[iom*nkx+ikx].r   = ax.r - az.r;
+                up[iom*nkx+ikx].i   = ax.i - az.i;
+            }
+        }
+        
+    }
+    else { /* P normalised decompostion */
+        for (iom = iomin; iom <= iomax; iom++) {
+            om  = iom*deltom;
 
-		decud(om, rho, cp, dx, nkx, kangle, alpha, eps, pu);
-/*
-		kxwfilter(dpux, kp, dx, nkx, alfa1, alfa2, perc); 
-		kxwfilter(dpuz, kp, dx, nkx, alfa1, alfa2, perc); 
-*/
-		for (ikx = 0; ikx < nkx; ikx++) {
-			ax.r = 0.5*rp[iom*nkx+ikx].r;
-			ax.i = 0.5*rp[iom*nkx+ikx].i;
-			az.r = 0.5*(rvz[iom*nkx+ikx].r*pu[ikx].r - rvz[iom*nkx+ikx].i*pu[ikx].i);
-			az.i = 0.5*(rvz[iom*nkx+ikx].i*pu[ikx].r + rvz[iom*nkx+ikx].r*pu[ikx].i);
+            decudP(om, rho, cp, dx, nkx, kangle, alpha, eps, pu);
 
-			down[iom*nkx+ikx].r = ax.r + az.r;
-			down[iom*nkx+ikx].i = ax.i + az.i;
-			up[iom*nkx+ikx].r   = ax.r - az.r;
-			up[iom*nkx+ikx].i   = ax.i - az.i;
-		}
+            for (ikx = 0; ikx < nkx; ikx++) {
+                ax.r = 0.5*rp[iom*nkx+ikx].r;
+                ax.i = 0.5*rp[iom*nkx+ikx].i;
+                az.r = 0.5*(rvz[iom*nkx+ikx].r*pu[ikx].r - rvz[iom*nkx+ikx].i*pu[ikx].i);
+                az.i = 0.5*(rvz[iom*nkx+ikx].i*pu[ikx].r + rvz[iom*nkx+ikx].r*pu[ikx].i);
 
-	}
+                down[iom*nkx+ikx].r = ax.r + az.r;
+                down[iom*nkx+ikx].i = ax.i + az.i;
+                up[iom*nkx+ikx].r   = ax.r - az.r;
+                up[iom*nkx+ikx].i   = ax.i - az.i;
+            }
+        }
+    }
 
 	free(pu);
 	free(angle);
@@ -154,7 +178,9 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 	return;
 }
 
-void decud(float om, float rho, float cp, float dx, int nkx, float kangle, float alpha, float eps, complex *pu)
+/* Pressure  normalised decompostion */
+
+void decudP(float om, float rho, float cp, float dx, int nkx, float kangle, float alpha, float eps, complex *pu)
 {
 	int 	 ikx, ikxmax1, ikxmax2, filterpoints, filterppos;
 	float 	 kp, kp2;
@@ -239,6 +265,85 @@ void decud(float om, float rho, float cp, float dx, int nkx, float kangle, float
 
 	return;
 }
+
+/* Particle Velocity normalised decompostion */
+
+void decudVz(float om, float rho, float cp, float dx, int nkx, float kangle, float alpha, float eps, complex *pu)
+{
+    int      ikx, ikxmax1, ikxmax2, filterpoints, filterppos;
+    float      kp, kp2;
+    float      kx, kx2, kzp2, dkx, stab;
+    float     kxfmax, kxnyq, kpos, kfilt, perc, band, *filter;
+    complex kzp,  ckp, ckp2;
+    
+    kp  = om/cp;
+    kp2 = kp*kp;
+    dkx = 2.0*M_PI/(nkx*dx);
+    stab  = eps*eps*kp*kp;
+    
+    /* make kw filter at maximum angle alfa */
+    perc = 0.15; /* percentage of band to use for smooth filter */
+    filter = (float *)malloc(nkx*sizeof(float));
+    kpos = kp*sin(M_PI*kangle/180.0);
+    kxnyq  = M_PI/dx;
+    if (kpos > kxnyq)  kpos = kxnyq;
+    band = kpos;
+    filterpoints = (int)abs((int)(perc*band/dkx));
+    kfilt = fabsf(dkx*filterpoints);
+    if (kpos+kfilt < kxnyq) {
+        kxfmax = kpos+kfilt;
+        filterppos = filterpoints;
+    }
+    else {
+        kxfmax = kxnyq;
+        filterppos = (int)(0.15*nkx/2);
+    }
+    ikxmax1 = (int) (kxfmax/dkx);
+    ikxmax2 = ikxmax1 - filterppos;
+    
+    for (ikx = 0; ikx < ikxmax2; ikx++)
+        filter[ikx]=1.0;
+    for (ikx = ikxmax2; ikx < ikxmax1; ikx++)
+        filter[ikx] =(cos(M_PI*(ikx-ikxmax2)/(ikxmax1-ikxmax2))+1)/2.0;
+    for (ikx = ikxmax1; ikx <= nkx/2; ikx++)
+        filter[ikx] = 0.0;
+    /* end of kxfilter */
+    
+    for (ikx = 0; ikx <= (nkx/2); ikx++) {
+        kx   = ikx*dkx;
+        kx2  = kx*kx;
+        kzp2 = kp2 - kx2;
+        kzp  = froot(kzp2);
+        
+        pu[ikx].r = filter[ikx]*kzp.r/(om*rho);
+        pu[ikx].i = filter[ikx]*kzp.i/(om*rho);
+    }
+    
+    /* operators are symmetric in kx-w domain */
+    for (ikx = (nkx/2+1); ikx < nkx; ikx++) {
+        pu[ikx] = pu[nkx-ikx];
+    }
+    free(filter);
+    
+    return;
+}
+
+
+complex froot(float x)
+{
+    complex z;
+    if (x >= 0.0) {
+        z.r = sqrt(x);
+        z.i = 0.0;
+        return z;
+    }
+    else {
+        z.r = 0.0;
+        z.i = -sqrt(-x);
+        return z;
+    }
+}
+
 
 /* compute 1/x */
 complex firoot(float x, float stab)

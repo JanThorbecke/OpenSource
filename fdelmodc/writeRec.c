@@ -34,7 +34,7 @@ int traceWrite(segy *hdr, float *data, int n, FILE *fp) ;
 void name_ext(char *filename, char *extension);
 void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
                int nkx, float dx, int nt, float dt, float fmin, float fmax,
-               float cp, float rho, int verbose);
+               float cp, float rho, int vznorm, int verbose);
 
 
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
@@ -50,7 +50,7 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
     float dx, dt, cp, rho, fmin, fmax;
     complex *crec_vz, *crec_p, *crec_up, *crec_dw;
     int irec, ntfft, nfreq, nkx, xorig, ix, iz, it, ibndx;
-    int append;
+    int append, vznorm;
     double ddt;
     char number[16], filename[1024];
     segy hdr;
@@ -117,6 +117,8 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
         if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
         cp  = rec.cp;
         rho = rec.rho;
+		if (rec.type.ud==2) vznorm=1;
+		else vznorm=0;
         if (verbose) vmess("Decomposition array at z=%.2f with cp=%.2f rho=%.2f", rec.zr[0]+mod.z0, cp, rho);
         rec_up  = (float *)calloc(ntfft*nkx,sizeof(float));
         rec_down= (float *)calloc(ntfft*nkx,sizeof(float));
@@ -140,7 +142,7 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
 
         /* apply decomposition operators */
         kxwdecomp(crec_p, crec_vz, crec_up, crec_dw,
-               nkx, mod.dx, nsam, dt, fmin, fmax, cp, rho, verbose);
+               nkx, mod.dx, nsam, dt, fmin, fmax, cp, rho, vznorm, verbose);
 
         /* transform back to t-x */
         wkx2xt(crec_up, rec_up, ntfft, nkx, nkx, ntfft, xorig);
