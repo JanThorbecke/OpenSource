@@ -27,13 +27,13 @@ makemod sizex=6000 sizez=4000 dx=$dx dz=$dx cp0=$cp cs0=$cs ro0=$rho \
 
 makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
 
-
+# pressure Normalised decompostion 
 ../fdelmodc \
     file_cp=syncl_cp.su ischeme=1 \
     file_den=syncl_ro.su \
     file_src=wave.su \
     file_rcv=shot_fd_Fz_zsrc1150.su \
-	nshot=2 dxshot=500 \
+	nshot=1 dxshot=500 \
     src_type=7 \
 	src_orient=1 \
 	src_injectionrate=1 \
@@ -46,8 +46,8 @@ makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
     xrcv1=-2250 xrcv2=2250 \
     zrcv1=1150 zrcv2=1150 \
     xsrc=0 zsrc=0 \
-    ntaper=200 \
-    left=4 right=4 top=4 bottom=4
+    ntaper=50 \
+    left=2 right=2 top=2 bottom=2
 
 
 supsgraph < anglerp.su hbox=2 wbox=4 style=normal \
@@ -69,4 +69,27 @@ supsimage < shot_fd_Fz_zsrc1150_ru.su \
 supsimage < shot_fd_Fz_zsrc1150_rd.su \
     wbox=2 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
     label1="time [s]" label2="lateral position [m]" > shot_fd_Fz_zsrc1150_rd.eps
+
+# Particle Velocity Normalised decompostion 
+../fdelmodc \
+    file_cp=syncl_cp.su ischeme=1 \
+    file_den=syncl_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_fd_Fz_zsrc1150_vznorm.su \
+	nshot=1 dxshot=500 \
+    src_type=7 \
+	src_orient=1 \
+	src_injectionrate=1 \
+    rec_type_ud=2 \
+    dtrcv=0.0040 \
+	rec_delay=0.1 \
+    verbose=2 \
+    tmod=3.10 \
+    dxrcv=10 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=1150 zrcv2=1150 \
+    xsrc=0 zsrc=0 \
+    ntaper=50 \
+    left=2 right=2 top=2 bottom=2
+
 
