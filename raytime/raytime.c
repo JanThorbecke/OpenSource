@@ -355,6 +355,8 @@ private (coordgx,irec,Time,Jr)
         	hdr.f1     = mod.x0+rec.x[0]*mod.dx;
         	hdr.d2     = (shot.x[MIN(shot.n-1,1)]-shot.x[0])*mod.dx;
         	hdr.f2     = mod.x0+shot.x[0]*mod.dx;
+			dt_tmp = (fabs(hdr.d1*((float)hdr.scalco)));
+			hdr.dt	   = (unsigned short)dt_tmp;
     
         	nwrite = fwrite( &hdr, 1, TRCBYTES, fpt);
         	assert(nwrite == TRCBYTES);
