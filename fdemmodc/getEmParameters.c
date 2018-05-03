@@ -20,6 +20,8 @@
 *           The Netherlands
 **/
 
+int optncr(int n);
+
 float gaussGen();
 
 int getModelInfo(char *file_name, int *n1, int *n2, float *d1, float *d2, float *f1, float *f2, float *min, float *max, int *axis, int zeroch, int verbose);
@@ -36,7 +38,7 @@ int writesufile(char *filename, float *data, int n1, int n2, float f1, float f2,
 int getEmParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, shotPar *shot, bndPar *bnd, int verbose)
 {
 	int isnapmax1, isnapmax2, isnapmax, sna_nrsna;
-	int n1, n2, nx, nz, nsrc, ix, axis, ioPz, is0;
+	int n1, n2, nx, nz, nsrc, ix, axis, ioPz, is0, optn;
 	int idzshot, idxshot;
 	int src_ix0, src_iz0, src_ix1, src_iz1;
 	int disable_check;
@@ -49,7 +51,7 @@ int getEmParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *
 	float tsnap1, tsnap2, dtsnap, dxsnap, dzsnap, dtrcv;
 	float xsnap1, xsnap2, zsnap1, zsnap2, xmax, zmax;
 	float xsrc1, xsrc2, zsrc1, zsrc2, tsrc1, tsrc2, tlength, tactive;
-	float src_angle, src_velo, p, grad2rad, rdelay;
+	float src_angle, src_velo, p, grad2rad, rdelay, scaledt;
 	float *xsrca, *zsrca, rrcv;
 	float rsrc, oxsrc, ozsrc, dphisrc, ncsrc;
 	size_t nsamp;
@@ -102,13 +104,28 @@ int getEmParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *
 	/* define wavelet(s), modeling time and wavelet maximum frequency */
 
 	if (wav->file_src!=NULL) {
-		getWaveletInfo(wav->file_src, &wav->nt, &wav->nx, &wav->dt, &d2, &f1, &f2, &fmax, &ntraces, verbose);
-		if (wav->dt <= 0.0) {
+		getWaveletInfo(wav->file_src, &wav->ns, &wav->nx, &wav->ds, &d2, &f1, &f2, &fmax, &ntraces, verbose);
+		if (wav->ds <= 0.0) {
 			vwarn("dt in wavelet (file_src) equal to 0.0 or negative.");
 			vwarn("Use parameter dt= to overule dt from file_src.");
 		}
+        wav->nt = wav->ns;
+        wav->dt = wav->ds;
 		if(!getparfloat("tmod",&mod->tmod)) mod->tmod = (wav->nt-1)*wav->dt;
 		if(!getparfloat("dt",&mod->dt)) mod->dt=wav->dt;
+        if (NINT(wav->ds*1000000) != NINT(mod->dt*1000000)) {
+            if (wav->dt > mod->dt) {
+                scaledt = wav->dt/mod->dt;
+                scaledt = floorf(wav->dt/mod->dt);
+                optn = optncr(wav->ns);
+                wav->nt  = floorf(scaledt*optn);
+                vmess("file_src dt-scalefactor=%f : wav.dt=%e ==interpolated==> mod.dt=%e", scaledt, wav->dt, mod->dt);
+                wav->dt = mod->dt;
+            }
+            else {
+                wav->dt = mod->dt; /* in case if wav.dt is smaller than 1e-7 and can not be read by SU-getpar */
+            }
+        }
 		if(!getparfloat("fmax",&wav->fmax)) wav->fmax=fmax;
 	}
 	else {
@@ -714,7 +731,7 @@ int getEmParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *
 		vmess("*******************************************");
 		vmess("************* wavelet info ****************");
 		vmess("*******************************************");
-		vmess("wav_nt   = %6d   wav_nx      = %d", wav->nt, wav->nx);
+		vmess("wav_nt   = %6d   wav_nx      = %d", wav->ns, wav->nx);
 		vmess("src_type = %6d   src_orient  = %d", src->type, src->orient);
 		vmess("fmax     = %10.3e", fmax);
 		fprintf(stderr,"    %s: Source type         : ",xargv[0]);
