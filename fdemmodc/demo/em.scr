@@ -40,12 +40,12 @@ makewave fp=250e+6 dt=$dt file_out=wave.su nt=4096 t0=6e-9 verbose=1
     file_ks=syncl_ro.su \
     file_src=wave.su \
     file_rcv=shot_zsrc1150.su \
-    src_type=1 \
+    src_type=7 \
 	src_orient=1 \
 	src_injectionrate=1 \
     dtrcv=1e-10 \
 	rec_delay=6e-9 \
-    verbose=3 \
+    verbose=6 \
     tmod=2e-7 \
 	dt=$dt \
     dxrcv=0.02 \

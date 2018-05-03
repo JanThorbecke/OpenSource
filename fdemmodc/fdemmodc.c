@@ -16,7 +16,7 @@ int getEmParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *
 
 int readEmModel(modPar mod, bndPar bnd, float *eprs, float *ksigma, float *mu);
 
-int defineSource(wavPar wav, srcPar src, float **src_nwav, int reverse, int verbose);
+int defineSource(wavPar wav, srcPar src, modPar mod, float **src_nwav, int reverse, int verbose);
 
 int writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot);
 
@@ -273,7 +273,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	defineSource(wav, src, src_nwav, mod.grid_dir, verbose);
+	defineSource(wav, src, mod, src_nwav, mod.grid_dir, verbose);
 
 	/* allocate arrays for wavefield and receiver arrays */
 

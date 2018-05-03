@@ -5,16 +5,15 @@
 #include<assert.h>
 #include"fdelmodc.h"
 
-int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float *vx, float *vz, float *tzz,
-float *txx, float *txz, float *rox, float *roz, float *l2m, float **src_nwav, int verbose);
+int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float **src_nwav, int verbose);
 
 int storeSourceOnSurface(modPar mod, srcPar src, bndPar bnd, int ixsrc, int izsrc, float *vx, float *vz, float *tzz, float *txx, float *txz, int verbose);
 
 int reStoreSourceOnSurface(modPar mod, srcPar src, bndPar bnd, int ixsrc, int izsrc, float *vx, float *vz, float *tzz, float *txx, float *txz, int verbose);
 
-int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, int verbose);
+int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, int itime, int verbose);
 
-int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, int verbose);
+int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, int itime, int verbose);
 
 int em4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *hz, float *hx, float *Ey, float *eprs, float *ksigma, float *mu, int verbose)
 {
@@ -93,6 +92,7 @@ int em4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, in
 						c1*(Ey[ix*n1+iz]     - Ey[(ix-1)*n1+iz]) +
 						c2*(Ey[(ix+1)*n1+iz] - Ey[(ix-2)*n1+iz]));
 			//if (hz[ix*n1+iz] > 0.1*FLT_MAX) fprintf(stderr,"%d: hz[%d %d] = %e\n", itime, ix, iz, hz[ix*n1+iz]);
+			if (hz[ix*n1+iz] != 0.0) fprintf(stderr,"%d: hz[%d %d] = %e\n", itime, ix, iz, hz[ix*n1+iz]);
 		}
 	}
 
@@ -105,16 +105,19 @@ int em4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, in
 						c1*(Ey[ix*n1+iz]   - Ey[ix*n1+iz-1]) +
 						c2*(Ey[ix*n1+iz+1] - Ey[ix*n1+iz-2]));
 			//if (hx[ix*n1+iz] > 0.1*FLT_MAX) fprintf(stderr,"%d: hx[%d %d] = %e\n", itime, ix, iz, hx[ix*n1+iz]);
+			if (fabs(hx[ix*n1+iz]) != 0.0) fprintf(stderr,"%d: hx[%d %d] = %e\n", itime, ix, iz, hx[ix*n1+iz]);
 		}
 	}
 
 	/* Add force source */
 	if (src.type > 5) {
 		 applySource(mod, src, wav, bnd, itime, ixsrc, izsrc, hz, hx, Ey, NULL, NULL, mu, mu, eprs, src_nwav, verbose);
+//			fprintf(stderr,"%d: hx[%d %d] = %e hz=%e \n", itime, ixsrc, izsrc, hx[ixsrc*n1+izsrc], hz[ixsrc*n1+izsrc]);
+//fprintf(stderr,"src.n = %d\n", src.n);
 	}
 
 	/* boundary condition clears velocities on boundaries */
-	boundariesP(mod, bnd, hz, hx, Ey, NULL, NULL, mu, mu, eprs, NULL, NULL, verbose);
+	boundariesP(mod, bnd, hz, hx, Ey, NULL, NULL, mu, mu, eprs, NULL, NULL, itime, verbose);
 
 	/* calculate p/tzz for all grid points except on the virtual boundary */
 	for (ix=mod.ioPx; ix<mod.iePx; ix++) {
@@ -137,6 +140,7 @@ int em4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, in
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			Ey[ix*n1+iz] -= eprs[ix*n1+iz]*(dzhx[iz]+dxhz[iz]) + ksigma[ix*n1+iz]*Ey[ix*n1+iz];
 			//if (Ey[ix*n1+iz] > 0.1*FLT_MAX) fprintf(stderr,"%d: Ey[%d %d] = %e\n", itime, ix, iz, Ey[ix*n1+iz]);
+			if (Ey[ix*n1+iz] != 0.0) fprintf(stderr,"%d: Ey[%d %d] = %e\n", itime, ix, iz, Ey[ix*n1+iz]);
 		}
 	}
 
