@@ -26,6 +26,7 @@ PRG = raytime
 SRCC	= $(PRG).c \
 		JespersRayTracer.c \
 		vidale.c \
+		Grid2Time1.c \
 		getParameters.c  \
 		getWaveletInfo.c  \
 		writeSrcRecPos.c  \
