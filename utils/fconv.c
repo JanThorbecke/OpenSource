@@ -647,9 +647,11 @@ void deconv(float *data1, float *data2, float *decon, int nrec, int nsam,
 	qr = (float *) &cdec[0].r;
 	p1i = p1r + 1;
 	p2i = p2r + 1;
+    qi = qr + 1;
 	leps = reps*maxden+eps;
 //	fprintf(stderr,"eps=%e reps=%e max=%e => leps=%e\n", eps, reps, maxden, leps);
 	for (j = 0; j < n; j++) {
+
 		if (fabs(*p2r)>=fabs(*p2i)) {
 			*qr = (*p2r**p1r+*p2i**p1i)/(den[j]+leps);
 			*qi = (*p2r**p1i-*p2i**p1r)/(den[j]+leps);
