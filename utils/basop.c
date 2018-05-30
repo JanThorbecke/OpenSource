@@ -39,6 +39,7 @@ void timeRotate(float *data, int nsam, int nrec, int nrot);
 void rma(float *data, int nsam, int nrec);
 void rmat(float *data, int nsam, int nrec);
 void decompAcoustic(float *data, int nsam, int nrec, float dt, float dx, float fmin, float fmax, float c, float rho, int opt);
+void kxwfilter(float *data, int nt, int nx, float dt, float dx, float fmin, float fmax, float angle, float cp, float perc);
 int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *nxm);
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
 int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
@@ -70,6 +71,7 @@ char *sdoc[] = {
 "   shift=0 .................. time shift in seconds",
 "   rot=0 .................... phase rotation in parts of PI",
 "   c=1500 ................... velocity of the medium (for kz and ghost)",
+"   alpha=65 ................. angle for kfilt option: k > (w/c)*cos(alpha) is filtered out",
 "   rho=1000 ................. density in kg/m^3 of the medium (for decomposition operator)",
 "   dz=9 ..................... depth of receivers for deghosting (m)",
 "   eps=0.01 ................. stabilization for deghosting",
@@ -105,6 +107,7 @@ char *sdoc[] = {
 "         - 23 - som    = multiply with sqrt(w) in frequency domain",
 "         - 24 - deca1  = acoustic decompostion multiply with sqrt(2 kz/(w rho)) in kx-w domain",
 "         - 25 - deca2  = acoustic decompostion multiply with sqrt((2 w rho)/(kz)) in kx-w domain",
+"         - 26 - kfilt  = dipfilter in the kx-w domain given alpha and cp",
 "  ",
 " author  : Jan Thorbecke : 12-12-1994 (janth@xs4all.nl)",
 "           Alexander Koek (E.A.Koek@CTG.TuDelft.NL)",
@@ -124,7 +127,7 @@ int main(int argc, char **argv)
 	float   dt, dx, dy, c, rho, d1, d2, f1, f2; 
 	float   scl, xmin, xmax, trot;
 	double  t0, t1, t2;
-	float	fmin, fmax, *data, shift, rot, dz, eps, *tmpdata;
+	float	fmin, fmax, *data, shift, rot, alpha, perc, dz, eps, *tmpdata;
 	char  	*file_in, *file_out;
 	char  	choice[10], *choicepar;
 	segy	*hdrs;
@@ -148,6 +151,7 @@ int main(int argc, char **argv)
 	if(!getparfloat("fmin", &fmin)) fmin = 0.0;
 	if(!getparfloat("shift", &shift)) shift = 0.0;
 	if(!getparfloat("c", &c)) c = 1500.0;
+	if(!getparfloat("alpha", &alpha)) alpha = 65.0;
     if(!getparfloat("rho", &rho)) rho = 1000.0;
 	if(!getparfloat("dz", &dz)) dz = 9;
 	if(!getparfloat("eps", &eps)) eps = 0.01;
@@ -379,7 +383,11 @@ int main(int argc, char **argv)
 			opt = 2;
 			decompAcoustic(data, nsam, nrec, dt, dx, fmin, fmax, c, rho, opt);
 		}
-
+        else if (!strcmp(choice, "kfilt") || !strcmp(choice, "26")) {
+			if (verbose) vmess("kx-w filtering for angles > alpha");
+			perc=0.15;
+			kxwfilter(data, nsam, nrec, dt, dx, fmin, fmax, alpha, c, perc);
+		}
 		
 
 		t2 = wallclock_time();

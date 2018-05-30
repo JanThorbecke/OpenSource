@@ -86,6 +86,7 @@ SRCG	= green.c \
 
 SRCB	= basop.c \
 		getFileInfo.c  \
+		kxwfilter.c  \
 		readData.c \
 		writeData.c \
 		wallclock_time.c \
