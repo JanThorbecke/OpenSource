@@ -123,7 +123,7 @@ int main(int argc, char **argv)
     fcoord coordsx, coordgx, Time;
     icoord grid, isrc; 
     float Jr, *ampl, *time, *ttime, *ttime_p, cp_average, *wavelet, dw, dt;
-	float dxrcv, dzrcv, rdelay, tr;
+	float dxrcv, dzrcv, rdelay, tr, dt_tmp;
     segy hdr;
     char filetime[1024], fileamp[1024], *method, *file_rcvtime, *file_src;
     size_t  nwrite, nread;

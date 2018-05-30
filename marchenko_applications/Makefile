@@ -7,7 +7,7 @@ LIBS    += -L$L -lgenfft -lm $(LIBSM)
 
 #ALL: fmute marchenko marchenko2
 
-ALL: fmute marchenko_app combine gmshift MuteSnap HomG iba
+ALL: fmute marchenko_app combine gmshift MuteSnap HomG iba reshape_su
 
 SRCJ	= fmute.c \
 		getFileInfo.c  \
@@ -64,6 +64,15 @@ SRCC	= combine.c \
 		atopkge.c \
         docpkge.c \
 		readSnapData.c 
+
+SRCRS   = reshape_su.c \
+        getFileInfo.c \
+        writeData.c \
+        getpars.c \
+        verbosepkg.c \
+        atopkge.c \
+        docpkge.c \
+        readSnapData.c
 
 SRCG    = gmshift.c \
         getFileInfo.c \
@@ -122,6 +131,11 @@ OBJC	= $(SRCC:%.c=%.o)
 combine:  $(OBJC)
 	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o combine $(OBJC) $(LIBS)
 
+OBJRS    = $(SRCRS:%.c=%.o)
+
+reshape_su:  $(OBJRS)
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o reshape_su $(OBJRS) $(LIBS)
+
 OBJG	= $(SRCG:%.c=%.o)
 
 gmshift:  $(OBJG)
@@ -142,7 +156,7 @@ OBJIBA	= $(SRCIBA:%.c=%.o)
 iba:	$(OBJIBA)
 	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o iba $(OBJIBA) $(LIBS)
 
-install: fmute marchenko_app combine gmshift MuteSnap HomG iba
+install: fmute marchenko_app combine gmshift MuteSnap HomG iba reshape_su
 	cp fmute $B
 	cp marchenko_app $B
 	cp combine $B
@@ -150,14 +164,15 @@ install: fmute marchenko_app combine gmshift MuteSnap HomG iba
 	cp MuteSnap $B
 	cp HomG $B
 	cp iba $B
+	cp reshape_su $B
 
 #	cp marchenko2 $B
 
 clean:
-		rm -f core fmute $(OBJJ) marchenko_app $(OBJH) combine $(OBJC) gmshift $(OBJG) MuteSnap $(OBJMS) HomG $(OBJHG) iba $(OBJIBA)
+		rm -f core fmute $(OBJJ) marchenko_app $(OBJH) combine $(OBJC) gmshift $(OBJG) MuteSnap $(OBJMS) HomG $(OBJHG) iba $(OBJIBA) reshape_su $(OBJRS)
 
 realclean: clean
-		rm -f $B/fmute $B/marchenko_app $B/combine $B/gmshift $B/MuteSnap $B/HomG $B/iba
+		rm -f $B/fmute $B/marchenko_app $B/combine $B/gmshift $B/MuteSnap $B/HomG $B/iba $B/reshape_su
 
 
 
