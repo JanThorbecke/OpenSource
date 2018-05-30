@@ -88,7 +88,7 @@ int readTinvData(char *filename, WavePar WP, char *file_ray, char *file_amp, flo
         	hdrs_mute = (segy *) calloc(Nsyn,sizeof(segy));
 			fp = fopen( file_ray, "r" );
         	if ( fp == NULL ) {
-            	perror("Error opening file containing wavelet");
+            	perror("Error opening file containing rays");
         	}
         	fclose(fp);
         	readSnapData(file_ray, timeval, hdrs_mute, Nsyn, 1, nx, 0, 1, 0, nx);
@@ -99,7 +99,7 @@ int readTinvData(char *filename, WavePar WP, char *file_ray, char *file_amp, flo
 				hdrs_amp = (segy *) calloc(Nsyn,sizeof(segy));
 				fp = fopen( file_amp, "r" );
             	if ( fp == NULL ) {
-            		perror("Error opening file containing wavelet");
+            		perror("Error opening file containing ray amplitudes");
             	}
             	fclose(fp);
         		readSnapData(file_amp, amp, hdrs_amp, Nsyn, 1, nx, 0, 1, 0, nx);
