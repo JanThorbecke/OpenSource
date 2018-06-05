@@ -14,7 +14,7 @@ void kxwfilter(float *data, int nt, int nx, float dt, float dx, float fmin, floa
 {
 	int ntfft, nfreq, nkx, ix, it, iomin, iomax, xorig, iom, ikx;
 	float df, dkx, deltom, omin, omax, kp, om;
-	float *pdata, *filter;
+	float *pdata;
 	complex *cdata;
 
         ntfft = optncr(nt);
@@ -33,7 +33,6 @@ void kxwfilter(float *data, int nt, int nx, float dt, float dx, float fmin, floa
 
         pdata = (float *)calloc(ntfft*nkx,sizeof(float));
         cdata = (complex *)malloc(nfreq*nkx*sizeof(complex));
-	filter = (float *)malloc(nkx*sizeof(float));
 
         /* copy input data into extended arrays with padded zeroes */
         for (ix=0; ix<nx; ix++) {
@@ -51,10 +50,6 @@ void kxwfilter(float *data, int nt, int nx, float dt, float dx, float fmin, floa
 
 		kxwfilt(&cdata[iom*nkx], kp, dx, nkx, angle, perc);
 
-		for (ikx = 0; ikx < nkx; ikx++) {
-           		cdata[ikx].r *= filter[ikx];
-           		cdata[ikx].i *= filter[ikx];
-		}
 	}
 
         /* transform back to t-x */
