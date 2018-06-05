@@ -84,7 +84,7 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
     hdr.trid   = 1;
     hdr.ns     = nsam;
     hdr.trwf   = rec.n;
-    hdr.ntr    = (ishot+1)*rec.n;
+    hdr.ntr    = rec.n;
     if (mod.grid_dir) { /* reverse time modeling */
         hdr.f1 = (-mod.nt+1)*mod.dt;
     }
