@@ -17,9 +17,9 @@ void kxwfilter(float *data, int nt, int nx, float dt, float dx, float fmin, floa
 	float *pdata;
 	complex *cdata;
 
-        ntfft = optncr(nt);
-        nfreq = ntfft/2+1;
-        nkx = optncc(2*nx);
+    ntfft = optncr(nt);
+    nfreq = ntfft/2+1;
+    nkx = optncc(2*nx);
 
 	df     = 1.0/((float)ntfft*dt);
 	dkx    = 2.0*M_PI/(nkx*dx);
@@ -31,34 +31,33 @@ void kxwfilter(float *data, int nt, int nx, float dt, float dx, float fmin, floa
 	iomin  = MAX(iomin, 1);
 	iomax  = MIN((int)(omax/deltom), (nfreq-1));
 
-        pdata = (float *)calloc(ntfft*nkx,sizeof(float));
-        cdata = (complex *)malloc(nfreq*nkx*sizeof(complex));
+    pdata = (float *)calloc(ntfft*nkx,sizeof(float));
+    cdata = (complex *)malloc(nfreq*nkx*sizeof(complex));
 
-        /* copy input data into extended arrays with padded zeroes */
-        for (ix=0; ix<nx; ix++) {
-            memcpy(&pdata[ix*ntfft],&data[ix*nt],nt*sizeof(float));
-        }
+    /* copy input data into extended arrays with padded zeroes */
+    for (ix=0; ix<nx; ix++) {
+        memcpy(&pdata[ix*ntfft],&data[ix*nt],nt*sizeof(float));
+    }
 
-        /* transform from t-x to kx-w */
-        xorig = nkx/2;
-        xt2wkx(pdata, cdata, ntfft, nkx, ntfft, nkx, xorig);
+    /* transform from t-x to kx-w */
+    xorig = nkx/2;
+    xt2wkx(pdata, cdata, ntfft, nkx, ntfft, nkx, xorig);
 
 
-        for (iom = iomin; iom <= iomax; iom++) {
+    for (iom = iomin; iom <= iomax; iom++) {
 		om  = iom*deltom;
 		kp  = om/cp;
 
 		kxwfilt(&cdata[iom*nkx], kp, dx, nkx, angle, perc);
-
 	}
 
-        /* transform back to t-x */
-        wkx2xt(cdata, pdata, ntfft, nkx, nkx, ntfft, xorig);
+    /* transform back to t-x */
+    wkx2xt(cdata, pdata, ntfft, nkx, nkx, ntfft, xorig);
 
-        /* reduce array to nt samples nx traces */
-        for (ix=0; ix<nx; ix++) {
-            memcpy(&data[ix*nt],&pdata[ix*ntfft],nt*sizeof(float));
-        }
+    /* reduce array to nt samples nx traces */
+    for (ix=0; ix<nx; ix++) {
+        memcpy(&data[ix*nt],&pdata[ix*ntfft],nt*sizeof(float));
+    }
 
 	free(pdata);
 	free(cdata);

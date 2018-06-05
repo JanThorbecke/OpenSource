@@ -53,7 +53,8 @@ SRCH	= marchenko.c \
 		threadAffinity.c \
 		makeWindow.c \
 		homogeneousg.c \
-		AmpEstApp.c
+		AmpEstApp.c \
+		kxwfilter.c
 
 SRCC	= combine.c \
 		getFileInfo.c \
