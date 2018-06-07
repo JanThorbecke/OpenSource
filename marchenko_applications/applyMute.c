@@ -31,10 +31,10 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
             for (i = 0; i < npos; i++) {
                 imute = ixpos[i];
                 tmute = mute[isyn*nxs+imute];
-                for (j = 0; j < tmute-shift-smooth; j++) {
+                for (j = 0; j < MAX(0,tmute-shift-smooth); j++) {
                     data[isyn*nxs*nt+i*nt+j] = 0.0;
                 }
-                for (j = tmute-shift-smooth,l=0; j < tmute-shift; j++,l++) {
+                for (j = MAX(0,tmute-shift-smooth),l=0; j < MAX(0,tmute-shift); j++,l++) {
                     data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
                 }
             }
@@ -47,13 +47,13 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
                     memset(&data[isyn*nxs*nt+i*nt],0, sizeof(float)*nt);
                     continue;
                 }
-                for (j = tmute-shift,l=0; j < tmute-shift+smooth; j++,l++) {
+                for (j = MAX(0,tmute-shift),l=0; j < MAX(0,tmute-shift+smooth); j++,l++) {
                     data[isyn*nxs*nt+i*nt+j] *= costaper[l];
                 }
-                for (j = tmute-shift+smooth+1; j < nt+1-tmute+shift-smooth; j++) {
+                for (j = MAX(0,tmute-shift+smooth)+1; j < MIN(nt,nt+1-tmute+shift-smooth); j++) {
                     data[isyn*nxs*nt+i*nt+j] = 0.0;
                 }
-                for (j = nt-tmute+shift-smooth,l=0; j < nt-tmute+shift; j++,l++) {
+                for (j = MIN(nt,nt-tmute+shift-smooth),l=0; j < MIN(nt,nt-tmute+shift); j++,l++) {
                     data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
                 }
             }
@@ -62,10 +62,10 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
             for (i = 0; i < npos; i++) {
                 imute = ixpos[i];
                 tmute = mute[isyn*nxs+imute];
-                for (j = tmute-shift,l=0; j < tmute-shift+smooth; j++,l++) {
+                for (j = MAX(0,tmute-shift),l=0; j < MAX(0,tmute-shift+smooth); j++,l++) {
                     data[isyn*nxs*nt+i*nt+j] *= costaper[l];
                 }
-                for (j = tmute-shift+smooth; j < nt; j++) {
+                for (j = MAX(0,tmute-shift+smooth); j < nt; j++) {
                     data[isyn*nxs*nt+i*nt+j] = 0.0;
                 }
             }
@@ -74,16 +74,16 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
             for (i = 0; i < npos; i++) {
                 imute = ixpos[i];
                 tmute = mute[isyn*nxs+imute];
-                for (j = tmute-shift-smooth,l=0; j < tmute-shift; j++,l++) {
+                for (j = MAX(0,tmute-shift-smooth),l=0; j < MAX(0,tmute-shift); j++,l++) {
                     data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
                 }
-                for (j = 0; j < tmute-shift-smooth-1; j++) {
+                for (j = 0; j < MAX(0,tmute-shift-smooth-1); j++) {
                     data[isyn*nxs*nt+i*nt+j] = 0.0;
                 }
-                for (j = nt+1-tmute+shift+smooth; j < nt; j++) {
+                for (j = MIN(nt,nt+1-tmute+shift+smooth); j < nt; j++) {
                     data[isyn*nxs*nt+i*nt+j] = 0.0;
                 }
-                for (j = nt-tmute+shift,l=0; j < nt-tmute+shift+smooth; j++,l++) {
+                for (j = MIN(nt,nt-tmute+shift),l=0; j < MIN(nt,nt-tmute+shift+smooth); j++,l++) {
                     data[isyn*nxs*nt+i*nt+j] *= costaper[l];
                 }
             }
@@ -92,16 +92,16 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
             for (i = 0; i < npos; i++) {
                 imute = ixpos[i];
                 tmute = mute[isyn*nxs+imute];
-                for (j = 0; j < tmute-shift-smooth; j++) {
+                for (j = 0; j < MAX(0,tmute-shift-smooth); j++) {
                     data[isyn*nxs*nt+i*nt+j] = 0.0;
                 }
-                for (j = tmute-shift-smooth,l=0; j < tmute-shift; j++,l++) {
+                for (j = MAX(0,tmute-shift-smooth),l=0; j < MAX(0,tmute-shift); j++,l++) {
                     data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
                 }
-                for (j = tmute+shift,l=0; j < tmute+shift+smooth; j++,l++) {
+                for (j = MAX(0,tmute+shift),l=0; j < MAX(0,tmute+shift+smooth); j++,l++) {
                     data[isyn*nxs*nt+i*nt+j] *= costaper[l];
                 }
-                for (j = tmute+shift+smooth; j < nt; j++) {
+                for (j = MAX(0,tmute+shift+smooth); j < nt; j++) {
                     data[isyn*nxs*nt+i*nt+j] = 0.0;
                 }
             }
