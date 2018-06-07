@@ -27,7 +27,7 @@ void synthesis(complex *Refl, complex *Fop, float *Top, float *iRN, int nx, int 
 void imaging(float *Image, WavePar WP, complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *synpos, int verbose)
 {
 	FILE	*fp, *fp_out;
-    int     i, j, l, ret;
+    int     i, j, l, ret, count=0;
     int     iter, ix, nfreq, first=0;
 	float   *iRN, *conv, *Gmin, *wavelet, *wav;
 	complex	*Fop;
@@ -91,7 +91,9 @@ void imaging(float *Image, WavePar WP, complex *Refl, int nx, int nt, int nxs, i
 #pragma omp for
 	for (l = 0; l < Nsyn; l++) {
 
-		if (verbose > 2) vmess("Imaging location %d out of %d",l+1,Nsyn);
+		count+=1;
+
+		if (verbose > 2) vmess("Imaging location %d out of %d",count,Nsyn);
 
 		if (WP.wav) {
 			for (i=0; i<npossyn; i++) {
