@@ -240,7 +240,7 @@ int main (int argc, char **argv)
     tsyn = tread = tfft = tcopy = 0.0;
     t0   = wallclock_time();
 
-	if (!getparstring("file_img", &file_img)) file_img = "img.su";
+	if (!getparstring("file_img", &file_img)) file_img = NULL;
 	if (!getparstring("file_homg", &file_homg)) file_homg = NULL;
     if (!getparstring("file_shot", &file_shot)) file_shot = NULL;
     if (!getparstring("file_tinv", &file_tinv)) file_tinv = NULL;
@@ -263,6 +263,8 @@ int main (int argc, char **argv)
     if (!getparint("verbose", &verbose)) verbose = 0;
     if (file_tinv == NULL && file_shot == NULL) 
         verr("file_tinv and file_shot cannot be both input pipe");
+	if (file_img == NULL && file_homg == NULL)
+        verr("file_img and file_homg cannot both be empty");
     if (!getparstring("file_green", &file_green)) {
         if (verbose) vwarn("parameter file_green not found, assume pipe");
         file_green = NULL;
