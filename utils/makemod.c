@@ -86,6 +86,7 @@ char *sdoc[] = {
   "   dtype=0 .................. diffractor type for diffr and randdf",
   " OUTPUT ",
   "   writeint=0 ............... interfaces as function of x (ext: _int)",
+  "   reflectivity=0 ........... compute reflectivity (ext: _rfl)",
   "   rayfile=0 ................ interfaces as function of x in ASCII file.mod",
   "   skip=5 ................... number of x position to skip in file_ray",
   "   example=0 ................ makes an example parameter file",
@@ -138,13 +139,13 @@ int main(int argc, char **argv)
 {
   FILE *fpint, *fpcp, *fpcs, *fpro;
   int   example, verbose, writeint, nb;
-  int	above, diffrwidth, dtype;
+  int	above, diffrwidth, dtype, reflectivity;
   int   Ngp, Ngs, Ngr, Np, Ns, Nr, Ng, Ni, Nv, Nvi, No, Noi;
   int   jint, jcount, j, ix, iz, nx, nz, nxp, nzp, *zp, nmaxx, nminx, optgrad, poly, gradt; 
   int	ncp, nro, ncs, nvel, skip, rayfile, store_int;
 	long lseed;
   size_t  nwrite;
-  float *data_out, orig[2], cp0, cs0, ro0;
+  float *data_out, orig[2], cp0, cs0, ro0, Z1, Z2;
   float	*x, *z, *var, *interface, **inter;
   float back[3], sizex, sizez, dx, dz;
   float **cp ,**cs, **ro, aver, gradlen, gradcp, gradcs, gradro;
@@ -210,6 +211,7 @@ int main(int argc, char **argv)
   if(!getparint("gradt", &gradt)) gradt = 1;
   if(!getparint("gradunit", &gradunit)) gradunit = 0;
   if(!getparint("writeint", &writeint)) writeint = 0;
+  if(!getparint("reflectivity", &reflectivity)) reflectivity = 0;
   if(!getparint("rayfile", &rayfile)) rayfile = 0;
   if(!getparint("skip", &skip)) skip = 5;
   if(!getparint("above", &above)) above=0;
@@ -654,6 +656,7 @@ int main(int argc, char **argv)
 		fpint = fopen(filename,"w");
 		assert(fpint != NULL);
 	}
+
   
   /* write P-velocities in file */
   strcpy(filename, file_base);
@@ -672,6 +675,37 @@ int main(int argc, char **argv)
     assert(nwrite == nz);
   }
   fclose(fpcp);
+
+  /* write reflectivity of the interfaces */
+  if (reflectivity == 1) {
+    strcpy(filename, file_base);
+    name_ext(filename, "_rfl");
+    fpro = fopen(filename,"w");
+    assert(fpro != NULL);
+    
+    for(ix = 0; ix < nx-1; ix++) {
+      for(iz = 0; iz < nz-1; iz++) {
+         Z1=gridro[ix][iz]*gridcp[ix][iz];
+         Z2=gridro[ix][iz+1]*gridcp[ix][iz+1];
+	     data_out[ix*nz+iz] = (Z2-Z1)/(Z2+Z1);
+      }
+	  data_out[ix*nz+nz-1] = 0.0;
+      nwrite = fwrite( &hdrs[ix], 1, TRCBYTES, fpro);
+      assert(nwrite == TRCBYTES);
+      nwrite = fwrite( &data_out[ix*nz], sizeof(float), nz, fpro);
+      assert(nwrite == nz);
+    }
+    ix = nx-1;
+    for(iz = 0; iz < nz; iz++) {
+	   data_out[ix*nz+iz] = 0.0;
+    }
+    nwrite = fwrite( &hdrs[ix], 1, TRCBYTES, fpro);
+    assert(nwrite == TRCBYTES);
+    nwrite = fwrite( &data_out[ix*nz], sizeof(float), nz, fpro);
+    assert(nwrite == nz);
+    fclose(fpro);
+  } /* end of writing reflectivity file */
+
   free2float(gridcp);
   
   /* write S-velocities in file */
@@ -714,6 +748,7 @@ int main(int argc, char **argv)
     fclose(fpro);
     free2float(gridro);
   } /* end of writing density file */
+  
   
   /* write depths of the interfaces */
   if (writeint == 1) {
