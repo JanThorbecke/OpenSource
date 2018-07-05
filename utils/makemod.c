@@ -86,6 +86,7 @@ char *sdoc[] = {
   "   dtype=0 .................. diffractor type for diffr and randdf",
   " OUTPUT ",
   "   writeint=0 ............... interfaces as function of x (ext: _int)",
+  "   supersmooth=0 ............ samples at dx/4 and apply 5x5 smoothing operator(1)",
   "   reflectivity=0 ........... compute reflectivity (ext: _rfl)",
   "   rayfile=0 ................ interfaces as function of x in ASCII file.mod",
   "   skip=5 ................... number of x position to skip in file_ray",
@@ -121,6 +122,7 @@ char *sdoc[] = {
   "   Option for gradunit, gradient unit per layer:",
   "         - 0         = gradient unit per layer is m/s per dz (default)",
   "         - 1         = gradient unit per layer is m/s per m",
+  "  (1) Reference: Zeng and West: Geophysics 1996 ",
   " ",
   " makemod builds a gridded subsurface file which can be used in a migration",
   " or finite difference program. The gridded model is stored in files with",
@@ -139,13 +141,13 @@ int main(int argc, char **argv)
 {
   FILE *fpint, *fpcp, *fpcs, *fpro;
   int   example, verbose, writeint, nb;
-  int	above, diffrwidth, dtype, reflectivity;
+  int	above, diffrwidth, dtype, reflectivity, supersmooth;
   int   Ngp, Ngs, Ngr, Np, Ns, Nr, Ng, Ni, Nv, Nvi, No, Noi;
   int   jint, jcount, j, ix, iz, nx, nz, nxp, nzp, *zp, nmaxx, nminx, optgrad, poly, gradt; 
   int	ncp, nro, ncs, nvel, skip, rayfile, store_int;
-	long lseed;
+  long lseed;
   size_t  nwrite;
-  float *data_out, orig[2], cp0, cs0, ro0, Z1, Z2;
+  float *data_out, orig[2], cp0, cs0, ro0, Z1, Z2, sigma;
   float	*x, *z, *var, *interface, **inter;
   float back[3], sizex, sizez, dx, dz;
   float **cp ,**cs, **ro, aver, gradlen, gradcp, gradcs, gradro;
@@ -212,12 +214,18 @@ int main(int argc, char **argv)
   if(!getparint("gradunit", &gradunit)) gradunit = 0;
   if(!getparint("writeint", &writeint)) writeint = 0;
   if(!getparint("reflectivity", &reflectivity)) reflectivity = 0;
+  if(!getparint("supersmooth", &supersmooth)) supersmooth = 0;
+  if(!getparfloat("sigma", &sigma)) sigma = 0.0;
   if(!getparint("rayfile", &rayfile)) rayfile = 0;
   if(!getparint("skip", &skip)) skip = 5;
   if(!getparint("above", &above)) above=0;
   if(!getparint("verbose", &verbose)) verbose=0;
   if(!getparint("dtype", &dtype)) dtype = 0;
   
+  if (supersmooth==1) {
+    dx = dx/4;
+    dz = dz/4;
+  }
   if ((writeint == 1) || (rayfile == 1)) store_int = 1;
   else store_int = 0;
   
@@ -631,6 +639,85 @@ int main(int argc, char **argv)
     }
   } /* end of loop over interfaces */
   
+/* apply supersampled data smoothing operator according to Zeng and West (1996) */
+  
+  if (supersmooth==1) {
+	float Wsmooth[5][5], C, iC, xx, xz, *dataS, smooth;
+	int ixi, izi, nxout, nzout;
+
+	sigma = -1.0*log(sigma)/(dx*(powf(0.25*2.0,2.0)));
+    for(ixi = -2; ixi < 3; ixi++) {
+      for(izi = -2; izi < 3; izi++) {
+        xx = 0.25*ixi;
+        xz = 0.25*izi;
+        Wsmooth[ixi+2][izi+2] = exp(-sigma*dx*(xx*xx+xz*xz) );
+		//fprintf(stderr,"Wsmooth[%d][%d] = %f\n", ixi, izi, Wsmooth[ixi+2][izi+2]);
+		C += Wsmooth[ixi+2][izi+2];
+	  }
+    }
+    iC = 1.0/C;
+	//fprintf(stderr,"sigma=%f %f C=%f\n",sigma, exp(-sigma*dx*powf(0.25*2.0,2.0)),C);
+
+	nxout = (nx-1)/4+1;
+	nzout = (nz-1)/4+1;
+	fprintf(stderr,"nxout=%d nzout=%d nx=%d nz=%d \n",nxout,nzout, nx, nz);
+    dataS = malloc(nxout*nzout*sizeof(float));
+    for(ix = 0; ix < nxout-1; ix++) {
+      for(iz = 0; iz < nzout-1; iz++) {
+        smooth = 0.0;
+        for(ixi = -2; ixi < 3; ixi++) {
+          for(izi = -2; izi < 3; izi++) {
+            smooth += Wsmooth[ixi+2][izi+2]/gridcp[4*ix+2+ixi][4*iz+2+izi];
+	      }
+        }
+        dataS[ix*nzout+iz] = 1.0/(iC*smooth);
+	  }
+      iz = nzout-1;
+      dataS[ix*nzout+iz] = dataS[ix*nzout+iz-1];
+    }
+    ix = nxout-1;
+    for(iz = 0; iz < nzout; iz++) {
+      dataS[ix*nzout+iz] = dataS[(ix-1)*nzout+iz-1];
+	}
+
+    for(ix = 0; ix < nxout; ix++) {
+      for(iz = 0; iz < nzout; iz++) {
+        gridcp[ix][iz] = dataS[ix*nzout+iz];
+      }
+    }
+
+    /* smoothin densities */
+    if (Nr > 0 || getparfloat("ro0", &ro0)) {
+      for(ix = 0; ix < nxout-1; ix++) {
+        for(iz = 0; iz < nzout-1; iz++) {
+          smooth = 0.0;
+          for(ixi = -2; ixi < 3; ixi++) {
+            for(izi = -2; izi < 3; izi++) {
+              smooth += Wsmooth[ixi+2][izi+2]*gridro[4*ix+2+ixi][4*iz+2+izi];
+	        }
+          }
+          dataS[ix*nzout+iz] = iC*smooth;
+	    }
+        iz = nzout-1;
+        dataS[ix*nzout+iz] = dataS[ix*nzout+iz-1];
+      }
+      ix = nxout-1;
+      for(iz = 0; iz < nzout; iz++) {
+        dataS[ix*nzout+iz] = dataS[(ix-1)*nzout+iz-1];
+	  }
+      for(ix = 0; ix < nxout; ix++) {
+        for(iz = 0; iz < nzout; iz++) {
+          gridro[ix][iz] = dataS[ix*nzout+iz];
+        }
+      }
+    }
+    nx = nxout;
+	nz = nzout;
+    dx = dx*4;
+    dz = dz*4;
+	free(dataS);
+  }
+	fprintf(stderr,"nx=%d nz=%d \n", nx, nz);
   if (verbose) vmess("Writing data to disk.");
   
   hdrs = (segy *) calloc(nx,sizeof(segy));
@@ -657,7 +744,7 @@ int main(int argc, char **argv)
 		assert(fpint != NULL);
 	}
 
-  
+ 
   /* write P-velocities in file */
   strcpy(filename, file_base);
   name_ext(filename, "_cp");
