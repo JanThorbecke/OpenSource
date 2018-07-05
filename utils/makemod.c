@@ -87,6 +87,7 @@ char *sdoc[] = {
   " OUTPUT ",
   "   writeint=0 ............... interfaces as function of x (ext: _int)",
   "   supersmooth=0 ............ samples at dx/4 and apply 5x5 smoothing operator(1)",
+  "   sigma=0.8 ................ smoothing value, higher values gives more smoothing",
   "   reflectivity=0 ........... compute reflectivity (ext: _rfl)",
   "   rayfile=0 ................ interfaces as function of x in ASCII file.mod",
   "   skip=5 ................... number of x position to skip in file_ray",
@@ -215,7 +216,7 @@ int main(int argc, char **argv)
   if(!getparint("writeint", &writeint)) writeint = 0;
   if(!getparint("reflectivity", &reflectivity)) reflectivity = 0;
   if(!getparint("supersmooth", &supersmooth)) supersmooth = 0;
-  if(!getparfloat("sigma", &sigma)) sigma = 0.0;
+  if(!getparfloat("sigma", &sigma)) sigma = 0.8;
   if(!getparint("rayfile", &rayfile)) rayfile = 0;
   if(!getparint("skip", &skip)) skip = 5;
   if(!getparint("above", &above)) above=0;
