@@ -661,7 +661,7 @@ int main(int argc, char **argv)
 
 	nxout = (nx-1)/4+1;
 	nzout = (nz-1)/4+1;
-	fprintf(stderr,"nxout=%d nzout=%d nx=%d nz=%d \n",nxout,nzout, nx, nz);
+	//fprintf(stderr,"nxout=%d nzout=%d nx=%d nz=%d \n",nxout,nzout, nx, nz);
     dataS = malloc(nxout*nzout*sizeof(float));
     for(ix = 0; ix < nxout-1; ix++) {
       for(iz = 0; iz < nzout-1; iz++) {
@@ -677,9 +677,11 @@ int main(int argc, char **argv)
       dataS[ix*nzout+iz] = dataS[ix*nzout+iz-1];
     }
     ix = nxout-1;
-    for(iz = 0; iz < nzout; iz++) {
-      dataS[ix*nzout+iz] = dataS[(ix-1)*nzout+iz-1];
+    for(iz = 0; iz < nzout-1; iz++) {
+      dataS[ix*nzout+iz] = dataS[(ix-1)*nzout+iz];
 	}
+    ix = nxout-1; iz = nzout-1;
+    dataS[ix*nzout+iz] = dataS[(ix-1)*nzout+iz-1];
 
     for(ix = 0; ix < nxout; ix++) {
       for(iz = 0; iz < nzout; iz++) {
@@ -703,9 +705,12 @@ int main(int argc, char **argv)
         dataS[ix*nzout+iz] = dataS[ix*nzout+iz-1];
       }
       ix = nxout-1;
-      for(iz = 0; iz < nzout; iz++) {
-        dataS[ix*nzout+iz] = dataS[(ix-1)*nzout+iz-1];
+      for(iz = 0; iz < nzout-1; iz++) {
+        dataS[ix*nzout+iz] = dataS[(ix-1)*nzout+iz];
 	  }
+      ix = nxout-1; iz = nzout-1;
+      dataS[ix*nzout+iz] = dataS[(ix-1)*nzout+iz-1];
+
       for(ix = 0; ix < nxout; ix++) {
         for(iz = 0; iz < nzout; iz++) {
           gridro[ix][iz] = dataS[ix*nzout+iz];
@@ -718,7 +723,7 @@ int main(int argc, char **argv)
     dz = dz*4;
 	free(dataS);
   }
-	fprintf(stderr,"nx=%d nz=%d \n", nx, nz);
+
   if (verbose) vmess("Writing data to disk.");
   
   hdrs = (segy *) calloc(nx,sizeof(segy));
