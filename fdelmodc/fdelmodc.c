@@ -5,6 +5,9 @@
 #include<string.h>
 #include"par.h"
 #include"fdelmodc.h"
+#ifdef MPI
+#include <mpi.h>
+#endif
 
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
@@ -273,14 +276,26 @@ int main(int argc, char **argv)
 	float *beam_vx, *beam_vz, *beam_p;
 	float *beam_txx, *beam_tzz, *beam_txz;
 	float *beam_pp, *beam_ss;	
-	float sinkvel;
+	float sinkvel, npeshot;
 	double t0, t1, t2, t3, tt, tinit;
 	size_t size, sizem, nsamp;
 	int n1, ix, iz, ir, ishot, i;
 	int ioPx, ioPz;
 	int it0, it1, its, it, fileno, isam;
-	int ixsrc, izsrc;
+	int ixsrc, izsrc, is0, is1;
 	int verbose;
+#ifdef MPI
+	int     npes, pe;
+
+	MPI_Init( &argc, &argv );
+	MPI_Comm_size( MPI_COMM_WORLD, &npes );
+	MPI_Comm_rank( MPI_COMM_WORLD, &pe );
+#else
+	int     npes, pe;
+	npes = 1;
+	pe   = 0;
+#endif
+
 
 	t0= wallclock_time();
 	initargs(argc,argv);
@@ -447,7 +462,17 @@ int main(int argc, char **argv)
 	if (verbose>3) writeSrcRecPos(&mod, &rec, &src, &shot);
 
 	/* Outer loop over number of shots */
-	for (ishot=0; ishot<shot.n; ishot++) {
+#ifdef MPI
+    npeshot = MAX((((float)shot.n)/((float)npes)), 1.0);
+    is0=ceil(pe*npeshot);
+    is1=MIN(ceil((pe+1)*npeshot), shot.n);
+    if (verbose>1) vmess("MPI: pe=%d does shots is0 %d - is1 %d\n", pe, is0, is1);
+#else
+	is0=0;
+	is1=shot.n;
+#endif
+
+	for (ishot=is0; ishot<is1; ishot++) {
 
 		izsrc = shot.z[ishot];
 		ixsrc = shot.x[ishot];
@@ -704,6 +729,9 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 		free(q);
 	}
 
+#ifdef MPI  
+    MPI_Finalize();
+#endif
 
 	return 0;
 }

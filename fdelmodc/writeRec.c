@@ -50,7 +50,7 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
     float dx, dt, cp, rho, fmin, fmax;
     complex *crec_vz, *crec_p, *crec_up, *crec_dw;
     int irec, ntfft, nfreq, nkx, xorig, ix, iz, it, ibndx;
-    int append, vznorm;
+    int append, vznorm, sx;
     double ddt;
     char number[16], filename[1024];
     segy hdr;
@@ -66,6 +66,11 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
         sprintf(number,"_%03d",fileno);
         name_ext(filename, number);
     }
+#ifdef MPI
+    sx = (int)mod.x0+ixsrc*mod.dx;
+    sprintf(number,"_%06d",sx);
+    name_ext(filename, number);
+#endif
 
     if (verbose>2) vmess("Writing receiver data to file %s", filename);
     if (nsam != rec.nt && verbose) vmess("Number of samples written to last file = %d",nsam);
