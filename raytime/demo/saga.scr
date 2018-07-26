@@ -14,11 +14,14 @@ makewave file_out=wavelet.su dt=0.0003 nt=1024 fp=20 w=g2 verbose=1 t0=0.1
 
 dt=0.004
 nt=2001
-makewave w=fp fp=15  dt=$dt file_out=wave.su nt=$nt t0=0.1 scale=0 scfft=1
+makewave w=fp fp=30  dt=$dt file_out=wave.su nt=$nt t0=0.1 scale=0 scfft=1
 
-../raytime nshots=1 verbose=1 file_rcvtime=Gd.su  zsrc=1200.000 xrcv1=0 xrcv2=20000 dxrcv=25 dtrcv=$dt nt=$nt file_cp=saga_cp.su file_src=wave.su rec_delay=0.1 zrcv1=0 zrcv2=0 xsrc=9000 rec_delay=0.1
+../raytime nshots=1 verbose=1 file_rcvtime=Gd.su  \
+	zsrc=1200.000 xrcv1=0 xrcv2=20000 dxrcv=25 dtrcv=$dt nt=$nt \
+	file_cp=saga_cp.su file_src=wave.su rec_delay=0.1 zrcv1=0 zrcv2=0 xsrc=9000 rec_delay=0.1
 
 export OMP_NUM_THREADS=2
+ exit
 
 fdelmodc ischeme=1 verbose=1 file_rcv=FD.su file_den=saga_cp.su file_src=wavelet.su tmod=5.0 \
 zsrc=4500.000 xrcv1=0 xrcv2=20000 dxrcv=25 dtrcv=0.003 file_cp=saga_cp.su zrcv1=0 zrcv2=0  rec_delay=0.1 \

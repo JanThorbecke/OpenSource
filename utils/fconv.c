@@ -566,7 +566,7 @@ void corr3(float *data1, float *data2, float *cov, int nrec, int nsam, float dt)
 	qi = qr + 1;
 	n = nrec*nfreq;
 	for (j = 0; j < n; j++) {
-		*qr = (*p1r * *p2r + *p1i * *p2i);
+		*qr = (*p1r * *p2r - *p1i * *p2i);
 		qr += 2;
 		p1r += 2;
 		p1i += 2;

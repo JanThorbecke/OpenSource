@@ -12,6 +12,8 @@ marchenko file_shot=shotsdx5_rp.su file_tinv=p0plus.su nshots=901 verbose=2 \
 	file_green=pgreen.su file_gplus=Gplus0.su file_gmin=Gmin0.su  \
 	file_f1plus=f1plus0.su file_f1min=f1min0.su file_f2=f2.su 
 
+exit
+
 #compare Green's funtions on Marhcenko and reference result
 suwind key=gx min=0 max=0 itmax=511 < pgreen.su | sumax mode=abs outpar=nepmg
 suwind key=gx min=0 max=0 itmax=511 < referenceP_rp.su | sumax mode=abs outpar=neprf

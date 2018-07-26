@@ -27,6 +27,7 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 	int isrc, ix, iz, n1;
 	int id1, id2;
 	float src_ampl, time, scl, dt, sdx;
+	float Mxx, Mzz, Mxz, rake;
 	static int first=1;
 
 	if (src.type==6) {
@@ -302,29 +303,39 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 * pure potential pressure P source (experimental)
 * Divergence P-pot = DIV(F) = dF_x/dx + dF_z/dz
 ***********************************************************************/
-                else if(src.type == 8) {
-				    src_ampl = src_ampl*rox[ix*n1+iz]/(l2m[ix*n1+iz]);
-                    if (src.orient == 3) src_ampl = -src_ampl;
-                    vx[(ix+1)*n1+iz] += src_ampl*sdx;
-                    vx[ix*n1+iz]     -= src_ampl*sdx;
-                    vz[ix*n1+iz+1]   += src_ampl*sdx;
-                    vz[ix*n1+iz]     -= src_ampl*sdx;
-                    /* determine second position of dipole */
-                    if (src.orient == 2) { /* dipole +/- */
-                        iz += 1;
-                        vx[(ix+1)*n1+iz] -= src_ampl*sdx;
-                        vx[ix*n1+iz]     += src_ampl*sdx;
-                        vz[ix*n1+iz+1]   -= src_ampl*sdx;
-                        vz[ix*n1+iz]     += src_ampl*sdx;
-                    }
-                    else if (src.orient == 3) { /* dipole - + */
-                        ix += 1;
-                        vx[(ix+1)*n1+iz] -= src_ampl*sdx;
-                        vx[ix*n1+iz]     += src_ampl*sdx;
-                        vz[ix*n1+iz+1]   -= src_ampl*sdx;
-                        vz[ix*n1+iz]     += src_ampl*sdx;
-                    }
-                
+            else if(src.type == 8) {
+			    src_ampl = src_ampl*rox[ix*n1+iz]/(l2m[ix*n1+iz]);
+                if (src.orient == 3) src_ampl = -src_ampl;
+                vx[(ix+1)*n1+iz] += src_ampl*sdx;
+                vx[ix*n1+iz]     -= src_ampl*sdx;
+                vz[ix*n1+iz+1]   += src_ampl*sdx;
+                vz[ix*n1+iz]     -= src_ampl*sdx;
+                /* determine second position of dipole */
+                if (src.orient == 2) { /* dipole +/- */
+                    iz += 1;
+                    vx[(ix+1)*n1+iz] -= src_ampl*sdx;
+                    vx[ix*n1+iz]     += src_ampl*sdx;
+                    vz[ix*n1+iz+1]   -= src_ampl*sdx;
+                    vz[ix*n1+iz]     += src_ampl*sdx;
+                }
+                else if (src.orient == 3) { /* dipole - + */
+                    ix += 1;
+                    vx[(ix+1)*n1+iz] -= src_ampl*sdx;
+                    vx[ix*n1+iz]     += src_ampl*sdx;
+                    vz[ix*n1+iz+1]   -= src_ampl*sdx;
+                    vz[ix*n1+iz]     += src_ampl*sdx;
+                }
+			}
+            else if(src.type == 9) {
+				rake = 0.5*M_PI;
+				src.strike=0.5*M_PI;
+				Mxx = -1.0*(sin(src.dip)*cos(rake)*sin(2.0*src.strike)+sin(src.dip*2.0)*sin(rake)*sin(src.strike)*sin(src.strike));
+				Mxz = -1.0*(cos(src.dip)*cos(rake)*cos(src.strike)+cos(src.dip*2.0)*sin(rake)*sin(src.strike));
+				Mzz = sin(src.dip*2.0)*sin(rake);
+
+				txx[ix*n1+iz] -= Mxx*src_ampl;
+				tzz[ix*n1+iz] -= Mzz*src_ampl;
+				txz[ix*n1+iz] -= Mxz*src_ampl;
 			} /* src.type */
 		} /* ischeme */
 	} /* loop over isrc */
