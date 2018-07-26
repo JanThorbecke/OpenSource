@@ -546,6 +546,11 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparint("nshot",&shot->n)) shot->n=1;
 	if (!getparfloat("dxshot",&dxshot)) dxshot=dx;
 	if (!getparfloat("dzshot",&dzshot)) dzshot=0.0;
+	if (!getparfloat("dip",&src->dip)) src->dip=0.0;
+	if (!getparfloat("strike",&src->strike)) src->strike=1.0;
+	if (src->strike>=0) src->strike=1.0;
+	else src->strike = -1.0;
+	src->dip = M_PI*(src->dip/180.0);
 
 	if (shot->n>1) {
 		idxshot=MAX(0,NINT(dxshot/dx));

@@ -21,7 +21,7 @@ export OMP_NUM_THREADS=8
 zsrc=1100
 zsrc=0
 
-../fdelmodc \
+~/bin/fdelmodc \
     file_cp=syncl_cp.su ischeme=1 iorder=4 \
     file_den=syncl_ro.su \
     file_src=wave.su \
@@ -46,7 +46,7 @@ zsrc=0
 	snapwithbnd=1 \
     left=2 right=2 top=2 bottom=2
 
-suxmovie < snapF_${zsrc}_svz.su loop=1 clip=1e-13
+#suxmovie < snapF_${zsrc}_svz.su loop=1 clip=1e-13
 
 exit
 
