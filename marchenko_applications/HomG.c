@@ -31,6 +31,10 @@ int topdet(float *data, int nt);
 void scl_data(float *data, int nsam, int nrec, float scl, float *datout, int nsamout);
 void pad_data(float *data, int nsam, int nrec, int nsamout, float *datout);
 void convol(float *data1, float *data2, float *con, int nrec, int nsam, float dt, int shift);
+void corr(float *data1, float *data2, float *cov, int nrec, int nsam, float dt, int shift);
+void timeDiff(float *data, int nsam, int nrec, float dt, float fmin, float fmax, int opt);
+void depthDiff(float *data, int nsam, int nrec, float dt, float dx, float fmin, float fmax, float c, int opt);
+void pad2d_data(float *data, int nsam, int nrec, int nsamout, int nrecout, float *datout);
 
 char *sdoc[] = {
 " ",
@@ -61,12 +65,11 @@ int main (int argc, char **argv)
 {
 	FILE *fp_in, *fp_shot, *fp_out;
 	char *fin, *fshot, *fout, *ptr, fbegin[100], fend[100], fins[100], fin2[100];
-	float *indata, *Ghom, *shotdata, *rtrace, *costaper, scl, rho;
-	float dt, dx, t0, x0, xmin, xmax1, sclsxgx, f1, f2, dxrcv, dzrcv, dxpos, offset, dw, *taper;
-	int nshots, nt, nw, nx, ntraces, ret, ix, it, is, ir, pos, ifile, file_det, nxs, nzs, sxmin, sxmax;
-	int pos1, xcount, zcount, npos, zmax, file_cl, ht, inx, numb, dnumb, indrcv, shift;
-	int rmt, smooth, *tol, tolside, tolset, mode, ntap, maxoffset, offset_tmp, count;
-	complex *chom, *cshot, *ctrace;
+	float *indata, *Ghom, *shotdata, *shotdata_jkz, rho, fmin, fmax;
+	float dt, dx, t0, x0, xmin, xmax1, sclsxgx, f1, f2, dxrcv, dzrcv;
+	float *conv, *tmp1, *tmp2, cp;
+	int nshots, nt, nx, ntraces, ret, ix, it, is, ir, file_det, nxs, nzs;
+	int pos1, npos, zmax, inx, numb, dnumb, mode, count, scheme, ntmax, ntshift;
 	segy *hdr_in, *hdr_out, *hdr_shot;
 
 	initargs(argc, argv);
@@ -82,12 +85,14 @@ int main (int argc, char **argv)
 	if (!getparfloat("dzrcv", &dzrcv)) dzrcv = -1;
     if (!getparfloat("dxrcv", &dxrcv)) dxrcv = -1;
 	if (!getparfloat("rho", &rho)) rho=1000.0;
+	if (!getparfloat("cp", &cp)) cp = 1500.0;
+	if (!getparfloat("fmin", &fmin)) fmin=0.0;
+	if (!getparfloat("fmax", &fmax)) fmax=100.0;
 	if (!getparint("numb", &numb)) numb=0;
     if (!getparint("dnumb", &dnumb)) dnumb=1;
-	if (!getparint("tolset", &tolset)) tolset=10;
 	if (!getparint("mode", &mode)) mode=0;
-	if (!getparint("ntap", &ntap)) ntap=0;
-	if (!getparint("maxoffset", &maxoffset)) maxoffset=0;
+	if (!getparint("scheme", &scheme)) scheme = 0;
+	if (!getparint("ntmax", &ntmax)) ntmax = 0;
 	if (fin == NULL) verr("Incorrect f2 input");
 	if (fshot == NULL) verr("Incorrect Green input");
 
@@ -102,7 +107,6 @@ int main (int argc, char **argv)
    	sprintf(fend,"%s", fin+pos1+1);
 
 	file_det = 1;
-	zcount=0;
 	nzs=0;
 
 	while (file_det) {
@@ -156,63 +160,39 @@ int main (int argc, char **argv)
 		verr("Could not open file");
 	}
 	vmess("nt: %d nx: %d nshots: %d",nt,nx,nshots);
-	//nx = readData(fp_shot, shotdata, hdr_shot, nt);
 	fclose(fp_shot);
 	readSnapData(fshot, &shotdata[0], &hdr_shot[0], 1, nx, nt, 0, nx, 0, nt);
 
 	hdr_out     = (segy *)calloc(nxs,sizeof(segy));	
 	Ghom		= (float *)malloc(nt*npos*sizeof(float));
-	ht			= (int)ceil(nt/2);
-	nw 			= ht+1;
-	dw			= 2.0*(M_PI)/(dt*nt);
-	cshot		= (complex *)malloc(nw*nx*sizeof(complex));
-	tol			= (int *)malloc(nxs*sizeof(float));
-	taper       = (float *)malloc(nx*sizeof(float));
 
-    /*for (ix=0; ix<nx; ix++) {
-        taper[ix] = 1.0;
-    }
-    if (ntap > 0) {//Create taper
-		vmess("Tapering of %d points applied at edges",ntap);
-        for (ix=0; ix<ntap; ix++) {
-            taper[ix] = (cos((M_PI)*(ix-ntap)/ntap)+1)/2.0;
-            taper[nx-1-ix] = (cos((M_PI)*(ix-ntap)/ntap)+1)/2.0;
+	if (scheme==2) {
+		vmess("Classical representation");
+		shotdata_jkz = (float *)malloc(nt*nx*nshots*sizeof(float));
+		for (ix = 0; ix < nx; ix++) {
+            for (it = 0; it < nt; it++) {
+                shotdata_jkz[ix*nt+it] = shotdata[ix*nt+it];
+            }
         }
-    }*/
-
-	for (ix = 0; ix < nx; ix++) {
-		/*for (it=0; it<nt; it++) {
-			shotdata[ix*nt+it] *= taper[ix];
-		}*/
-		if (hdr_shot[ix].scalco < 0) {
-			offset_tmp = (hdr_shot[ix].sx-hdr_shot[ix].gx)/-hdr_shot[ix].scalco;
-		}
-		else if (hdr_shot[ix].scalco == 0) {
-			offset_tmp = hdr_shot[ix].sx-hdr_shot[ix].gx;
-		}
-		else {
-			offset_tmp = (hdr_shot[ix].sx-hdr_shot[ix].gx)*hdr_shot[ix].scalco;
-		}
-		if (maxoffset > 0 ) {
-			if (abs(offset_tmp) > maxoffset) {
-				for (it=0;it<nt;it++) {
-					shotdata[ix*nt+it] = 0.0;
-				}
-				vmess("Removed offset:%d",offset_tmp);
-			}
-		}
-		rc1fft(&shotdata[ix*nt],&cshot[ix*nw],nt,-1);
+        depthDiff(shotdata_jkz, nt, nx, dt, dx, fmin, fmax, cp, 1);
 	}
+	else if (scheme==0) {
+		vmess("Marchenko representation");
+	}
+	else if (scheme==1) {
+		vmess("Marchenko representation with multiple sources");
+	}	
 
 #pragma omp parallel default(shared) \
-  private(offset,ctrace,rtrace,chom,indrcv,rmt,ix,it,is) \
-  private(indata, hdr_in,fins,fin2,fp_in,offset_tmp)
+  private(ix,it,is,indata, hdr_in,fins,fin2,fp_in,conv,tmp1,tmp2)
 {
-	chom		= (complex *)calloc(nw,sizeof(complex));
-	ctrace		= (complex *)malloc(nw*sizeof(complex));
-    rtrace		= (float *)malloc(nt*sizeof(float));
 	indata		= (float *)malloc(nt*nx*nxs*sizeof(float));
     hdr_in 		= (segy *)calloc(nx*nxs,sizeof(segy));
+	conv    = (float *)calloc(nx*nt,sizeof(float));
+    if (scheme==1) {
+        tmp1    = (float *)calloc(nx*nt,sizeof(float));
+        tmp2    = (float *)calloc(nx*nt,sizeof(float));
+    }
 #pragma omp for 
 	for (ir = 0; ir < nzs; ir++) {
         sprintf(fins,"z%d",ir*dnumb+numb);
@@ -223,78 +203,78 @@ int main (int argc, char **argv)
 		}
 		fclose(fp_in);
 		readSnapData(fin2, &indata[0], &hdr_in[0], nxs, nx, nt, 0, nx, 0, nt);
-		for (is = 0; is < nxs; is++) {
-			for (ix = 0; ix < nx; ix++) {
-				/*for (it=0; it<nt; it++) {
-            		indata[is*nt*nx+ix*nt+it] *= taper[ix];
-        		}*/
-				if (hdr_in[is*nx+ix].scalco < 0) {
-            		offset_tmp = (hdr_in[is*nx+ix].sx-hdr_in[is*nx+ix].gx)/-hdr_in[is*nx+ix].scalco;
-        		}
-        		else if (hdr_in[is*nx+ix].scalco == 0) {
-            		offset_tmp = hdr_in[is*nx+ix].sx-hdr_in[is*nx+ix].gx;
-        		}
-        		else {
-            		offset_tmp = (hdr_in[is*nx+ix].sx-hdr_in[is*nx+ix].gx)*hdr_in[is*nx+ix].scalco;
-        		}
-        		if (maxoffset > 0 ) {
-            		if (abs(offset_tmp) > maxoffset) {
-                		for (it=0;it<nt;it++) {
-                    		indata[is*nt*nx+ix*nt+it] = 0.0;
-                		}
-                	//vmess("Removed offset:%d",offset_tmp);
-            		}
-				}
-				rc1fft(&indata[is*nt*nx+ix*nt],ctrace,nt,-1);
-				if (mode==0) { //Single source
-					for (it = 1; it < nw; it++) {
-						//chom[it].r +=  (4/(rho*dw*it))*(ctrace[it].r*cshot[ix*nw+it].i + ctrace[it].i*cshot[ix*nw+it].r);
-						//chom[it].r +=  (4/(rho*dw*it))*2*(ctrace[it].r*cshot[ix*nw+it].r - ctrace[it].i*cshot[ix*nw+it].i);
-						chom[it].r +=  2*(ctrace[it].r*cshot[ix*nw+it].r - ctrace[it].i*cshot[ix*nw+it].i);
-						//chom[it].r +=  ctrace[it].r*cshot[ix*nw+it].r - ctrace[it].i*cshot[ix*nw+it].i;
-						//chom[it].r +=  ctrace[it].r*cshot[ix*nw+it].i + ctrace[it].i*cshot[ix*nw+it].r;
+		for (is=0;is<nxs;is++) {
+			if (scheme==0) { //Marchenko representation
+            	depthDiff(&indata[is*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
+            	convol(shotdata, &indata[is*nx*nt], conv, nx, nt, dt, -2);		
+            	timeDiff(conv, nt, nx, dt, fmin, fmax, -2);		
+            	for (ix=0; ix<nx; ix++) {
+                	it=0;
+                	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += 4*conv[ix*nt+it];
+                	for (it=1; it<nt/2; it++) {
+                    	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += 4*conv[ix*nt+it];
+                    	Ghom[it*nxs*nzs+is*nzs+ir] += 4*conv[ix*nt+(it+nt/2)];
+                	}
+            	}
+        	}
+			else if (scheme==1) { //Marchenko representation with multiple sources
+            	depthDiff(&indata[is*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
+            	convol(shotdata, &indata[is*nx*nt], conv, nx, nt, dt, 0);		
+            	timeDiff(conv, nt, nx, dt, fmin, fmax, -1);		
+            	for (ix=0; ix<nx; ix++) {
+                	it=0;
+                	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += 2*conv[ix*nt+it];
+                	for (it=1; it<nt/2; it++) {
+                    	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += 2*conv[ix*nt+it];
+                    	Ghom[it*nxs*nzs+is*nzs+ir] += 2*conv[ix*nt+(it+nt/2)];
+                	}
+            	}
+        	}
+        	else if (scheme==2) { //classical representation
+            	corr(&indata[is*nx*nt], shotdata_jkz, tmp1, nx, nt, dt, 0);
+				depthDiff(&indata[is*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
+            	corr(&indata[is*nx*nt], shotdata, tmp2, nx, nt, dt, 0);
+            	for (ix = 0; ix < nx; ix++) {
+                	for (it = 0; it < nt; it++) {
+                    	conv[ix*nt+it] = -(tmp2[ix*nt+it]-tmp1[ix*nt+it]);
+                	}
+            	}
+            	timeDiff(conv, nt, nx, dt, fmin, fmax, -1);
+            	for (ix=0; ix<nx; ix++) {
+                	it=0;
+                	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += conv[ix*nt+it];
+                	for (it=1; it<nt/2; it++) {
+                    	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += conv[ix*nt+it];
+                    	Ghom[it*nxs*nzs+is*nzs+ir] += conv[ix*nt+(it+nt/2)];
 					}
-				}
-				else { //Multiple sources
-                	for (it = 0; it < nw; it++) {
-                        /*chom[it].r -=  (2/(rho*dw*it))*(ctrace[it].r*cshot[ix*nw+it].i + ctrace[it].i*cshot[ix*nw+it].r);
-						chom[it].i +=  (2/(rho*dw*it))*(ctrace[it].r*cshot[ix*nw+it].r - ctrace[it].i*cshot[ix*nw+it].i);*/
-						chom[it].r -=  (ctrace[it].r*cshot[ix*nw+it].i + ctrace[it].i*cshot[ix*nw+it].r);
-                        chom[it].i +=  (ctrace[it].r*cshot[ix*nw+it].r - ctrace[it].i*cshot[ix*nw+it].i);
-                    }
-				}
-			}
-			cr1fft(&chom[0],rtrace,nt,1);
-			indrcv = 0;
-            rmt = MIN(nt-indrcv,indrcv)-shift;
-			for (it = 0; it < ht; it++) {
-				if (it > ht-rmt) {
-					Ghom[it*nxs*nzs+is*nzs+ir] = 0.0;
-				}
-				else {
-					Ghom[it*nxs*nzs+is*nzs+ir] = rtrace[ht+it];
-				}
-			}
-			for (it = ht; it < nt; it++) {
-				if (it < ht+rmt) {
-					Ghom[it*nxs*nzs+is*nzs+ir] = 0.0;
-				}
-				else {
-					Ghom[it*nxs*nzs+is*nzs+ir] = rtrace[it-ht];
-				}
+                }
             }
-		memset(&chom[0].r, 0, nw*2*sizeof(float));
-		}
-		//vmess("Creating Homogeneous Green's function at depth %d from %d depths",ir+1,nzs);
+        }
+
 		count+=1;
 		vmess("Creating Homogeneous Green's function at depth %d from %d depths",count,nzs);
 	}
-    free(chom);free(ctrace);free(rtrace);
-	free(indata);free(hdr_in);
+	free(conv); free(indata); free(hdr_in);
+	if (scheme==1) {
+		free(tmp1);free(tmp2);
+	}
 }
 	free(shotdata);
 
 	vmess("nxs: %d nxz: %d f1: %.7f",nxs,nzs,f1);
+
+	ntshift=0;
+
+	if (ntmax > 0) {
+		if (ntmax < nt) {
+			ntshift = (nt-ntmax)/2;
+			vmess("Time shifted %d samples",ntshift);
+			nt=ntmax;
+		}
+		else {
+			vmess("Max time samples larger than original samples");
+		}
+	}
 
 	fp_out = fopen(fout, "w+");
 	
@@ -319,7 +299,7 @@ int main (int argc, char **argv)
 				hdr_out[ix].gx      = (int)roundf(f2 + (ix*hdr_out[ix].d2)*1000.0);
             	hdr_out[ix].offset	= (hdr_out[ix].gx - hdr_out[ix].sx)/1000.0;
 		}
-		ret = writeData(fp_out, &Ghom[ir*nxs*nzs], hdr_out, nzs, nxs);
+		ret = writeData(fp_out, &Ghom[(ir+ntshift)*nxs*nzs], hdr_out, nzs, nxs);
 		if (ret < 0 ) verr("error on writing output file.");
 	}
 	
@@ -380,7 +360,7 @@ void convol(float *data1, float *data2, float *con, int nrec, int nsam, float dt
     free(cdata1);
     free(cdata2);
 
-    if (shift) {
+    if (shift==1) {
         df = 1.0/(dt*optn);
         dw = 2*PI*df;
         tau = dt*(nsam/2);
@@ -391,6 +371,14 @@ void convol(float *data1, float *data2, float *con, int nrec, int nsam, float dt
                 tmp.i = ccon[j*nfreq+i].i*cos(om*tau) - ccon[j*nfreq+i].r*sin(om*tau);
                 ccon[j*nfreq+i] = tmp;
                 om += dw;
+            }
+        }
+    }
+	if (shift==-2) {
+        for (j = 0; j < nrec; j++) {
+            for (i = 0; i < nfreq; i++) {
+                ccon[j*nfreq+i].r = 0.0;
+                ccon[j*nfreq+i].i *= -1.0;
             }
         }
     }
@@ -424,5 +412,301 @@ void scl_data(float *data, int nsam, int nrec, float scl, float *datout, int nsa
     for (ix = 0; ix < nrec; ix++) {
         for (it = 0 ; it < nsamout ; it++)
             datout[ix*nsamout+it] = scl*data[ix*nsam+it];
+    }
+}
+
+void corr(float *data1, float *data2, float *cov, int nrec, int nsam, float dt, int shift)
+{
+    int     i, j, n, optn, nfreq, sign;
+    float   df, dw, om, tau, scl;
+    float   *qr, *qi, *p1r, *p1i, *p2r, *p2i, *rdata1, *rdata2;
+    complex *cdata1, *cdata2, *ccov, tmp;
+
+    optn = optncr(nsam);
+    nfreq = optn/2+1;
+
+    cdata1 = (complex *)malloc(nfreq*nrec*sizeof(complex));
+    if (cdata1 == NULL) verr("memory allocation error for cdata1");
+    cdata2 = (complex *)malloc(nfreq*nrec*sizeof(complex));
+    if (cdata2 == NULL) verr("memory allocation error for cdata2");
+    ccov = (complex *)malloc(nfreq*nrec*sizeof(complex));
+    if (ccov == NULL) verr("memory allocation error for ccov");
+
+    rdata1 = (float *)malloc(optn*nrec*sizeof(float));
+    if (rdata1 == NULL) verr("memory allocation error for rdata1");
+    rdata2 = (float *)malloc(optn*nrec*sizeof(float));
+    if (rdata2 == NULL) verr("memory allocation error for rdata2");
+
+    /* pad zeroes until Fourier length is reached */
+    pad_data(data1, nsam, nrec, optn, rdata1);
+    pad_data(data2, nsam, nrec, optn, rdata2);
+
+    /* forward time-frequency FFT */
+    sign = -1;
+    rcmfft(&rdata1[0], &cdata1[0], optn, nrec, optn, nfreq, sign);
+    rcmfft(&rdata2[0], &cdata2[0], optn, nrec, optn, nfreq, sign);
+
+    /* apply correlation */
+    p1r = (float *) &cdata1[0];
+    p2r = (float *) &cdata2[0];
+    qr  = (float *) &ccov[0].r;
+    p1i = p1r + 1;
+    p2i = p2r + 1;
+    qi = qr + 1;
+    n = nrec*nfreq;
+    for (j = 0; j < n; j++) {
+        *qr = (*p1r * *p2r + *p1i * *p2i);
+        *qi = (*p1i * *p2r - *p1r * *p2i);
+        qr += 2;
+        qi += 2;
+        p1r += 2;
+        p1i += 2;
+        p2r += 2;
+        p2i += 2;
+    }
+    free(cdata1);
+    free(cdata2);
+
+    /* shift t=0 to middle of time window (nsam/2)*/
+    if (shift) {
+        df = 1.0/(dt*optn);
+        dw = 2*PI*df;
+        tau = dt*(nsam/2);
+
+        for (j = 0; j < nrec; j++) {
+            om = 0.0;
+            for (i = 0; i < nfreq; i++) {
+                tmp.r = ccov[j*nfreq+i].r*cos(om*tau) + ccov[j*nfreq+i].i*sin(om*tau);
+                tmp.i = ccov[j*nfreq+i].i*cos(om*tau) - ccov[j*nfreq+i].r*sin(om*tau);
+                ccov[j*nfreq+i] = tmp;
+                om += dw;
+            }
+        }
+    }
+
+    /* inverse frequency-time FFT and scale result */
+    sign = 1;
+    scl = 1.0/(float)optn;
+    crmfft(&ccov[0], &rdata1[0], optn, nrec, nfreq, optn, sign);
+    scl_data(rdata1,optn,nrec,scl,cov,nsam);
+
+    free(ccov);
+    free(rdata1);
+    free(rdata2);
+    return;
+}
+
+void timeDiff(float *data, int nsam, int nrec, float dt, float fmin, float fmax, int opt)
+{
+    int     optn, iom, iomin, iomax, nfreq, ix, sign;
+    float   omin, omax, deltom, om, df, *rdata, scl;
+    complex *cdata, *cdatascl;
+
+    optn = optncr(nsam);
+    nfreq = optn/2+1;
+    df    = 1.0/(optn*dt);
+
+    cdata = (complex *)malloc(nfreq*nrec*sizeof(complex));
+    if (cdata == NULL) verr("memory allocation error for cdata");
+
+    rdata = (float *)malloc(optn*nrec*sizeof(float));
+    if (rdata == NULL) verr("memory allocation error for rdata");
+
+    /* pad zeroes until Fourier length is reached */
+    pad_data(data,nsam,nrec,optn,rdata);
+
+    /* Forward time-frequency FFT */
+    sign = -1;
+    rcmfft(&rdata[0], &cdata[0], optn, nrec, optn, nfreq, sign);
+
+    deltom = 2.*PI*df;
+    omin   = 2.*PI*fmin;
+    omax   = 2.*PI*fmax;
+    iomin  = (int)MIN((omin/deltom), (nfreq));
+    iomin  = MAX(iomin, 1);
+    iomax  = MIN((int)(omax/deltom), (nfreq));
+
+    cdatascl = (complex *)malloc(nfreq*nrec*sizeof(complex));
+    if (cdatascl == NULL) verr("memory allocation error for cdatascl");
+
+    for (ix = 0; ix < nrec; ix++) {
+        for (iom = 0; iom < iomin; iom++) {
+            cdatascl[ix*nfreq+iom].r = 0.0;
+            cdatascl[ix*nfreq+iom].i = 0.0;
+        }
+        for (iom = iomax; iom < nfreq; iom++) {
+            cdatascl[ix*nfreq+iom].r = 0.0;
+            cdatascl[ix*nfreq+iom].i = 0.0;
+        }
+        if (opt == 1) {
+            for (iom = iomin ; iom < iomax ; iom++) {
+                om = deltom*iom;
+                cdatascl[ix*nfreq+iom].r = -om*cdata[ix*nfreq+iom].i;
+                cdatascl[ix*nfreq+iom].i = om*cdata[ix*nfreq+iom].r;
+            }
+        }
+        else if (opt == -1) {
+            for (iom = iomin ; iom < iomax ; iom++) {
+                om = 1.0/(deltom*iom);
+                cdatascl[ix*nfreq+iom].r = om*cdata[ix*nfreq+iom].i;
+                cdatascl[ix*nfreq+iom].i = -om*cdata[ix*nfreq+iom].r;
+            }
+        }
+        else if (opt == -2) {
+            for (iom = iomin ; iom < iomax ; iom++) {
+                om = 4.0/(deltom*iom);
+                cdatascl[ix*nfreq+iom].r = om*cdata[ix*nfreq+iom].r;
+                cdatascl[ix*nfreq+iom].i = om*cdata[ix*nfreq+iom].i;
+            }
+        }
+    }
+    free(cdata);
+
+    /* Inverse frequency-time FFT and scale result */
+    sign = 1;
+    scl = 1.0/(float)optn;
+    crmfft(&cdatascl[0], &rdata[0], optn, nrec, nfreq, optn, sign);
+    scl_data(rdata,optn,nrec,scl,data,nsam);
+
+    free(cdatascl);
+    free(rdata);
+
+    return;
+}
+
+void depthDiff(float *data, int nsam, int nrec, float dt, float dx, float fmin, float fmax, float c, int opt)
+{
+    int     optn, iom, iomin, iomax, nfreq, ix, ikx, nkx, ikxmax;
+    float   omin, omax, deltom, df, dkx, *rdata, kx, scl;
+    float   kx2, kz2, kp2, kp;
+    complex *cdata, *cdatascl, kz, kzinv;
+
+    optn  = optncr(nsam);
+    nfreq = optncr(nsam)/2+1;
+    df    = 1.0/(optn*dt);
+    nkx   = optncc(nrec);
+    dkx   = 2.0*PI/(nkx*dx);
+    cdata = (complex *)malloc(nfreq*nkx*sizeof(complex));
+    if (cdata == NULL) verr("memory allocation error for cdata");
+
+    rdata = (float *)malloc(optn*nkx*sizeof(float));
+    if (rdata == NULL) verr("memory allocation error for rdata");
+
+    /* pad zeroes in 2 directions to reach FFT lengths */
+    pad2d_data(data,nsam,nrec,optn,nkx,rdata);
+
+    /* double forward FFT */
+    xt2wkx(&rdata[0], &cdata[0], optn, nkx, optn, nkx, 0);
+
+    deltom = 2.*PI*df;
+    omin   = 2.*PI*fmin;
+    omax   = 2.*PI*fmax;
+
+    iomin  = (int)MIN((omin/deltom), nfreq);
+    iomin  = MAX(iomin, 0);
+    iomax  = MIN((int)(omax/deltom), nfreq);
+
+    cdatascl = (complex *)malloc(nfreq*nkx*sizeof(complex));
+    if (cdatascl == NULL) verr("memory allocation error for cdatascl");
+
+    for (iom = 0; iom < iomin; iom++) {
+        for (ix = 0; ix < nkx; ix++) {
+            cdatascl[iom*nkx+ix].r = 0.0;
+            cdatascl[iom*nkx+ix].i = 0.0;
+        }
+    }
+    for (iom = iomax; iom < nfreq; iom++) {
+        for (ix = 0; ix < nkx; ix++) {
+            cdatascl[iom*nkx+ix].r = 0.0;
+            cdatascl[iom*nkx+ix].i = 0.0;
+        }
+    }
+    if (opt > 0) {
+        for (iom = iomin ; iom <= iomax ; iom++) {
+            kp = (iom*deltom)/c;
+            kp2 = kp*kp;
+
+            ikxmax = MIN((int)(kp/dkx), nkx/2);
+
+            for (ikx = 0; ikx < ikxmax; ikx++) {
+                kx  = ikx*dkx;
+                kx2 = kx*kx;
+                kz2 = kp2 - kx2;
+                kz.r  = 0.0;
+                kz.i  = sqrt(kz2);
+                cdatascl[iom*nkx+ikx].r = cdata[iom*nkx+ikx].r*kz.r-cdata[iom*nkx+ikx].i*kz.i;
+                cdatascl[iom*nkx+ikx].i = cdata[iom*nkx+ikx].i*kz.r+cdata[iom*nkx+ikx].r*kz.i;
+
+            }
+            for (ikx = ikxmax; ikx <= nkx-ikxmax+1; ikx++) {
+                cdatascl[iom*nkx+ikx].r = 0.0;
+                cdatascl[iom*nkx+ikx].i = 0.0;
+            }
+            for (ikx = nkx-ikxmax+1; ikx < nkx; ikx++) {
+                kx  = (ikx-nkx)*dkx;
+                kx2 = kx*kx;
+                kz2 = kp2 - kx2;
+                kz.r  = 0.0;
+                kz.i  = sqrt(kz2);
+                cdatascl[iom*nkx+ikx].r = cdata[iom*nkx+ikx].r*kz.r-cdata[iom*nkx+ikx].i*kz.i;
+                cdatascl[iom*nkx+ikx].i = cdata[iom*nkx+ikx].i*kz.r+cdata[iom*nkx+ikx].r*kz.i;
+            }
+        }
+    }
+    else if (opt < 0) {
+        for (iom = iomin ; iom < iomax ; iom++) {
+            kp = iom*deltom/c;
+            kp2 = kp*kp;
+            ikxmax = MIN((int)(kp/dkx), nkx/2);
+            for (ikx = 0; ikx < ikxmax; ikx++) {
+                kx = ikx*dkx;
+                kx2  = kx*kx;
+                kz2 = kp2 - kx2;
+                kzinv.r  = 0.0;
+                kzinv.i  = -sqrt(kz2)/kz2;
+                cdatascl[iom*nkx+ikx].r = cdata[iom*nkx+ikx].r*kzinv.r-cdata[iom*nkx+ikx].i*kzinv.i;
+                cdatascl[iom*nkx+ikx].i = cdata[iom*nkx+ikx].i*kzinv.r+cdata[iom*nkx+ikx].r*kzinv.i;
+            }
+            for (ikx = ikxmax; ikx <= nkx-ikxmax+1; ikx++) {
+                cdatascl[iom*nkx+ikx].r = 0.0;
+                cdatascl[iom*nkx+ikx].i = 0.0;
+            }
+            for (ikx = nkx-ikxmax+1; ikx < nkx; ikx++) {
+                kx = (ikx-nkx)*dkx;
+                kx2  = kx*kx;
+                kz2 = kp2 - kx2;
+                kzinv.r  = 0.0;
+                kzinv.i  = -sqrt(kz2)/kz2;
+                cdatascl[iom*nkx+ikx].r = cdata[iom*nkx+ikx].r*kzinv.r-cdata[iom*nkx+ikx].i*kzinv.i;
+                cdatascl[iom*nkx+ikx].i = cdata[iom*nkx+ikx].i*kzinv.r+cdata[iom*nkx+ikx].r*kzinv.i;
+            }
+        }
+    }
+    free(cdata);
+
+    /* inverse double FFT */
+    wkx2xt(&cdatascl[0], &rdata[0], optn, nkx, nkx, optn, 0);
+    /* select original samples and traces */
+    scl = 1.0;
+    scl_data(rdata,optn,nrec,scl,data,nsam);
+
+    free(cdatascl);
+    free(rdata);
+
+    return;
+}
+
+void pad2d_data(float *data, int nsam, int nrec, int nsamout, int nrecout, float *datout)
+{
+    int it,ix;
+    for (ix=0;ix<nrec;ix++) {
+        for (it=0;it<nsam;it++)
+            datout[ix*nsam+it]=data[ix*nsam+it];
+        for (it=nsam;it<nsamout;it++)
+            datout[ix*nsam+it]=0.0;
+    }
+    for (ix=nrec;ix<nrecout;ix++) {
+        for (it=0;it<nsamout;it++)
+            datout[ix*nsam+it]=0.0;
     }
 }

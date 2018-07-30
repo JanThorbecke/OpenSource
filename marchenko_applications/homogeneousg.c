@@ -121,25 +121,31 @@ void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int 
 
 		if (verbose > 2) vmess("Creating Homogeneous G at location %d out of %d",count,Nsyn);
 		if (scheme==0) { //Marchenko representation
-			convol(green, &f2p[l*nxs*nts], conv, nxs, nts, dt, 0);
+			depthDiff(&f2p[l*nxs*nts], ntfft, nshots, dt, dx, fmin, fmax, cp, 1);
+			convol(green, &f2p[l*nxs*nts], conv, nxs, nts, dt, -2);
+			timeDiff(conv, ntfft, nshots, dt, fmin, fmax, -2);
 			if (kxwfilt) {
 				kxwfilter(conv, ntfft, nshots, dt, dx, fmin, fmax, alpha, cp, perc);
 			}
 			for (i=0; i<npossyn; i++) {
             	j=0;
-            	HomG[(j+nts/2)*Nsyn+synpos[l]] += scl*(conv[i*nts+j] + conv[i*nts+j]);
+            	HomG[(j+nts/2)*Nsyn+synpos[l]] += scl*conv[i*nts+j];
             	for (j=1; j<nts/2; j++) {
-                	HomG[(j+nts/2)*Nsyn+synpos[l]] += scl*(conv[i*nts+j] + conv[i*nts+nts-j]);
-					HomG[j*Nsyn+synpos[l]] += scl*(conv[i*nts+(j+nts/2)] + conv[i*nts+nts-(j+nts/2)]);
+                	//HomG[(j+nts/2)*Nsyn+synpos[l]] -= scl*(conv[i*nts+j] + conv[i*nts+nts-j]);
+					//HomG[j*Nsyn+synpos[l]] -= scl*(conv[i*nts+(j+nts/2)] + conv[i*nts+nts-(j+nts/2)]);
+                	HomG[(j+nts/2)*Nsyn+synpos[l]] += scl*conv[i*nts+j];
+					HomG[j*Nsyn+synpos[l]] += scl*conv[i*nts+(j+nts/2)];
             	}
         	}
 		}
 		else if (scheme==1) { //classical representation
-			corr(&greenf2[l*nxs*nts], greenjkz, tmp1, nxs, nts, dt, 0);
-			corr(&greenf2jkz[l*nxs*nts], green, tmp2, nxs, nts, dt, 0);
+			//corr(&greenf2[l*nxs*nts], greenjkz, tmp1, nxs, nts, dt, 0);
+			//corr(&greenf2jkz[l*nxs*nts], green, tmp2, nxs, nts, dt, 0);
+			corr(greenjkz, &greenf2[l*nxs*nts], tmp1, nxs, nts, dt, 0);
+            corr(green, &greenf2jkz[l*nxs*nts], tmp2, nxs, nts, dt, 0);
 			for (i = 0; i < npossyn; i++) {
 				for (j = 0; j < nts; j++) {
-					conv[i*nts+j] = -(tmp2[i*nts+j]-tmp1[i*nts+j]);
+					conv[i*nts+j] = -(tmp1[i*nts+j]-tmp2[i*nts+j]);
 				}
 			}
 			timeDiff(conv, ntfft, nshots, dt, fmin, fmax, -1);
@@ -154,9 +160,15 @@ void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int 
 		}
 	}
     free(conv);
-	if (scheme==1) free(tmp1);free(tmp2);
+	if (scheme==1) { 
+		free(tmp1);
+		free(tmp2);
+	}
 }
-	if (scheme==1) free(greenf2);free(greenf2jkz);
+	if (scheme==1) {
+		free(greenf2);
+		free(greenf2jkz);
+	}
 		
     t2 = wallclock_time();
     if (verbose) {
@@ -289,18 +301,25 @@ void timeDiff(float *data, int nsam, int nrec, float dt, float fmin, float fmax,
             cdatascl[ix*nfreq+iom].r = 0.0;
             cdatascl[ix*nfreq+iom].i = 0.0;
         }
-        if (opt > 0) {
+        if (opt == 1) {
             for (iom = iomin ; iom < iomax ; iom++) {
                 om = deltom*iom;
                 cdatascl[ix*nfreq+iom].r = -om*cdata[ix*nfreq+iom].i;
                 cdatascl[ix*nfreq+iom].i = om*cdata[ix*nfreq+iom].r;
             }
         }
-        else if (opt < 0) {
+        else if (opt == -1) {
             for (iom = iomin ; iom < iomax ; iom++) {
                 om = 1.0/(deltom*iom);
                 cdatascl[ix*nfreq+iom].r = om*cdata[ix*nfreq+iom].i;
                 cdatascl[ix*nfreq+iom].i = -om*cdata[ix*nfreq+iom].r;
+            }
+        }
+		else if (opt == -2) {
+            for (iom = iomin ; iom < iomax ; iom++) {
+                om = 4.0/(deltom*iom);
+                cdatascl[ix*nfreq+iom].r = om*cdata[ix*nfreq+iom].r;
+                cdatascl[ix*nfreq+iom].i = om*cdata[ix*nfreq+iom].i;
             }
         }
     }

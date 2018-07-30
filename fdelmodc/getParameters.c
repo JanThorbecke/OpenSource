@@ -548,8 +548,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparfloat("dzshot",&dzshot)) dzshot=0.0;
 	if (!getparfloat("dip",&src->dip)) src->dip=0.0;
 	if (!getparfloat("strike",&src->strike)) src->strike=1.0;
-	if (src->strike>=0) src->strike=1.0;
-	else src->strike = -1.0;
+	if (src->strike>=0) src->strike=0.5*M_PI;
+	else src->strike = -0.5*M_PI;
 	src->dip = M_PI*(src->dip/180.0);
 
 	if (shot->n>1) {

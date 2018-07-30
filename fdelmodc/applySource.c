@@ -328,7 +328,6 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 			}
             else if(src.type == 9) {
 				rake = 0.5*M_PI;
-				src.strike=0.5*M_PI;
 				Mxx = -1.0*(sin(src.dip)*cos(rake)*sin(2.0*src.strike)+sin(src.dip*2.0)*sin(rake)*sin(src.strike)*sin(src.strike));
 				Mxz = -1.0*(cos(src.dip)*cos(rake)*cos(src.strike)+cos(src.dip*2.0)*sin(rake)*sin(src.strike));
 				Mzz = sin(src.dip*2.0)*sin(rake);
