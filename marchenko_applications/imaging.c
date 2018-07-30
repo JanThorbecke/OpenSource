@@ -177,7 +177,7 @@ void convol(float *data1, float *data2, float *con, int nrec, int nsam, float dt
     free(cdata1);
     free(cdata2);
 
-    if (shift) {
+    if (shift==1) {
 		df = 1.0/(dt*optn);
         dw = 2*PI*df;
         tau = dt*(nsam/2);
@@ -188,6 +188,14 @@ void convol(float *data1, float *data2, float *con, int nrec, int nsam, float dt
                 tmp.i = ccon[j*nfreq+i].i*cos(om*tau) - ccon[j*nfreq+i].r*sin(om*tau);
                 ccon[j*nfreq+i] = tmp;
                 om += dw;
+            }
+        }
+    }
+    if (shift==-2) {
+        for (j = 0; j < nrec; j++) {
+            for (i = 0; i < nfreq; i++) {
+                ccon[j*nfreq+i].r = 0.0;
+                ccon[j*nfreq+i].i *= -1.0;
             }
         }
     }

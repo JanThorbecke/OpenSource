@@ -3,7 +3,7 @@
 include ../Make_include
 
 LIBS    += -L$L -lgenfft -lm $(LIBSM)
-OPTC += -g -Wall
+#OPTC += -g -Wall
 
 #ALL: fmute marchenko marchenko2
 
