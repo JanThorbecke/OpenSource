@@ -59,18 +59,18 @@ void iterations (complex *Refl, int nx, int nt, int nxs, int nts, float dt, floa
     
 /*================ construction of Ni(-t) = - \int R(x,t) Ni(t)  ================*/
 
-/*
+
         synthesis(Refl, Fop, Ni, iRN, nx, nt, nxs, nts, dt, xsyn, Nsyn, 
             xrcv, xsrc, fxs2, fxs, dxs, dxsrc, dx, ixa, ixb, ntfft, nw, nw_low, nw_high, mode,
             reci, nshots, ixpossyn, npossyn, &tfft, first, verbose);
-*/
+
 
         t3 = wallclock_time();
         tsyn +=  t3 - t2;
 
         /* N_k(x,t) = -N_(k-1)(x,-t) */
         /* p0^-(x,t) += iRN = (R * T_d^inv)(t) */
-/*
+
         for (l = 0; l < Nsyn; l++) {
             for (i = 0; i < npossyn; i++) {
                 j = 0;
@@ -86,7 +86,7 @@ void iterations (complex *Refl, int nx, int nt, int nxs, int nts, float dt, floa
 			vmess("    - operator %d at iteration %d has energy %e", l, iter, energyNi);
         }
 
-*/
+
 		/* apply mute window based on times of direct arrival (in muteW) */
         applyMute(Ni, muteW, smooth, above, Nsyn, nxs, nts, ixpossyn, npossyn, shift, pad, nt0);
 

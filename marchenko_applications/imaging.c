@@ -191,11 +191,11 @@ void convol(float *data1, float *data2, float *con, int nrec, int nsam, float dt
             }
         }
     }
-    if (shift==-2) {
+	if (shift==-2) {
         for (j = 0; j < nrec; j++) {
             for (i = 0; i < nfreq; i++) {
-                ccon[j*nfreq+i].r = 0.0;
-                ccon[j*nfreq+i].i *= -1.0;
+                ccon[j*nfreq+i].r = ccon[j*nfreq+i].i;
+                ccon[j*nfreq+i].i = 0.0;
             }
         }
     }

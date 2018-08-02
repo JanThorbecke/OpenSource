@@ -68,8 +68,8 @@ int main (int argc, char **argv)
 	float *indata, *Ghom, *shotdata, *shotdata_jkz, rho, fmin, fmax;
 	float dt, dx, t0, x0, xmin, xmax1, sclsxgx, f1, f2, dxrcv, dzrcv;
 	float *conv, *tmp1, *tmp2, cp;
-	int nshots, nt, nx, ntraces, ret, ix, it, is, ir, file_det, nxs, nzs;
-	int pos1, npos, zmax, inx, numb, dnumb, mode, count, scheme, ntmax, ntshift;
+	int nshots, nt, nx, ntraces, ret, ix, it, is, ir, file_det, nxs, nzs, verbose;
+	int pos1, npos, zmax, inx, numb, dnumb, count, scheme, ntmax, ntshift;
 	segy *hdr_in, *hdr_out, *hdr_shot;
 
 	initargs(argc, argv);
@@ -90,15 +90,21 @@ int main (int argc, char **argv)
 	if (!getparfloat("fmax", &fmax)) fmax=100.0;
 	if (!getparint("numb", &numb)) numb=0;
     if (!getparint("dnumb", &dnumb)) dnumb=1;
-	if (!getparint("mode", &mode)) mode=0;
 	if (!getparint("scheme", &scheme)) scheme = 0;
 	if (!getparint("ntmax", &ntmax)) ntmax = 0;
+	if (!getparint("verbose", &verbose)) verbose = 0;
 	if (fin == NULL) verr("Incorrect f2 input");
 	if (fshot == NULL) verr("Incorrect Green input");
 
 	if (dnumb == 0) dnumb = 1;
 
 	sprintf(fins,"z%d",numb);
+
+	fp_in = fopen(fin, "r");
+	if (fp_in == NULL) {
+		verr("error on opening basefile=%s", fin);
+	}
+	fclose(fp_in);
 
 	ptr  = strstr(fin,fins);
 	pos1 = ptr - fin + 1;
@@ -143,7 +149,7 @@ int main (int argc, char **argv)
 	count=0;
 	npos = nxs*nzs;
 
-	vmess("nxs: %d, nzs: %d",nxs,nzs);
+	if (verbose) vmess("nxs: %d, nzs: %d",nxs,nzs);
 
 	nshots = 0;
     getFileInfo(fshot, &nt, &nx, &nshots, &dt, &dx, &t0, &x0, &xmin, &xmax1, &sclsxgx, &ntraces);
@@ -175,6 +181,7 @@ int main (int argc, char **argv)
             }
         }
         depthDiff(shotdata_jkz, nt, nx, dt, dx, fmin, fmax, cp, 1);
+		if (verbose) vmess("Applied jkz to source data");
 	}
 	else if (scheme==0) {
 		vmess("Marchenko representation");
@@ -189,7 +196,7 @@ int main (int argc, char **argv)
 	indata		= (float *)malloc(nt*nx*nxs*sizeof(float));
     hdr_in 		= (segy *)calloc(nx*nxs,sizeof(segy));
 	conv    = (float *)calloc(nx*nt,sizeof(float));
-    if (scheme==1) {
+    if (scheme==2) {
         tmp1    = (float *)calloc(nx*nt,sizeof(float));
         tmp2    = (float *)calloc(nx*nt,sizeof(float));
     }
@@ -209,11 +216,12 @@ int main (int argc, char **argv)
             	convol(shotdata, &indata[is*nx*nt], conv, nx, nt, dt, -2);		
             	timeDiff(conv, nt, nx, dt, fmin, fmax, -2);		
             	for (ix=0; ix<nx; ix++) {
-                	it=0;
-                	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += 4*conv[ix*nt+it];
-                	for (it=1; it<nt/2; it++) {
-                    	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += 4*conv[ix*nt+it];
-                    	Ghom[it*nxs*nzs+is*nzs+ir] += 4*conv[ix*nt+(it+nt/2)];
+                	//it=0;
+                	//Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] = -conv[ix*nt+it];
+					//Ghom[it*nxs*nzs+is*nzs+ir] = -conv[ix*nt+(it+nt/2)];
+                	for (it=0; it<nt/2; it++) {
+                    	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] -= conv[ix*nt+it]/rho;
+                    	Ghom[it*nxs*nzs+is*nzs+ir] -= conv[ix*nt+(it+nt/2)]/rho;
                 	}
             	}
         	}
@@ -222,11 +230,11 @@ int main (int argc, char **argv)
             	convol(shotdata, &indata[is*nx*nt], conv, nx, nt, dt, 0);		
             	timeDiff(conv, nt, nx, dt, fmin, fmax, -1);		
             	for (ix=0; ix<nx; ix++) {
-                	it=0;
-                	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += 2*conv[ix*nt+it];
-                	for (it=1; it<nt/2; it++) {
-                    	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += 2*conv[ix*nt+it];
-                    	Ghom[it*nxs*nzs+is*nzs+ir] += 2*conv[ix*nt+(it+nt/2)];
+                	//it=0;
+                	//Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] -= 2*conv[ix*nt+it];
+                	for (it=0; it<nt/2; it++) {
+                    	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] -= 2*conv[ix*nt+it]/rho;
+                    	Ghom[it*nxs*nzs+is*nzs+ir] -= 2*conv[ix*nt+(it+nt/2)]/rho;
                 	}
             	}
         	}
@@ -241,38 +249,38 @@ int main (int argc, char **argv)
             	}
             	timeDiff(conv, nt, nx, dt, fmin, fmax, -1);
             	for (ix=0; ix<nx; ix++) {
-                	it=0;
-                	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += conv[ix*nt+it];
-                	for (it=1; it<nt/2; it++) {
-                    	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += conv[ix*nt+it];
-                    	Ghom[it*nxs*nzs+is*nzs+ir] += conv[ix*nt+(it+nt/2)];
+                	//it=0;
+                	//Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += conv[ix*nt+it];
+                	for (it=0; it<nt/2; it++) {
+                    	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += conv[ix*nt+it]/rho;
+                    	Ghom[it*nxs*nzs+is*nzs+ir] += conv[ix*nt+(it+nt/2)]/rho;
 					}
                 }
             }
         }
 
 		count+=1;
-		vmess("Creating Homogeneous Green's function at depth %d from %d depths",count,nzs);
+		if (verbose) vmess("Creating Homogeneous Green's function at depth %d from %d depths",count,nzs);
 	}
 	free(conv); free(indata); free(hdr_in);
-	if (scheme==1) {
+	if (scheme==2) {
 		free(tmp1);free(tmp2);
 	}
 }
 	free(shotdata);
 
-	vmess("nxs: %d nxz: %d f1: %.7f",nxs,nzs,f1);
+	if (verbose) vmess("nxs: %d nxz: %d f1: %.7f",nxs,nzs,f1);
 
 	ntshift=0;
 
 	if (ntmax > 0) {
 		if (ntmax < nt) {
 			ntshift = (nt-ntmax)/2;
-			vmess("Time shifted %d samples",ntshift);
+			if (verbose) vmess("Time shifted %d samples",ntshift);
 			nt=ntmax;
 		}
 		else {
-			vmess("Max time samples larger than original samples");
+			if (verbose) vmess("Max time samples larger than original samples");
 		}
 	}
 
@@ -377,8 +385,8 @@ void convol(float *data1, float *data2, float *con, int nrec, int nsam, float dt
 	if (shift==-2) {
         for (j = 0; j < nrec; j++) {
             for (i = 0; i < nfreq; i++) {
-                ccon[j*nfreq+i].r = 0.0;
-                ccon[j*nfreq+i].i *= -1.0;
+                ccon[j*nfreq+i].r = ccon[j*nfreq+i].i;
+				ccon[j*nfreq+i].i = 0.0;
             }
         }
     }

@@ -18,6 +18,7 @@ LIBS    += -L$L -lgenfft -lm $(LIBSM)
 #		side.c \
 #		corner.c \
 #		near_source.c \
+#		Grid2Time1.c \
 
 all: raytime 
 
@@ -26,7 +27,6 @@ PRG = raytime
 SRCC	= $(PRG).c \
 		JespersRayTracer.c \
 		vidale.c \
-		Grid2Time1.c \
 		getParameters.c  \
 		getWaveletInfo.c  \
 		writeSrcRecPos.c  \
@@ -47,16 +47,16 @@ SRCC	= $(PRG).c \
 OBJC	= $(SRCC:%.c=%.o)
 
 $(PRG):	$(OBJC) raytime.h
-	$(CC) $(LDFLAGS) $(CFLAGS) $(OPTC) -o raytime $(OBJC) $(LIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) $(OPTC) -o Raytime $(OBJC) $(LIBS)
 
 install: raytime 
-	cp raytime $B
+	cp Raytime $B
 
 clean:
-		rm -f core $(OBJC) $(OBJM) raytime 
+		rm -f core $(OBJC) $(OBJM) Raytime 
 
 realclean:
-		rm -f core $(OBJC) $(OBJM) $(PRG) $B/raytime 
+		rm -f core $(OBJC) $(OBJM) $(PRG) $B/Raytime 
 
 
 print:	Makefile $(SRC)
