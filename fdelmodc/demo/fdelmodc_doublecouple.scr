@@ -20,12 +20,12 @@ export filero=model_ro.su
 export OMP_NUM_THREADS=1
 
 ../fdelmodc \
-	file_cp=$filecp file_cs=$filecs file_den=$filero \
-	ischeme=3 \
+	file_cp=$filecp file_den=$filero \
+	ischeme=5 \
 	src_type=9 dip=0  tmod=2.0  \
 	file_src=wavelet.su verbose=2 \
-	file_rcv=recS.su \
-	file_snap=snapS0.su \
+	file_rcv=rec4S.su \
+	file_snap=snap4S0.su \
 	xrcv1=0 xrcv2=2100 dxrcv=15 \
 	zrcv1=400 zrcv2=400 \
 	rec_type_vx=1 rec_int_vx=1 \

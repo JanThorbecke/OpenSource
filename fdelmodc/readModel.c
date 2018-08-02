@@ -85,8 +85,8 @@ int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float 
    	nread = fread(&hdr, 1, TRCBYTES, fpro);
    	assert(nread == TRCBYTES);
 
-	if (mod.ischeme>2) {
-		cs = (float *)malloc(nz*nx*sizeof(float));
+	cs = (float *)calloc(nz*nx,sizeof(float));
+	if (mod.ischeme>2 && mod.ischeme!=5) {
 		fpcs = fopen( mod.file_cs, "r" );
    		assert( fpcs != NULL);
    		nread = fread(&hdr, 1, TRCBYTES, fpcs);
@@ -120,7 +120,7 @@ int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float 
        	assert (nread == hdr.ns);
        	nread = fread(&ro[i*nz], sizeof(float), hdr.ns, fpro);
        	assert (nread == hdr.ns);
-		if (mod.ischeme>2) {
+		if (mod.ischeme>2 && mod.ischeme!=5) {
        		nread = fread(&cs[i*nz], sizeof(float), hdr.ns, fpcs);
        		assert (nread == hdr.ns);
 		}
@@ -181,7 +181,7 @@ int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float 
        	if (nread==0) break;
        	nread = fread(&hdr, 1, TRCBYTES, fpro);
        	if (nread==0) break;
-		if (mod.ischeme>2) {
+		if (mod.ischeme>2 && mod.ischeme!=5) {
        		nread = fread(&hdr, 1, TRCBYTES, fpcs);
        		if (nread==0) break;
 		}
@@ -197,7 +197,7 @@ int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float 
 	}
    	fclose(fpcp);
    	fclose(fpro);
-   	if (mod.ischeme>2) fclose(fpcs);
+   	if (mod.ischeme>2 && mod.ischeme!=5) fclose(fpcs);
 	if (fpqp != NULL) fclose(fpqp);
 	if (fpqs != NULL) fclose(fpqs);
 
@@ -784,7 +784,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
 
 	free(cp);
 	free(ro);
-   	if (mod.ischeme>2) free(cs);
+   	free(cs);
 
     return 0;
 }
