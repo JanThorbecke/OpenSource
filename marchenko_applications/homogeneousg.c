@@ -34,7 +34,7 @@ void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int 
 {
     int     i, j, l, ret, scheme,count=0;
     int     iter, niter, ix, kxwfilt;
-	float   scl, *conv, *greenf2, fmin, fmax, alpha, cp, perc;
+	float   scl, *conv, *greenf2, fmin, fmax, alpha, cp, rho, perc;
 	float   *greenjkz, *greenf2jkz, *tmp1, *tmp2;
     double  t0, t2, tfft;
 	FILE	*fp;
@@ -46,12 +46,12 @@ void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int 
 	if (!getparfloat("fmax", &fmax)) fmax = 100.0;
 	if (!getparfloat("alpha", &alpha)) alpha = 65.0;
 	if (!getparfloat("cp", &cp)) cp = 1500.0;
+	if (!getparfloat("rho", &rho)) rho = 1000.0;
 	if (!getparfloat("perc", &perc)) perc = 0.15;
 
 	tfft = 0.0;
 	ret = 0;
     t0   = wallclock_time();
-	scl	= 1.0/((float)npossyn);
 
 	if (scheme==1) {
 		if (verbose) vmess("Classical Homogeneous Green's function retrieval");
@@ -128,13 +128,13 @@ void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int 
 				kxwfilter(conv, ntfft, nshots, dt, dx, fmin, fmax, alpha, cp, perc);
 			}
 			for (i=0; i<npossyn; i++) {
-            	j=0;
-            	HomG[(j+nts/2)*Nsyn+synpos[l]] += scl*conv[i*nts+j];
-            	for (j=1; j<nts/2; j++) {
+            	//j=0;
+            	//HomG[(j+nts/2)*Nsyn+synpos[l]] += scl*conv[i*nts+j];
+            	for (j=0; j<nts/2; j++) {
                 	//HomG[(j+nts/2)*Nsyn+synpos[l]] -= scl*(conv[i*nts+j] + conv[i*nts+nts-j]);
 					//HomG[j*Nsyn+synpos[l]] -= scl*(conv[i*nts+(j+nts/2)] + conv[i*nts+nts-(j+nts/2)]);
-                	HomG[(j+nts/2)*Nsyn+synpos[l]] += scl*conv[i*nts+j];
-					HomG[j*Nsyn+synpos[l]] += scl*conv[i*nts+(j+nts/2)];
+                	HomG[(j+nts/2)*Nsyn+synpos[l]] -= conv[i*nts+j]/rho;
+					HomG[j*Nsyn+synpos[l]] -= conv[i*nts+(j+nts/2)]/rho;
             	}
         	}
 		}
@@ -150,11 +150,11 @@ void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int 
 			}
 			timeDiff(conv, ntfft, nshots, dt, fmin, fmax, -1);
 			for (i=0; i<npossyn; i++) {
-                j=0;
-                HomG[(j+nts/2)*Nsyn+synpos[l]] += scl*(conv[i*nts+j]);
-                for (j=1; j<nts/2; j++) {
-                    HomG[(j+nts/2)*Nsyn+synpos[l]] += scl*conv[i*nts+j];
-					HomG[j*Nsyn+synpos[l]] += scl*conv[i*nts+(j+nts/2)];
+                //j=0;
+                //HomG[(j+nts/2)*Nsyn+synpos[l]] += scl*(conv[i*nts+j]);
+                for (j=0; j<nts/2; j++) {
+                    HomG[(j+nts/2)*Nsyn+synpos[l]] += conv[i*nts+j]/rho;
+					HomG[j*Nsyn+synpos[l]] += conv[i*nts+(j+nts/2)]/rho;
                 }
             }
 		}
