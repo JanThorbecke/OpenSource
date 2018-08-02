@@ -46,6 +46,8 @@ int viscoacoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, in
 
 int elastic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, int verbose);
 
+int elastic4dc(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, int verbose);
+
 int viscoelastic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx, float
 *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, float *ts, float *tep, float
 *tes, float *r, float *q, float *p, int verbose);
@@ -96,7 +98,7 @@ char *sdoc[] = {
 "   dt= ............... read from file_src: if dt is set it will interpolate file_src to dt sampling",
 "" ,
 " OPTIONAL PARAMETERS:",
-"   ischeme=3 ......... 1=acoustic, 2=visco-acoustic 3=elastic, 4=visco-elastic",
+"   ischeme=3 ......... 1=acoustic, 2=visco-acoustic 3=elastic, 4=visco-elastic, 5=double-couple",
 "   tmod=(nt-1)*dt .... total modeling time (nt from file_src)",
 "   ntaper=0 .......... length of taper in points at edges of model",
 "   npml=35 ........... length of PML layer in points at edges of model",
@@ -583,6 +585,10 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 					viscoelastic4(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
 						vx, vz, tzz, txx, txz, rox, roz, l2m, lam, mul, 
 						tss, tep, tes, r, q, p, verbose);
+					break;
+				case 5 : /* Elastic FD kernel with S-velocity set to zero*/
+                     elastic4dc(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
+                            vx, vz, tzz, txx, txz, rox, roz, l2m, lam, mul, verbose);
 					break;
 			}
 

@@ -78,7 +78,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparstring("file_den",&mod->file_ro)) {
 		verr("parameter file_den required!");
 	}
-	if (mod->ischeme>2) {
+	if (mod->ischeme>2 && mod->ischeme!=5) {
 		if (!getparstring("file_cs",&mod->file_cs)) {
 			verr("parameter file_cs required!");
 		}
@@ -110,7 +110,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (nz != n1) 
 		vwarn("nz differs for file_cp and file_den!");
 
-	if (mod->ischeme>2) {
+	if (mod->ischeme>2 && mod->ischeme!=5) {
 		getModelInfo(mod->file_cs, &n1, &n2, &d1, &d2, &zstart, &xstart, &cs_min, &cs_max, &axis, 1, verbose);
 		mod->cs_max = cs_max;
 		mod->cs_min = cs_min;
@@ -123,6 +123,12 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		if (nz != n1) 
 			vwarn("nz differs for file_cp and file_cs!");
 	}
+	if (mod->ischeme==5) {
+		cs_max=0.0; cs_min=0.0;
+		mod->cs_max = cs_max;
+		mod->cs_min = cs_min;
+	}
+		
 	mod->dz = dz;
 	mod->dx = dx;
 	mod->nz = nz;
@@ -223,6 +229,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		if (mod->ischeme == 2) vmess("Visco-Acoustic staggered grid, pressure/velocity");
 		if (mod->ischeme == 3) vmess("Elastic staggered grid, stress/velocity");
 		if (mod->ischeme == 4) vmess("Visco-Elastic staggered grid, stress/velocity");
+		if (mod->ischeme == 5) vmess("Acoustic staggered grid, Txx/Tzz/velocity");
 		if (mod->grid_dir) vmess("Time reversed modelling");
 		else vmess("Forward modelling");
 		vmess("*******************************************");
@@ -233,7 +240,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		vmess("zmin    = %8.4f   zmax    = %8.4f", sub_z0, zmax);
 		vmess("xmin    = %8.4f   xmax    = %8.4f", sub_x0, xmax);
 		vmess("min(cp) = %9.3f  max(cp) = %9.3f", cp_min, cp_max);
-		if (mod->ischeme>2) vmess("min(cs) = %9.3f  max(cs) = %9.3f", cs_min, cs_max);
+		if (mod->ischeme>2 && mod->ischeme!=5) vmess("min(cs) = %9.3f  max(cs) = %9.3f", cs_min, cs_max);
 		vmess("min(ro) = %9.3f  max(ro) = %9.3f", ro_min, ro_max);
 		if (mod->ischeme==2 || mod->ischeme==4) {
 			if (mod->file_qp!=NULL) vmess("Qp from file %s   ", mod->file_qp);
