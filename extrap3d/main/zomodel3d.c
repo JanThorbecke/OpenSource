@@ -24,7 +24,7 @@ void cr1fft(complex *cdata, float *rdata, int n, int sign);
 /****** IO routines *******/
 int openVelocityFile(char *file_vel, FILE **fp, Area *vel_area, int verbose);
 void readVelocitySlice(FILE *fp, float *velocity, int iz, int nyv, int nxv);
-int write_FFT_DataFile(FILE *fp, complex *data, Area data_area, int fldr, int nt, int nfft, int nw, int nw_low, float dt, int out_su, int conjg, int verbose);
+int write_FFT_DataFile(FILE *fp, complex *data, Area data_area, int fldr, int nt, int nfft, int nw, int nw_low, float dt, int out_su, int conjg, int freq, int verbose);
 
 /***** Operator tables *****/
 void tablecalc_2D(int oplx, int oply, int nx, float dx, int ny, float dy, 
@@ -64,7 +64,6 @@ char *sdoc[] = {
 " Optional parameters:",
 " ",
 "   conjg=0 .................. 1: take complex conjugate of input data",
-"   verbose=0 ................ >1: shows various parameters and results",
 " VELOCITY MODEL ",
 "   dxv=dxv .................. stepsize in x-direction of velocity model ",
 "   dyv=dyv .................. stepsize in y-direction of velocity model ",
@@ -113,6 +112,9 @@ char *sdoc[] = {
 "   fine=2 ................... fine sampling in operator table",
 "   filter_inc=1 ............. the increment in dz for the Li filter (0=off)",
 "   nterms=1 ................. the number of terms in the paraxial expansion",
+" OUTPUT DEFINITION ",
+"   freq=0 ................... output in frequency slices",
+"   verbose=0 ................ >1: shows various parameters and results",
 "  ",
 "   Options for method:",
 "         - 1  = Direct 2D convolution (Walter's scheme)",
@@ -148,7 +150,7 @@ int main(int argc, char *argv[])
 	int     nfft, nfreq, nw_high, nw_low, nw, ix, iy;
 	int     sxy, iw, sign, ixv, iyv; 
 	int     nxy, pos, id, idp, oper_opt;
-	int		out_su, nterms, filter_inc, interpol;
+	int		out_freq, out_su, nterms, filter_inc, interpol;
 	Area    shot_area;
 	float   alpha, weight;
 	float	depth1,depth2;
@@ -217,6 +219,7 @@ int main(int argc, char *argv[])
 	if(!getparint("fine", &fine)) fine = 2;
 	if(!getparfloat("dt", &dt)) dt = 0.004;
 	if(!getparint("nt", &nt)) nt = 512;
+	if(!getparint("freq", &out_freq)) out_freq = 0;
 	if(!getparint("verbose", &verbose)) verbose = 0;
 
 	if(!ISODD(oplx)) oplx += 1;
@@ -699,7 +702,7 @@ int main(int argc, char *argv[])
 		out_file = fopen( file_out, "w+" ); assert( out_file );
 
 		write_FFT_DataFile(out_file, rec_field, shot_area, 1,  
-			nt, nfft, nw, nw_low, dt, out_su, conjg, verbose);
+			nt, nfft, nw, nw_low, dt, out_su, conjg, out_freq, verbose);
 
 		fclose(out_file);
 	}
