@@ -1,0 +1,56 @@
+#!/bin/bash
+
+dx=1.0
+dt=0.0001
+dx=2.5
+dt=0.0004
+
+makewave w=fw fmin=0 flef=5 frig=70 fmax=90  dt=$dt file_out=wavefw4.su nt=16384 t0=0.4 scale=0 scfft=1
+makewave w=fw fmin=1.5 flef=4 frig=45 fmax=60  dt=$dt file_out=wavefw4.su nt=16384 t0=0.4 scale=0 scfft=1
+
+../makemod sizex=12000 sizez=4500 dx=$dx dz=$dx cp0=1654 ro0=1000 \
+    orig=-6000,0 file_base=blind.su reflectivity=1 supersmooth=1 sigma=0.8 \
+    intt=def x=-6000,0,6000 z=450,450,450 poly=0 cp=2316 ro=2500 grad=0 gradcp=0 \
+    intt=def x=-6000,0,6000 z=590,860,980 poly=2 cp=1734 ro=1500  grad=0 gradcp=0 gradt=2 \
+    intt=elipse x=4100 z=1000 poly=0 cp=1022 ro=1911 var=300,900 grad=0 gradcp=500 \
+    intt=rough x=-6000,6000 z=1000,1000 poly=0 cp=2222 ro=1111 var=120,4,13  grad=0 gradcp=0 \
+    intt=def x=-6000,2000 z=490,3000 poly=0 cp=2110 ro=2300  grad=0 gradcp=0 \
+    intt=def x=-6000,2000 z=550,3060 poly=0 cp=2438 ro=1300  grad=0 gradcp=0 \
+    intt=def x=-6000,2000 z=650,3160 poly=0 cp=2106 ro=2300  grad=0 gradcp=0 \
+    intt=def x=-6000,2000 z=880,3390 poly=0 cp=2512 ro=1700  grad=0 gradcp=0 \
+    intt=def x=-6000,2000 z=1200,3710 poly=0 cp=2912 ro=1000   grad=0 gradcp=0 \
+    intt=def x=-1000,6000 z=2700,1710 poly=0 cp=2442 ro=2700   grad=0 gradcp=0 \
+    intt=def x=-1000,6000 z=2900,1910 poly=0 cp=2642 ro=2900   grad=0 gradcp=0 \
+    intt=def x=-1000,6000 z=2960,1970 poly=0 cp=2242 ro=2400   grad=0 gradcp=0 \
+    intt=def x=-1000,6000 z=3400,2410 poly=0 cp=3012 ro=2500   grad=0 gradcp=0 \
+    intt=def x=-1145,2860 z=2015,2150 poly=0 cp=2012 ro=1300   grad=0 gradcp=0 \
+    intt=def x=-1145,2860 z=2215,2350 poly=0 cp=2512 ro=1300   grad=0 gradcp=0 \
+    intt=def x=-1145,2860 z=2315,2450 poly=0 cp=2712 ro=2500   grad=0 gradcp=0 \
+    intt=def x=-6000,-3000,0,2000,6000 z=2000,2500,2600,3000,3100 poly=2 cp=2822 ro=1811 grad=0 gradcp=0 \
+    intt=def x=-6000,6000 z=3500,3500 poly=0 cp=3104 ro=1500  grad=0 gradcp=0 \
+    intt=def x=-6000,2000 z=4000,3500 poly=0 cp=3504 ro=2500  grad=0 gradcp=0 \
+    intt=def x=2000,6000 z=3500,3500 poly=0 cp=3504 ro=2500  grad=0 gradcp=0
+
+fdelmodc \
+    file_cp=blind_cp.su ischeme=1 iorder=4 \
+    file_den=blind_ro.su \
+    file_src=wavefw4.su \
+    file_rcv=shot_dx${dx}.su \
+    src_type=7 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_vz=1 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.004 \
+    rec_delay=0.4 fmax=40 \
+    verbose=2 \
+    tmod=8.588 \
+    dxrcv=12.5 \
+    xrcv1=-6000 xrcv2=6000 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=0 \
+    ntaper=400 \
+    dtsnap=0.1 dxsnap=10 dzsnap=10 tsnap2=8.5 snapwithbnd=1 \
+    tapleft=2 tapright=2 taptop=2 tapbottom=2
+
