@@ -24,7 +24,7 @@ void cr1fft(complex *cdata, float *rdata, int n, int sign);
 /****** IO routines *******/
 int openVelocityFile(char *file_vel, FILE **fp, Area *vel_area, int verbose);
 void readVelocitySlice(FILE *fp, float *velocity, int iz, int nyv, int nxv);
-int write_FFT_DataFile(FILE *fp, complex *data, Area data_area, int fldr, int nt, int nfft, int nw, int nw_low, float dt, int out_su, int conjg, int verbose);
+int write_FFT_DataFile(FILE *fp, complex *data, Area data_area, int fldr, int nt, int nfft, int nw, int nw_low, float dt, int out_su, int conjg, int freq, int verbose);
 
 int write_ImageFile(FILE *fp, float *data, Area data_area, int fldr, int d, int out_su, int verbose);
 
@@ -129,6 +129,7 @@ char *sdoc[] = {
 "   filter_inc=1 ............. the increment in dz for the Li filter (0=off)",
 "   nterms=1 ................. the number of terms in the paraxial expansion",
 " OUTPUT DEFINITION ",
+"   freq=0 ................... output in frequency slices",
 "   snap=0 ................... snapshots (not yet implemented)",
 "   beam=0 ................... beams ",
 "   verbose=0 ................ >1: shows various parameters and results",
@@ -152,7 +153,7 @@ int main(int argc, char *argv[])
 {
 	FILE    *out_file, *vel_file, *src_file, *beam_file;
 	size_t  nread, size, size_out;
-	int     verbose, method, ntraces, oper_opt, MB, out_su, verb_root;
+	int     verbose, method, ntraces, oper_opt, MB, out_su, out_freq, verb_root;
 	int     nxv, nyv, nzv, dstep, fldr;
 	int     nt, err;
 	int     ntap, tap_opt, order, McC, oplx, oply, fine;
@@ -239,6 +240,7 @@ int main(int argc, char *argv[])
 	if(!getparint("fine", &fine)) fine = 2;
 	if(!getparint("beam", &beam)) beam = 0;
 	if(!getparint("add", &add)) add = 0;
+	if(!getparint("freq", &out_freq)) out_freq = 0;
 	if(!getparint("verbose", &verbose)) verbose = 0;
 
 	if(!ISODD(oplx)) oplx += 1;
@@ -651,7 +653,7 @@ int main(int argc, char *argv[])
 
 			fldr = is+1;
 			write_FFT_DataFile(out_file, rec_all, shot_area, fldr,  
-				nt, nfft, nw, nw_low, dt, out_su, conjg, verbose);
+				nt, nfft, nw, nw_low, dt, out_su, conjg, out_freq, verbose);
 
 			fclose(out_file);
 			if (verbose) 

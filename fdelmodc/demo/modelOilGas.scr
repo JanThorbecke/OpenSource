@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#export PATH=$HOME/bin:$HOME/src/OpenSource/utils:$PATH:
+export PATH=$HOME/bin:$HOME/src/OpenSource/utils:$PATH:
 
 cp=2000
 rho=2500
@@ -16,12 +16,14 @@ makemod sizex=5000 sizez=2500 dx=$dx dz=$dx cp0=$cp ro0=$rho \
 
 makewave w=g1 fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
 
-export OMP_NUM_THREADS=8
+export OMP_NUM_THREADS=1
 
 zsrc=1100
 zsrc=0
 
-~/bin/fdelmodc \
+which fdelmodc
+
+fdelmodc \
     file_cp=syncl_cp.su ischeme=1 iorder=4 \
     file_den=syncl_ro.su \
     file_src=wave.su \

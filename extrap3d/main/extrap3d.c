@@ -22,7 +22,7 @@ int openVelocityFile(char *file_vel, FILE **fp, Area *vel_area, int verbose);
 
 void readVelocitySlice(FILE *fp, float *velocity, int iz, int nyv, int nxv);
 
-int write_FFT_DataFile(FILE *fp, complex *data, Area data_area, int fldr, int nt, int nfft, int nw, int nw_low, float dt, int out_su, int conjg, int verbose);
+int write_FFT_DataFile(FILE *fp, complex *data, Area data_area, int fldr, int nt, int nfft, int nw, int nw_low, float dt, int out_su, int conjg, int freq, int verbose);
 
 int read_FFT_DataFile(FILE *fp, complex *data, Area vel_area, int nfft, int nw, int nw_low, int *tr_read_in, int *tr_shot, int *ixmin, int *ixmax, int *iymin, int *iymax, int *sx, int *sy, int conjg, int verbose);
 
@@ -107,6 +107,7 @@ char *sdoc[] = {
 "   filter_inc=1 ............. the increment in dz for the Li filter (0=off)",
 "   nterms=1 ................. the number of terms in the paraxial expansion",
 " OUTPUT DEFINITION ",
+"   freq=0 ................... output in frequency slices",
 "   snap=0 ................... snapshots (not yet implemented)",
 "   beam=0 ................... beams ",
 "   verbose=0 ................ >1: shows various parameters and results",
@@ -136,7 +137,7 @@ int main(int argc, char *argv[])
 	size_t  nread, bytes, size, trace_sz, size_out;
 	int     verbose,  method, ntraces, verb_root;
 	int     nxv, nyv, nzv, binary_file, dstep, id, id1, id2;
-	int     d, nt, ndepth, i, j, conjg, conjgs, mode, out_su;
+	int     d, nt, ndepth, i, j, conjg, conjgs, mode, out_su, out_freq;
 	int     ntap, tap_opt, order, McC, oplx, oply, fine, MB;
 	int     stackmigr, imc, area, ixmin, ixmax, iymin, iymax, ns;
 	int     nfft, nfreq, nw_high, nw_low, nw, sx, sy, ix, iy;
@@ -206,6 +207,7 @@ int main(int argc, char *argv[])
 	if(!getparfloat("weights", &weights)) weights = 1e-2;
 	if(!getparint("fine", &fine)) fine = 2;
 	if(!getparint("beam", &beam)) beam = 0;
+	if(!getparint("freq", &out_freq)) out_freq = 0;
 	if(!getparint("verbose", &verbose)) verbose = 0;
 	
 	if(!ISODD(oplx)) oplx += 1;
@@ -602,7 +604,7 @@ int main(int argc, char *argv[])
 			assert( out_file );
 
 			write_FFT_DataFile(out_file, rec_all, shot_area, (is+1),  
-				nt, nfft, nw, nw_low, dt, out_su, conjg, verb_root);
+				nt, nfft, nw, nw_low, dt, out_su, conjg, out_freq, verb_root);
 
 			fclose(out_file);
 		}
