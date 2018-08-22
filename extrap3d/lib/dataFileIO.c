@@ -107,7 +107,7 @@ int read_FFT_DataFile(FILE *fp, complex *data, Area vel_area, int nfft, int nw, 
 }
 
 
-int write_FFT_DataFile(FILE *fp, complex *data, Area data_area, int fldr, int nt, int nfft, int nw, int nw_low, float dt, int out_su, int conjg, int verbose)
+int write_FFT_DataFile(FILE *fp, complex *data, Area data_area, int fldr, int nt, int nfft, int nw, int nw_low, float dt, int out_su, int conjg, int freq, int verbose)
 {
 	int ix, iy, iw, i, nx, ny, sxy, nfreq, pos, sign;
 	int xvmin, yvmin;
@@ -142,37 +142,72 @@ int write_FFT_DataFile(FILE *fp, complex *data, Area data_area, int fldr, int nt
 	hdr[0].d2 = dx;
     hdr[0].scalco = -1000;
 
-    for (iy=0; iy<ny; iy++) {
-        for (ix=0; ix<nx; ix++) {
-			pos = iy*nx+ix;
-			for (i=0; i<nfreq; i++) 
-				ctrace[i].r = ctrace[i].i = 0.0;
-			for (iw=0; iw<nw; iw++) {
-				ctrace[iw+nw_low].r = data[iw*sxy+pos].r;
-				ctrace[iw+nw_low].i = conjg*data[iw*sxy+pos].i;
-			}
 
-            /* transform back to time */
-            cr1fft(ctrace, trace, nfft, sign);
-
-            /* write to output file */
-             if (out_su) {
-                hdr[0].gx = (int)(xvmin+ix*dx)*1000;
-                hdr[0].gy = (int)(yvmin+iy*dy)*1000;
-		        hdr[0].f2 = xvmin+ix*dx;
-		        hdr[0].tracf = ix+1;
-		        hdr[0].tracl = iy*nx+ix+1;
-		        nwrite = fwrite(hdr, 1, TRCBYTES, fp);
-		        assert( nwrite == TRCBYTES );
-		        nwrite = fwrite(trace, sizeof(float), nt, fp);
-		        assert( nwrite == nt );
-            }
-            else {
-	            nwrite = fwrite(trace, sizeof(float), nt, fp);
-	            assert( nwrite == nt );
+    if (freq==0) {
+        for (iy=0; iy<ny; iy++) {
+            for (ix=0; ix<nx; ix++) {
+			    pos = iy*nx+ix;
+			    for (i=0; i<nfreq; i++) 
+				    ctrace[i].r = ctrace[i].i = 0.0;
+			    for (iw=0; iw<nw; iw++) {
+				    ctrace[iw+nw_low].r = data[iw*sxy+pos].r;
+				    ctrace[iw+nw_low].i = conjg*data[iw*sxy+pos].i;
+			    }
+    
+                /* transform back to time */
+                cr1fft(ctrace, trace, nfft, sign);
+    
+                /* write to output file */
+                 if (out_su) {
+                    hdr[0].gx = (int)(xvmin+ix*dx)*1000;
+                    hdr[0].gy = (int)(yvmin+iy*dy)*1000;
+		            hdr[0].f2 = xvmin+ix*dx;
+		            hdr[0].tracf = ix+1;
+		            hdr[0].tracl = iy*nx+ix+1;
+		            nwrite = fwrite(hdr, 1, TRCBYTES, fp);
+		            assert( nwrite == TRCBYTES );
+		            nwrite = fwrite(trace, sizeof(float), nt, fp);
+		            assert( nwrite == nt );
+                }
+                else {
+	                nwrite = fwrite(trace, sizeof(float), nt, fp);
+	                assert( nwrite == nt );
+                }
             }
         }
-    }
+	}
+	else { /* Frequency output slices */
+    	hdr[0].trid = 122;
+		hdr[0].fldr = fldr;
+		hdr[0].trwf = ny;
+		hdr[0].ntr = nw*ny;
+		hdr[0].ns = nx;
+		hdr[0].dt = 1000000*dt;
+		hdr[0].f1 = 0.0;
+		hdr[0].f2 = yvmin;
+
+	    for (iw=0; iw<nw; iw++) {
+            for (iy=0; iy<ny; iy++) {
+                /* write to output file */
+                 if (out_su) {
+                    hdr[0].gx = (int)(xvmin)*1000;
+                    hdr[0].gy = (int)(yvmin+iy*dy)*1000;
+		            hdr[0].f1 = xvmin+ix*dx;
+		            hdr[0].f2 = yvmin+iy*dy;
+		            hdr[0].tracf = iy+1;
+		            hdr[0].tracl = iw*ny+iy+1;
+		            nwrite = fwrite(hdr, 1, TRCBYTES, fp);
+		            assert( nwrite == TRCBYTES );
+		            nwrite = fwrite(&data[iw*sxy+iy*nx], sizeof(complex), nx, fp);
+		            assert( nwrite == nx );
+                }
+                else {
+	                nwrite = fwrite(&data[iw*sxy+iy*nx], sizeof(complex), nx, fp);
+	                assert( nwrite == nx );
+                }
+            }
+        }
+	}
 	fflush(fp);
 
 	free(trace);
