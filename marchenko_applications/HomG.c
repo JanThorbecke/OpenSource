@@ -27,6 +27,7 @@ double wallclock_time(void);
 int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 int readSnapData(char *filename, float *data, segy *hdr, int ngath, int nx, int ntfft, int sx, int ex, int sz, int ez);
 int topdet(float *data, int nt);
+void conjugate(float *data, int nsam, int nrec, float dt);
 
 void scl_data(float *data, int nsam, int nrec, float scl, float *datout, int nsamout);
 void pad_data(float *data, int nsam, int nrec, int nsamout, float *datout);
@@ -180,6 +181,7 @@ int main (int argc, char **argv)
                 shotdata_jkz[ix*nt+it] = shotdata[ix*nt+it];
             }
         }
+		conjugate(shotdata_jkz, nt, nx, dt);
         depthDiff(shotdata_jkz, nt, nx, dt, dx, fmin, fmax, cp, 1);
 		if (verbose) vmess("Applied jkz to source data");
 	}
@@ -220,8 +222,8 @@ int main (int argc, char **argv)
                 	//Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] = -conv[ix*nt+it];
 					//Ghom[it*nxs*nzs+is*nzs+ir] = -conv[ix*nt+(it+nt/2)];
                 	for (it=0; it<nt/2; it++) {
-                    	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] -= conv[ix*nt+it]/rho;
-                    	Ghom[it*nxs*nzs+is*nzs+ir] -= conv[ix*nt+(it+nt/2)]/rho;
+                    	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += conv[ix*nt+it]/rho;
+                    	Ghom[it*nxs*nzs+is*nzs+ir] += conv[ix*nt+(it+nt/2)]/rho;
                 	}
             	}
         	}
@@ -233,18 +235,18 @@ int main (int argc, char **argv)
                 	//it=0;
                 	//Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] -= 2*conv[ix*nt+it];
                 	for (it=0; it<nt/2; it++) {
-                    	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] -= 2*conv[ix*nt+it]/rho;
-                    	Ghom[it*nxs*nzs+is*nzs+ir] -= 2*conv[ix*nt+(it+nt/2)]/rho;
+                    	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += 2*conv[ix*nt+it]/rho;
+                    	Ghom[it*nxs*nzs+is*nzs+ir] += 2*conv[ix*nt+(it+nt/2)]/rho;
                 	}
             	}
         	}
         	else if (scheme==2) { //classical representation
-            	corr(&indata[is*nx*nt], shotdata_jkz, tmp1, nx, nt, dt, 0);
+            	convol(&indata[is*nx*nt], shotdata_jkz, tmp1, nx, nt, dt, 0);
 				depthDiff(&indata[is*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
             	corr(&indata[is*nx*nt], shotdata, tmp2, nx, nt, dt, 0);
             	for (ix = 0; ix < nx; ix++) {
                 	for (it = 0; it < nt; it++) {
-                    	conv[ix*nt+it] = -(tmp2[ix*nt+it]-tmp1[ix*nt+it]);
+                    	conv[ix*nt+it] = (tmp2[ix*nt+it]+tmp1[ix*nt+it]);
                 	}
             	}
             	timeDiff(conv, nt, nx, dt, fmin, fmax, -1);
@@ -717,4 +719,47 @@ void pad2d_data(float *data, int nsam, int nrec, int nsamout, int nrecout, float
         for (it=0;it<nsamout;it++)
             datout[ix*nsam+it]=0.0;
     }
+}
+void conjugate(float *data, int nsam, int nrec, float dt)
+{
+    int     optn,  nfreq, j, ix, it, sign, ntdiff;
+    float   *rdata, scl;
+    complex *cdata;
+
+    optn  = optncr(nsam);
+    ntdiff = optn-nsam;
+    nfreq = optn/2+1;
+
+    cdata = (complex *)malloc(nfreq*nrec*sizeof(complex));
+    if (cdata == NULL) verr("memory allocation error for cdata");
+
+    rdata = (float *)malloc(optn*nrec*sizeof(float));
+    if (rdata == NULL) verr("memory allocation error for rdata");
+
+    /* pad zeroes until Fourier length is reached */
+    pad_data(data,nsam,nrec,optn,rdata);
+
+    /* Forward time-frequency FFT */
+    sign = -1;
+    rcmfft(&rdata[0], &cdata[0], optn, nrec, optn, nfreq, sign);
+
+    /* take complex conjugate */
+    for(ix = 0; ix < nrec; ix++) {
+        for(j = 0; j < nfreq; j++) cdata[ix*nfreq+j].i = -cdata[ix*nfreq+j].i;
+    }
+
+    /* Inverse frequency-time FFT and scale result */
+    sign = 1;
+    scl = 1.0/(float)optn;
+    crmfft(&cdata[0], &rdata[0], optn, nrec, nfreq, optn, sign);
+    for (ix = 0; ix < nrec; ix++) {
+        for (it = 0 ; it < nsam ; it++)
+            data[ix*nsam+it] = scl*rdata[ix*optn+it+ntdiff];
+    }
+    //scl_data(rdata,optn,nrec,scl,data,nsam);
+
+    free(cdata);
+    free(rdata);
+
+    return;
 }
