@@ -17,6 +17,7 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nsyn, int nxs
 int disp_fileinfo(char *file, int n1, int n2, float f1, float f2, float d1, float d2, segy *hdrs);
 double wallclock_time(void);
 int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
+void conjugate(float *data, int nsam, int nrec, float dt);
 
 void scl_data(float *data, int nsam, int nrec, float scl, float *datout, int nsamout);
 void pad_data(float *data, int nsam, int nrec, int nsamout, float *datout);
@@ -37,7 +38,7 @@ void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int 
 	float   scl, *conv, *greenf2, fmin, fmax, alpha, cp, rho, perc;
 	float   *greenjkz, *greenf2jkz, *tmp1, *tmp2;
     double  t0, t2, tfft;
-	FILE	*fp;
+	FILE	*fp, *fp1, *fp2, *fp3;
 
 	if (!getparint("scheme", &scheme)) scheme = 0;
 	if (!getparint("kxwfilt", &kxwfilt)) kxwfilt = 0;
@@ -59,46 +60,39 @@ void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int 
 		greenf2jkz	= (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
 		greenjkz	= (float *)calloc(nxs*ntfft,sizeof(float));
 
+		if (niter<1) {
+			vmess("Single event");
+		}
+		else {
+			vmess("Multiple events");
+		}
+
 		for (l = 0; l < Nsyn; l++) {
-			if (niter<1) {
-				for (i = 0; i < npossyn; i++) {
-                    j = 0;
-					ix = ixpossyn[i];
-                    greenf2[l*nxs*nts+i*nts+j] = G_d[l*nxs*nts+ix*nts+j];
-                    greenf2jkz[l*nxs*nts+i*nts+j] = G_d[l*nxs*nts+ix*nts+j];
-                    for (j = 1; j < nts; j++) {
-                        greenf2[l*nxs*nts+i*nts+j] = G_d[l*nxs*nts+ix*nts+nts-j];
-                        greenf2jkz[l*nxs*nts+i*nts+j] = G_d[l*nxs*nts+ix*nts+nts-j];
-                    }
-                }
+            for (i = 0; i < npossyn; i++) {
+               	j = 0;
+               	/* set green to zero if mute-window exceeds nt/2 */
+               	if (muteW[l*nxs+ixpossyn[i]] >= nts/2) {
+                   	memset(&greenf2[l*nxs*nts+i*nts],0, sizeof(float)*nt);
+					memset(&greenf2jkz[l*nxs*nts+i*nts],0, sizeof(float)*nt);
+                   	continue;
+               	}
+               	greenf2[l*nxs*nts+i*nts+j] = f2p[l*nxs*nts+i*nts+j] + pmin[l*nxs*nts+i*nts+j];
+				greenf2jkz[l*nxs*nts+i*nts+j] = f2p[l*nxs*nts+i*nts+j] + pmin[l*nxs*nts+i*nts+j];
+               	for (j = 1; j < nts; j++) {
+                   	greenf2[l*nxs*nts+i*nts+j] = f2p[l*nxs*nts+i*nts+nts-j] + pmin[l*nxs*nts+i*nts+j];
+					greenf2jkz[l*nxs*nts+i*nts+j] = f2p[l*nxs*nts+i*nts+nts-j] + pmin[l*nxs*nts+i*nts+j];
+               	}
 			}
-			else {
-            	for (i = 0; i < npossyn; i++) {
-                	j = 0;
-                	/* set green to zero if mute-window exceeds nt/2 */
-                	if (muteW[l*nxs+ixpossyn[i]] >= nts/2) {
-                    	memset(&greenf2[l*nxs*nts+i*nts],0, sizeof(float)*nt);
-						memset(&greenf2jkz[l*nxs*nts+i*nts],0, sizeof(float)*nt);
-                    	continue;
-                	}
-                	greenf2[l*nxs*nts+i*nts+j] = f2p[l*nxs*nts+i*nts+j] + pmin[l*nxs*nts+i*nts+j];
-					greenf2jkz[l*nxs*nts+i*nts+j] = f2p[l*nxs*nts+i*nts+j] + pmin[l*nxs*nts+i*nts+j];
-                	for (j = 1; j < nts; j++) {
-                    	greenf2[l*nxs*nts+i*nts+j] = f2p[l*nxs*nts+i*nts+nts-j] + pmin[l*nxs*nts+i*nts+j];
-						greenf2jkz[l*nxs*nts+i*nts+j] = f2p[l*nxs*nts+i*nts+nts-j] + pmin[l*nxs*nts+i*nts+j];
-                	}
-				}
-            }
 			depthDiff(&greenf2jkz[l*nxs*nts], ntfft, nshots, dt, dx, fmin, fmax, cp, 1);
         }
-		applyMute(greenf2, muteW, smooth, 4, Nsyn, nxs, nts, ixpossyn, npossyn, shift, pad, nt0);
-		applyMute(greenf2jkz, muteW, smooth, 4, Nsyn, nxs, nts, ixpossyn, npossyn, shift, pad, nt0);
 
 		for (i = 0; i < npossyn; i++) {
 			for (j = 0; j < nts; j++) {
 				greenjkz[i*nts+j] = green[i*nts+j];
 			}
 		}
+		conjugate(greenjkz, ntfft, nshots, dt);
+		conjugate(green, ntfft, nshots, dt);
 		depthDiff(greenjkz, ntfft, nshots, dt, dx, fmin, fmax, cp, 1);
 	}
 	else {
@@ -128,30 +122,22 @@ void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int 
 				kxwfilter(conv, ntfft, nshots, dt, dx, fmin, fmax, alpha, cp, perc);
 			}
 			for (i=0; i<npossyn; i++) {
-            	//j=0;
-            	//HomG[(j+nts/2)*Nsyn+synpos[l]] += scl*conv[i*nts+j];
             	for (j=0; j<nts/2; j++) {
-                	//HomG[(j+nts/2)*Nsyn+synpos[l]] -= scl*(conv[i*nts+j] + conv[i*nts+nts-j]);
-					//HomG[j*Nsyn+synpos[l]] -= scl*(conv[i*nts+(j+nts/2)] + conv[i*nts+nts-(j+nts/2)]);
-                	HomG[(j+nts/2)*Nsyn+synpos[l]] -= conv[i*nts+j]/rho;
-					HomG[j*Nsyn+synpos[l]] -= conv[i*nts+(j+nts/2)]/rho;
+                	HomG[(j+nts/2)*Nsyn+synpos[l]] += conv[i*nts+j]/rho;
+					HomG[j*Nsyn+synpos[l]] += conv[i*nts+(j+nts/2)]/rho;
             	}
         	}
 		}
 		else if (scheme==1) { //classical representation
-			//corr(&greenf2[l*nxs*nts], greenjkz, tmp1, nxs, nts, dt, 0);
-			//corr(&greenf2jkz[l*nxs*nts], green, tmp2, nxs, nts, dt, 0);
-			corr(greenjkz, &greenf2[l*nxs*nts], tmp1, nxs, nts, dt, 0);
-            corr(green, &greenf2jkz[l*nxs*nts], tmp2, nxs, nts, dt, 0);
+            convol(&greenf2jkz[l*nxs*nts], green, tmp1, nxs, nts, dt, 0);
+            convol(&greenf2[l*nxs*nts], greenjkz, tmp2, nxs, nts, dt, 0);
 			for (i = 0; i < npossyn; i++) {
 				for (j = 0; j < nts; j++) {
-					conv[i*nts+j] = -(tmp1[i*nts+j]-tmp2[i*nts+j]);
+					conv[i*nts+j] = tmp1[i*nts+j]+tmp2[i*nts+j];
 				}
 			}
 			timeDiff(conv, ntfft, nshots, dt, fmin, fmax, -1);
 			for (i=0; i<npossyn; i++) {
-                //j=0;
-                //HomG[(j+nts/2)*Nsyn+synpos[l]] += scl*(conv[i*nts+j]);
                 for (j=0; j<nts/2; j++) {
                     HomG[(j+nts/2)*Nsyn+synpos[l]] += conv[i*nts+j]/rho;
 					HomG[j*Nsyn+synpos[l]] += conv[i*nts+(j+nts/2)]/rho;
@@ -473,3 +459,47 @@ void pad2d_data(float *data, int nsam, int nrec, int nsamout, int nrecout, float
             datout[ix*nsam+it]=0.0;
     }
 }
+void conjugate(float *data, int nsam, int nrec, float dt)
+{
+    int     optn,  nfreq, j, ix, it, sign, ntdiff;
+    float   *rdata, scl;
+    complex *cdata;
+
+    optn  = optncr(nsam);
+    ntdiff = optn-nsam;
+    nfreq = optn/2+1;
+
+    cdata = (complex *)malloc(nfreq*nrec*sizeof(complex));
+    if (cdata == NULL) verr("memory allocation error for cdata");
+
+    rdata = (float *)malloc(optn*nrec*sizeof(float));
+    if (rdata == NULL) verr("memory allocation error for rdata");
+
+    /* pad zeroes until Fourier length is reached */
+    pad_data(data,nsam,nrec,optn,rdata);
+
+    /* Forward time-frequency FFT */
+    sign = -1;
+    rcmfft(&rdata[0], &cdata[0], optn, nrec, optn, nfreq, sign);
+
+    /* take complex conjugate */
+    for(ix = 0; ix < nrec; ix++) {
+        for(j = 0; j < nfreq; j++) cdata[ix*nfreq+j].i = -cdata[ix*nfreq+j].i;
+    }
+
+    /* Inverse frequency-time FFT and scale result */
+    sign = 1;
+    scl = 1.0/(float)optn;
+    crmfft(&cdata[0], &rdata[0], optn, nrec, nfreq, optn, sign);
+    for (ix = 0; ix < nrec; ix++) {
+        for (it = 0 ; it < nsam ; it++)
+            data[ix*nsam+it] = scl*rdata[ix*optn+it+ntdiff];
+    }
+    //scl_data(rdata,optn,nrec,scl,data,nsam);
+        
+	free(cdata);
+    free(rdata);
+
+    return;
+}
+
