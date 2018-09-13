@@ -174,7 +174,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparfloat("rec_delay",&rdelay)) rdelay=0.0;
 	rec->delay=NINT(rdelay/mod->dt);
 //	mod->tmod += rdelay;
-	mod->nt = NINT(mod->tmod/mod->dt)+1;
+	mod->nt = NINT(mod->tmod/mod->dt);
 	dt = mod->dt;
 
 	if (!getparint("src_type",&src->type)) src->type=1;
