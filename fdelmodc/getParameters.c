@@ -1110,7 +1110,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	rec->skipdt=NINT(dtrcv/dt);
 	dtrcv = mod->dt*rec->skipdt;
 	if (!getparfloat("rec_delay",&rdelay)) rdelay=0.0;
-	if (!getparint("rec_ntsam",&rec->nt)) rec->nt=NINT((mod->tmod-rdelay)/dtrcv)+1;
+	if (!getparint("rec_ntsam",&rec->nt)) rec->nt=NINT((mod->tmod-rdelay)/dtrcv);
 	if (!getparint("rec_int_p",&rec->int_p)) rec->int_p=0;
 	if (!getparint("rec_int_vx",&rec->int_vx)) rec->int_vx=0;
 	if (!getparint("rec_int_vz",&rec->int_vz)) rec->int_vz=0;
@@ -1118,7 +1118,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparint("scale",&rec->scale)) rec->scale=0;
 	if (!getparfloat("dxspread",&dxspread)) dxspread=0;
 	if (!getparfloat("dzspread",&dzspread)) dzspread=0;
-	rec->nt=MIN(rec->nt, NINT((mod->tmod-rdelay)/dtrcv)+1);
+	rec->nt=MIN(rec->nt, NINT((mod->tmod-rdelay)/dtrcv));
 
 /* allocation of receiver arrays is done in recvPar */
 /*
