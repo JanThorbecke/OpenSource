@@ -145,7 +145,7 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwa
             }
 
             if (src.type < 6) { // shift wavelet with +1/2 DeltaT due to staggered in time 
-                tshift=-(0.5*rec.skipdt+0.5)*wav.dt;
+                tshift=-(0.5*rec.skipdt+1.5)*wav.dt;
                 for (iw=1;iw<iwmax;iw++) {
                     om = deltom*iw*tshift;
                     tmp.r = ctrace[iw].r*cos(-om) - ctrace[iw].i*sin(-om);
