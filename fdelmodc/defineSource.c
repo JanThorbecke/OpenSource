@@ -52,7 +52,7 @@ void seedCMWC4096(void);
 #define     MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
-int defineSource(wavPar wav, srcPar src, modPar mod, float **src_nwav, int reverse, int verbose)
+int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwav, int reverse, int verbose)
 {
     FILE    *fp;
     size_t  nread;
@@ -145,7 +145,7 @@ int defineSource(wavPar wav, srcPar src, modPar mod, float **src_nwav, int rever
             }
 
             if (src.type < 6) { // shift wavelet with +1/2 DeltaT due to staggered in time 
-                tshift=0.5*wav.dt;
+                tshift=-(0.5*rec.skipdt+0.5)*wav.dt;
                 for (iw=1;iw<iwmax;iw++) {
                     om = deltom*iw*tshift;
                     tmp.r = ctrace[iw].r*cos(-om) - ctrace[iw].i*sin(-om);

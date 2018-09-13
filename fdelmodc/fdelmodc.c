@@ -21,7 +21,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 
 int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float *lam, float *muu, float *tss, float *tes, float *tep);
 
-int defineSource(wavPar wav, srcPar src, modPar mod, float **src_nwav, int reverse, int verbose);
+int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwav, int reverse, int verbose);
 
 int writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot);
 
@@ -365,7 +365,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	defineSource(wav, src, mod, src_nwav, mod.grid_dir, verbose);
+	defineSource(wav, src, mod, rec, src_nwav, mod.grid_dir, verbose);
 
 	/* allocate arrays for wavefield and receiver arrays */
 
@@ -601,7 +601,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 
 				writeToFile = ! ( (((it-rec.delay)/rec.skipdt)+1)%rec.nt );
 				itwritten   = fileno*(rec.nt)*rec.skipdt;
-				isam        = (it-rec.delay-itwritten)/rec.skipdt;
+				isam        = (it-rec.delay-itwritten)/rec.skipdt+1;
                 /* Note that time step it=0 (t=0 for t**-fields t=-1/2 dt for v*-field) is not recorded */
 				/* store time at receiver positions */
 				getRecTimes(mod, rec, bnd, it, isam, vx, vz, tzz, txx, txz, 
