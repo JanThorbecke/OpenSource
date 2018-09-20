@@ -368,7 +368,7 @@ int main (int argc, char **argv)
 
 	#pragma omp parallel default(shared) \
 	private(cmaster,cslaves,vtrace,r,c, t1_ivs, t3_ivs) \
-	private(ivrcv, gxv, gyv, vrpeg, gelev, nsrcSlave) \
+	private(ivrcv, gxv, gyv, vrpeg, gvelev, nsrcSlave) \
 	private(xmin,ymin,xmax,ymax, cx1, cy1, cx2, cy2, cx3, cy3, distmc2, distsc2min, distsc2max, distsc2) \
 	private(nsrc, trdloc, tftloc, tcorrloc) \
 	private(isrcm, isrcs, sxm, sym, sxs, sys, read_trace) \
@@ -633,6 +633,7 @@ int main (int argc, char **argv)
 }
 		} /* end of virtual receiver loop */
 
+		#pragma omp barrier /* to get timing when all threads are done */
 		#pragma omp master
 {
 		if (verbose>=3) {
