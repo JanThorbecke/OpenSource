@@ -112,14 +112,13 @@ int viscoacoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, in
 	boundariesP(mod, bnd, vx, vz, p, NULL, NULL, rox, roz, l2m, NULL, NULL, itime, verbose);
 
 	/* calculate p/tzz for all grid points except on the virtual boundary */
+#pragma omp	for private (iz,ix, Tpp) nowait schedule(guided,1)
 	for (ix=mod.ioPx; ix<mod.iePx; ix++) {
-#pragma omp	for private (iz) nowait schedule(guided,1)
 #pragma ivdep
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			dxvx[iz] = c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
 					   c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]);
 		}
-#pragma omp	for private (iz) nowait schedule(guided,1)
 #pragma ivdep
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			dzvz[iz] = c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
@@ -127,14 +126,12 @@ int viscoacoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, in
 		}
 
 		/* help variables to let the compiler vectorize the loops */
-#pragma omp	for private (iz) nowait schedule(guided,1)
 #pragma ivdep
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			Tpp     = tep[ix*n1+iz]*tss[ix*n1+iz];
 			Tlm[iz] = (1.0-Tpp)*tss[ix*n1+iz]*l2m[ix*n1+iz]*0.5;
 			Tlp[iz] = l2m[ix*n1+iz]*Tpp;
 		}   
-#pragma omp	for private (iz)  schedule(guided,1)
 #pragma ivdep
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			Tt1[iz] = 1.0/(ddt+0.5*tss[ix*n1+iz]);
@@ -142,18 +139,15 @@ int viscoacoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, in
 		}   
 
 		/* the update with the relaxation correction */
-#pragma omp	for private (iz)  schedule(guided,1)
 #pragma ivdep
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			p[ix*n1+iz] -= Tlp[iz]*(dzvz[iz]+dxvx[iz]) + q[ix*n1+iz];
 		}
-#pragma omp	for private (iz)  schedule(guided,1)
 #pragma ivdep
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			q[ix*n1+iz] = (Tt2[iz]*q[ix*n1+iz] + Tlm[iz]*(dxvx[iz]+dzvz[iz]))*Tt1[iz];
 			p[ix*n1+iz] -= q[ix*n1+iz];
 		}
-
 	}
 
 	/* Add stress source */

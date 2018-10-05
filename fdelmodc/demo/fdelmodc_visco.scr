@@ -37,6 +37,7 @@ export filero=model_ro.su
 export fileqp=relax_cp.su
 export fileqs=relax_cs.su
 
+export OMP_NUM_THREADS=4
 
 ../fdelmodc \
 	file_cp=$filecp file_cs=$filecs file_den=$filero \
