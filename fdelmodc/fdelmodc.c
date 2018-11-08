@@ -40,9 +40,7 @@ int acoustic2(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 int acoustic4Block(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx,
 float *vz, float *p, float *rox, float *roz, float *l2m, int verbose);
 
-
-int viscoacoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx, float
-*vz, float *p, float *rox, float *roz, float *l2m, float *tss, float *tep, float *q, int verbose);
+int viscoacoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, float *tss, float *tep, float *q, int verbose);
 
 int elastic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, int verbose);
 
