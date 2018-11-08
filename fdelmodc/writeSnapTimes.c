@@ -30,7 +30,7 @@ int traceWrite(segy *hdr, float *data, int n, FILE *fp);
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
-int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, int ixsrc, int izsrc, int itime, float *vx, float *vz, float *tzz, float *txx, float *txz, int verbose)
+int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, wavPar wav, int ixsrc, int izsrc, int itime, float *vx, float *vz, float *tzz, float *txx, float *txz, int verbose)
 {
 	FILE    *fpvx, *fpvz, *fptxx, *fptzz, *fptxz, *fpp, *fppp, *fpss;
 	int append, isnap;
@@ -66,7 +66,7 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, int ixsrc, int izsrc, int
 
 		isnap = NINT((itime-sna.delay)/sna.skipdt);
 
-        if (mod.grid_dir)  stime = (-mod.nt+1+itime)*mod.dt;  /* reverse time modeling */
+        if (mod.grid_dir)  stime = (-wav.nt+1+itime)*mod.dt;  /* reverse time modeling */
         else  stime = itime*mod.dt;
 		if (verbose) vmess("Writing snapshot(%d) at time=%.4f", isnap+1, stime);
 	

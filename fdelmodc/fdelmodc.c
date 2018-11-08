@@ -65,7 +65,7 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
 			 float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
 			 float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, int verbose);
 
-int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, int ixsrc, int izsrc, int itime, 
+int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, wavPar wav,int ixsrc, int izsrc, int itime, 
 				   float *vx, float *vz, float *tzz, float *txx, float *txz, int verbose);
 
 int getBeamTimes(modPar mod, snaPar sna, float *vx, float *vz, float *tzz, float *txx, float *txz, 
@@ -620,7 +620,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 
 			/* write snapshots to output file(s) */
 			if (sna.nsnap) {
-				writeSnapTimes(mod, sna, bnd, ixsrc, izsrc, it, vx, vz, tzz, txx, txz, verbose);
+				writeSnapTimes(mod, sna, bnd, wav, ixsrc, izsrc, it, vx, vz, tzz, txx, txz, verbose);
 			}
 
 			/* calculate beams */
