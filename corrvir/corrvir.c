@@ -11,10 +11,12 @@
 
 double wallclock_time(void);
 
+#ifdef _OPENMP
 int omp_get_max_threads(void);
 int omp_get_num_threads(void);
 int omp_get_thread_num(void);
 void omp_set_num_threads(int num_threads);
+#endif
 
 typedef struct { /* complex number */
         float r,i;
@@ -383,7 +385,9 @@ int main (int argc, char **argv)
 	c = (complex *)malloc((ntfft/2+1)*sizeof(complex));
 	//itrace_out=0;
 
+#ifdef _OPENMP
         fprintf(stderr,"Number of OpenMP threads set  = %d number=%d\n", omp_get_max_threads(), omp_get_thread_num());
+#endif
 
 	ivs = 0;
 	while (ivs<nvsrc) {/* loop over the number of virtual source positions to be created */
@@ -638,7 +642,9 @@ int main (int argc, char **argv)
 {
 		if (verbose>=3) {
 			t3_ivs = wallclock_time();
+#ifdef _OPENMP
         		fprintf(stderr,"Number of OpenMP threads set  = %d number=%d\n", omp_get_max_threads(), omp_get_thread_num());
+#endif
 			//tlogic_ivs = ((t3_ivs-t1_ivs)-tread_ivs-tfft_ivs-tcorr_ivs-twrite_ivs-tmemcpy);
 			fprintf(stderr,"************* Timings ************* vshot= %d (ivs = %d)\n", vspeg, ivs);
 			//fprintf(stderr,"CPU-time read data         = %.3f\n", tread_ivs);

@@ -94,7 +94,7 @@ void threadAffinity(void)
 /* for use inside parallel region */
   #pragma omp critical
   {
-#ifdef __USE_GNU
+#ifdef _OPENMP
     thread = omp_get_thread_num();
 #else
     thread = 1;
