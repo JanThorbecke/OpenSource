@@ -1118,7 +1118,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparint("scale",&rec->scale)) rec->scale=0;
 	if (!getparfloat("dxspread",&dxspread)) dxspread=0;
 	if (!getparfloat("dzspread",&dzspread)) dzspread=0;
-	rec->nt=MIN(rec->nt, NINT((mod->tmod-rdelay)/dtrcv));
+	rec->nt=MIN(rec->nt, NINT((mod->tmod-rdelay)/dtrcv)+1);
 
 /* allocation of receiver arrays is done in recvPar */
 /*
