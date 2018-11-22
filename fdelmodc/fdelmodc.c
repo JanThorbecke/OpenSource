@@ -599,8 +599,8 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 
 				writeToFile = ! ( (((it-rec.delay)/rec.skipdt)+1)%rec.nt );
 				itwritten   = fileno*(rec.nt)*rec.skipdt;
-				isam        = (it-rec.delay-itwritten)/rec.skipdt+1;
                 /* Note that time step it=0 (t=0 for t**-fields t=-1/2 dt for v*-field) is not recorded */
+				isam        = (it-rec.delay-itwritten)/rec.skipdt+1;
 				/* store time at receiver positions */
 				getRecTimes(mod, rec, bnd, it, isam, vx, vz, tzz, txx, txz, 
 					l2m, rox, roz, 
