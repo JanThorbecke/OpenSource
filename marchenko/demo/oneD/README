@@ -9,6 +9,7 @@ extra scripts
 +) marchenkoIter.scr : to make the figure with "Four iterations of the Marchenko method."
 +) backpropf2.scr : to make Figure "Snapshots of back-propagation of f_2."
 +) eps*.scr : reproduce the postscript files of the manuscript using SU postscript plotting programs.
++) backProp_f2sum_movie.scr : produces a snapshot move of f2(-t) + f2(t) ; Figure 10 3'rd column
 +) clean : remove all produced files and start with a clean directory
 
 
