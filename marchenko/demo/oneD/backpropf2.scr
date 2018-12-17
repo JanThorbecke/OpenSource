@@ -26,6 +26,7 @@ basop choice=shift shift=$shift file_in=nep.su verbose=1 > pplus.su
 #ftr1d file_in=pplus.su file_out=freq.su
 #sushw < freq.su key=nhs,dt a=8192,500 > fr.su
 #ftr1d file_in=fr.su n1=8194 file_out=pplusdt.su verbose=1
+#this is now done within the fdelmodc code: 
 
 #backpropagate f2.su and collect snapshots
 fdelmodc \
