@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# $1 input-file of backpropf2_sp.su format
+
+export PATH=$HOME/OpenSource/bin/:$PATH:
+
+#rm prop_movie.su
+
+for fldr in $(seq 1 101);
+do
+  times=$(echo "scale=2; -0.01*(${fldr}-101)" | bc -l)
+  echo "   Adding ${fldr}-th frame"
+  suwind key=fldr min=$fldr max=$fldr < backpropmar_sp.su > neg.su
+  (( fldr = 101+(101-$fldr) ))
+  suwind key=fldr min=$fldr max=$fldr < backpropmar_sp.su > pos.su
+  susum neg.su pos.su >prop_frame.su
+
+  if [ "$fldr" != "201" ]; then 
+    cat prop_movie.su prop_frame.su >temp_movie.su
+    mv temp_movie.su prop_movie.su
+  else
+    cp prop_frame.su prop_movie.su
+  fi
+done
+
+suchw <prop_movie.su key1=ntr key2=fldr b=1001 >temp_movie.su
+
+susort <temp_movie.su -fldr tracf >prop_movie.su
+
+rm neg.su pos.su temp_movie.su
+
+n2=`surange <backpropmar_sp.su | grep tracf | awk '{print $3}'` 
+
+suxmovie <prop_movie.su loop=1 height=500 width=1000 title=%g n2=$n2
