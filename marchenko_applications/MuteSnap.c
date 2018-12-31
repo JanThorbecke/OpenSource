@@ -132,7 +132,12 @@ int main (int argc, char **argv)
 		vmess("First arrival determined through tolerance (=%.4f)",tol);
 	}
 	else if (mode == 2) {
-		vmess("First arrival determined through raytimes:%d",nz*nx);
+		vmess("First arrival determined through raytimes");
+		fp_snap = fopen(fray,"r");
+    	if (fp_snap == NULL) {
+        	verr("Could not open file");
+		}
+		fclose(fp_snap);
 		hdrs_mute = (segy *) calloc(nz,sizeof(segy));
         timeval = (float *)calloc(nz*nx,sizeof(float));
         readSnapData(fray, timeval, hdrs_mute, nz, 1, nx, 0, 1, 0, nx);

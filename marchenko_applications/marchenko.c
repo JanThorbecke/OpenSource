@@ -51,7 +51,7 @@ double wallclock_time(void);
 void makeWindow(WavePar WP, char *file_ray, char *file_amp, float dt, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nsyn, int nx, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose);
 void iterations (complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *first, int niter, int verbose);
 void imaging (float *Image, WavePar WP, complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *synpos, int verbose);
-void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *synpos, int verbose);
+void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *synpos, int n_source, int verbose);
 
 void AmpEst(float *amp, WavePar WP, complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *synpos, int verbose);
 
@@ -214,7 +214,7 @@ int main (int argc, char **argv)
     int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn, *synpos;
     int     reci, mode, ixa, ixb, n2out, verbose, ntfft;
     int     iter, niter, niterh, tracf, *muteW, pad, nt0, *hmuteW, *hxnxsyn;
-    int     hw, smooth, above, shift, *ixpossyn, npossyn, ix, first=1;
+    int     hw, smooth, above, shift, *ixpossyn, npossyn, ix, first=1, shot_transpose;
     float   fmin, fmax, *tapersh, *tapersy, fxf, dxf, fxs2, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
 	float	*hzsyn, *hxsyn, *hxrcvsyn, *hG_d, xloc, zloc, *HomG;
     double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, energyNi, *J;
@@ -265,10 +265,6 @@ int main (int argc, char **argv)
         verr("file_tinv and file_shot cannot be both input pipe");
 	if (file_img == NULL && file_homg == NULL)
         verr("file_img and file_homg cannot both be empty");
-    if (!getparstring("file_green", &file_green)) {
-        if (verbose) vwarn("parameter file_green not found, assume pipe");
-        file_green = NULL;
-    }
     if (!getparfloat("fmin", &fmin)) fmin = 0.0;
     if (!getparfloat("fmax", &fmax)) fmax = 70.0;
     if (!getparint("ixa", &ixa)) ixa = 0;
@@ -289,6 +285,7 @@ int main (int argc, char **argv)
     if(!getparint("above", &above)) above = 0;
     if(!getparint("shift", &shift)) shift=12;
 	if(!getparint("nb", &nb)) nb=0;
+	if(!getparint("shot_transpose", &shot_transpose)) shot_transpose=0;
 	if (!getparfloat("bstart", &bstart)) bstart = 1.0;
     if (!getparfloat("bend", &bend)) bend = 1.0;
 
@@ -352,8 +349,14 @@ int main (int argc, char **argv)
         WP.xloc = -123456.0;
         WP.zloc = -123456.0;
 		synpos = (int *)calloc(ngath,sizeof(int));
-		shot.nz = 1;
-		shot.nx = ngath;
+		if (shot_transpose==1) {
+			shot.nx = 1;
+			shot.nz = ngath;
+		}
+		else {
+			shot.nx = ngath;
+			shot.nz = 1;
+		}
 		shot.n = shot.nx*shot.nz;
 		for (l=0; l<shot.nz; l++) {
             for (j=0; j<shot.nx; j++) {
@@ -420,7 +423,6 @@ int main (int argc, char **argv)
     
 /*================ Allocating all data arrays ================*/
 
-    green   = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
     f2p     = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
     pmin    = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
     f1plus  = (float *)calloc(Nsyn*nxs*ntfft,sizeof(float));
@@ -570,7 +572,6 @@ int main (int argc, char **argv)
         vmess("time sampling                  = %e ", dt);
 		if (ampest > 0) 		vmess("Amplitude correction estimation is switched on");
 		if (nb > 0)				vmess("Scaling estimation in %d step(s) from %.3f to %.3f (db=%.3f)",nb,bstart,bend,db);
-        if (file_green != NULL) vmess("Green output file              = %s ", file_green);
         if (file_gmin != NULL)  vmess("Gmin output file               = %s ", file_gmin);
         if (file_gplus != NULL) vmess("Gplus output file              = %s ", file_gplus);
         if (file_pmin != NULL)  vmess("Pmin output file               = %s ", file_pmin);
@@ -603,25 +604,35 @@ int main (int argc, char **argv)
 			fclose(fp_src);
 
 			ret = getFileInfo(file_src, &nt_src, &nx_src, &n_src, &dt_src, &dx_src, &fzsrc, &fxsrc, &srcmin, &srcmax, &srcscl, &ntr_src);
-			hdr_src = (segy *) calloc(nx_src,sizeof(segy));
-			src_data = (float *)calloc(nx_src*nt_src,sizeof(float));
+			hdr_src = (segy *) calloc(n_src*nx_src,sizeof(segy));
+			src_data = (float *)calloc(n_src*nx_src*nt_src,sizeof(float));
+
+			vmess("n_src:%d, nx_src:%d, nt_src:%d",n_src,nx_src,nt_src);
+
 			readSnapData(file_src, &src_data[0], hdr_src, n_src, nx_src, nt_src, 0, nx_src, 0, nt_src);
-			//pad_data(src_data, nt_src, nx_src, ntfft, green);
+
+			vmess("n_src:%d",n_src);
+			
+    		green   = (float *)calloc(n_src*nxs*ntfft,sizeof(float));
 			
 			if (nt_src < ntfft) {
-				for (l=0;l<nxs;l++) {
-					for (j=0;j<nt_src;j++) {
-						green[l*ntfft+j] = src_data[l*nt_src+j];
-					}	
-					for (j=nt_src;j<ntfft;j++) {
-						green[l*ntfft+j] = 0.0;
+				for (i=0;i<n_src;i++) {
+					for (l=0;l<nxs;l++) {
+						for (j=0;j<nt_src;j++) {
+							green[i*ntfft*nxs+l*ntfft+j] = src_data[i*ntfft*nx_src+l*nt_src+j];
+						}	
+						for (j=nt_src;j<ntfft;j++) {
+							green[i*ntfft*nxs+l*ntfft+j] = 0.0;
+						}
 					}
 				}
 			}
-			else if (nt_src >= ntfft) {	
-				for (l=0;l<nxs;l++) {
-					for (j=0;j<ntfft;j++) {
-						green[l*ntfft+j] = src_data[l*nt_src+j];
+			else if (nt_src >= ntfft) {		
+				for (i=0;i<n_src;i++) {
+					for (l=0;l<nxs;l++) {
+						for (j=0;j<ntfft;j++) {
+							green[i*ntfft*nxs+l*ntfft+j] = src_data[i*ntfft*nx_src+l*nt_src+j];
+						}
 					}	
 				}
 			}
@@ -677,6 +688,8 @@ int main (int argc, char **argv)
 			iterations(Refl,nx,nt,nxs,nts,dt,hxsyn,1,xrcv,xsrc,fxs2,fxs,dxs,dxsrc,dx,ixa,ixb,
         		ntfft,nw,nw_low,nw_high,mode,reci,nshots,ixpossyn,npossyn,pmin,f1min,f1plus,
         		f2p,hG_d,hmuteW,smooth,shift,above,pad,nt0,&first,niterh,verbose);
+
+			green   = (float *)calloc(nxs*ntfft,sizeof(float));
 
 			/* compute full Green's function G = int R * f2(t) + f2(-t) = Pplus + Pmin */
         	for (i = 0; i < npossyn; i++) {
@@ -817,40 +830,43 @@ int main (int argc, char **argv)
 
         hdrs_homg = (segy *) calloc(shot.nx,sizeof(segy));
         if (hdrs_homg == NULL) verr("allocation for hdrs_out");
-        HomG	= (float *)calloc(Nsyn*ntfft,sizeof(float));
+        HomG	= (float *)calloc(n_src*Nsyn*ntfft,sizeof(float));
 
         homogeneousg(HomG,green,Refl,nx,nt,nxs,nts,dt,xsyn,Nsyn,xrcv,xsrc,fxs2,fxs,dxs,dxsrc,dx,ixa,ixb,
            	ntfft,nw,nw_low,nw_high,mode,reci,nshots,ixpossyn,npossyn,pmin,f1min,f1plus,
-           	f2p,G_d,muteW,smooth,shift,above,pad,nt0,synpos,verbose);
+           	f2p,G_d,muteW,smooth,shift,above,pad,nt0,synpos,n_src,verbose);
 
         /*============= write output files ================*/
 
 		fp_out = fopen(file_homg, "w+");
 		if (fp_out==NULL) verr("Homogeneous Green's function file %s could not be found",file_homg);
 
-		for (j = 0; j < ntfft; j++) {
-        	for (i = 0; i < shot.nx; i++) {
-            	hdrs_homg[i].fldr    = j+1;
-            	hdrs_homg[i].tracl   = j*shot.nx+i+1;
-            	hdrs_homg[i].tracf   = i+1;
-            	hdrs_homg[i].scalco  = -1000;
-            	hdrs_homg[i].scalel  = -1000;
-            	hdrs_homg[i].sdepth  = (int)(zloc*1000.0);
-            	hdrs_homg[i].trid    = 1;
-            	hdrs_homg[i].ns      = shot.nz;
-            	hdrs_homg[i].trwf    = shot.nx;
-            	hdrs_homg[i].ntr     = hdrs_homg[i].fldr*hdrs_homg[i].trwf;
-            	hdrs_homg[i].f1      = zsyn[0];
-            	hdrs_homg[i].f2      = xsyn[0];
-            	hdrs_homg[i].dt      = dt*(1E6);
-            	hdrs_homg[i].d1      = (float)zsyn[shot.nx]-zsyn[0];
-            	hdrs_homg[i].d2      = (float)xsyn[1]-xsyn[0];
-            	hdrs_homg[i].sx      = (int)roundf(xsyn[0] + (i*hdrs_homg[i].d2));
-            	hdrs_homg[i].gx      = (int)roundf(xsyn[0] + (i*hdrs_homg[i].d2));
-            	hdrs_homg[i].offset  = (hdrs_homg[i].gx - hdrs_homg[i].sx)/1000.0;
-        	}
-        	ret = writeData(fp_out, &HomG[j*shot.n], hdrs_homg, shot.nz, shot.nx);
-        	if (ret < 0 ) verr("error on writing output file.");
+		for (l = 0; l < n_src; l++) {
+			for (j = 0; j < ntfft; j++) {
+        		for (i = 0; i < shot.nx; i++) {
+            		hdrs_homg[i].fldr    = j+1;
+            		hdrs_homg[i].tracl   = j*shot.nx+i+1;
+            		hdrs_homg[i].tracf   = i+1;
+            		hdrs_homg[i].scalco  = -1000;
+            		hdrs_homg[i].scalel  = -1000;
+            		hdrs_homg[i].sdepth  = (int)(zloc*1000.0);
+            		hdrs_homg[i].trid    = 1;
+            		hdrs_homg[i].ns      = shot.nz;
+            		hdrs_homg[i].trwf    = shot.nx;
+            		hdrs_homg[i].ntr     = hdrs_homg[i].fldr*hdrs_homg[i].trwf;
+            		hdrs_homg[i].f1      = zsyn[0];
+            		hdrs_homg[i].f2      = xsyn[0];
+            		hdrs_homg[i].dt      = dt*(1E6);
+            		hdrs_homg[i].d1      = (float)zsyn[shot.nx]-zsyn[0];
+            		hdrs_homg[i].d2      = (float)xsyn[1]-xsyn[0];
+            		hdrs_homg[i].sx      = (int)roundf(xsyn[0] + (i*hdrs_homg[i].d2));
+					hdrs_homg[i].sy      = l+1;
+            		hdrs_homg[i].gx      = (int)roundf(xsyn[0] + (i*hdrs_homg[i].d2));
+            		hdrs_homg[i].offset  = (hdrs_homg[i].gx - hdrs_homg[i].sx)/1000.0;
+        		}
+        		ret = writeData(fp_out, &HomG[l*ntfft*shot.n+j*shot.n], hdrs_homg, shot.nz, shot.nx);
+        		if (ret < 0 ) verr("error on writing output file.");
+			}
 		}
 
         fclose(fp_out);

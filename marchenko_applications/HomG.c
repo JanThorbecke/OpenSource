@@ -33,6 +33,7 @@ void scl_data(float *data, int nsam, int nrec, float scl, float *datout, int nsa
 void pad_data(float *data, int nsam, int nrec, int nsamout, float *datout);
 void convol(float *data1, float *data2, float *con, int nrec, int nsam, float dt, int shift);
 void corr(float *data1, float *data2, float *cov, int nrec, int nsam, float dt, int shift);
+void timeShift(float *data, int nsam, int nrec, float dt, float shift, float fmin, float fmax);
 void timeDiff(float *data, int nsam, int nrec, float dt, float fmin, float fmax, int opt);
 void depthDiff(float *data, int nsam, int nrec, float dt, float dx, float fmin, float fmax, float c, int opt);
 void pad2d_data(float *data, int nsam, int nrec, int nsamout, int nrecout, float *datout);
@@ -60,6 +61,9 @@ char *sdoc[] = {
 "   xrcv= .................... x-coordinate of first receiver location",
 "   dzrcv= ................... z-spacing of receivers",
 "   dxrcv= ................... x-spacing of receivers",
+"   shift=0.0 ................ shift per shot",
+"   scheme=0 ................. Scheme used for retrieval. 0=Marchenko,",
+"                              1=Marchenko with multiple sources, 2=classical",
 NULL};
 
 int main (int argc, char **argv)
@@ -68,9 +72,9 @@ int main (int argc, char **argv)
 	char *fin, *fshot, *fout, *ptr, fbegin[100], fend[100], fins[100], fin2[100];
 	float *indata, *Ghom, *shotdata, *shotdata_jkz, rho, fmin, fmax;
 	float dt, dx, t0, x0, xmin, xmax1, sclsxgx, f1, f2, dxrcv, dzrcv;
-	float *conv, *tmp1, *tmp2, cp;
-	int nshots, nt, nx, ntraces, ret, ix, it, is, ir, file_det, nxs, nzs, verbose;
-	int pos1, npos, zmax, inx, numb, dnumb, count, scheme, ntmax, ntshift;
+	float *conv, *conv2, *tmp1, *tmp2, cp, shift;
+	int nshots, nt, nx, ntraces, ret, ix, it, is, ir, ig, file_det, nxs, nzs, verbose;
+	int pos1, npos, zmax, inx, numb, dnumb, count, scheme, ntmax, ntshift, shift_num;
 	segy *hdr_in, *hdr_out, *hdr_shot;
 
 	initargs(argc, argv);
@@ -89,6 +93,7 @@ int main (int argc, char **argv)
 	if (!getparfloat("cp", &cp)) cp = 1500.0;
 	if (!getparfloat("fmin", &fmin)) fmin=0.0;
 	if (!getparfloat("fmax", &fmax)) fmax=100.0;
+	if (!getparfloat("shift", &shift)) shift=0.0;
 	if (!getparint("numb", &numb)) numb=0;
     if (!getparint("dnumb", &dnumb)) dnumb=1;
 	if (!getparint("scheme", &scheme)) scheme = 0;
@@ -168,7 +173,8 @@ int main (int argc, char **argv)
 	}
 	vmess("nt: %d nx: %d nshots: %d",nt,nx,nshots);
 	fclose(fp_shot);
-	readSnapData(fshot, &shotdata[0], &hdr_shot[0], 1, nx, nt, 0, nx, 0, nt);
+	readSnapData(fshot, &shotdata[0], &hdr_shot[0], nshots, nx, nt, 0, nx, 0, nt);
+
 
 	hdr_out     = (segy *)calloc(nxs,sizeof(segy));	
 	Ghom		= (float *)malloc(nt*npos*sizeof(float));
@@ -182,6 +188,7 @@ int main (int argc, char **argv)
             }
         }
 		conjugate(shotdata_jkz, nt, nx, dt);
+		conjugate(shotdata, nt, nx, dt);
         depthDiff(shotdata_jkz, nt, nx, dt, dx, fmin, fmax, cp, 1);
 		if (verbose) vmess("Applied jkz to source data");
 	}
@@ -190,14 +197,18 @@ int main (int argc, char **argv)
 	}
 	else if (scheme==1) {
 		vmess("Marchenko representation with multiple sources");
-	}	
+	}
+	else if (scheme==3) {	
+		vmess("Marchenko representation with multiple shot gathers");
+    }
 
 #pragma omp parallel default(shared) \
-  private(ix,it,is,indata, hdr_in,fins,fin2,fp_in,conv,tmp1,tmp2)
+  private(ix,it,is,indata, hdr_in,fins,fin2,fp_in,conv,ig,conv2,tmp1,tmp2)
 {
 	indata		= (float *)malloc(nt*nx*nxs*sizeof(float));
     hdr_in 		= (segy *)calloc(nx*nxs,sizeof(segy));
 	conv    = (float *)calloc(nx*nt,sizeof(float));
+	conv2	= (float *)calloc(nx*nt,sizeof(float));
     if (scheme==2) {
         tmp1    = (float *)calloc(nx*nt,sizeof(float));
         tmp2    = (float *)calloc(nx*nt,sizeof(float));
@@ -218,9 +229,6 @@ int main (int argc, char **argv)
             	convol(shotdata, &indata[is*nx*nt], conv, nx, nt, dt, -2);		
             	timeDiff(conv, nt, nx, dt, fmin, fmax, -2);		
             	for (ix=0; ix<nx; ix++) {
-                	//it=0;
-                	//Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] = -conv[ix*nt+it];
-					//Ghom[it*nxs*nzs+is*nzs+ir] = -conv[ix*nt+(it+nt/2)];
                 	for (it=0; it<nt/2; it++) {
                     	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += conv[ix*nt+it]/rho;
                     	Ghom[it*nxs*nzs+is*nzs+ir] += conv[ix*nt+(it+nt/2)]/rho;
@@ -232,8 +240,6 @@ int main (int argc, char **argv)
             	convol(shotdata, &indata[is*nx*nt], conv, nx, nt, dt, 0);		
             	timeDiff(conv, nt, nx, dt, fmin, fmax, -1);		
             	for (ix=0; ix<nx; ix++) {
-                	//it=0;
-                	//Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] -= 2*conv[ix*nt+it];
                 	for (it=0; it<nt/2; it++) {
                     	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += 2*conv[ix*nt+it]/rho;
                     	Ghom[it*nxs*nzs+is*nzs+ir] += 2*conv[ix*nt+(it+nt/2)]/rho;
@@ -243,20 +249,45 @@ int main (int argc, char **argv)
         	else if (scheme==2) { //classical representation
             	convol(&indata[is*nx*nt], shotdata_jkz, tmp1, nx, nt, dt, 0);
 				depthDiff(&indata[is*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
-            	corr(&indata[is*nx*nt], shotdata, tmp2, nx, nt, dt, 0);
+				convol(&indata[is*nx*nt], shotdata, tmp2, nx, nt, dt, 0);
+            	//corr(&indata[is*nx*nt], shotdata, tmp2, nx, nt, dt, 0);
             	for (ix = 0; ix < nx; ix++) {
                 	for (it = 0; it < nt; it++) {
-                    	conv[ix*nt+it] = (tmp2[ix*nt+it]+tmp1[ix*nt+it]);
+                    	conv[ix*nt+it] = tmp2[ix*nt+it]+tmp1[ix*nt+it];
                 	}
             	}
             	timeDiff(conv, nt, nx, dt, fmin, fmax, -1);
             	for (ix=0; ix<nx; ix++) {
-                	//it=0;
-                	//Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += conv[ix*nt+it];
                 	for (it=0; it<nt/2; it++) {
                     	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += conv[ix*nt+it]/rho;
                     	Ghom[it*nxs*nzs+is*nzs+ir] += conv[ix*nt+(it+nt/2)]/rho;
 					}
+                }
+            }
+			if (scheme==3) { //Marchenko representation with multiple shot gathers
+				depthDiff(&indata[is*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
+				for (ig=0; ig<nshots; ig++) {
+                	convol(&shotdata[ig*nx*nt], &indata[is*nx*nt], conv, nx, nt, dt, -2);
+                	timeDiff(conv, nt, nx, dt, fmin, fmax, -2);
+					shift_num = ig*((int)(shift/dt));
+					for (ix = 0; ix < nx; ix++) {
+						for (it = nt/2+1; it < nt; it++) {
+							conv[ix*nt+it] = 0.0;
+						}
+                    	for (it = shift_num; it < nt; it++) {
+                        	conv2[ix*nt+it] = conv[ix*nt+it-shift_num];
+                    	}
+						for (it = 0; it < shift_num; it++) {
+                            conv2[ix*nt+it] = conv[ix*nt+nt-shift_num+it];
+                        }
+                	}
+                	for (ix=0; ix<nx; ix++) {
+						Ghom[(-1+nt/2)*nxs*nzs+is*nzs+ir] += conv2[ix*nt+nt-1]/rho;
+                    	for (it=0; it<nt/2; it++) {
+                        	Ghom[(it+nt/2)*nxs*nzs+is*nzs+ir] += conv2[ix*nt+it]/rho;
+                        	//Ghom[it*nxs*nzs+is*nzs+ir] += conv2[ix*nt+(it+nt/2)]/rho;
+                    	}
+                	}
                 }
             }
         }
@@ -264,7 +295,7 @@ int main (int argc, char **argv)
 		count+=1;
 		if (verbose) vmess("Creating Homogeneous Green's function at depth %d from %d depths",count,nzs);
 	}
-	free(conv); free(indata); free(hdr_in);
+	free(conv); free(indata); free(hdr_in); free(conv2);
 	if (scheme==2) {
 		free(tmp1);free(tmp2);
 	}
@@ -759,6 +790,68 @@ void conjugate(float *data, int nsam, int nrec, float dt)
     //scl_data(rdata,optn,nrec,scl,data,nsam);
 
     free(cdata);
+    free(rdata);
+
+    return;
+}
+
+void timeShift(float *data, int nsam, int nrec, float dt, float shift, float fmin, float fmax)
+{
+    int     optn, iom, iomin, iomax, nfreq, ix, sign;
+    float   omin, omax, deltom, om, tom, df, *rdata, scl;
+    complex *cdata, *cdatascl;
+
+    optn = optncr(nsam);
+    nfreq = optn/2+1;
+    df    = 1.0/(optn*dt);
+
+    cdata = (complex *)malloc(nfreq*nrec*sizeof(complex));
+    if (cdata == NULL) verr("memory allocation error for cdata");
+
+    rdata = (float *)malloc(optn*nrec*sizeof(float));
+    if (rdata == NULL) verr("memory allocation error for rdata");
+
+    /* pad zeroes until Fourier length is reached */
+    pad_data(data,nsam,nrec,optn,rdata);
+
+    /* Forward time-frequency FFT */
+    sign = -1;
+    rcmfft(&rdata[0], &cdata[0], optn, nrec, optn, nfreq, sign);
+
+    deltom = 2.*PI*df;
+    omin   = 2.*PI*fmin;
+    omax   = 2.*PI*fmax;
+    iomin  = (int)MIN((omin/deltom), (nfreq));
+	iomax  = MIN((int)(omax/deltom), (nfreq));
+
+    cdatascl = (complex *)malloc(nfreq*nrec*sizeof(complex));
+    if (cdatascl == NULL) verr("memory allocation error for cdatascl");
+
+    for (ix = 0; ix < nrec; ix++) {
+        for (iom = 0; iom < iomin; iom++) {
+            cdatascl[ix*nfreq+iom].r = 0.0;
+            cdatascl[ix*nfreq+iom].i = 0.0;
+        }
+        for (iom = iomax; iom < nfreq; iom++) {
+            cdatascl[ix*nfreq+iom].r = 0.0;
+            cdatascl[ix*nfreq+iom].i = 0.0;
+        }
+        for (iom = iomin ; iom < iomax ; iom++) {
+            om = deltom*iom;
+            tom = om*shift;
+            cdatascl[ix*nfreq+iom].r = cdata[ix*nfreq+iom].r*cos(-tom) - cdata[ix*nfreq+iom].i*sin(-tom);
+            cdatascl[ix*nfreq+iom].i = cdata[ix*nfreq+iom].i*cos(-tom) + cdata[ix*nfreq+iom].r*sin(-tom);
+        }
+    }
+    free(cdata);
+
+    /* Inverse frequency-time FFT and scale result */
+    sign = 1;
+    scl = 1.0/(float)optn;
+    crmfft(&cdatascl[0], &rdata[0], optn, nrec, nfreq, optn, sign);
+    scl_data(rdata,optn,nrec,scl,data,nsam);
+
+    free(cdatascl);
     free(rdata);
 
     return;
