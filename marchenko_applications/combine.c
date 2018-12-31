@@ -52,8 +52,8 @@ int main (int argc, char **argv)
 	char *fin, *fout, *ptr, fbegin[100], fend[100], fins[100], fin2[100], numb1[100];
 	float *indata, *outdata, *rtrace, fz, fx;
 	float dt, dx, t0, x0, xmin, xmax, sclsxgx, dt2, dx2, t02, x02, xmin2, xmax2, sclsxgx2, dxrcv, dzrcv;
-	int nshots, nt, nx, ntraces, nshots2, nt2, nx2, ntraces2, ix, it, is, ir, pos, ifile, file_det, nxs, nzs;
-	int xcount, numb, dnumb, ret, nzmax, verbose;
+	int nshots, nt, nx, ntraces, nshots2, nt2, nx2, ntraces2, ix, it, is, iz, pos, ifile, file_det, nxs, nzs;
+	int xcount, numb, dnumb, ret, nzmax, transpose, verbose;
 	segy *hdr_in, *hdr_out;
 
 	initargs(argc, argv);
@@ -65,6 +65,7 @@ int main (int argc, char **argv)
 	if (!getparint("dnumb", &dnumb)) dnumb=0;
 	if (!getparint("nzmax", &nzmax)) nzmax=0;
 	if (!getparint("verbose", &verbose)) verbose=0;
+	if (!getparint("transpose", &transpose)) transpose=0;
 	if (fin == NULL) verr("Incorrect downgoing input");
 
 	if (dnumb < 1) dnumb = 1;
@@ -122,31 +123,43 @@ int main (int argc, char **argv)
 	if (nshots==0) nshots=1;
 	nxs = ntraces;
 
+	
+
 	// ngath zijn het aantal schoten
-	hdr_out     = (segy *)calloc(nxs,sizeof(segy));	
-	outdata		= (float *)calloc(nxs*nzs,sizeof(float));
-	hdr_in      = (segy *)calloc(nxs,sizeof(segy));
-    indata    	= (float *)calloc(nxs,sizeof(float));
+	hdr_out     = (segy *)calloc(nxs*nt,sizeof(segy));	
+	outdata		= (float *)calloc(nxs*nzs*nt,sizeof(float));
+	hdr_in      = (segy *)calloc(nxs*nt,sizeof(segy));
+    indata    	= (float *)calloc(nxs*nt,sizeof(float));
 
 	readSnapData(fin2, &indata[0], &hdr_in[0], nshots, nxs, nt, 0, nxs, 0, nt);
 	nshots 	= hdr_in[nxs-1].fldr;
-	nxs		= hdr_in[nxs-1].tracf;
+	if (transpose==0) {
+		nxs		= hdr_in[nxs-1].tracf;
+	}
+	else {
+		nxs     = hdr_in[nxs-1].ns;
+	}
 
-	for (ir = 0; ir < nzs; ir++) {
-		if (verbose) vmess("Depth:%d out of %d",ir+1,nzs);
-		sprintf(fins,"%d",ir*dnumb+numb);
-        sprintf(fin2,"%s%s%s",fbegin,fins,fend);
-        fp_in = fopen(fin2, "r");
+	for (iz = 0; iz < nzs; iz++) {
+		if (verbose) vmess("Depth:%d out of %d",iz+1,nzs);
+		sprintf(fins,"%d",iz*dnumb+numb);
+       	sprintf(fin2,"%s%s%s",fbegin,fins,fend);
+       	fp_in = fopen(fin2, "r");
 		if (fp_in == NULL) {
 			verr("Error opening file");
 		}
 		fclose(fp_in);
-		readSnapData(fin2, &indata[0], &hdr_in[0], nshots, nxs, nt, 0, nxs, 0, nt);
-		if (ir==0) fz=hdr_in[0].f1; fx=hdr_in[0].f2;
-		if (ir==1) dzrcv=hdr_in[0].f1-fz;
-		for (is = 0; is < nxs; is++) {
-			for (it = 0; it < nshots; it++) {
-				outdata[it*nxs*nzs+is*nzs+ir] = indata[it*nxs+is];
+		if (transpose==0) {
+			readSnapData(fin2, &indata[0], &hdr_in[0], nshots, nxs, nt, 0, nxs, 0, nt);
+		}
+		else {
+			readSnapData(fin2, &indata[0], &hdr_in[0], nshots, 1, nxs, 0, 1, 0, nxs);
+		}
+		if (iz==0) fz=hdr_in[0].f1; fx=hdr_in[0].f2;
+		if (iz==1) dzrcv=hdr_in[0].f1-fz;
+		for (ix = 0; ix < nxs; ix++) {
+			for (is = 0; is < nshots; is++) {
+				outdata[is*nxs*nzs+ix*nzs+iz] = indata[is*nxs+ix];
 			}
 		}
 	}

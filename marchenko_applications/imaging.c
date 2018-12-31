@@ -17,6 +17,7 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nsyn, int nxs
 int disp_fileinfo(char *file, int n1, int n2, float f1, float f2, float d1, float d2, segy *hdrs);
 double wallclock_time(void);
 int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
+void kxwfilter(float *data, int nt, int nx, float dt, float dx, float fmin, float fmax, float angle, float cp, float perc);
 
 void scl_data(float *data, int nsam, int nrec, float scl, float *datout, int nsamout);
 void pad_data(float *data, int nsam, int nrec, int nsamout, float *datout);
@@ -27,9 +28,9 @@ void synthesis(complex *Refl, complex *Fop, float *Top, float *iRN, int nx, int 
 void imaging(float *Image, WavePar WP, complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *synpos, int verbose)
 {
 	FILE	*fp, *fp_out;
-    int     i, j, l, ret, count=0;
-    int     iter, ix, nfreq, first=0;
-	float   *iRN, *conv, *Gmin, *wavelet, *wav;
+    int     i, j, l, ret, count=0, kxwfilt;
+    int     iter, ix, nfreq, first=0, im_shift, im_smooth;
+	float   *iRN, *conv, *Gmin, *wavelet, *wav, fmin, fmax, alpha, cp, rho, perc, *costaper;
 	complex	*Fop;
     double  t0, t2, tfft;
 	segy	*hdrs;
@@ -38,6 +39,41 @@ void imaging(float *Image, WavePar WP, complex *Refl, int nx, int nt, int nxs, i
 	ret = 0;
     t0   = wallclock_time();
 	nfreq = ntfft/2+1;
+
+    if (!getparint("kxwfilt", &kxwfilt)) kxwfilt = 0;
+	if (!getparint("im_shift", &im_shift)) im_shift = 0;
+	if (!getparint("im_smooth", &im_smooth)) im_smooth = 0;
+    if (!getparfloat("fmin", &fmin)) fmin = 0.0;
+    if (!getparfloat("fmax", &fmax)) fmax = 100.0;
+    if (!getparfloat("alpha", &alpha)) alpha = 65.0;
+    if (!getparfloat("cp", &cp)) cp = 1500.0;
+    if (!getparfloat("rho", &rho)) rho = 1000.0;
+    if (!getparfloat("perc", &perc)) perc = 0.15;
+
+	if (im_shift<0) im_shift=0;
+	if (im_smooth<0) im_smooth=0;
+
+	costaper	= (float *)calloc(nxs,sizeof(float));
+
+	if (im_shift>0 && im_smooth>0) {
+		vmess("Applying shift of %d samples and taper of %d samples",im_shift,im_smooth);
+	}
+
+    for (j = 0; j < im_shift; j++) {
+		costaper[j] = 0.0;
+	}
+	for (j = im_shift; j < im_shift+im_smooth; j++) {
+        costaper[j] = (cos(PI*(j-im_shift+im_smooth)/im_smooth)+1)/2.0;
+	}
+    for (j = im_shift+im_smooth; j < nxs-(im_shift+im_smooth); j++) {
+        costaper[j] = 1.0;
+	}
+    for (j = nxs-(im_shift+im_smooth); j < nxs-im_shift; j++) {
+        costaper[j] = (cos(PI*(j-(nxs-(im_shift+im_smooth)))/im_smooth)+1)/2.0;
+	}
+	for (j = nxs-(im_shift); j < nxs; j++) {
+        costaper[j] = 0.0;
+	}
 	
 	//Image   = (float *)malloc(Nsyn*sizeof(float));
 	Fop     = (complex *)calloc(nxs*nw*Nsyn,sizeof(complex));
@@ -49,8 +85,8 @@ void imaging(float *Image, WavePar WP, complex *Refl, int nx, int nt, int nxs, i
     	if (verbose>3) vmess("Modeling wavelet for Image");
         freqwave(wavelet, WP.nt, WP.dt, WP.fp, WP.fmin, WP.flef, WP.frig, WP.fmax,
         	WP.t0, WP.db, WP.shift, WP.cm, WP.cn, WP.w, WP.scale, WP.scfft, WP.inv, WP.eps, verbose);
-    }
-
+	}
+    
     /* use f1+ as operator on R in frequency domain */
     mode=1;
     synthesis(Refl, Fop, f1plus, iRN, nx, nt, nxs, nts, dt, xsyn, Nsyn,
@@ -104,9 +140,12 @@ void imaging(float *Image, WavePar WP, complex *Refl, int nx, int nt, int nxs, i
 		else{
 			convol(&Gmin[l*nxs*nts], &f1plus[l*nxs*nts], conv, nxs, nts, dt, 0);
 		}
-
+		if (kxwfilt) {
+			if (verbose>8) vmess("Applying kxwfilter");
+			kxwfilter(conv, ntfft, nshots, dt, dx, fmin, fmax, alpha, cp, perc);
+		}
 		for (i=0; i<nxs; i++) {
-        	Image[synpos[l]] += conv[i*nts]/((float)(nxs*ntfft));
+        	Image[synpos[l]] += costaper[i]*conv[i*nts]/((float)(nxs*ntfft));
 		}
 	}
     free(conv);
@@ -114,7 +153,7 @@ void imaging(float *Image, WavePar WP, complex *Refl, int nx, int nt, int nxs, i
 }
 		
 	if (WP.wav) free(wavelet);
-	free(Gmin);
+	free(Gmin);free(costaper);
 
     t2 = wallclock_time();
     if (verbose) {
