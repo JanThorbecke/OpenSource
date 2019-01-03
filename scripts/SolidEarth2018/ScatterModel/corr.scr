@@ -1,0 +1,69 @@
+#!/bin/bash
+
+suwind key=gx min=0 max=0 < NoiseSourcesA.su > traceA.su
+
+fconv mode=cor1 file_in1=NoiseSourcesB.su file_in2=traceA.su file_out=BwithTraceA.su 
+
+#correlate with wavelet 
+makewave fp=25 dt=0.004 file_out=wavedt4.su nt=4096 t0=0.0 scale=1
+cp BwithTraceA.su nep.su
+fconv mode=cor1 file_in1=nep.su file_in2=wavedt4.su  file_out=BwithTraceA.su 
+
+sumax < BwithTraceA.su mode=abs outpar=nep
+clip=`cat nep | awk '{print $1/3}'`
+
+supsimage hbox=2 wbox=4 labelsize=10 < BwithTraceA.su \
+	x1beg=0 x1end=1.0 clip=$clip f1=0 \
+	x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > SI_BwithTraceA.eps
+
+sudipfilt < BwithTraceA.su slopes=-0.0007,-0.0001,0,0.0001,0.0007 amps=0,1,1,1,0 | \
+	supsimage hbox=2 wbox=4 labelsize=10 \
+	x1beg=0 x1end=1.0 clip=$clip f1=0 \
+	x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > SI_BwithTraceA_dipfilt.eps
+
+sudipfilt < BwithTraceA.su slopes=-0.0007,-0.0001,0,0.0001,0.0007 amps=0,1,1,1,0 | \
+	suwind j=5 s=1 | \
+	supswigp hbox=2 wbox=4.0 labelsize=10 linewidth=0.0 \
+	x1beg=0 x1end=1.0 clip=$clip f1=0 n1tic=2 \
+	x2beg=-1000 f2num=-1000 d2=50 d2num=500 x2end=1000 > SI_BwithTraceA_dipfilt_wiggle.eps
+
+
+#optimal results obtained by placing recievers at level of TraceA (virtual shot position) in time-reversal computation 
+#fdelmodc \
+    file_cp=hom_cp.su ischeme=1 iorder=4 \
+    file_den=scatter_ro.su \
+    file_src=ctr_rp.su \
+	file_rcv=SI_reference_timerev.su \
+    grid_dir=1 \
+    src_type=1 \
+    src_injectionrate=1 \
+    src_orient=1 \
+	rec_type_vz=1 \
+    rec_delay=4.0955 \
+    verbose=2 \
+    tmod=5.1 \
+    xrcv1=-2250 xrcv2=2250 zrcv1=1000 zrcv2=1000 \
+    npml=250 \
+    left=2 right=2 top=2 bottom=2
+
+sumax < SI_reference_timerev_rp.su mode=abs outpar=nep
+clip=`cat nep | awk '{print $1/5}'`
+
+supsimage hbox=2 wbox=4 labelsize=10 < SI_reference_timerev_rp.su \
+	x1beg=0 x1end=1.0 clip=$clip f1=0 \
+	x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > SI_reference_timerev_rp.eps
+
+sudipfilt < SI_reference_timerev_rp.su slopes=-0.0007,-0.0001,0,0.0001,0.0007 amps=0,1,1,1,0 | \
+	supsimage hbox=2 wbox=4 labelsize=10 \
+	x1beg=0 x1end=1.0 clip=$clip f1=0 \
+	x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > SI_reference_timerev_rp_dipfilt.eps
+
+#plot noisetraces
+
+for offset in -1000 -500 0 500 1000
+do
+suwind key=offset min=$offset max=$offset < noiseTraces.su | \
+    supswigp wbox=1 hbox=5 titlesize=-1 labelsize=-1 axescolor=white > noiseTraces_off${offset}.eps
+done
+
+
