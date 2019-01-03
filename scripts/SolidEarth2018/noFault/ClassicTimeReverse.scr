@@ -1,0 +1,175 @@
+#!/bin/bash
+#
+#SBATCH -J ClassicTimeReverse
+#SBATCH --cpus-per-task=12
+#SBATCH --ntasks=1
+#SBATCH --time=2:00:00
+
+export PATH=:$HOME/src/OpenSource/bin:$HOME/bin:$PATH:
+which makewave
+which makemod
+which fdelmodc
+
+cd /vardim/home/thorbcke/data/Kees/Marchenko/SolidEarth/noFault
+
+#makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
+#makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3
+
+dx=1.0
+dt=0.0002
+depth=1450
+
+base=$(echo "scale=0; ${depth}/${dx}" | bc -l)
+
+makewave fp=25 dt=$dt file_out=wave.su nt=1024 t0=0.1 scale=1
+
+file_mod=nofault
+
+export OMP_NUM_THREADS=12
+
+#fdelmodc \
+    file_cp=${file_mod}_cp.su ischeme=1 iorder=4 \
+    file_den=${file_mod}_ro.su \
+    file_src=wave.su \
+    file_rcv=ctr.su \
+    src_type=1 \
+    src_injectionrate=1 \
+	src_orient=1 \
+    rec_type_vz=1 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=$dt \
+	rec_delay=0.1 \
+    verbose=2 \
+    tmod=4.1958 \
+    dxrcv=$dx \
+    xrcv1=-5000 xrcv2=5000 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=$depth \
+    npml=250 \
+    left=2 right=2 top=2 bottom=2
+
+
+scale=-1
+filectr=ctr_dn.su
+sugain scale=$scale < ctr_rvz.su > $filectr
+
+#fdelmodc \
+    file_cp=${file_mod}_cp.su ischeme=1 iorder=4 \
+    file_den=${file_mod}_ro.su \
+    file_src=$filectr \
+    grid_dir=1 \
+    src_type=1 \
+    src_injectionrate=1 \
+	src_orient=1 \
+	rec_delay=0.0 \
+    verbose=2 \
+    tmod=4.51 \
+	file_snap=${file_mod}_timerev.su \
+    tsnap1=3.4956 dtsnap=0.05 tsnap2=4.5005 sna_type_vz=0 \
+	dxsnap=$dx dzsnap=$dx zsnap1=0 zsnap2=2750 xsnap1=-1650 xsnap2=1650 \
+    npml=250 \
+    left=2 right=2 top=2 bottom=2
+
+#    curve=curve1,curve2,curve3 npair=25,25,25 curvecolor=black,black,black curvedash=3,3,3 \
+
+filectr=ctr_rp.su
+skip=250 
+sumax < $filectr mode=abs outpar=nep
+clip=`cat nep | awk '{print $1/2}'`
+echo $clip
+suwind j=$skip s=1 < $filectr | \
+	supswigp hbox=4 wbox=6.6 d2=$skip labelsize=10 \
+	x1end=2.5 clip=$clip > ${file_mod}_P_wiggle.eps
+
+suwind j=$skip s=1 < $filectr tmax=2.5 |  \
+	supswigp hbox=4 wbox=6.6 d2=$skip labelsize=10 \
+	f1=2.5 x1beg=2.5 x1end=0 d1=-0.0002 clip=$clip > ${file_mod}_P_wiggle_flip.eps
+
+filectr=ctr_dn.su
+sumax < $filectr mode=abs outpar=nep
+clip=`cat nep | awk '{print $1/2}'`
+echo $clip
+suwind j=$skip s=1 < $filectr | \
+	supswigp hbox=4 wbox=6.6 d2=$skip labelsize=10 \
+	x1end=2.5 clip=$clip > ${file_mod}_Vn_wiggle.eps
+
+suwind j=$skip s=1 < $filectr tmax=2.5 |  \
+	supswigp hbox=4 wbox=6.6 d2=$skip labelsize=10 \
+	f1=2.5 x1beg=2.5 x1end=0 d1=-0.0002 clip=$clip > ${file_mod}_Vn_wiggle_flip.eps
+
+
+for file in ${file_mod}_timerev
+do
+	sumax < ${file}_sp.su mode=abs outpar=nep
+	clip=`cat nep | awk '{print $1/10}'`
+	echo $clip
+
+	for fldr in 10 13 16
+	do
+		times=$(echo "scale=2; -0.05*(13-${fldr})" | bc -l)
+		atime=`printf "%4.2f" $times`
+		suwind key=fldr min=$fldr max=$fldr < ${file}_sp.su | \
+    		supsimage hbox=4.9 wbox=6.6 labelsize=10 \
+    		x1beg=300 x1end=2750 clip=$clip \
+    		x2beg=-1650 f2num=-1500 d2num=500 x2end=1650 > ${file}_$atime.eps
+	done
+	
+    suwind itmin=$base itmax=$base key=fldr min=13 max=13 < ${file}_sp.su | sumax mode=abs outpar=nep
+    scl=`cat nep | awk '{print 1.0/$1}'`
+    echo scale for trace = $scl 
+
+    suwind itmin=$base itmax=$base key=fldr min=13 max=13 < ${file}_sp.su | sugain scale=$scl | sustrip > trace.bin
+    suaddhead < trace.bin n1=3001 dt=$dx | supsgraph hbox=2 wbox=6 labelsize=10 \
+    f1=-1650 d1=$dx x1beg=-500 x1end=500 f1num=-500 d1num=500 style=normal > ${file}_z${depth}_t0.eps
+
+    (( imin = base - 125 ))
+    (( imax = base + 125 ))
+    echo $base $imin $imax
+    suwind key=fldr min=13 max=13 < ${file}_sp.su | \
+    suwind itmin=$imin itmax=$imax key=gx min=-125000 max=125000 | \
+    sustrip > ${file}_t0.bin
+
+    python3 readbin.py ${file}_t0.bin
+
+done
+
+# model slightly above depth to get Gd(x,xB,t)
+
+(( depth = depth - 400 ))
+echo $depth
+#fdelmodc \
+    file_cp=${file_mod}_cp.su ischeme=1 iorder=4 \
+    file_den=${file_mod}_ro.su \
+    file_src=wave.su \
+    file_rcv=T${depth}.su \
+    src_type=1 \
+    src_injectionrate=1 \
+    src_orient=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.004 \
+    rec_delay=0.1 \
+    verbose=2 \
+    tmod=4.1920 \
+    dxrcv=10 \
+    xrcv1=-5000 xrcv2=5000 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=$depth \
+    npml=250 \
+    left=2 right=2 top=2 bottom=2
+
+fmute file_shot=T${depth}_rp.su file_out=Gd${depth}.su above=-1 shift=-10 verbose=1 check=1 hw=4
+
+sumax < T${depth}_rp.su  mode=abs outpar=nep
+clip=`cat nep | awk '{print $1/2}'`
+skip=25
+suwind j=$skip s=1 < Gd${depth}.su  tmax=2.5 |  \
+	supswigp hbox=4 wbox=6.6 d2=250 labelsize=10 \
+	f1=2.5 x1beg=2.5 x1end=0 d1=-0.0002 clip=$clip > ${file_mod}_Gd${depth}_flip.eps
+
+suwind j=$skip s=1 < Gd${depth}.su  |  \
+	supswigp hbox=4 wbox=6.6 d2=250 labelsize=10 \
+	x1beg=0 x1end=2.5 d1=0.0002 clip=$clip > ${file_mod}_Gd${depth}.eps
+

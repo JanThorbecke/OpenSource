@@ -1,0 +1,223 @@
+#!/bin/bash
+#
+#SBATCH -J ClassicTimeReverse
+#SBATCH --cpus-per-task=12
+#SBATCH --ntasks=1
+#SBATCH --time=1:00:00
+#SBATCH --hint=nomultithread
+
+export PATH=:$HOME/src/OpenSource/bin:$HOME/bin:$PATH:
+which makewave
+which makemod
+which fdelmodc
+
+cd /vardim/home/thorbcke/data/Kees/Marchenko/SolidEarth/ScatterModel
+
+#makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
+#makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3
+
+dx=2.5
+dt=0.0005
+depth=850
+
+ix1a=1
+ix1b=$(echo "scale=0; ${ix1a}+6000/${dx}" | bc -l)
+base=$(echo "scale=0; ${depth}/${dx}" | bc -l)
+
+makewave fp=25 dt=$dt file_out=wave.su nt=1024 t0=0.1 scale=1
+
+file_mod=scat
+
+export OMP_NUM_THREADS=12
+
+#forward model of scattered response of source at depth 
+fdelmodc \
+    file_cp=hom_cp.su ischeme=1 iorder=4 \
+    file_den=scatter_ro.su \
+    file_src=wave.su \
+    file_rcv=ctr.su \
+    src_type=1 \
+    src_injectionrate=1 \
+	src_orient=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=$dt \
+	rec_delay=0.1 \
+    verbose=2 \
+    tmod=4.1955 \
+    dxrcv=$dx \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=$depth \
+    npml=250 \
+    left=2 right=2 top=2 bottom=2
+
+#impulse response through scattered medium
+fdelmodc \
+    file_cp=hom_cp.su ischeme=1 iorder=4 \
+    file_den=scatter_ro.su \
+    file_src=wave.su \
+    file_rcv=ctr_impulse_response.su \
+    src_type=1 \
+    src_injectionrate=1 \
+	src_orient=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+	rec_delay=0.1 \
+    tmod=4.1940 \
+   	dtrcv=0.004 \
+   	verbose=2 \
+   	dxrcv=10.0 \
+   	xrcv1=-2250 xrcv2=2250 \
+   	zrcv1=$depth zrcv2=$depth \
+   	xsrc=$xsrc zsrc=0 \
+   	ntaper=250 \
+   	left=2 right=2 top=2 bottom=2
+
+for offset in -1000 -500 0 500 1000
+do
+suwind key=offset min=$offset max=$offset < ctr_impulse_response_rp.su | \
+	supswigp wbox=1 hbox=5 titlesize=-1 labelsize=-1 axescolor=white > impulse_response_off${offset}.eps
+done
+
+
+#Forward model of homogenoeus response of source at depth 
+fdelmodc \
+    file_cp=hom_cp.su ischeme=1 iorder=4 \
+    file_den=hom_ro.su \
+    file_src=wave.su \
+    file_rcv=shom.su \
+    src_type=1 \
+    src_injectionrate=1 \
+	src_orient=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=$dt \
+	rec_delay=0.1 \
+    verbose=2 \
+    tmod=4.1955 \
+    dxrcv=$dx \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=$depth \
+    npml=250 \
+    left=2 right=2 top=2 bottom=2
+
+app=300
+filectr=ctr_${app}.su
+fileshom=shom_${app}.su
+suwind < ctr_rp.su key=gx min=-${app}000 max=${app}000 > $filectr
+suwind < shom_rp.su key=gx min=-${app}000 max=${app}000 > $fileshom
+
+#Time reverse of scattered field through scattered medium
+fdelmodc \
+    file_cp=hom_cp.su ischeme=1 iorder=4 \
+    file_den=scatter_ro.su \
+    file_src=$filectr \
+    grid_dir=1 \
+    src_type=1 \
+    src_injectionrate=1 \
+	src_orient=1 \
+	rec_delay=0.0 \
+    verbose=2 \
+    tmod=4.51 \
+	file_snap=${file_mod}_timerev_scat_scat${app}.su \
+	tsnap1=3.4950 dtsnap=0.05 tsnap2=4.5005 sna_type_vz=0 \
+	dxsnap=$dx dzsnap=$dx zsnap1=0 zsnap2=1200 xsnap1=-2250 xsnap2=2250 \
+    npml=250 \
+    left=2 right=2 top=2 bottom=2
+
+#Time reverse of homogenoeus field through homogenoeus medium
+fdelmodc \
+    file_cp=hom_cp.su ischeme=1 iorder=4 \
+    file_den=hom_ro.su \
+    file_src=$fileshom \
+    grid_dir=1 \
+    src_type=1 \
+    src_injectionrate=1 \
+	src_orient=1 \
+	rec_delay=0.0 \
+    verbose=2 \
+    tmod=4.51 \
+	file_snap=${file_mod}_timerev_hom_hom${app}.su \
+	tsnap1=3.4950 dtsnap=0.05 tsnap2=4.5005 sna_type_vz=0 \
+	dxsnap=$dx dzsnap=$dx zsnap1=0 zsnap2=1200 xsnap1=-2250 xsnap2=2250 \
+    npml=250 \
+    left=2 right=2 top=2 bottom=2
+
+#Time reverse of scattered field through homogenoeus medium
+fdelmodc \
+    file_cp=hom_cp.su ischeme=1 iorder=4 \
+    file_den=hom_ro.su \
+    file_src=$filectr \
+    grid_dir=1 \
+    src_type=1 \
+    src_injectionrate=1 \
+	src_orient=1 \
+	rec_delay=0.0 \
+    verbose=2 \
+    tmod=4.51 \
+	file_snap=${file_mod}_timerev_hom_scat${app}.su \
+	tsnap1=3.4950 dtsnap=0.05 tsnap2=4.5005 sna_type_vz=0 \
+	dxsnap=$dx dzsnap=$dx zsnap1=0 zsnap2=1200 xsnap1=-2250 xsnap2=2250 \
+    npml=250 \
+    left=2 right=2 top=2 bottom=2
+
+#    curve=curve1,curve2,curve3 npair=25,25,25 curvecolor=black,black,black curvedash=3,3,3 \
+
+#sumax < ${file_mod}_back_hom_ctr${app}_sp.su mode=abs outpar=nep
+#x2end=`cat nep | awk '{print $1}'`
+#echo $x2end
+
+for file in ${file_mod}_timerev_hom_scat${app} ${file_mod}_timerev_hom_hom${app} ${file_mod}_timerev_scat_scat${app}
+do
+	sumax < ${file}_sp.su mode=abs outpar=nep
+	clip=`cat nep | awk '{print $1/10}'`
+	echo $file has clip $clip
+
+	for fldr in 10 13 16
+	do
+		times=$(echo "scale=2; 0.05*(13-${fldr})" | bc -l)
+		atime=`printf "%4.2f" $times`
+		suwind key=fldr min=$fldr max=$fldr < ${file}_sp.su | \
+    		supsimage hbox=4 wbox=4.7 labelsize=10 \
+    		x1beg=0 x1end=1200 clip=$clip \
+    		n1tic=4 x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > ${file}_$atime.eps
+	done
+	
+	suwind itmin=$base itmax=$base key=fldr min=13 max=13 < ${file}_sp.su | sumax mode=abs outpar=nep
+	scl=`cat nep | awk '{print 1.0/$1}'`
+	echo scale for trace = $scl 
+	suwind itmin=$base itmax=$base key=fldr min=13 max=13 < ${file}_sp.su | sugain scale=$scl | sustrip > trace.bin
+    suaddhead < trace.bin n1=1801 dt=$dx | supsgraph hbox=2 wbox=6 labelsize=10 \
+    f1=-2250 d1=$dx x1beg=-500 x1end=500 f1num=-500 d1num=500 style=normal > ${file}_z${depth}_t0.eps
+
+    suaddhead < trace.bin n1=1801 dt=$dx > ${file}_z${depth}_t0.su
+
+	(( imin = base - 50 ))
+	(( imax = base + 50 ))
+	echo $base $imin $imax
+	suwind key=fldr min=13 max=13 < ${file}_sp.su | \
+	suwind itmin=$imin itmax=$imax key=gx min=-125000 max=125000 | \
+	sustrip > ${file}_t0.bin
+
+	python3 readbin.py ${file}_t0.bin
+done
+
+
+(cat ${file_mod}_timerev_hom_hom${app}_z${depth}_t0.su; cat ${file_mod}_timerev_scat_scat${app}_z${depth}_t0.su;cat ${file_mod}_timerev_hom_scat${app}_z${depth}_t0.su ) | \
+	supsgraph hbox=2 wbox=6 labelsize=10 \
+    f1=-2250 d1=$dx x1beg=-500 x1end=500 f1num=-500 d1num=500 x2beg=-0.1 \
+	style=normal linecolor=red,blue,green > ${file_mod}_timerev_z${depth}_t0.eps
+
+
+rm nep trace.bin
+
+exit;
+
+xgraph < trace.bin n=451 pairs=2 d1=10 title=hom
+suwind itmin=75 itmax=75 key=fldr min=13 max=13 < snap_back_ctr_sp.su | sustrip > trace.bin
+xgraph < trace.bin n=451 pairs=2 d1=10 title=scatter

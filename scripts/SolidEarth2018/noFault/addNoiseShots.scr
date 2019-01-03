@@ -1,0 +1,32 @@
+#!/bin/bash
+
+itmax=64530 
+suwind < shotsNoise/shots_0_rp.su key=tracl min=1 max=901 itmax=$itmax | \
+	suzero itmax=$itmax | \
+	suaddnoise f=0,5,80,100 amps=0,1,1,0 | \
+	sushw key=fldr a=1 c=1 j=1 > noiseTraces.su
+
+zsrc=0
+dxshot=10
+ishot=0
+nshots=901
+
+rm /tmp/all*.su
+
+while (( ishot < nshots ))
+do
+	(( xsrc = -4500 + ${ishot}*${dxshot} ))
+	(( ishot = $ishot + 1))
+
+	file_rcv=shotsNoise/shots_${xsrc}_rp.su
+    echo $file_rcv
+	suwind < $file_rcv key=tracl min=1 max=901 > /tmp/sh.su
+	suwind < noiseTraces.su key=fldr min=$ishot max=$ishot > /tmp/tr.su
+	fconv file_in1=/tmp/sh.su file_in2=/tmp/tr.su ntfft=$itmax >> /tmp/allA.su
+
+done
+
+susort gx fldr < /tmp/allA.su | sustack key=gx > NoiseSources.su
+
+rm /tmp/sh.su /tmp/tr.su /tmp/all*.su
+
