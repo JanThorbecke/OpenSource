@@ -128,8 +128,8 @@ void makeWindow(WavePar WP, char *file_ray, char *file_amp, float dt, float *xrc
 			if (WP.wav) { /*Apply the wavelet to create a first arrival*/
 				if (file_amp != NULL || geosp==1) {
 					for (ig=0; ig<nfreq; ig++) {
-                       	cmute[ig].r = (cwav[ig].r*cos(ig*dw*timeval[j*nx+i]-M_PI/4.0)-cwav[ig].i*sin(ig*dw*timeval[j*nx+i]-M_PI/4.0))/amp[j*nx+i];
-                       	cmute[ig].i = (cwav[ig].i*cos(ig*dw*timeval[j*nx+i]-M_PI/4.0)+cwav[ig].r*sin(ig*dw*timeval[j*nx+i]-M_PI/4.0))/amp[j*nx+i];
+                       	cmute[ig].r = (cwav[ig].r*cos(ig*dw*timeval[j*nx+i]-M_PI/4.0)-cwav[ig].i*sin(ig*dw*timeval[j*nx+i]-M_PI/4.0))/(amp[j*nx+i]*amp[j*nx+i]*ntfft*sqrtf(timeval[j*nx+i]));
+                       	cmute[ig].i = (cwav[ig].i*cos(ig*dw*timeval[j*nx+i]-M_PI/4.0)+cwav[ig].r*sin(ig*dw*timeval[j*nx+i]-M_PI/4.0))/(amp[j*nx+i]*amp[j*nx+i]*ntfft*sqrtf(timeval[j*nx+i]));
                    	}
 				}
 				else { /*Use the raytime only to determine the mutewindow*/
@@ -139,7 +139,6 @@ void makeWindow(WavePar WP, char *file_ray, char *file_amp, float dt, float *xrc
            			}
 				}
            		cr1fft(cmute,&tinv[j*nx*ntfft+i*ntfft],ntfft,1);
-           		tinv[j*nx*ntfft+i*ntfft] /= ntfft;
 			}
 		}
 	}
