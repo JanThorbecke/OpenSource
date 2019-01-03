@@ -31,14 +31,13 @@ void timeDiff(float *data, int nsam, int nrec, float dt, float fmin, float fmax,
 void depthDiff(float *data, int nsam, int nrec, float dt, float dx, float fmin, float fmax, float c, int opt);
 void pad2d_data(float *data, int nsam, int nrec, int nsamout, int nrecout, float *datout);
 
-void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *synpos, int verbose)
+void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nsyn, float *xrcv, float *xsrc, float fxs2, float fxs, float dxs, float dxsrc, float dx, int ixa, int ixb, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpossyn, int npossyn, float *pmin, float *f1min, float *f1plus, float *f2p, float *G_d, int *muteW, int smooth, int shift, int above, int pad, int nt0, int *synpos, int n_source, int verbose)
 {
     int     i, j, l, ret, scheme,count=0;
-    int     iter, niter, ix, kxwfilt;
+    int     iter, niter, ix, is, kxwfilt, shift_num;
 	float   scl, *conv, *greenf2, fmin, fmax, alpha, cp, rho, perc;
-	float   *greenjkz, *greenf2jkz, *tmp1, *tmp2;
+	float   *greenjkz, *greenf2jkz, *tmp1, *tmp2, source_shift;
     double  t0, t2, tfft;
-	FILE	*fp, *fp1, *fp2, *fp3;
 
 	if (!getparint("scheme", &scheme)) scheme = 0;
 	if (!getparint("kxwfilt", &kxwfilt)) kxwfilt = 0;
@@ -49,6 +48,7 @@ void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int 
 	if (!getparfloat("cp", &cp)) cp = 1500.0;
 	if (!getparfloat("rho", &rho)) rho = 1000.0;
 	if (!getparfloat("perc", &perc)) perc = 0.15;
+	if (!getparfloat("source_shift", &source_shift)) source_shift = 0.1;
 
 	tfft = 0.0;
 	ret = 0;
@@ -95,18 +95,22 @@ void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int 
 		conjugate(green, ntfft, nshots, dt);
 		depthDiff(greenjkz, ntfft, nshots, dt, dx, fmin, fmax, cp, 1);
 	}
+	else if (scheme==2) {
+		if (verbose) vmess("Marchenko Homogeneous Green's function retrieval with multiple sources");
+	}
 	else {
 		if (verbose) vmess("Marchenko Homogeneous Green's function retrieval");
 	}
 
 #pragma omp parallel default(shared) \
-  private(i,j,conv,tmp1,tmp2) 
+  private(i,j,is,conv,tmp1,tmp2) 
 {	
 	conv	= (float *)calloc(nxs*ntfft,sizeof(float));
 	if (scheme==1) {
 		tmp1	= (float *)calloc(nxs*ntfft,sizeof(float));
 		tmp2	= (float *)calloc(nxs*ntfft,sizeof(float));
 	}
+	if (scheme==3) tmp1 = (float *)calloc(nxs*ntfft,sizeof(float));
 
 #pragma omp for
 	for (l = 0; l < Nsyn; l++) {
@@ -114,23 +118,25 @@ void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int 
 		count+=1;
 
 		if (verbose > 2) vmess("Creating Homogeneous G at location %d out of %d",count,Nsyn);
+		if (scheme==3) vmess("Looping over %d source positions",n_source);
+
 		if (scheme==0) { //Marchenko representation
 			depthDiff(&f2p[l*nxs*nts], ntfft, nshots, dt, dx, fmin, fmax, cp, 1);
-			convol(green, &f2p[l*nxs*nts], conv, nxs, nts, dt, -2);
-			timeDiff(conv, ntfft, nshots, dt, fmin, fmax, -2);
+			convol(green, &f2p[l*nxs*nts], conv, nxs, nts, dt, 0);
+			timeDiff(conv, ntfft, nshots, dt, fmin, fmax, -3);
 			if (kxwfilt) {
 				kxwfilter(conv, ntfft, nshots, dt, dx, fmin, fmax, alpha, cp, perc);
 			}
 			for (i=0; i<npossyn; i++) {
-            	for (j=0; j<nts/2; j++) {
-                	HomG[(j+nts/2)*Nsyn+synpos[l]] += conv[i*nts+j]/rho;
+           		for (j=0; j<nts/2; j++) {
+               		HomG[(j+nts/2)*Nsyn+synpos[l]] += conv[i*nts+j]/rho;
 					HomG[j*Nsyn+synpos[l]] += conv[i*nts+(j+nts/2)]/rho;
-            	}
-        	}
+           		}
+       		}
 		}
 		else if (scheme==1) { //classical representation
-            convol(&greenf2jkz[l*nxs*nts], green, tmp1, nxs, nts, dt, 0);
-            convol(&greenf2[l*nxs*nts], greenjkz, tmp2, nxs, nts, dt, 0);
+           	convol(&greenf2jkz[l*nxs*nts], green, tmp1, nxs, nts, dt, 0);
+           	convol(&greenf2[l*nxs*nts], greenjkz, tmp2, nxs, nts, dt, 0);
 			for (i = 0; i < npossyn; i++) {
 				for (j = 0; j < nts; j++) {
 					conv[i*nts+j] = tmp1[i*nts+j]+tmp2[i*nts+j];
@@ -138,18 +144,58 @@ void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int 
 			}
 			timeDiff(conv, ntfft, nshots, dt, fmin, fmax, -1);
 			for (i=0; i<npossyn; i++) {
-                for (j=0; j<nts/2; j++) {
-                    HomG[(j+nts/2)*Nsyn+synpos[l]] += conv[i*nts+j]/rho;
+               	for (j=0; j<nts/2; j++) {
+                   	HomG[(j+nts/2)*Nsyn+synpos[l]] += conv[i*nts+j]/rho;
 					HomG[j*Nsyn+synpos[l]] += conv[i*nts+(j+nts/2)]/rho;
-                }
-            }
+               	}
+           	}
 		}
+		else if (scheme==2) { //Marchenko representation with multiple sources
+			depthDiff(&f2p[l*nxs*nts], ntfft, nshots, dt, dx, fmin, fmax, cp, 1);
+			convol(green, &f2p[l*nxs*nts], conv, nxs, nts, dt, 0);
+			timeDiff(conv, ntfft, nshots, dt, fmin, fmax, -1);
+			for (i=0; i<npossyn; i++) {
+               	for (j=0; j<nts/2; j++) {
+                   	HomG[(j+nts/2)*Nsyn+synpos[l]] += 2*conv[i*nts+j]/rho;
+                   	HomG[j*Nsyn+synpos[l]] += 2*conv[i*nts+(j+nts/2)]/rho;
+               	}
+           	}
+		}
+		if (scheme==3) { //Marchenko representation with multiple shot gathers
+            depthDiff(&f2p[l*nxs*nts], ntfft, nshots, dt, dx, fmin, fmax, cp, 1); 
+			for (is=0; is<n_source; is++) {
+            	convol(&green[is*nxs*nts], &f2p[l*nxs*nts], conv, nxs, nts, dt, 0);
+            	timeDiff(conv, ntfft, nshots, dt, fmin, fmax, -3);
+				//shift_num = is*((int)(source_shift/dt));
+            	if (kxwfilt) {
+                	kxwfilter(conv, ntfft, nshots, dt, dx, fmin, fmax, alpha, cp, perc);
+            	}
+            	for (i=0; i<npossyn; i++) {
+					/*for (j = nts/2+1; j < nts; j++) {
+                    	tmp1[i*nts+j] = 0.0;
+                    }
+					for (j = shift_num; j < nts; j++) {
+                        tmp1[i*nts+j] = conv[i*nts+j-shift_num];;
+                    }
+					for (j = shift_num; j < nts; j++) {
+                        tmp1[i*nts+j] = conv[i*nts+nts-shift_num+j];;
+                    }*/
+					//HomG[(nts/2-1)*Nsyn+synpos[l]] += tmp1[i*nts+nts-1]/rho;
+                	for (j=0; j<nts/2; j++) {
+                    	//HomG[(j+nts/2)*Nsyn+synpos[l]] += tmp1[i*nts+j]/rho;
+                    	HomG[is*nts*Nsyn+(j+nts/2)*Nsyn+synpos[l]] += conv[i*nts+j]/rho;
+                    	HomG[is*nts*Nsyn+j*Nsyn+synpos[l]] += conv[i*nts+(j+nts/2)]/rho;
+                	}
+				}
+            }
+        }
 	}
     free(conv);
 	if (scheme==1) { 
 		free(tmp1);
 		free(tmp2);
 	}
+	if (scheme==3) free(tmp1);
 }
 	if (scheme==1) {
 		free(greenf2);
@@ -306,6 +352,13 @@ void timeDiff(float *data, int nsam, int nrec, float dt, float fmin, float fmax,
                 om = 4.0/(deltom*iom);
                 cdatascl[ix*nfreq+iom].r = om*cdata[ix*nfreq+iom].r;
                 cdatascl[ix*nfreq+iom].i = om*cdata[ix*nfreq+iom].i;
+            }
+        }
+		else if (opt == -3) {
+            for (iom = iomin ; iom < iomax ; iom++) {
+                om = 1.0/(deltom*iom);
+                cdatascl[ix*nfreq+iom].r = 2*om*cdata[ix*nfreq+iom].i;
+                cdatascl[ix*nfreq+iom].i = 0.0;
             }
         }
     }
