@@ -788,7 +788,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
 /* Loop over total number of shots */
     if (reci == 0 || reci == 1) {
         for (k=0; k<nshots; k++) {
-            if ((xsrc[k] < 0.99*fxsb) || (xsrc[k] > 1.01*fxse)) continue;
+            if ((xsrc[k] < 0.999*fxsb) || (xsrc[k] > 1.001*fxse)) continue;
             ixsrc = NINT((xsrc[k] - fxsb)/dxs);
             inx = xnx[k]; /* number of traces per shot */
 
@@ -936,7 +936,7 @@ float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos
                     vmess("focal point positions:  %.2f <--> %.2f", fxsb, fxse);
                 }
         
-                if ( (xsrc[k] >= 0.99*fxsb) && (xsrc[k] <= 1.01*fxse) ) {
+                if ( (xsrc[k] >= 0.999*fxsb) && (xsrc[k] <= 1.001*fxse) ) {
 				    j = linearsearch(ixpos, *npos, ixsrc);
 				    if (j < *npos) { /* the position (at j) is already included */
 					    count[j] += xnx[k];
