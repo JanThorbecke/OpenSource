@@ -1,0 +1,42 @@
+#!/bin/bash
+#PBS -N fdelmod
+#PBS -q verylong
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+
+export PATH=$HOME/bin:$HOME/src/OpenSource/bin:$PATH:
+
+dxshot=10
+ishot=0
+nshots=601
+
+file_R=shotsnew/refl_rp.su
+rm $file_R
+
+while (( ishot < nshots ))
+do
+
+	(( xsrc = -3000 + ${ishot}*${dxshot} ))
+	(( sx = ${xsrc}*1000 ))
+	(( iishot = ${ishot}*${dxshot}/10 ))
+	(( tr1 = 601 - ${iishot} ))
+	(( tr2 = ${tr1} + 600 ))
+	echo xsrc=$xsrc tr1=$tr1 tr2=$tr2
+
+# direct wave
+	suwind < direct_rp.su key=tracl min=$tr1 max=$tr2 > direct.su
+
+# 2D shot
+	file_rcv=shotsnew/shots_${xsrc}_rp.su
+	#suwind key=tracl min=1 max=601 < $file_rcv > shotz0.su
+	sudiff $file_rcv direct.su > refl.su 
+
+	(( ishot = $ishot + 1))
+
+    sushw < refl.su key=fldr a=$ishot | sugain scale=0.5 >> $file_R
+
+done
+
+rm direct.su refl.su
+

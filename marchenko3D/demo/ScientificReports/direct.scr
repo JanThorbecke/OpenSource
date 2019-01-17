@@ -1,0 +1,40 @@
+#!/bin/bash
+
+cd /vardim/home/thorbcke/data/Kees/Marchenko/Tutorial
+
+dx=2.5
+dt=0.00050
+fast="fast"
+
+dx=0.5
+dt=0.0001
+fast=""
+
+makemod sizex=12000 sizez=250 dx=$dx dz=$dx cp0=1500 ro0=1000 \
+	orig=-6000,0 file_base=noContrast.su 
+
+export OMP_NUM_THREADS=8
+makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw${fast}.su nt=8192 t0=0.4 scale=0 scfft=1
+
+fdelmodc \
+    file_cp=noContrast_cp.su ischeme=1 iorder=4 \
+    file_den=noContrast_ro.su \
+    file_src=wavefw${fast}.su \
+    file_rcv=direct${fast}.su \
+    src_type=7 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    rec_delay=0.4 \
+    dtrcv=0.004 \
+    verbose=2 \
+    tmod=4.492 \
+    dxrcv=10.0 \
+    xrcv1=-6000 xrcv2=6000 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=0 \
+    ntaper=200 \
+    left=2 right=2 top=2 bottom=2
+

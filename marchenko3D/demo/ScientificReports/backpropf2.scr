@@ -1,0 +1,57 @@
+#!/bin/bash
+
+export PATH=:$HOME/src/OpenSource/bin:$HOME/bin:$PATH:
+
+export OMP_NUM_THREADS=8
+dx=2.5
+dt=0.00050
+dx=0.5
+dt=0.000125
+
+ns=`surange < f2.su | grep ns | awk '{print $2}'`
+dtrcv=`surange < f2.su | grep dt | awk '{print $2/1000000.0}'`
+#suwind key=gx min=-2250000 max=2250000 itmax=1023 < f2.su | sushw key=f2 a=-2250 > nep.su
+#shift=$(echo "scale=6; ($dtrcv*($ns/2.0-1)+0.5*$dt-0.000250)" | bc -l)
+shift=$(echo "scale=6; ($dtrcv*($ns/2.0-1))" | bc -l)
+echo $shift
+basop choice=shift shift=$shift file_in=f2.su verbose=1 > pplus.su
+
+# the f2.su is sampled with 4ms the FD program need 0.5ms
+# time axis is interpolated by making use of FFT's: sinc interpolation
+# this is now done in fdelmodc 
+
+#ftr1d file_in=pplus.su file_out=freq.su
+#sushw < freq.su key=nhs,dt a=8192,500 > fr.su
+#ftr1d file_in=fr.su n1=8194 file_out=pplusdt.su verbose=1
+
+file_cp=tutodel_dx${dx}_cp.su
+file_ro=tutodel_dx${dx}_ro.su
+
+# back propagate with f2 from marchenko.scr
+
+set -x 
+fdelmodc \
+    file_cp=$file_cp ischeme=1 iorder=4 \
+    file_den=$file_ro \
+    file_src=pplus.su \
+    file_snap=snapinj_f2.su \
+    grid_dir=0 \
+    src_type=1 \
+    src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=0 \
+    rec_int_p=0 \
+    verbose=4 \
+	dt=$dt \
+    tmod=3.0000 \
+    tsnap1=0.744125 tsnap2=2.744125 dtsnap=0.01 \
+    xsnap1=-1000 xsnap2=1000 dxsnap=2.5 dzsnap=2.5 \
+    sna_type_vz=0 \
+    sna_type_p=1 \
+	fmax=120 \
+    ntaper=400 \
+    left=2 right=2 top=2 bottom=2
+
+#2.044125
+#    tmod=2.1000 \
+#    tsnap1=2.0400 tsnap2=2.0500 dtsnap=0.000125 \
