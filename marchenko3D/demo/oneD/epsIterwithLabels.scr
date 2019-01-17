@@ -1,0 +1,76 @@
+#!/bin/bash
+
+export PATH=$HOME/src/OpenSource/bin/:$PATH:
+
+#mute to get pslinepos.asci files used in plotting only
+fmute file_shot=iniFocus_rp.su file_out=nep.su above=0 shift=8 verbose=1 check=1 hw=4
+
+#set same clip factor for iteration updates
+file=iter_001.su
+sumax < $file mode=abs outpar=nep
+clipiter=`cat nep | awk '{print $1/8}'`
+
+#set same clip factor for Green;s function updates
+file=pgreen_004.su
+file_base=${file%.su}
+sumax < $file mode=abs outpar=nep
+clipgreen=`cat nep | awk '{print $1/4}'`
+
+#iterations
+for (( iter=1; iter<=4; iter+=1 ))
+do
+piter=$(printf %03d $iter)
+echo $piter
+
+file=iter_$piter.su
+#ns=`surange < iter_001.su | grep ns | awk '{print $2}'`
+#dtrcv=`surange < iter_001.su | grep dt | awk '{print $2/1000000.0}'`
+#shift=$(echo "scale=4; ($dtrcv*($ns/2.0-1))" | bc -l)
+#basop choice=shift shift=$shift file_in=$file | \
+file_base=${file%.su}
+clipref=$clipiter
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < $file \
+   	label1="time (s)" label2="lateral distance (m)" \
+	n1tic=2 d2=5 x1beg=-1.504 x1end=1.5 d1num=0.4 \
+	curve=pslinepos.asci,pslineneg.asci npair=901,901 curvewidth=2,2 curvecolor=black,black curvedash=3,3 \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > ${file_base}_labels.eps
+
+file=f1min_$piter.su
+file_base=${file%.su}
+sumax < $file mode=abs outpar=nep
+clipref=`cat nep | awk '{print $1/5}'`
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < $file\
+   	label1="time (s)" label2="lateral distance (m)" \
+    n1tic=2 d2=5 x1beg=-1.504 x1end=1.5 d1num=0.4 \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > ${file_base}_labels.eps
+
+file=f1plus_$piter.su
+file_base=${file%.su}
+sumax < $file mode=abs outpar=nep
+clipref=`cat nep | awk '{print $1/5}'`
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < $file\
+   	label1="time (s)" label2="lateral distance (m)" \
+    n1tic=2 d2=5 x1beg=-1.504 x1end=1.5 d1num=0.4 \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > ${file_base}_labels.eps
+
+file=pgreen_$piter.su
+file_base=${file%.su}
+sumax < $file mode=abs outpar=nep
+clipref=`cat nep | awk '{print $1/4}'`
+suwind key=gx min=-2250000 max=2250000 < $file | \
+	supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 \
+   	label1="time (s)" label2="lateral distance (m)" \
+	n1tic=2 d2=5 f1=0.0 x1beg=0 x1end=2.004 d1num=0.4 \
+	f2=-2250 f2num=-2000 d2num=1000 clip=$clipgreen > ${file_base}_labels.eps
+
+done
+ 
+
+#special treatment of f1+ zero-iteration: which is zero, to make a nice gray plot (and not black)
+file=f1plus_001.su
+file_base=${file%.su}
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < $file\
+   	label1="time (s)" label2="lateral distance (m)" \
+    n1tic=2 d2=5 x1beg=-1.504 x1end=1.5 d1num=0.4 \
+    f2=-2250 f2num=-2000 d2num=1000 bclip=1 wclip=-1> ${file_base}_labels.eps
+
