@@ -25,7 +25,7 @@ int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
 int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 int disp_fileinfo(char *file, int n1, int n2, float f1, float f2, float d1, float d2, segy *hdrs);
-void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift);
+void applyMute(float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *xrcvsyn, int npos, int shift, int *muteW);
 double wallclock_time(void);
 
 /*********************** self documentation **********************/
@@ -64,7 +64,7 @@ int main (int argc, char **argv)
     FILE    *fp_in1, *fp_in2, *fp_out, *fp_chk, *fp_psline1, *fp_psline2;
     int        verbose, shift, k, nx1, nt1, nx2, nt2;
     int     ntmax, nxmax, ret, i, j, jmax, imax, above, check;
-    int     size, ntraces, ngath, *maxval, hw, smooth;
+    int     size, ntraces, ngath, *maxval, *tsynW, hw, smooth;
     int     tstart, tend, scale, *xrcv;
     float   dt, d2, f1, f2, t0, t1, f1b, f2b, d1, d1b, d2b;
     float    w1, w2, dxrcv;
@@ -169,6 +169,7 @@ int main (int argc, char **argv)
 /*================ initializations ================*/
 
     maxval = (int *)calloc(nx1,sizeof(int));
+    tsynW  = (int *)calloc(nx1,sizeof(int));
     xrcv   = (int *)calloc(nx1,sizeof(int));
     
     if (file_out==NULL) fp_out = stdout;
@@ -289,7 +290,7 @@ int main (int argc, char **argv)
 
 /*================ apply mute window ================*/
 
-        applyMute(tmpdata2, maxval, smooth, above, 1, nx2, nt2, xrcv, nx2, shift);
+        applyMute(tmpdata2, maxval, smooth, above, 1, nx2, nt2, xrcv, nx2, shift, tsynW);
 
 /*================ write result to output file ================*/
 
