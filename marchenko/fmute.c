@@ -43,7 +43,7 @@ char *sdoc[] = {
 " Optional parameters: ",
 " ",
 "   file_out= ................ output file",
-"   above=0 .................. mute after(0), before(1) or around(2) the maximum times of file_mute",
+"   above=0 .................. mute above(1), around(0) or below(-1) the first travel times of file_tinv",
 "   .......................... options 4 is the inverse of 0 and -1 the inverse of 1",
 "   shift=0 .................. number of points above(positive) / below(negative) maximum time for mute",
 "   check=0 .................. plots muting window on top of file_mute: output file check.su",
