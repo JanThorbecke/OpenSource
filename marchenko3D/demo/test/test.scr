@@ -1,0 +1,5 @@
+#!/bin/bash
+
+./../../test file_shot=shot_gy.su
+./../../test file_shot=shot_sxgy.su
+./../../test file_shot=shot_sxsygy.su
