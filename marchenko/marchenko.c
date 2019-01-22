@@ -43,7 +43,7 @@ float *zsyn, int *ixpos, int npos, int iter);
 
 void name_ext(char *filename, char *extension);
 
-void applyMute(float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *xrcvsyn, int npos, int shift);
+void applyMute(float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *xrcvsyn, int npos, int shift, int *muteW);
 
 int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *ntraces);
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
@@ -87,6 +87,9 @@ char *sdoc[] = {
 "   shift=12 ................. number of points above(positive) / below(negative) travel time for mute",
 "   hw=8 ..................... window in time samples to look for maximum in next trace",
 "   smooth=5 ................. number of points to smooth mute with cosine window",
+"   plane_wave=0 ............. enable plane-wave illumination function"
+"   src_angle=0 .............. angle of plane source array",
+"   src_velo=1500 ............ velocity to use in src_angle definition",
 " REFLECTION RESPONSE CORRECTION ",
 "   tsq=0.0 .................. scale factor n for t^n for true amplitude recovery",
 "   Q=0.0 .......,............ Q correction factor",
@@ -121,16 +124,17 @@ int main (int argc, char **argv)
     int     size, n1, n2, ntap, tap, di, ntraces, pad;
     int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     int     reci, countmin, mode, n2out, verbose, ntfft;
-    int     iter, niter, tracf, *muteW;
-    int     hw, smooth, above, shift, *ixpos, npos, ix;
+    int     iter, niter, tracf, *muteW, *tsynW;
+    int     hw, smooth, above, shift, *ixpos, npos, ix, plane_wave;
     int     nshots_r, *isxcount, *reci_xsrc, *reci_xrcv;
     float   fmin, fmax, *tapersh, *tapersy, fxf, dxf, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
     double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, energyNi, energyN0;
     float   d1, d2, f1, f2, fxsb, fxse, ft, fx, *xsyn, dxsrc;
     float   *green, *f2p, *pmin, *G_d, dt, dx, dxs, scl, mem;
-    float   *f1plus, *f1min, *iRN, *Ni, *trace, *Gmin, *Gplus;
+    float   *f1plus, *f1min, *iRN, *Ni, *Nig, *trace, *Gmin, *Gplus;
     float   xmin, xmax, scale, tsq, Q, f0;
     float   *ixmask;
+    float   grad2rad, p, src_angle, src_velo;
     complex *Refl, *Fop;
     char    *file_tinv, *file_shot, *file_green, *file_iter;
     char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_pmin;
@@ -176,6 +180,10 @@ int main (int argc, char **argv)
     if(!getparint("above", &above)) above = 0;
     if(!getparint("shift", &shift)) shift=12;
 
+    if (!getparint("plane_wave", &plane_wave)) plane_wave = 0;
+	if (!getparfloat("src_angle",&src_angle)) src_angle=0.;
+	if (!getparfloat("src_velo",&src_velo)) src_velo=1500.;
+
     if (reci && ntap) vwarn("tapering influences the reciprocal result");
 
 /*================ Reading info about shot and initial operator sizes ================*/
@@ -214,8 +222,10 @@ int main (int argc, char **argv)
     f1min   = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     iRN     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     Ni      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
+    Nig     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     G_d     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     muteW   = (int *)calloc(Nfoc*nxs,sizeof(int));
+    tsynW   = (int *)malloc(Nfoc*nxs*sizeof(int)); // time-shift for Giovanni's plane-wave on non-zero times
     trace   = (float *)malloc(ntfft*sizeof(float));
     tapersy = (float *)malloc(nxs*sizeof(float));
     xrcvsyn = (float *)calloc(Nfoc*nxs,sizeof(float)); // x-rcv postions of focal points
@@ -247,6 +257,28 @@ int main (int argc, char **argv)
     /* reading data added zero's to the number of time samples to be the same as ntfft */
     nts   = ntfft;
                              
+	/* compute time shift for tilted plane waves */
+	if (plane_wave != 0) {
+		grad2rad = 17.453292e-3;
+		p = sin(src_angle*grad2rad)/src_velo;
+		if (p < 0.0) {
+			for (i=0; i<nxs; i++) {
+				tsynW[i] = NINT(fabsf((nxs-1-i)*dxs*p)/dt);
+			}
+		}
+		else {
+			for (i=0; i<nxs; i++) {
+				tsynW[i] = NINT(i*dxs*p/dt);
+			}
+		}
+		if (Nfoc!=1) verr("For plave-wave focusing only one function can be computed at the same time");
+	}
+	else { /* just fill with zero's */
+		for (i=0; i<nxs*Nfoc; i++) {
+			tsynW[i] = 0;
+		}
+    }
+
     /* define tapers to taper edges of acquisition */
     if (tap == 1 || tap == 3) {
         for (j = 0; j < ntap; j++)
@@ -461,6 +493,12 @@ int main (int argc, char **argv)
                     pmin[l*nxs*nts+i*nts+j] += iRN[l*nxs*nts+ix*nts+j];
                     energyNi += iRN[l*nxs*nts+ix*nts+j]*iRN[l*nxs*nts+ix*nts+j];
                 }
+                if (plane_wave!=0) { /* don't reverse in time */
+					Nig[l*nxs*nts+i*nts+j]   = -iRN[l*nxs*nts+ix*nts+j];
+                	for (j = 1; j < nts; j++) {
+                        Nig[l*nxs*nts+i*nts+j]   = -iRN[l*nxs*nts+ix*nts+j];
+					}
+				}
             }
             if (iter==0) energyN0 = energyNi;
             if (verbose >=2) vmess(" - iSyn %d: Ni at iteration %d has energy %e; relative to N0 %e", l, iter, sqrt(energyNi),
@@ -468,29 +506,34 @@ sqrt(energyNi/energyN0));
         }
 
         /* apply mute window based on times of direct arrival (in muteW) */
-        applyMute(Ni, muteW, smooth, above, Nfoc, nxs, nts, ixpos, npos, shift);
-
-        /* update f2 */
-        for (l = 0; l < Nfoc; l++) {
-            for (i = 0; i < npos; i++) {
-                j = 0;
-                f2p[l*nxs*nts+i*nts+j] += Ni[l*nxs*nts+i*nts+j];
-                for (j = 1; j < nts; j++) {
-                    f2p[l*nxs*nts+i*nts+j] += Ni[l*nxs*nts+i*nts+j];
-                }
-            }
-        }
+        applyMute(Ni, muteW, smooth, above, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
+        if (plane_wave!=0) applyMute(Nig, muteW, smooth, above, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
 
         if (iter % 2 == 0) { /* even iterations update: => f_1^-(t) */
-            for (l = 0; l < Nfoc; l++) {
-                for (i = 0; i < npos; i++) {
-                    j = 0;
-                    f1min[l*nxs*nts+i*nts+j] -= Ni[l*nxs*nts+i*nts+j];
-                    for (j = 1; j < nts; j++) {
-                        f1min[l*nxs*nts+i*nts+j] -= Ni[l*nxs*nts+i*nts+nts-j];
+			if (plane_wave==0) { /* follow the standard focal point scheme */
+                for (l = 0; l < Nfoc; l++) {
+                    for (i = 0; i < npos; i++) {
+                        j = 0;
+                        f1min[l*nxs*nts+i*nts+j] -= Ni[l*nxs*nts+i*nts+j];
+                        for (j = 1; j < nts; j++) {
+                            f1min[l*nxs*nts+i*nts+j] -= Ni[l*nxs*nts+i*nts+nts-j];
+                        }
                     }
                 }
-            }
+			}
+			else { /* plane wave scheme */
+                for (l = 0; l < Nfoc; l++) {
+                    for (i = 0; i < npos; i++) {
+                        j = 0;
+                        f1min[l*nxs*nts+i*nts+j] -= Nig[l*nxs*nts+i*nts+j];
+                        Ni[l*nxs*nts+i*nts+j]    = Nig[l*nxs*nts+i*nts+j];
+                        for (j = 1; j < nts; j++) {
+                            f1min[l*nxs*nts+i*nts+j] -= Nig[l*nxs*nts+i*nts+j];
+                            Ni[l*nxs*nts+i*nts+j] = Nig[l*nxs*nts+i*nts+nts-j];
+                        }
+                    }
+                }
+			}
         }
         else {/* odd iterations update: => f_1^+(t)  */
             for (l = 0; l < Nfoc; l++) {
@@ -504,6 +547,17 @@ sqrt(energyNi/energyN0));
             }
         }
 
+        /* update f2 */
+        for (l = 0; l < Nfoc; l++) {
+            for (i = 0; i < npos; i++) {
+                j = 0;
+                f2p[l*nxs*nts+i*nts+j] += Ni[l*nxs*nts+i*nts+j];
+                for (j = 1; j < nts; j++) {
+                    f2p[l*nxs*nts+i*nts+j] += Ni[l*nxs*nts+i*nts+j];
+                }
+            }
+        }
+
         t2 = wallclock_time();
         tcopy +=  t2 - t3;
 
@@ -512,6 +566,7 @@ sqrt(energyNi/energyN0));
     } /* end of iterations */
 
     free(Ni);
+    free(Nig);
     free(G_d);
 
     /* compute full Green's function G = int R * f2(t) + f2(-t) = Pplus + Pmin */
@@ -552,7 +607,7 @@ sqrt(energyNi/energyN0));
             }
         }
         /* Apply mute with window for Gmin */
-        applyMute(Gmin, muteW, smooth, 1, Nfoc, nxs, nts, ixpos, npos, shift);
+        applyMute(Gmin, muteW, smooth, 1, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
     } /* end if Gmin */
 
     /* compute downgoing Green's function G^+,+ */
@@ -577,6 +632,9 @@ sqrt(energyNi/energyN0));
             }
         }
     } /* end if Gplus */
+
+    free(muteW);
+    free(tsynW);
 
     t2 = wallclock_time();
     if (verbose) {
