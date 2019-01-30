@@ -7,7 +7,7 @@ LIBS    += -L$L -lgenfft -lm $(LIBSM)
 
 #ALL: fmute marchenko marchenko2
 
-ALL: fmute marchenko test fmute3D
+ALL: fmute marchenko marchenko3D fmute3D
 
 SRCJ	= fmute.c \
 		getFileInfo.c  \
@@ -69,8 +69,8 @@ fmute:	$(OBJJ)
 
 OBJT	= $(SRCT:%.c=%.o)
 
-test:	$(OBJT) 
-	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o test $(OBJT) $(LIBS)
+marchenko3D:	$(OBJT) 
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o marchenko3D $(OBJT) $(LIBS)
 
 OBJH	= $(SRCH:%.c=%.o)
 
@@ -90,13 +90,13 @@ fmute3D:	$(OBJJ3)
 install: fmute marchenko test fmute3D
 	cp fmute $B
 	cp marchenko $B
-	cp test $B
+	cp marchenko3D $B
 	cp fmute3D $B
 
 #	cp marchenko2 $B
 
 clean:
-		rm -f core fmute $(OBJJ) marchenko $(OBJH) marchenko2 $(OBJH2) test $(OBJT) fmute3D $(OBJJ3)
+		rm -f core fmute $(OBJJ) marchenko $(OBJH) marchenko2 $(OBJH2) marchenko3D $(OBJT) fmute3D $(OBJJ3)
 
 realclean: clean
-		rm -f $B/fmute $B/marchenko $B/marchenko2 $B/test $B/fmute3D
+		rm -f $B/fmute $B/marchenko $B/marchenko2 $B/marchenko3D $B/fmute3D
