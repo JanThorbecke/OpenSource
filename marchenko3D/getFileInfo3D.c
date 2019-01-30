@@ -58,6 +58,7 @@ int getFileInfo3D(char *filename, int *n1, int *n2, int *n3, int *ngath, float *
         *f1 = hdr.f1;
     }
     *f2 = hdr.f2;
+    *f3 = hdr.gy;
 
     data_sz = sizeof(float)*(*n1);
     trace_sz = sizeof(float)*(*n1)+TRCBYTES;
