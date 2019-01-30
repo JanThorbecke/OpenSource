@@ -19,16 +19,16 @@ typedef struct { /* complex number */
 
 void findShotInMute(float *xrcvMute, float xrcvShot, int nxs, int *imute);
 
-int readTinvData(char *filename, float *xrcv, float *yrcv, float *xsrc, float *ysrc float *zsrc, int *xnx, int Nfoc, int nx, int ny, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose)
+int readTinvData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float *ysrc, float *zsrc, int *xnx, int Nfoc, int nx, int ny, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose)
 {
 	FILE *fp;
 	segy hdr;
 	size_t nread;
-	int fldr_shot, sx_shot, sy_shot, itrace, one_shot, ig, isyn, i, j;
+	int fldr_shot, sx_shot, sy_shot, itrace, one_shot, ig, isyn, i, j, l;
 	int end_of_file, nt, gx0, gx1, gy0, gy1;
-	int nx1, ny1, jmax, imax, tstart, tend, nxy;
-	float xmax, tmax, lmax, ixmax, iymax;
-	float scl, scel, *trace, dxrcv;
+	int nx1, ny1, jmax, imax, tstart, tend, nxy, ixmax, iymax;
+	float xmax, tmax, lmax;
+	float scl, scel, *trace, dxrcv, dyrcv;
 	complex *ctrace;
 
     nxy = nx*ny;
@@ -95,11 +95,6 @@ int readTinvData(char *filename, float *xrcv, float *yrcv, float *xsrc, float *y
 			/* copy trace to data array */
             memcpy( &tinv[ig+itrace*ntfft], trace, nt*sizeof(float));
 
-            gx1 = hdr.gx;
-            if (gy1 != hdr.gy) {
-                gy1 = hdr.gy;
-                ny1++;
-            }
 			itrace++;
 
 			/* read next hdr of next trace */
@@ -110,9 +105,15 @@ int readTinvData(char *filename, float *xrcv, float *yrcv, float *xsrc, float *y
 				break;
 			}
 			if ((sx_shot != hdr.sx) || (sy_shot != hdr.sy) || (fldr_shot != hdr.fldr)) break;
+
+			gx1 = hdr.gx;
+            if (gy1 != hdr.gy) {
+                gy1 = hdr.gy;
+                ny1++;
+            }
 		}
 		if (verbose>2) {
-			fprintf(stderr,"finished reading shot x=%d y=%d (%d) with %d traces\n",sx_shot,isyn,itrace);
+			fprintf(stderr,"finished reading shot x=%d y=%d (%d) with %d traces\n",sx_shot,sy_shot,isyn,itrace);
 		}
 
 		/* look for maximum in shot record to define mute window */
@@ -126,6 +127,22 @@ int readTinvData(char *filename, float *xrcv, float *yrcv, float *xsrc, float *y
         //imax = NINT(((sx_shot-gx0)*scl)/dxrcv);
         ixmax = NINT(((sx_shot-gx0)*scl)/dxrcv);
         iymax = NINT(((sy_shot-gy0)*scl)/dyrcv);
+		if (iymax > ny1-1) {
+            vmess("source of y is past array, snapping to nearest y");
+            iymax = ny1-1;
+        }
+        if (iymax < 0) {
+            vmess("source of y is before array, snapping to nearest y");
+            iymax = 0;
+        }
+        if (ixmax > nx1-1) {
+            vmess("source of x is past array, snapping to nearest x");
+            ixmax = nx1-1;
+        }
+        if (ixmax < 0) {
+            vmess("source of x is before array, snapping to nearest x");
+            ixmax = 0;
+        }
         tmax=0.0;
         jmax = 0;
         for (j = 0; j < nt; j++) {
@@ -174,11 +191,9 @@ int readTinvData(char *filename, float *xrcv, float *yrcv, float *xsrc, float *y
 
         /* search forward in y-trace direction from maximum in file */
         for (i = iymax+1; i < ny1; i++) {
-            tstart = MAX(0, (maxval[isyn*nxy+(i-1)*nx+ixmax]-hw));
-            tend   = MIN(nt-1, (maxval[isyn*nxy+(i-1)*nx+ixmax]+hw));
-            jmax=tstart;
             tmax=0.0;
-            for(j = tstart; j <= tend; j++) {
+        	jmax = 0;
+            for(j = 0; j <= nt; j++) {
                 lmax = fabs(tinv[ig+i*nx*ntfft+ixmax*ntfft+j]);
                 if (lmax > tmax) {
                     jmax = j;
@@ -186,15 +201,44 @@ int readTinvData(char *filename, float *xrcv, float *yrcv, float *xsrc, float *y
                 }
             }
             maxval[isyn*nxy+i*nx+ixmax] = jmax;
+			if (verbose >= 8) vmess("Mute max at src-trace x=%d y=%d is sample %d", ixmax, i, maxval[isyn*nxy+i*nx+ixmax]);
+			/* search forward in x-trace direction from maximum in file */
+			for (l = ixmax+1; l < nx1; l++) {
+				tstart = MAX(0, (maxval[isyn*nxy+i*nx+(l-1)]-hw));
+				tend   = MIN(nt-1, (maxval[isyn*nxy+i*nx+(l-1)]+hw));
+				jmax=tstart;
+				tmax=0.0;
+				for(j = tstart; j <= tend; j++) {
+					lmax = fabs(tinv[ig+i*nx*ntfft+l*ntfft+j]);
+					if (lmax > tmax) {
+						jmax = j;
+						tmax = lmax;
+					}
+				}
+				maxval[isyn*nxy+i*nx+l] = jmax;
+			}
+			/* search backward in x-trace direction from maximum in file */
+			for (l = ixmax-1; l >=0; l--) {
+				tstart = MAX(0, (maxval[isyn*nxy+i*nx+l+1]-hw));
+				tend   = MIN(nt-1, (maxval[isyn*nxy+i*nx+l+1]+hw));
+				jmax=tstart;
+				tmax=0.0;
+				for(j = tstart; j <= tend; j++) {
+					lmax = fabs(tinv[ig+i*nx*ntfft+l*ntfft+j]);
+					if (lmax > tmax) {
+						jmax = j;
+						tmax = lmax;
+					}
+				}
+				maxval[isyn*nxy+i*nx+l] = jmax;
+			}
         }
 
         /* search backward in y-trace direction from maximum in file */
         for (i = iymax-1; i >= 0; i--) {
-            tstart = MAX(0, (maxval[isyn*nxy+(i+1)*nx+ixmax]-hw));
-            tend   = MIN(nt-1, (maxval[isyn*nxy+(i+1)*nx+ixmax]+hw));
-            jmax=tstart;
             tmax=0.0;
-            for(j = tstart; j <= tend; j++) {
+        	jmax = 0;
+            for(j = 0; j <= nt; j++) {
                 lmax = fabs(tinv[ig+i*nx*ntfft+ixmax*ntfft+j]);
                 if (lmax > tmax) {
                     jmax = j;
@@ -202,6 +246,37 @@ int readTinvData(char *filename, float *xrcv, float *yrcv, float *xsrc, float *y
                 }
             }
             maxval[isyn*nxy+i*nx+ixmax] = jmax;
+			if (verbose >= 8) vmess("Mute max at src-trace x=%d y=%d is sample %d", ixmax, i, maxval[isyn*nxy+i*nx+ixmax]);
+			/* search forward in x-trace direction from maximum in file */
+			for (l = ixmax+1; l < nx1; l++) {
+				tstart = MAX(0, (maxval[isyn*nxy+i*nx+(l-1)]-hw));
+				tend   = MIN(nt-1, (maxval[isyn*nxy+i*nx+(l-1)]+hw));
+				jmax=tstart;
+				tmax=0.0;
+				for(j = tstart; j <= tend; j++) {
+					lmax = fabs(tinv[ig+i*nx*ntfft+l*ntfft+j]);
+					if (lmax > tmax) {
+						jmax = j;
+						tmax = lmax;
+					}
+				}
+				maxval[isyn*nxy+i*nx+l] = jmax;
+			}
+			/* search backward in x-trace direction from maximum in file */
+			for (l = ixmax-1; l >=0; l--) {
+				tstart = MAX(0, (maxval[isyn*nxy+i*nx+l+1]-hw));
+				tend   = MIN(nt-1, (maxval[isyn*nxy+i*nx+l+1]+hw));
+				jmax=tstart;
+				tmax=0.0;
+				for(j = tstart; j <= tend; j++) {
+					lmax = fabs(tinv[ig+i*nx*ntfft+l*ntfft+j]);
+					if (lmax > tmax) {
+						jmax = j;
+						tmax = lmax;
+					}
+				}
+				maxval[isyn*nxy+i*nx+l] = jmax;
+			}
         }
 
 		if (itrace != 0) { /* end of shot record, but not end-of-file */
@@ -215,11 +290,13 @@ int readTinvData(char *filename, float *xrcv, float *yrcv, float *xsrc, float *y
 		/* copy trace to data array for mode=-1 */
         /* time reverse trace */
 		if (mode==-1) {
-			for (i = 0; i < nx1; i++) {
-            	memcpy( trace, &tinv[ig+i*ntfft], ntfft*sizeof(float));
-				j=0;
-				tinv[ig+i*ntfft+j] = trace[j];
-				for (j=1; j<ntfft; j++) tinv[ig+i*ntfft+ntfft-j] = trace[j];
+			for (i = 0; i < ny1; i++) {
+				for (l = 0; l < nx1; l++) {
+					memcpy( trace, &tinv[ig+i*nx*ntfft+l*ntfft], ntfft*sizeof(float));
+					j=0;
+					tinv[ig+i*nx*ntfft+l*ntfft+j] = trace[j];
+					for (j=1; j<ntfft; j++) tinv[ig+i*nx*ntfft+l*ntfft+ntfft-j] = trace[j];
+				}
 			}
 		}
 	}
