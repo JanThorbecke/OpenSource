@@ -1,5 +1,9 @@
-#include <cwp.h>
-#include <su.h>
+#include<stdlib.h>
+#include<stdio.h>
+#include<math.h>
+#include<assert.h>
+#include<string.h>
+#include"par.h"
 
 #define SQR2 1.414213562
 #define SQR3 1.732050808
@@ -7,10 +11,10 @@
 #define t0(x,y,z)   time0[nxy*(z) + nx*(y) + (x)]
 #define s0(x,y,z)   slow0[nxy*(z) + nx*(y) + (x)]
 
-/* definitions from saerrpkge.c */
-extern void saerr(char *fmt, ...);
-extern void sawarn(char *fmt, ...);
-extern void samess(char *fmt, ...);
+/* definitions from verbose.c */
+extern void verr(char *fmt, ...);
+extern void vwarn(char *fmt, ...);
+extern void vmess(char *fmt, ...);
 
 struct sorted
 	{ float time; int i1, i2;};
@@ -82,7 +86,7 @@ void vidale3d(float *slow0, float *time0, int nz, int nx, int ny, float h, int x
 	/* SET MAXIMUM RADIUS TO COMPUTE */
 	if (maxoff > 0.) {
 		maxrad = maxoff/h + 1;
-		sawarn("WARNING: Computing only to max radius = %d",maxrad);
+		vwarn("WARNING: Computing only to max radius = %d",maxrad);
 	}
 	else maxrad = 99999999;
 
@@ -106,7 +110,7 @@ void vidale3d(float *slow0, float *time0, int nz, int nx, int ny, float h, int x
 	}
 	wall = (float *) malloc(4*nwall);
 	if(sort == NULL || wall == NULL) 
-		saerr("error in allocation of arrays sort and wall");
+		verr("error in allocation of arrays sort and wall");
 
 	if(!getparint("srctype",&srctype)) srctype=1;
 	if(srctype==1) {
@@ -126,7 +130,7 @@ void vidale3d(float *slow0, float *time0, int nz, int nx, int ny, float h, int x
 		else{ z2 = nz; dz2 = 0;}
 	}
 	else {
-		if (!getparint("srcwall",&srcwall)) saerr("srcwall not given");
+		if (!getparint("srcwall",&srcwall)) verr("srcwall not given");
 		/* SET LOCATIONS OF SIDES OF THE CUBE SO THAT CUBE IS A FACE  */
 		radius = 1;
 		if (srcwall == 1)	x2=1;
@@ -1245,7 +1249,7 @@ void vidale3d(float *slow0, float *time0, int nz, int nx, int ny, float h, int x
 
 		/* UPDATE RADIUS */
 		radius++;
-		if(radius%10 == 0 && verbose) samess("Completed radius = %d",radius);
+		if(radius%10 == 0 && verbose) vmess("Completed radius = %d",radius);
         if(radius == maxrad) rad0 = 0;
 
 	}	/* END BIG LOOP */
@@ -1259,42 +1263,42 @@ void vidale3d(float *slow0, float *time0, int nz, int nx, int ny, float h, int x
 	else {
 		head=0;
 		if (headw[1]>0) {
-			if(verbose) samess("Head waves found on left: %d",headw[1]);
+			if(verbose) vmess("Head waves found on left: %d",headw[1]);
 			if (headw[1]>head)  {
 				head = headw[1];
 				srcwall = 1;
 			}
 		}
 		if (headw[2]>0) {
-			if(verbose) samess("Head waves found on right: %d",headw[2]);
+			if(verbose) vmess("Head waves found on right: %d",headw[2]);
 			if (headw[2]>head)  {
 				head = headw[2];
 				srcwall = 2;
 			}
 		}
 		if (headw[3]>0) {
-			if(verbose) samess("Head waves found on front: %d",headw[3]);
+			if(verbose) vmess("Head waves found on front: %d",headw[3]);
 			if (headw[3]>head)  {
 				head = headw[3];
 				srcwall = 3;
 			}
 		}
 		if (headw[4]>0) {
-			if(verbose) samess("Head waves found on back: %d",headw[4]);
+			if(verbose) vmess("Head waves found on back: %d",headw[4]);
 			if (headw[4]>head)  {
 				head = headw[4];
 				srcwall = 4;
 			}
 		}
 		if (headw[5]>0) {
-			if(verbose) samess("Head waves found on top: %d",headw[5]);
+			if(verbose) vmess("Head waves found on top: %d",headw[5]);
 			if (headw[5]>head)  {
 				head = headw[5];
 				srcwall = 5;
 			}
 		}
 		if (headw[6]>0) {
-			if(verbose) samess("Head waves found on bottom: %d",headw[6]);
+			if(verbose) vmess("Head waves found on bottom: %d",headw[6]);
 			if (headw[6]>head)  {
 				head = headw[6];
 				srcwall = 6;
@@ -1302,32 +1306,32 @@ void vidale3d(float *slow0, float *time0, int nz, int nx, int ny, float h, int x
 		}
 		if (headpref>0 && headw[headpref]>0) {
 			if(verbose) 
-				samess("Preference to restart on wall opposite source");
+				vmess("Preference to restart on wall opposite source");
 			srcwall = headpref;
 		}
 		/* SET LOCATIONS OF SIDES OF THE CUBE SO THAT CUBE IS A FACE */
 		dx1=1; dx2=1; dy1=1; dy2=1; dz1=1; dz2=1; rad0=1;
 		radius = 1;
 		if (srcwall == 1)	{  x2=1;
-			samess("RESTART at left side of model");  }
+			vmess("RESTART at left side of model");  }
 		else	{  x2=nx;	dx2=0;  }
 		if (srcwall == 2)	{ x1=nx-2;
-			samess("RESTART at right side of model");  }
+			vmess("RESTART at right side of model");  }
 		else	{  x1= -1;	dx1=0;  }
 		if (srcwall == 3)	{ y2=1;
-			samess("RESTART at front side of model");  }
+			vmess("RESTART at front side of model");  }
 		else	{  y2=ny;	dy2=0;  }
 		if (srcwall == 4)	{ y1=ny-2;
-			samess("RESTART at back side of model");  }
+			vmess("RESTART at back side of model");  }
 		else	{  y1= -1;	dy1=0;  }
 		if (srcwall == 5)	{ z2=1;
-			samess("RESTART at top side of model");  }
+			vmess("RESTART at top side of model");  }
 		else	{  z2=nz;	dz2=0;  }
 		if (srcwall == 6)	{ z1=nz-2;
-			samess("RESTART at bottom side of model");  }
+			vmess("RESTART at bottom side of model");  }
 		else	{  z1= -1;	dz1=0;  }
 		if (reverse == 0)  
-			sawarn("RESTART CANCELLED by choice of input parameter `reverse`");
+			vwarn("RESTART CANCELLED by choice of input parameter `reverse`");
 	}
 	reverse--;
 
