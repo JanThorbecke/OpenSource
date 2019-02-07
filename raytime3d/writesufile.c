@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <string.h>
 #include "par.h"
-#include "raytime.h"
+#include "raytime3d.h"
 #include "SUsegy.h"
 #include "segy.h"
 

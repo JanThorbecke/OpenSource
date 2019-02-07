@@ -1,5 +1,8 @@
-#include <cwp.h>
-#include <su.h>
+#include<stdlib.h>
+#include<stdio.h>
+#include<math.h>
+#include<assert.h>
+#include<string.h>
 #include <fcntl.h>
 
 #define t0(x,y,z)   time0[nxy*(z) + nx*(y) + (x)]
@@ -7,10 +10,10 @@
 #define	SQR(x)	((x) * (x))
 #define	DIST(x,y,z,x1,y1,z1)	sqrt(SQR(x-(x1))+SQR(y-(y1)) + SQR(z-(z1)))
 
-/* definitions from saerrpkge.c */
-extern void saerr(char *fmt, ...);
-extern void sawarn(char *fmt, ...);
-extern void samess(char *fmt, ...);
+/* definitions from verbose.c */
+extern void verr(char *fmt, ...);
+extern void vwarn(char *fmt, ...);
+extern void vmess(char *fmt, ...);
 
 void src3d(float *time0, float *slow0, int nz, int nx, int ny, float h, float ox, float oy, float oz, int *pxs, int *pys, int *pzs, int *cube)
 {
@@ -48,9 +51,9 @@ void src3d(float *time0, float *slow0, int nz, int nx, int ny, float h, float ox
 
 	if(!getparint("srctype",&srctype)) srctype=1;
 	if(srctype==1) {
-		if(!getparfloat("xsrc1",&xsrc1)) saerr("xsrc1 not given");
-		if(!getparfloat("ysrc1",&ysrc1)) saerr("ysrc1 not given");
-		if(!getparfloat("zsrc1",&zsrc1)) saerr("zsrc1 not given");
+		if(!getparfloat("xsrc1",&xsrc1)) verr("xsrc1 not given");
+		if(!getparfloat("ysrc1",&ysrc1)) verr("ysrc1 not given");
+		if(!getparfloat("zsrc1",&zsrc1)) verr("zsrc1 not given");
 		fxs = (xsrc1-ox)/h;
 		fys = (ysrc1-oy)/h;
 		fzs = (zsrc1-oz)/h;
@@ -58,30 +61,30 @@ void src3d(float *time0, float *slow0, int nz, int nx, int ny, float h, float ox
 		ys = (int)(fys + 0.5);
 		zs = (int)(fzs + 0.5);
 		if(xs<2 || ys<2 || zs<2 || xs>nx-3 || ys>ny-3 || zs>nz-3){
-			sawarn("Source near an edge, beware of traveltime errors");
-			sawarn("for raypaths that travel parallel to edge ");
-			sawarn("while wavefronts are strongly curved, (JV, 8/17/88)\n");
+			vwarn("Source near an edge, beware of traveltime errors");
+			vwarn("for raypaths that travel parallel to edge ");
+			vwarn("while wavefronts are strongly curved, (JV, 8/17/88)\n");
 		}
 		*pxs = xs; *pys = ys, *pzs = zs, *cube = NCUBE;
 	}
 	else if (srctype==2)  {
-		if (!getparint("srcwall",&srcwall)) saerr("srcwall not given");
-		if (!getparstring("wallfile",&wallfile)) saerr("wallfile not given");
+		if (!getparint("srcwall",&srcwall)) verr("srcwall not given");
+		if (!getparstring("wallfile",&wallfile)) verr("wallfile not given");
 		if((wfint=open(wallfile,O_RDONLY,0664))<=1) {
 			fprintf(stderr,"cannot open %s\n",wallfile);
 			exit(-1);
 		}
 	}
 	else if (srctype==3)  {
-		if (!getparint("srcwall",&srcwall)) saerr("srcwall not given");
-		if (!getparstring("oldtfile",&oldtfile)) saerr("oldtfile not given");
+		if (!getparint("srcwall",&srcwall)) verr("srcwall not given");
+		if (!getparstring("oldtfile",&oldtfile)) verr("oldtfile not given");
 		if((ofint=open(oldtfile,O_RDONLY,0664))<=1) {
 			fprintf(stderr,"cannot open %s\n",oldtfile);
 			exit(-1);
 		}
 	}
 	else  {
-		saerr("ERROR: incorrect value of srctype");
+		verr("ERROR: incorrect value of srctype");
 	}
 
 	nxy = nx * ny;
@@ -127,8 +130,8 @@ void src3d(float *time0, float *slow0, int nz, int nx, int ny, float h, float ox
 					  /* can't handle asin(1.) ! */
 					  if (fabs(rz1-rzc)>=rho)  rho=1.0000001*fabs(rz1-rzc);
 					  theta2 = asin((rz1-rzc)/rho);
-					  if (rxyc<0) theta1=PI-theta1;
-					  if (rxyc<rxy1) theta2=PI-theta2;
+					  if (rxyc<0) theta1=M_PI-theta1;
+					  if (rxyc<rxy1) theta2=M_PI-theta2;
 					  t0(xx,yy,zz) = log(tan(theta2/2)/tan(theta1/2)) / dv;
 				        }
 				}
