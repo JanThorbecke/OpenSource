@@ -24,7 +24,7 @@ void omp_set_num_threads(int num_threads);
 #ifndef MIN
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #endif
-#define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
+#define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 
 
 
@@ -34,36 +34,42 @@ typedef struct _complexStruct { /* complex number */
 } complex;
 #endif/* complex */
 
-int readShotData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float *ysrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int nshots, int nx, int ny, int ntfft, int mode, float scale, int verbose);
-int readTinvData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float *ysrc, float *zsrc, int *xnx, int Nfoc, int nx, int ny, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose);
-int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, float d2, float f2, int n2out, int Nfoc, float *xsyn,
-float *zsyn, int *ixpos, int npos, int iter);
-int unique_elements(float *arr, int len);
+long readShotData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float *ysrc, float *zsrc, long *xnx, complex *cdata,
+    long nw, long nw_low, long nshots, long nx, long ny, long ntfft, long mode, float scale, long verbose);
+long readTinvData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float *ysrc, float *zsrc,
+    long *xnx, long Nfoc, long nx, long ny, long ntfft, long mode, long *maxval, float *tinv, long hw, long verbose);
+// int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, float d2, float f2, int n2out, int Nfoc, float *xsyn,
+//     float *zsyn, int *ixpos, int npos, int iter);
+long unique_elements(float *arr, long len);
 
 void name_ext(char *filename, char *extension);
 
-void applyMute(float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *xrcvsyn, int npos, int shift);
+void applyMute3D(float *data, long *mute, long smooth, long above, long Nfoc, long nxs, long nt, long *xrcvsyn, long npos, long shift);
 
-int getFileInfo3D(char *filename, int *n1, int *n2, int *n3, int *ngath, float *d1, float *d2, float *d3, float *f1, float *f2, float *f3, float *sclsxgxsygy, int *nxm);
-int readData(FILE *fp, float *data, segy *hdrs, int n1);
-int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
-int disp_fileinfo3D(char *file, int n1, int n2, int n3, float f1, float f2, float f3, float d1, float d2, float d3, segy *hdrs);
+long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, float *d1, float *d2, float *d3, float *f1, float *f2, float *f3,
+    float *sclsxgxsygy, long *nxm);
+long readData3D(FILE *fp, float *data, segy *hdrs, long n1);
+long writeData3D(FILE *fp, float *data, segy *hdrs, long n1, long n2);
+long disp_fileinfo3D(char *file, long n1, long n2, long n3, float f1, float f2, float f3, float d1, float d2, float d3, segy *hdrs);
 double wallclock_time(void);
 
-void synthesisPositions3D(int nx, int ny, int nxs, int nys, int Nfoc, float *xrcv, float *yrcv, float *xsrc, float *ysrc, int *xnx, float fxse, float fyse, float fxsb, float fysb, float dxs, float dys, int nshots, int nxsrc, int nysrc, int *ixpos, int *npos, int reci, int verbose);
-void synthesis3D(complex *Refl, complex *Fop, float *Top, float *iRN, int nx, int ny, int nt, int nxs, int nys, int nts, float dt, float *xsyn, float *ysyn, 
-int Nfoc, float *xrcv, float *yrcv, float *xsrc, float *ysrc, int *xnx, float fxse, float fxsb, float fyse, float fysb, float dxs, float dys, float dxsrc, 
-float dysrc, float dx, float dy, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int nxsrc, int nysrc, 
-int *ixpos, int npos, double *tfft, int *isxcount, int *reci_xsrc,  int *reci_xrcv, float *ixmask, int verbose);
+void synthesisPositions3D(long nx, long ny, long nxs, long nys, long Nfoc, float *xrcv, float *yrcv, float *xsrc, float *ysrc,
+    long *xnx, float fxse, float fyse, float fxsb, float fysb, float dxs, float dys, long nshots, long nxsrc, long nysrc,
+    long *ixpos, long *npos, long reci, long verbose);
+void synthesis3D(complex *Refl, complex *Fop, float *Top, float *iRN, long nx, long ny, long nt, long nxs, long nys, long nts, float dt,
+    float *xsyn, float *ysyn, long Nfoc, float *xrcv, float *yrcv, float *xsrc, float *ysrc, long *xnx,
+    float fxse, float fxsb, float fyse, float fysb, float dxs, float dys, float dxsrc, float dysrc, 
+    float dx, float dy, long ntfft, long nw, long nw_low, long nw_high,  long mode, long reci, long nshots, long nxsrc, long nysrc, 
+    long *ixpos, long npos, double *tfft, long *isxcount, long *reci_xsrc,  long *reci_xrcv, float *ixmask, long verbose);
 
-int linearsearch(int *array, size_t N, int value);
+long linearsearch(long *array, size_t N, long value);
 
 /*********************** self documentation **********************/
 char *sdoc[] = {
 " ",
-" MARCHENKO - Iterative Green's function and focusing functions retrieval",
+" MARCHENKO3D - Iterative Green's function and focusing functions retrieval in 3D",
 " ",
-" marchenko file_tinv= file_shot= [optional parameters]",
+" marchenko3D file_tinv= file_shot= [optional parameters]",
 " ",
 " Required parameters: ",
 " ",
@@ -102,7 +108,8 @@ char *sdoc[] = {
 "   verbose=0 ................ silent option; >0 displays info",
 " ",
 " ",
-" author  : Jan Thorbecke : 2016 (j.w.thorbecke@tudelft.nl)",
+" author  : Jan Thorbecke     : 2016 (j.w.thorbecke@tudelft.nl)",
+" author  : Joeri Brackenhoff : 2019 (j.a.brackenhoff@tudelft.nl)",
 " ",
 NULL};
 /**************** end self doc ***********************************/
@@ -111,13 +118,13 @@ int main (int argc, char **argv)
 {
     FILE    *fp_out, *fp_f1plus, *fp_f1min;
     FILE    *fp_gmin, *fp_gplus, *fp_f2, *fp_pmin;
-    int     i, j, l, k, ret, nshots, nxshot, nyshot, Nfoc, nt, nx, ny, nts, nxs, nys, ngath;
-    int     size, n1, n2, n3, ntap, tap, dxi, dyi, ntraces, pad;
-    int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
-    int     reci, countmin, mode, n2out, n3out, verbose, ntfft;
-    int     iter, niter, tracf, *muteW;
-    int     hw, smooth, above, shift, *ixpos, npos, ix;
-    int     nshots_r, *isxcount, *reci_xsrc, *reci_xrcv;
+    long    i, j, l, k, ret, nshots, nxshot, nyshot, Nfoc, nt, nx, ny, nts, nxs, nys, ngath;
+    long    size, n1, n2, n3, ntap, tap, dxi, dyi, ntraces, pad;
+    long    nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
+    long    reci, countmin, mode, n2out, n3out, verbose, ntfft;
+    long    iter, niter, tracf, *muteW;
+    long    hw, smooth, above, shift, *ixpos, npos, ix;
+    long    nshots_r, *isxcount, *reci_xsrc, *reci_xrcv;
     float   fmin, fmax, *tapersh, *tapersy, fxf, fyf, dxf, dyf, *xsrc, *ysrc, *xrcv, *yrcv, *zsyn, *zsrc, *xrcvsyn, *yrcvsyn;
     double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, energyNi, energyN0;
     float   d1, d2, d3, f1, f2, f3, fxsb, fxse, fysb, fyse, ft, fx, fy, *xsyn, *ysyn, dxsrc, dysrc;
@@ -146,7 +153,7 @@ int main (int argc, char **argv)
     if (!getparstring("file_f2", &file_f2)) file_f2 = NULL;
     if (!getparstring("file_pmin", &file_pmin)) file_pmin = NULL;
     if (!getparstring("file_iter", &file_iter)) file_iter = NULL;
-    if (!getparint("verbose", &verbose)) verbose = 0;
+    if (!getparlong("verbose", &verbose)) verbose = 0;
     if (file_tinv == NULL && file_shot == NULL) 
         verr("file_tinv and file_shot cannot be both input pipe");
     if (!getparstring("file_green", &file_green)) {
@@ -155,20 +162,20 @@ int main (int argc, char **argv)
     }
     if (!getparfloat("fmin", &fmin)) fmin = 0.0;
     if (!getparfloat("fmax", &fmax)) fmax = 70.0;
-    if (!getparint("reci", &reci)) reci = 0;
+    if (!getparlong("reci", &reci)) reci = 0;
     if (!getparfloat("scale", &scale)) scale = 2.0;
     if (!getparfloat("tsq", &tsq)) tsq = 0.0;
     if (!getparfloat("Q", &Q)) Q = 0.0;
     if (!getparfloat("f0", &f0)) f0 = 0.0;
-    if (!getparint("tap", &tap)) tap = 0;
-    if (!getparint("ntap", &ntap)) ntap = 0;
-    if (!getparint("pad", &pad)) pad = 0;
+    if (!getparlong("tap", &tap)) tap = 0;
+    if (!getparlong("ntap", &ntap)) ntap = 0;
+    if (!getparlong("pad", &pad)) pad = 0;
 
-    if(!getparint("niter", &niter)) niter = 10;
-    if(!getparint("hw", &hw)) hw = 15;
-    if(!getparint("smooth", &smooth)) smooth = 5;
-    if(!getparint("above", &above)) above = 0;
-    if(!getparint("shift", &shift)) shift=12;
+    if(!getparlong("niter", &niter)) niter = 10;
+    if(!getparlong("hw", &hw)) hw = 15;
+    if(!getparlong("smooth", &smooth)) smooth = 5;
+    if(!getparlong("above", &above)) above = 0;
+    if(!getparlong("shift", &shift)) shift=12;
 
     if (reci && ntap) vwarn("tapering influences the reciprocal result");
 
@@ -194,12 +201,12 @@ int main (int argc, char **argv)
 
     ntfft = optncr(MAX(nt+pad, nts+pad)); 
     nfreq = ntfft/2+1;
-    nw_low = (int)MIN((fmin*ntfft*dt), nfreq-1);
+    nw_low = (long)MIN((fmin*ntfft*dt), nfreq-1);
     nw_low = MAX(nw_low, 1);
-    nw_high = MIN((int)(fmax*ntfft*dt), nfreq-1);
+    nw_high = MIN((long)(fmax*ntfft*dt), nfreq-1);
     nw  = nw_high - nw_low + 1;
     scl   = 1.0/((float)ntfft);
-    if (!getparint("countmin", &countmin)) countmin = 0.3*nx*ny;
+    if (!getparlong("countmin", &countmin)) countmin = 0.3*nx*ny;
     
 /*================ Allocating all data arrays ================*/
 
@@ -212,7 +219,7 @@ int main (int argc, char **argv)
     iRN     = (float *)calloc(Nfoc*nys*nxs*ntfft,sizeof(float));
     Ni      = (float *)calloc(Nfoc*nys*nxs*ntfft,sizeof(float));
     G_d     = (float *)calloc(Nfoc*nys*nxs*ntfft,sizeof(float));
-    muteW   = (int *)calloc(Nfoc*nys*nxs,sizeof(int));
+    muteW   = (long *)calloc(Nfoc*nys*nxs,sizeof(long));
     trace   = (float *)malloc(ntfft*sizeof(float));
     tapersy = (float *)malloc(nxs*sizeof(float));
     xrcvsyn = (float *)calloc(Nfoc*nys*nxs,sizeof(float)); // x-rcv postions of focal points
@@ -220,8 +227,8 @@ int main (int argc, char **argv)
     xsyn    = (float *)malloc(Nfoc*sizeof(float)); // x-src position of focal points
     ysyn    = (float *)malloc(Nfoc*sizeof(float)); // x-src position of focal points
     zsyn    = (float *)malloc(Nfoc*sizeof(float)); // z-src position of focal points
-    xnxsyn  = (int *)calloc(Nfoc,sizeof(int)); // number of traces per focal point
-    ixpos   = (int *)calloc(nys*nxs,sizeof(int)); // x-position of source of shot in G_d domain (nxs*nys with dxs, dys)
+    xnxsyn  = (long *)calloc(Nfoc,sizeof(long)); // number of traces per focal point
+    ixpos   = (long *)calloc(nys*nxs,sizeof(long)); // x-position of source of shot in G_d domain (nxs*nys with dxs, dys)
 
     Refl    = (complex *)malloc(nw*ny*nx*nshots*sizeof(complex));
     tapersh = (float *)malloc(nx*sizeof(float));
@@ -230,12 +237,12 @@ int main (int argc, char **argv)
     xsrc    = (float *)calloc(nshots,sizeof(float)); //x-src position of shots
     ysrc    = (float *)calloc(nshots,sizeof(float)); //x-src position of shots
     zsrc    = (float *)calloc(nshots,sizeof(float)); // z-src position of shots
-    xnx     = (int *)calloc(nshots,sizeof(int)); // number of traces per shot
+    xnx     = (long *)calloc(nshots,sizeof(long)); // number of traces per shot
 
 	if (reci!=0) {
-        reci_xsrc = (int *)malloc((nxs*nxs*nys*nys)*sizeof(int));
-        reci_xrcv = (int *)malloc((nxs*nxs*nys*nys)*sizeof(int));
-        isxcount  = (int *)calloc(nxs*nys,sizeof(int));
+        reci_xsrc = (long *)malloc((nxs*nxs*nys*nys)*sizeof(long));
+        reci_xrcv = (long *)malloc((nxs*nxs*nys*nys)*sizeof(long));
+        isxcount  = (long *)calloc(nxs*nys,sizeof(long));
         ixmask  = (float *)calloc(nxs*nys,sizeof(float));
     }
 
@@ -518,9 +525,9 @@ int main (int argc, char **argv)
         t3 = wallclock_time();
         tsyn +=  t3 - t2;
 
-        if (file_iter != NULL) {
-            writeDataIter(file_iter, iRN, hdrs_out, ntfft, nxs*nys, d2, f2, n2out*n3out, Nfoc, xsyn, zsyn, ixpos, npos, iter);
-        }
+        // if (file_iter != NULL) {
+        //     writeDataIter(file_iter, iRN, hdrs_out, ntfft, nxs*nys, d2, f2, n2out*n3out, Nfoc, xsyn, zsyn, ixpos, npos, iter);
+        // }
         /* N_k(x,t) = -N_(k-1)(x,-t) */
         /* p0^-(x,t) += iRN = (R * T_d^inv)(t) */
         for (l = 0; l < Nfoc; l++) {
@@ -604,6 +611,7 @@ int main (int argc, char **argv)
             }
         }
     }
+    applyMute(green, muteW, smooth, 4, Nfoc, nxs*nys, nts, ixpos, npos, shift);
 
     /* compute upgoing Green's function G^+,- */
     if (file_gmin != NULL) {
@@ -629,7 +637,7 @@ int main (int argc, char **argv)
             }
         }
         /* Apply mute with window for Gmin */
-        applyMute(Gmin, muteW, smooth, 1, Nfoc, nxs*nys, nts, ixpos, npos, shift);
+        applyMute(Gmin, muteW, smooth, 4, Nfoc, nxs*nys, nts, ixpos, npos, shift);
     } /* end if Gmin */
 
     /* compute downgoing Green's function G^+,+ */
@@ -655,6 +663,8 @@ int main (int argc, char **argv)
                 }
             }
         }
+        /* Apply mute with window for Gplus */
+        applyMute(Gplus, muteW, smooth, 4, Nfoc, nxs*nys, nts, ixpos, npos, shift);
     } /* end if Gplus */
 
     t2 = wallclock_time();
