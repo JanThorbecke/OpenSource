@@ -136,11 +136,20 @@ int *ixpos, int npos, double *tfft, int *isxcount, int *reci_xsrc,  int *reci_xr
     int     nfreq, size, inx;
     float   scl;
     int     i, j, l, m, iw, ix, k, isrc, il, ik, nxy, nxys;
-    float   *rtrace, idxs, idys;
+    float   *rtrace, idxs, idys, fxb, fyb, fxe, fye;
     complex *sum, *ctrace;
     int     npe;
     static int first=1, *ircv;
     static double t0, t1, t;
+
+    if (fxsb < 0) fxb = 1.001*fxsb;
+    else          fxb = 0.999*fxsb;
+    if (fysb < 0) fyb = 1.001*fysb;
+    else          fyb = 0.999*fysb;
+    if (fxse > 0) fxe = 1.001*fxse;
+    else          fxe = 0.999*fxse;
+    if (fyse > 0) fye = 1.001*fyse;
+    else          fye = 0.999*fyse;
 
     nxy     = nx*ny;
     nxys    = nxs*nys;
@@ -149,7 +158,7 @@ int *ixpos, int npos, double *tfft, int *isxcount, int *reci_xsrc,  int *reci_xr
     nfreq = ntfft/2+1;
     /* scale factor 1/N for backward FFT,
      * scale dt for correlation/convolution along time, 
-     * scale dx (or dxsrc) for integration over receiver (or shot) coordinates */
+     * scale dx*dy (or dxsrc*dysrc) for integration over receiver (or shot) coordinates */
     scl   = 1.0*dt/((float)ntfft);
 
 #ifdef _OPENMP
@@ -212,7 +221,7 @@ int *ixpos, int npos, double *tfft, int *isxcount, int *reci_xsrc,  int *reci_xr
 /* Loop over total number of shots */
     if (reci == 0 || reci == 1) {
         for (k=0; k<nshots; k++) {
-            if ((xsrc[k] < 0.999*fxsb) || (xsrc[k] > 1.001*fxse) || (ysrc[k] < 0.999*fysb) || (ysrc[k] > 1.001*fyse)) continue;
+            if ((xsrc[k] < fxb) || (xsrc[k] > fxe) || (ysrc[k] < fyb) || (ysrc[k] > fye)) continue;
             isrc = NINT((ysrc[k] - fysb)/dys)*nxs+NINT((xsrc[k] - fxsb)/dxs);
             inx = xnx[k]; /* number of traces per shot */
 
@@ -234,8 +243,8 @@ int *ixpos, int npos, double *tfft, int *isxcount, int *reci_xsrc,  int *reci_xr
 		        /* compute integral over receiver positions */
                 /* multiply R with Fop and sum over nx */
                 memset(&sum[0].r,0,nfreq*2*sizeof(float));
-                for (j = nw_low, m = 0; j <= nw_high; j++, m++) {
-                    for (i = 0; i < inx; i++) {
+                for (i = 0; i < inx; i++) {
+                    for (j = nw_low, m = 0; j <= nw_high; j++, m++) {
                         ix = ircv[k*nxy+i];
                         sum[j].r += Refl[k*nw*nxy+m*nxy+i].r*Fop[l*nw*nxys+m*nxys+ix].r -
                                     Refl[k*nw*nxy+m*nxy+i].i*Fop[l*nw*nxys+m*nxys+ix].i;
