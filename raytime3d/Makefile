@@ -20,24 +20,23 @@ LIBS    += -L$L -lgenfft -lm $(LIBSM)
 #		near_source.c \
 #		Grid2Time1.c \
 
-all: raytime 
+all: raytime3d
 
-PRG = raytime
+PRG = raytime3d
 
 SRCC	= $(PRG).c \
-		JespersRayTracer.c \
-		vidale.c \
-		getParameters.c  \
+		vidale3d.c \
+		src3d.c \
+		getParameters3d.c  \
 		getWaveletInfo.c  \
 		writeSrcRecPos.c  \
-		readModel.c  \
+		readModel3d.c  \
 		getWaveletHeaders.c  \
 		verbosepkg.c  \
-        getModelInfo.c  \
+        getModelInfo3d.c  \
 		wallclock_time.c  \
-        recvPar.c  \
+        recvPar3d.c  \
         writesufile.c  \
-        gaussGen.c  \
         name_ext.c  \
 		atopkge.c \
 		docpkge.c \
@@ -46,17 +45,17 @@ SRCC	= $(PRG).c \
 
 OBJC	= $(SRCC:%.c=%.o)
 
-$(PRG):	$(OBJC) raytime.h
-	$(CC) $(LDFLAGS) $(CFLAGS) $(OPTC) -o raytime $(OBJC) $(LIBS)
+$(PRG):	$(OBJC) raytime3d.h
+	$(CC) $(LDFLAGS) $(CFLAGS) $(OPTC) -o raytime3d $(OBJC) $(LIBS)
 
-install: raytime 
-	cp raytime $B
+install: raytime3d
+	cp raytime3d $B
 
 clean:
-		rm -f core $(OBJC) $(OBJM) raytime 
+		rm -f core $(OBJC) $(OBJM) raytime3d 
 
 realclean:
-		rm -f core $(OBJC) $(OBJM) $(PRG) $B/raytime 
+		rm -f core $(OBJC) $(OBJM) $(PRG) $B/raytime3d 
 
 
 print:	Makefile $(SRC)
