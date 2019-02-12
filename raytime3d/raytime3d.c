@@ -146,46 +146,44 @@ void main(int argc, char *argv[])
 
     getParameters3d(&mod, &rec, &src, &shot, &ray, verbose);
 
-
 /*---------------------------------------------------------------------------*
  *  Open velocity file
  *---------------------------------------------------------------------------*/
 
-	if (file_cp != NULL) {
+	if (mod.file_cp != NULL) {
 
 		if (n2==1) { /* 1D model */
 			if(!getparint("nx",&nx)) verr("for 1D medium nx not defined");
 			if(!getparint("ny",&nx)) verr("for 1D medium ny not defined");
 			nz = n1; 
 			oz = f1; ox = ((nx-1)/2)*d1; oy = ((ny-1)/2)*d1;
-			dz = d1; dx = d1; dy = d1;
 		}
 		else if (n3==1) { /* 2D model */
 			if(!getparint("ny",&nx)) verr("for 2D medium ny not defined");
 			nz = n1; nx = n2;
 			oz = f1; ox = f2; oy = ((ny-1)/2)*d1;
-			dz = d1; dx = d1; dy = d1;
 		}
 		else { /* Full 3D model */
 			nz = n1; nx = n2; nz = n3;
 			oz = f1; ox = f2; oy = f3;
-			dz = d1; dx = d1; dy = d1;
 		}
 
-		h = d1;
+		h = mod.dx;
 		slow0 = (float *)malloc(nz*nx*ny*sizeof(float));
 		if (slow0 == NULL) verr("Out of memory for slow0 array!");
 
-		readModel3d(file_cp, slow0, n1, n2, n3, nz, nx, ny, h, verbose);
+		readModel3d(mod.file_cp, slow0, n1, n2, n3, nz, nx, ny, h, verbose);
 
 		if (verbose) vmess("h = %.2f nx = %d nz = %d ny = %d", h, nx, nz, ny);
 
 	}
 	else {
-		nxy = nx * ny;
+        if(!getparfloat("c",&c)) verr("c not defined");
+        if(!getparfloat("h",&h)) verr("h not defined");
 		if(!getparint("nx",&nx)) verr("for homogenoeus medium nx not defined");
 		if(!getparint("ny",&nx)) verr("for homogenoeus medium ny not defined");
 		if(!getparint("nz",&nx)) verr("for homogenoeus medium nz not defined");
+		nxy = nx * ny;
 		oz = 0; ox = ((nx-1)/2)*d1; oy = ((ny-1)/2)*d1;
 
 		slow0 = (float *)malloc(nx*nz*ny*sizeof(float));
@@ -264,7 +262,6 @@ void main(int argc, char *argv[])
 	for (i = 0; i < ny; i++) {
 		hdrs[i].scalco = -1000;
 		hdrs[i].scalel = -1000;
-/*		hdrs[i].offset = xi[0]*dx + is*ispr*dx - xsrc;*/
 		hdrs[i].sx     = (int)(ox+xs*h)*1000;
 		hdrs[i].sy     = (int)(oy+ys*h)*1000;
 		hdrs[i].gy     = (int)(oy+i*d2)*1000;
