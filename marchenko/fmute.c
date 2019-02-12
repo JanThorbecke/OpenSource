@@ -228,6 +228,8 @@ int main (int argc, char **argv)
         /* alternative find maximum at source position */
         dxrcv = (hdrs_in1[nx1-1].gx - hdrs_in1[0].gx)*sclsxgx/(float)(nx1-1);
         imax = NINT(((hdrs_in1[0].sx-hdrs_in1[0].gx)*sclsxgx)/dxrcv);
+		/* make sure that the position fits into the receiver array */
+		imax = MIN(MAX(0,imax),nx1-1);
         tmax=0.0;
         jmax = 0;
         xmax=0.0;
