@@ -6,7 +6,7 @@ LIBS    += -L$L -lgenfft -lm $(LIBSM)
 #OPTC += -openmp 
 #OPTC += -g -O0
 
-ALL: makemod makewave extendModel fconv correigen green basop syn2d mat2su ftr1d
+ALL: makemod makewave extendModel fconv correigen green green3D basop syn2d mat2su ftr1d
 
 SRCM	= \
 		makemod.c  \
@@ -84,6 +84,17 @@ SRCG	= green.c \
 		docpkge.c \
 		getpars.c
 
+SRCG3	= green3D.c \
+		getFileInfo.c  \
+		getrecpos3D.c  \
+		readData.c \
+		writeData.c \
+		wallclock_time.c \
+		verbosepkg.c  \
+		atopkge.c \
+		docpkge.c \
+		getpars.c
+
 SRCB	= basop.c \
 		getFileInfo.c  \
 		kxwfilter.c  \
@@ -152,6 +163,11 @@ OBJG	= $(SRCG:%.c=%.o)
 green:	$(OBJG) 
 	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o green $(OBJG) $(LIBS)
 
+OBJG3	= $(SRCG3:%.c=%.o)
+
+green3D:	$(OBJG3) 
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o green3D $(OBJG3) $(LIBS)
+
 OBJB	= $(SRCB:%.c=%.o)
 
 basop:	$(OBJB) 
@@ -172,23 +188,24 @@ OBJT	= $(SRCT:%.c=%.o)
 ftr1d:	$(OBJT) 
 	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o ftr1d $(OBJT) $(LIBS)
 
-install: makemod makewave extendModel fconv correigen green basop syn2d mat2su ftr1d
+install: makemod makewave extendModel fconv correigen green green3D basop syn2d mat2su ftr1d
 	cp makemod $B
 	cp makewave $B
 	cp extendModel $B
 	cp fconv $B
 	cp correigen $B
 	cp green $B
+	cp green3D $B
 	cp basop $B
 	cp syn2d $B
 	cp mat2su $B
 	cp ftr1d $B
 
 clean:
-		rm -f core $(OBJM) makemod $(OBJW) makewave $(OBJE) extendModel $(OBJF) fconv $(OBJG) $(OBJC) correigen green $(OBJB) basop $(OBJJ) syn2d $(OBJS) mat2su $(OBJA) ftr1d $(OBJT)
+		rm -f core $(OBJM) makemod $(OBJW) makewave $(OBJE) extendModel $(OBJF) fconv $(OBJG) $(OBJC) correigen green $(OBJG3) green3D $(OBJB) basop $(OBJJ) syn2d $(OBJS) mat2su $(OBJA) ftr1d $(OBJT)
 
 realclean: clean
-		rm -f $B/makemod $B/makewave $B/extendModel $B/fconv $B/correigen $B/green $B/basop $B/syn2d $B/mat2su $B/ftr1d
+		rm -f $B/makemod $B/makewave $B/extendModel $B/fconv $B/correigen $B/green $B/green3D $B/basop $B/syn2d $B/mat2su $B/ftr1d
 
 
 
