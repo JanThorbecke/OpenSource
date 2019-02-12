@@ -68,6 +68,7 @@ char *sdoc[] = {
 "   xsrca= ............ defines source array x-positions",
 "   zsrca= ............ defines source array z-positions",
 "" ,
+/*
 " PLANE WAVE SOURCE DEFINITION:",
 "   plane_wave=0 ...... model plane wave with nsrc= sources",
 "   nsrc=1 ............ number of sources per (plane-wave) shot ",
@@ -83,6 +84,7 @@ char *sdoc[] = {
 "   distribution=0 .... random function for amplitude and tlength 0=flat 1=Gaussian ",
 "   seed=10 ........... seed for start of random sequence ",
 "" ,
+*/
 " RECEIVER SELECTION:",
 "   xrcv1=xmin ........ first x-position of linear receiver array(s)",
 "   xrcv2=xmax ........ last x-position of linear receiver array(s)",

@@ -122,25 +122,28 @@ int readTinvData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float 
 		xnx[isyn]=itrace;
 
         /* alternative find maximum at source position */
-        dxrcv = (gx1 - gx0)*scl/(float)(nx1-1);
-        dyrcv = (gy1 - gy0)*scl/(float)(ny1-1);
-        //imax = NINT(((sx_shot-gx0)*scl)/dxrcv);
+		if (nx1>1) dxrcv = (gx1 - gx0)*scl/(float)(nx1-1);
+        else dxrcv = (gx1 - gx0)*scl/(float)(1);
+		if (dxrcv==0.0) dxrcv=1.0;
         ixmax = NINT(((sx_shot-gx0)*scl)/dxrcv);
+        if (ny1>1) dyrcv = (gy1 - gy0)*scl/(float)(ny1-1);
+		else dyrcv = (gy1 - gy0)*scl/(float)(1);
+		if (dyrcv==0.0) dyrcv=1.0;
         iymax = NINT(((sy_shot-gy0)*scl)/dyrcv);
 		if (iymax > ny1-1) {
-            vmess("source of y is past array, snapping to nearest y");
+            vmess("source of y (%d) is past array, snapping to nearest y (%d)",iymax,ny1-1);
             iymax = ny1-1;
         }
         if (iymax < 0) {
-            vmess("source of y is before array, snapping to nearest y");
+            vmess("source of y (%d) is before array, snapping to nearest y (%d)",iymax,0);
             iymax = 0;
         }
         if (ixmax > nx1-1) {
-            vmess("source of x is past array, snapping to nearest x");
+            vmess("source of x (%d) is past array, snapping to nearest x (%d)",ixmax,nx1-1);
             ixmax = nx1-1;
         }
         if (ixmax < 0) {
-            vmess("source of x is before array, snapping to nearest x");
+            vmess("source of x (%d) is before array, snapping to nearest x (%d)",ixmax,nx1-1);
             ixmax = 0;
         }
         tmax=0.0;
