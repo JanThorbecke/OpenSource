@@ -3,7 +3,7 @@
 #include<math.h>
 #include<assert.h>
 #include"par.h"
-#include"raytime.h"
+#include"raytime3d.h"
 
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
