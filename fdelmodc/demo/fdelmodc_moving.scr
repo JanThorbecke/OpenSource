@@ -1,0 +1,48 @@
+#!/bin/bash
+#PBS -N fdelmod
+#PBS -q verylong
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+#
+# illustrates source and receiver positions, used in Figure 10 of the manual
+
+export PATH=../../utils:$PATH:
+
+#OK:
+dt=0.0005
+dx=5
+ntaper=10
+
+makewave file_out=wavelet1.su dt=$dt nt=1024 fmax=10 verbose=1 t0=0.1
+makewave file_out=wavelet2.su dt=$dt nt=1024 fmax=10 verbose=1 t0=0.2
+makewave file_out=wavelet3.su dt=$dt nt=1024 fmax=10 verbose=1 t0=0.3
+
+cat wavelet1.su | sushw key=gx,gelev,scalel a=6000,-1000,1 > src.su
+cat wavelet2.su | sushw key=gx,gelev,scalel a=5000,-500,1 >> src.su
+cat wavelet3.su | sushw key=gx,gelev,scalel a=1000,-1500,1 >> src.su
+
+# build a model with a steep salt-like flank of the side
+./model_flank.scr
+
+export filecp=grad_salt.su
+export filero=salt_ro.su
+
+#model sources on an array following the edges of the flank
+
+../fdelmodc \
+        file_cp=grad_salt.su file_den=salt_ro.su \
+        ischeme=1 \
+        file_src=src.su verbose=4 \
+        file_rcv=rec.su \
+        rec_type_vz=1 rec_int_vx=1 \
+        dtrcv=0.004 \
+        xrcv1=4000 zrcv1=1000 xrcv2=4000 zrcv2=6000 dzrcv=100 dxrcv=0 \
+        src_type=1 tmod=0.001  \
+        npml=100 tmod=0.6 \
+		tsnap1=0 tsnap2=0.5 dtsnap=0.01 \
+	    left=2 right=2 bottom=2 top=2 \
+        fmax=10
+
+sugain < SrcRecPositions.su scale=5000 > nep.su 
+
