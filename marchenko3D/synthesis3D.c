@@ -17,9 +17,9 @@ void omp_set_num_threads(int num_threads);
 #ifndef MIN
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #endif
-#define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
+#define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 int compareInt(const void *a, const void *b) 
-{ return (*(int *)a-*(int *)b); }
+{ return (*(long *)a-*(long *)b); }
 
 #ifndef COMPLEX
 typedef struct _complexStruct { /* complex number */
@@ -27,11 +27,13 @@ typedef struct _complexStruct { /* complex number */
 } complex;
 #endif/* complex */
 
-void synthesisPositions3D(int nx, int ny, int nxs, int nys, int Nfoc, float *xrcv, float *yrcv,
-float *xsrc, float *ysrc, int *xnx, float fxse, float fyse, float fxsb, float fysb, float dxs, float dys,
-int nshots, int nxsrc, int nysrc, int *ixpos, int *npos, int reci, int verbose)
+long linearsearch(long *array, size_t N, long value);
+
+void synthesisPositions3D(long nx, long ny, long nxs, long nys, long Nfoc, float *xrcv, float *yrcv,
+float *xsrc, float *ysrc, long *xnx, float fxse, float fyse, float fxsb, float fysb, float dxs, float dys,
+long nshots, long nxsrc, long nysrc, long *ixpos, long *npos, long reci, long verbose)
 {
-    int     j, l, ixsrc, iysrc, isrc, k, *count, nxy;
+    long     j, l, ixsrc, iysrc, isrc, k, *count, nxy;
     float   fxb, fxe, fyb, fye;
 
     if (fxsb < 0) fxb = 1.001*fxsb;
@@ -45,7 +47,7 @@ int nshots, int nxsrc, int nysrc, int *ixpos, int *npos, int reci, int verbose)
 
     nxy = nx*ny;
 
-    count   = (int *)calloc(nxs*nys,sizeof(int)); // number of traces that contribute to the integration over x
+    count   = (long *)calloc(nxs*nys,sizeof(long)); // number of traces that contribute to the integration over x
 
 /*================ SYNTHESIS ================*/
 
@@ -60,7 +62,7 @@ int nshots, int nxsrc, int nysrc, int *ixpos, int *npos, int reci, int verbose)
                 iysrc = NINT((ysrc[k] - fysb)/dys);
                 isrc  = iysrc*nxs + ixsrc;
                 if (verbose>=3) {
-                    vmess("source position:         x=%.2f y=%.2f in operator x=%d y=%d pos=%d", xsrc[k], ysrc[k], ixsrc, iysrc, isrc);
+                    vmess("source position:         x=%.2f y=%.2f in operator x=%li y=%li pos=%li", xsrc[k], ysrc[k], ixsrc, iysrc, isrc);
                     vmess("receiver positions:      x:%.2f <--> %.2f y:%.2f <--> %.2f", xrcv[k*nxy+0], xrcv[k*nxy+nxy-1], yrcv[k*nxy+0], yrcv[k*nxy+nxy-1]);
                     vmess("focal point positions:   x:%.2f <--> %.2f y:%.2f <--> %.2f", fxsb, fxse, fysb, fyse);
                 }
@@ -74,8 +76,8 @@ int nshots, int nxsrc, int nysrc, int *ixpos, int *npos, int reci, int verbose)
                     vwarn("source/receiver positions are outside synthesis aperture");
                     vmess("xsrc = %.2f xrcv_1 = %.2f xrvc_N = %.2f", xsrc[k], xrcv[k*nxy+0], xrcv[k*nxy+nxy-1]);
                     vmess("ysrc = %.2f yrcv_1 = %.2f yrvc_N = %.2f", ysrc[k], yrcv[k*nxy+0], yrcv[k*nxy+nxy-1]);
-                    vmess("source position x:       %.2f in operator %d", xsrc[k], ixsrc);
-                    vmess("source position y:       %.2f in operator %d", ysrc[k], iysrc);
+                    vmess("source position x:       %.2f in operator %li", xsrc[k], ixsrc);
+                    vmess("source position y:       %.2f in operator %li", ysrc[k], iysrc);
                     vmess("receiver positions x:    %.2f <--> %.2f", xrcv[k*nxy+0], xrcv[k*nxy+nxy-1]);
                     vmess("receiver positions y:    %.2f <--> %.2f", yrcv[k*nxy+0], yrcv[k*nxy+nxy-1]);
                     vmess("focal point positions x: %.2f <--> %.2f", fxsb, fxse);
@@ -94,7 +96,7 @@ int nshots, int nxsrc, int nysrc, int *ixpos, int *npos, int reci, int verbose)
 					    count[*npos] += xnx[k];
                    	    *npos += 1;
 				    }
-    //                vmess("source position %d is inside synthesis model %f *npos=%d count=%d", k, xsrc[k], *npos, count[*npos]);
+    //                vmess("source position %li is inside synthesis model %f *npos=%li count=%li", k, xsrc[k], *npos, count[*npos]);
 			    }
     
     	    } /* end of nshots (k) loop */
@@ -103,21 +105,21 @@ int nshots, int nxsrc, int nysrc, int *ixpos, int *npos, int reci, int verbose)
 
     if (verbose>=4) {
 	    for (j=0; j < *npos; j++) { 
-            vmess("ixpos[%d] = %d count=%d", j, ixpos[j], count[j]);
+            vmess("ixpos[%li] = %li count=%li", j, ixpos[j], count[j]);
 		}
     }
     free(count);
 
 /* sort ixpos into increasing values */
-    qsort(ixpos, *npos, sizeof(int), compareInt);
+    qsort(ixpos, *npos, sizeof(long), compareInt);
 
 
     return;
 }
 
-int linearsearch(int *array, size_t N, int value)
+long linearsearch(long *array, size_t N, long value)
 {
-	int j;
+	long j;
 /* Check is position is already in array */
     j = 0;
     while (j < N && value != array[j]) {
@@ -128,18 +130,18 @@ int linearsearch(int *array, size_t N, int value)
 
 /*================ Convolution and Integration ================*/
 
-void synthesis3D(complex *Refl, complex *Fop, float *Top, float *iRN, int nx, int ny, int nt, int nxs, int nys, int nts, float dt, float *xsyn, float *ysyn, 
-int Nfoc, float *xrcv, float *yrcv, float *xsrc, float *ysrc, int *xnx, float fxse, float fxsb, float fyse, float fysb, float dxs, float dys, float dxsrc, 
-float dysrc, float dx, float dy, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int nxsrc, int nysrc, 
-int *ixpos, int npos, double *tfft, int *isxcount, int *reci_xsrc,  int *reci_xrcv, float *ixmask, int verbose)
+void synthesis3D(complex *Refl, complex *Fop, float *Top, float *iRN, long nx, long ny, long nt, long nxs, long nys, long nts, float dt, float *xsyn, float *ysyn, 
+long Nfoc, float *xrcv, float *yrcv, float *xsrc, float *ysrc, long *xnx, float fxse, float fxsb, float fyse, float fysb, float dxs, float dys, float dxsrc, 
+float dysrc, float dx, float dy, long ntfft, long nw, long nw_low, long nw_high,  long mode, long reci, long nshots, long nxsrc, long nysrc, 
+long *ixpos, long npos, double *tfft, long *isxcount, long *reci_xsrc,  long *reci_xrcv, float *ixmask, long verbose)
 {
-    int     nfreq, size, inx;
+    long     nfreq, size, inx;
     float   scl;
-    int     i, j, l, m, iw, ix, k, isrc, il, ik, nxy, nxys;
+    long     i, j, l, m, iw, ix, k, isrc, il, ik, nxy, nxys;
     float   *rtrace, idxs, idys, fxb, fyb, fxe, fye;
     complex *sum, *ctrace;
-    int     npe;
-    static int first=1, *ircv;
+    long     npe;
+    static long first=1, *ircv;
     static double t0, t1, t;
 
     if (fxsb < 0) fxb = 1.001*fxsb;
@@ -162,11 +164,11 @@ int *ixpos, int npos, double *tfft, int *isxcount, int *reci_xsrc,  int *reci_xr
     scl   = 1.0*dt/((float)ntfft);
 
 #ifdef _OPENMP
-    npe   = omp_get_max_threads();
+    npe   = (long)omp_get_max_threads();
     /* parallelisation is over number of virtual source positions (Nfoc) */
     if (npe > Nfoc) {
-        vmess("Number of OpenMP threads set to %d (was %d)", Nfoc, npe);
-        omp_set_num_threads(Nfoc);
+        vmess("Number of OpenMP threads set to %li (was %li)", Nfoc, npe);
+        omp_set_num_threads((int)Nfoc);
     }
 #endif
 
@@ -207,7 +209,7 @@ int *ixpos, int npos, double *tfft, int *isxcount, int *reci_xsrc,  int *reci_xr
         }
         idxs = 1.0/dxs;
         idys = 1.0/dys;
-        ircv = (int *)malloc(nshots*nxy*sizeof(int));
+        ircv = (long *)malloc(nshots*nxy*sizeof(long));
         for (k=0; k<nshots; k++) {
             for (i = 0; i < nxy; i++) {
                 ircv[k*nxy+i] = NINT((yrcv[k*nxy+i]-fysb)*idys)*nx+NINT((xrcv[k*nxy+i]-fxsb)*idxs);
@@ -266,18 +268,18 @@ int *ixpos, int npos, double *tfft, int *isxcount, int *reci_xsrc,  int *reci_xr
 
 #ifdef _OPENMP
 #pragma omp single 
-            npe   = omp_get_num_threads();
+            npe   = (long)omp_get_num_threads();
 #endif
 } /* end of parallel region */
 
-        if (verbose>4) vmess("*** Shot gather %d processed ***", k);
+        if (verbose>4) vmess("*** Shot gather %li processed ***", k);
 
         } /* end of nshots (k) loop */
     }     /* end of if reci */
 
     t = wallclock_time() - t0;
     if (verbose) {
-        vmess("OMP: parallel region = %f seconds (%d threads)", t, npe);
+        vmess("OMP: parallel region = %f seconds (%li threads)", t, npe);
     }
 
     return;
