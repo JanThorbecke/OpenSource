@@ -1,0 +1,61 @@
+#!/bin/bash
+#PBS -l nodes=1
+#PBS -N InterfModeling
+#PBS -q fourweeks
+#
+# models sequential 900 shots at level z = 3600, 70 hours
+
+export PATH=../../bin:$PATH
+
+filout='T_simple_dxrcv50_dx10.su'
+#
+#/bin/rm $filout
+#
+makewave w=g1 fmax=45 t0=1.00 dt=0.0005 nt=4096 db=-40 file_out=G1.su verbose=1
+
+makemod sizex=10000 sizez=5000 dx=5 dz=5 cp0=1500 ro0=1000 file_base=simple.su \
+	intt=def poly=0 x=0,10000 z=1300,1300 cp=2000 ro=1400 \
+	intt=def poly=2 x=0,2000,3000,5000,7000,8000,10000 \
+	z=2000,2000,2000,2500,2000,2000,2000 cp=4000 ro=2000 \
+	intt=def poly=0 x=0,10000 z=3000,3000 cp=3000 ro=1500 \
+	intt=def poly=0 x=0,10000 z=3500,3500 cp=5500 ro=2200
+
+suwind itmin=91 < simple_cp.su | sushw key=f1 a=0 > vel_cp.su
+suwind itmin=91 < simple_ro.su | sushw key=f1 a=0 > vel_ro.su
+
+xsrc1=1000
+xsrc2=9000
+dxsrc=10
+#
+xsrc=$xsrc1
+ishot=1
+while (( xsrc <= xsrc2 ))
+do
+echo ' modeling shot at x=' $xsrc
+
+fdelmodc \
+	file_cp=vel_cp.su ischeme=1 \
+	file_den=vel_ro.su \
+	file_src=G1.su \
+	file_rcv=shot.su \
+	verbose=1 \
+	fmax=45 \
+	tmod=16.000\
+	xrcv1=0. \
+	xrcv2=10000. \
+	zrcv1=0. \
+	zrcv2=0. \
+	dxrcv=50.0 \
+	xsrc=$xsrc \
+	zsrc=3600. \
+	ntaper=45 \
+	left=4 right=4 top=1 bottom=4
+
+(( ishot = $xsrc / $dxsrc ))
+echo ishot=$ishot
+(( xsrc = $xsrc + $dxsrc))
+
+sushw < shot_rvz.su key=fldr a=$ishot >> $filout
+
+done
+

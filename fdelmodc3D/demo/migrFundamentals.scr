@@ -1,0 +1,165 @@
+#!/bin/bash
+#PBS -N fdelmod
+#PBS -q verylong
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+
+which makewave
+which makemod
+
+cd /Users/jan/src/OpenSource/fdelmodc/demo
+
+cp=2000
+rho=1000
+dx=5
+dt=0.0010
+
+makemod sizex=6000 sizez=4000 dx=$dx dz=$dx cp0=$cp cs0=$cs ro0=$rho \
+	orig=-3000,-1000 file_base=syncl.su \
+	intt=def x=-3000,0,3000 z=250,250,250 poly=0 cp=2300 ro=5000 \
+	intt=def x=-3000,-2000,-1000,-800,0,800,3000 z=650,650,700,750,900,750,600 poly=2 cp=2600 ro=1000 \
+	intt=def x=-3000,0,3000 z=1390,1390,1390 poly=0 cp=2000 ro=5000 
+
+makemod sizex=5000 sizez=2500 dx=$dx dz=$dx cp0=$cp cs0=$cs ro0=$rho \
+	orig=-2500,-500 file_base=model.su \
+	intt=def x=-2500,0,2500 z=1000,1000,1000 poly=0 cp=2000 ro=5000 cs=1200 
+
+#	intt=def x=-2500,0,2500 z=500,500,500 poly=0 cp=2300 ro=5000 
+
+makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
+
+../fdelmodc \
+    file_cp=model_cp.su ischeme=1 \
+    file_den=model_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_x1150.su \
+    src_type=1 \
+	src_orient=1 \
+	src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.0010 \
+	rec_delay=0.1 \
+    verbose=2 \
+    tmod=2.10 \
+    dxrcv=5.0 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=0 \
+    ntaper=100 \
+    sna_type_p=0 \
+    sna_type_vz=1 \
+    xsnap1=-2250 xsnap2=2250 zsnap1=0 zsnap2=2000 \
+    dxsnap=10 dzsnap=10 tsnap1=0.1 tsnap2=2.1 dtsnap=0.005 \
+    left=4 right=4 top=4 bottom=4
+
+
+makemod sizex=5000 sizez=2500 dx=$dx dz=$dx cp0=$cp cs0=$cs ro0=$rho \
+	orig=-2500,-500 file_base=hom.su
+
+../fdelmodc \
+    file_cp=hom_cp.su ischeme=1 \
+    file_den=hom_ro.su \
+    file_src=wave.su \
+    file_rcv=shothom_x1150.su \
+    file_snap=snaphom.su \
+    src_type=1 \
+	src_orient=1 \
+	src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.0010 \
+	rec_delay=0.1 \
+    verbose=2 \
+    tmod=2.10 \
+    dxrcv=5.0 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=0 \
+    ntaper=100 \
+    sna_type_p=0 \
+    sna_type_vz=1 \
+    xsnap1=-2250 xsnap2=2250 zsnap1=0 zsnap2=2000 \
+    dxsnap=10 dzsnap=10 tsnap1=0.1 tsnap2=2.1 dtsnap=0.005 \
+    left=4 right=4 top=4 bottom=4
+
+
+sudiff shot_x1150_rp.su shothom_x1150_rp.su > shot_refl_rp.su
+sudiff shot_x1150_rvz.su shothom_x1150_rvz.su > shot_refl_rvz.su
+#sudiff snap_svz.su snaphom_svz.su > snap_refl_rp.su
+
+../fdelmodc \
+    file_cp=hom_cp.su ischeme=1 \
+    file_den=hom_ro.su \
+    file_src=shot_refl_rp.su \
+    file_rcv=shot_reverse_x1150.su \
+    file_snap=snap_reverse.su \
+    grid_dir=1 \
+    src_type=1 \
+	src_orient=1 \
+	src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.0010 \
+	rec_delay=0.0 \
+    verbose=2 \
+    tmod=2.0 \
+    dxrcv=5.0 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=0 \
+    ntaper=100 \
+    sna_type_p=0 \
+    sna_type_vz=1 \
+    xsnap1=-2250 xsnap2=2250 zsnap1=0 zsnap2=2000 \
+    dxsnap=10 dzsnap=10 tsnap1=0.0 tsnap2=2.0 dtsnap=0.005 \
+    left=4 right=4 top=4 bottom=4
+
+susort < snap_reverse_svz.su -fldr +tracf > snap_reverse_svz_swap.su
+
+#suxmovie < snap_reverse_svz.su n2=451 loop=1 n3=401 clip=100 title=%g
+
+
+#fconv file_in1=snap_reverse_svz_swap.su file_in2=snap_svz.su mode=cor2 shift=0  > image_snap.su verbose=1
+#fconv file_in1=snap_reverse_svz_swap.su file_in2=snaphom_svz.su mode=cor2 shift=0  > image_snap.su verbose=1
+
+sustrip < snap_svz.su > snap_svz.bin
+sustrip < snaphom_svz.su > snaphom_svz.bin
+sustrip < snap_reverse_svz.su > snap_reverse_svz.bin
+sustrip < snap_reverse_svz_swap.su > snap_reverse_svz_swap.bin
+
+transp3d < snap_reverse_svz_swap.bin > snap_reverse_svz_swap_321.bin n1=201 n2=451 n3=401 verbose=1 nbpe=4 scratchdir="/tmp" perm=321
+transp3d < snaphom_svz.bin > snaphom_321.bin n1=201 n2=451 n3=401 verbose=1 nbpe=4 scratchdir="/tmp" perm=321
+
+
+suaddhead ns=401 ntrpr=451 < snap_reverse_svz_swap_321.bin | sushw key=fldr a=1 j=451 c=1 | \
+	sushw key=dt a=1 > snap_reverse_svz_swap_321.su
+#transpose verbose=3 < snap_reverse_svz_swap_231.su > snap_reverse_svz_swap_231_tr.su 
+
+suaddhead ns=401 ntrpr=451 < snaphom_321.bin | sushw key=fldr a=1 j=451 c=1 | \
+	sushw key=dt a=1 > snaphom_321.su
+#transpose verbose=3 < snaphom_231.su > snaphom_231_tr.su 
+
+fconv file_in1=snap_reverse_svz_swap_321.su file_in2=snaphom_321.su mode=cor2 shift=0  > image_snap.su verbose=1
+
+#suxmovie < image_snap.su n2=451 loop=1 n3=201 clip=1 title=%g
+
+sustrip < image_snap.su > image_snap.bin
+transp3d < image_snap.bin > image_snap_123.bin n3=201 n2=451 n1=401 verbose=1 nbpe=4 scratchdir="/tmp" perm=321
+
+
+i=0
+rm build_image.su
+suaddhead < image_snap_123.bin ns=201 ntrpr=451 | suwind key=tracl min=1 max=451 dt=1 > imagetmp.su
+while (( i <= 200 )) 
+do
+suwind dt=1 itmin=0 itmax=$i < imagetmp.su| \
+suwind itmax=200 dt=1 >> build_image.su
+	(( i = $i + 1 ))
+done
+
+sustrip < build_image.su > build_image.bin

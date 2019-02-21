@@ -1,0 +1,140 @@
+
+The scripts in this directory reproduce the Figures shown in the paper "Finite-difference modeling experiments for seismic interferometry". Some of those scripts take a very long time to run. In this file some guidelines and runtime indications are given of the scripts to reproduce the Figures. The runtimes are given for a 2.5 Ghz Intel Core 2 Duo. OpenMP parallelization is not used.
+
+All scripts use some commands from Seismic Unix (SU) to plot results or post-process the data. 
+
+==> Please make sure that SU is compiled without XDR (In $CWPROOT/Makefile.config make sure that XDRFLAG is NOT set). The SU output files of fdelmodc are base on local IEEE data. 
+
+
+
+Figure2.scr
+-------------
+starts fdelmodc only to compute the source positions, 1 s.
+runtime: 5 seconds
+
+Figure3.scr
+-------------
+First the shots along the box-shaped contour are modeled for each shot separately. This takes a very long time. To model these shots two other script are called:
+
+Simple_model_base.scr, to model 900 shots at level z=3600
+Simple_model_sides.scr, to model 2x360 shots at the sides of the model at x=1000 and x=9000
+runtime one shot: 270 seconds. 
+total runtime modeling: 122 hours.
+
+Figure3_ref.scr
+-------------
+direct modeled reference result Figure 3d
+runtime: 500 seconds.
+
+Figure4.scr
+-------------
+5 different source signature lengths
+Runtime: 3.5 hours per shot of 120 s. modeling
+
+Figure5.scr
+-------------
+simulates 8000 short (2.5 s) sources
+Runtime: 3.5 hours
+
+Figure6.scr
+-------------
+5 different number of random sources
+Runtime: 3.5 hours per shot of 120 s. modeling
+
+Figure6f.scr
+-------------
+make postscript file of middle trace after Figure6.scr, 1 s.
+Runtime: a few seconds to produce the figure.
+The script Figure6.scr must be run first
+
+Figure6length.scr
+-------------
+NOT used in paper: The same as script Figure6.scr, but a random source signature of a fixed length. 
+
+Figure7.scr
+-------------
+as Figure 6, but with 1000 deep sources
+Runtime: 3.5 hours
+
+Figure7length.scr
+-------------
+NOT used in paper: The same as script Figure7.scr, but a random source signature of a fixed length. 
+
+Figure7fmax.scr
+-------------
+NOT used in paper: The same as script Figure7.scr, but with varying maximum frequency in source signature.
+
+Figure8-9.scr
+-------------
+for random and ricker wavelet deep, volume and plane sources
+Runtime: 6 x 3.5 hours
+
+Figure8-9Hom.scr
+-------------
+for reviewer, same as Fig. 8-9 in homogeneous medium
+NOT used in paper: to answers reviewer, same as fig 8-9 in homogeneous medium,
+Runtime: 6 x 3.5 hours
+
+Figure10.scr
+-------------
+reference and 2 SI results for visco-acoustic media
+Runtime reference: 2 x 3 minutes 
+Runtime deep and volume: 2 x 1.5 hours  
+
+Figure11.scr
+----------- 
+Uses the result of fdelmodc_long.scr and produces the postscript figures.
+
+The program to compute the correlation in a continuous way (corrsmp) is missing and the correlation result can not be reproduced. The program corrsmp is still in a development state and not yet suited for release. 
+
+Figure12.scr
+-------------
+The program to compute the correlation in a continuous way (corrsmp) is missing and the correlation result can not be reproduced. The program corrsmp is still in a development state and not yet suited for release. 
+
+Figure13.scr
+-------------
+amplitude variations on source strength
+Runtime: 3 x 1500 s.
+
+Figure14-15.scr
+-------------
+The reference shot can be reproduced, together with the long 3600 s modeling. The SI retrieved results can not be reproduced.
+runtime: 161 hours for the 3600 seconds passive measurement
+
+61 output files will be created each containing 65535 time samples. 
+
+The program to compute the correlation in a continuous way (corrsmp) is missing and the correlation result can not be reproduced. The program corrsmp is still in a development state and not yet suited for release. 
+
+
+FigureSourcesAppendixA.scr
+-------------
+source construction shown in Figure A2-A3-A4
+runtime: 150 seconds
+
+
+FigureGreenAppendixA.scr
+-------------
+compares FD result with analytical result
+runtime 80 seconds.
+
+SIrand.scr
+----------
+Script used to generate the retrieved reflection from passive measurements.
+
+fdelmodc_long.scr
+------------
+This script is used to model the passive measurements and takes ~100 hours. 
+
+The program to compute the correlation in a continuous way (corrsmp) is missing and the correlation result can not be reproduced. The program corrsmp is still in a development state and not yet suited for release. 
+
+cross.scr and FigureCCsources.scr
+----------
+used to answer a question of reviewer 3
+
+FigurePres.scr and MakeGifMovie.scr
+-------------
+Generates snapshots which can be used in a presentation to explain SI
+
+
+
+
