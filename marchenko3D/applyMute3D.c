@@ -10,13 +10,13 @@
 #ifndef MIN
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #endif
-#define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
+#define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 
-void applyMute3D( float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift)
+void applyMute3D( float *data, long *mute, long smooth, long above, long Nfoc, long nxs, long nt, long *ixpos, long npos, long shift)
 {
-    int ix, iy, i, j, l, isyn;
+    long ix, iy, i, j, l, isyn;
     float *costaper, scl;
-    int imute, tmute;
+    long imute, tmute;
 
     if (smooth) {
         costaper = (float *)malloc(smooth*sizeof(float));

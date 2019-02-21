@@ -13,7 +13,7 @@
 #ifndef MIN
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #endif
-#define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
+#define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 
 #ifndef COMPLEX
 typedef struct _complexStruct { /* complex number */
@@ -21,11 +21,12 @@ typedef struct _complexStruct { /* complex number */
 } complex;
 #endif/* complex */
 
-int getFileInfo3D(char *filename, int *n1, int *n2, int *n3, int *ngath, float *d1, float *d2, float *d3, float *f1, float *f2, float *f3, float *sclsxgxsygy, int *nxm);
-int readData3D(FILE *fp, float *data, segy *hdrs, int n1);
-int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
-int disp_fileinfo3D(char *file, int n1, int n2, int n3, float f1, float f2, float f3, float d1, float d2, float d3, segy *hdrs);
-void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift);
+long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, float *d1, float *d2, float *d3, float *f1, float *f2, float *f3,
+    float *sclsxgxsygy, long *nxm);
+long readData3D(FILE *fp, float *data, segy *hdrs, long n1);
+long writeData3D(FILE *fp, float *data, segy *hdrs, long n1, long n2);
+long disp_fileinfo3D(char *file, long n1, long n2, long n3, float f1, float f2, float f3, float d1, float d2, float d3, segy *hdrs);
+void applyMute3D( float *data, long *mute, long smooth, long above, long Nfoc, long nxs, long nt, long *ixpos, long npos, long shift);
 double wallclock_time(void);
 
 /*********************** self documentation **********************/
@@ -60,13 +61,13 @@ char *sdoc[] = {
 NULL};
 /**************** end self doc ***********************************/
 
-int main (int argc, char **argv)
+long main (int argc, char **argv)
 {
     FILE    *fp_in1, *fp_in2, *fp_out, *fp_chk, *fp_psline1, *fp_psline2;
-    int        verbose, shift, k, nx1, ny1, nt1, nx2, ny2, nt2, nxy;
-    int     ntmax, nxmax, nymax, ret, i, j, l, jmax, ixmax, iymax, above, check;
-    int     size, ntraces, ngath, *maxval, hw, smooth;
-    int     tstart, tend, scale, *xrcv;
+    long        verbose, shift, k, nx1, ny1, nt1, nx2, ny2, nt2, nxy;
+    long     ntmax, nxmax, nymax, ret, i, j, l, jmax, ixmax, iymax, above, check;
+    long     size, ntraces, ngath, *maxval, hw, smooth;
+    long     tstart, tend, scale, *xrcv;
     float   dt, dt1, dx1, dy1, ft1, fx1, fy1, t0, t1, dt2, dx2, dy2, ft2, fx2, fy2;
     float    w1, w2, dxrcv, dyrcv;
     float     *tmpdata, *tmpdata2, *costaper;
@@ -81,17 +82,17 @@ int main (int argc, char **argv)
     if(!getparstring("file_mute", &file_mute)) file_mute=NULL;
     if(!getparstring("file_shot", &file_shot)) file_shot=NULL;
     if(!getparstring("file_out", &file_out)) file_out=NULL;
-    if(!getparint("ntmax", &ntmax)) ntmax = 1024;
-    if(!getparint("nxmax", &nxmax)) nxmax = 512;
-    if(!getparint("above", &above)) above = 0;
-    if(!getparint("check", &check)) check = 0;
-    if(!getparint("scale", &scale)) scale = 0;
-    if(!getparint("hw", &hw)) hw = 15;
-    if(!getparint("smooth", &smooth)) smooth = 0;
+    if(!getparlong("ntmax", &ntmax)) ntmax = 1024;
+    if(!getparlong("nxmax", &nxmax)) nxmax = 512;
+    if(!getparlong("above", &above)) above = 0;
+    if(!getparlong("check", &check)) check = 0;
+    if(!getparlong("scale", &scale)) scale = 0;
+    if(!getparlong("hw", &hw)) hw = 15;
+    if(!getparlong("smooth", &smooth)) smooth = 0;
     if(!getparfloat("w1", &w1)) w1=1.0;
     if(!getparfloat("w2", &w2)) w2=1.0;
-    if(!getparint("shift", &shift)) shift=0;
-    if(!getparint("verbose", &verbose)) verbose=0;
+    if(!getparlong("shift", &shift)) shift=0;
+    if(!getparlong("verbose", &verbose)) verbose=0;
 
 /* Reading input data for file_mute */
 
@@ -99,11 +100,11 @@ int main (int argc, char **argv)
         ngath = 1;
         ret = getFileInfo3D(file_mute, &nt1, &nx1, &ny1, &ngath, &dt1, &dx1, &dy1, &ft1, &fx1, &fy1, &sclsxgx, &ntraces);
         
-        if (!getparint("ntmax", &ntmax)) ntmax = nt1;
-        if (!getparint("nxmax", &nxmax)) nxmax = nx1;
-        if (!getparint("nymax", &nymax)) nymax = ny1;
+        if (!getparlong("ntmax", &ntmax)) ntmax = nt1;
+        if (!getparlong("nxmax", &nxmax)) nxmax = nx1;
+        if (!getparlong("nymax", &nymax)) nymax = ny1;
         if (verbose>=2 && (ntmax!=nt1 || nxmax!=nx1 || nymax!= ny1))
-            vmess("dimensions overruled: %d x %d y %d",ntmax,nxmax,nymax);
+            vmess("dimensions overruled: %li x %li y %li",ntmax,nxmax,nymax);
         if(!getparfloat("dt", &dt)) dt=dt1;
 
         fp_in1 = fopen(file_mute, "r");
@@ -130,9 +131,9 @@ int main (int argc, char **argv)
     ngath = 1;
     ret = getFileInfo3D(file_shot, &nt2, &nx2, &ny2, &ngath, &dt2, &dx2, &dy2, &ft2, &fx2, &fy2, &sclshot, &ntraces);
     
-    if (!getparint("ntmax", &ntmax)) ntmax = nt2;
-    if (!getparint("nxmax", &nxmax)) nxmax = nx2;
-    if (!getparint("nymax", &nymax)) nymax = ny2;
+    if (!getparlong("ntmax", &ntmax)) ntmax = nt2;
+    if (!getparlong("nxmax", &nxmax)) nxmax = nx2;
+    if (!getparlong("nymax", &nymax)) nymax = ny2;
 
     size = ntmax * nxmax * nymax;
     tmpdata2 = (float *)malloc(size*sizeof(float));
@@ -171,13 +172,13 @@ int main (int argc, char **argv)
         sclsxgx = sclshot;
     }
 
-    if (verbose) vmess("sampling file_mute=%d, file_shot=%d", nt1, nt2);
+    if (verbose) vmess("sampling file_mute=%li, file_shot=%li", nt1, nt2);
 
 /*================ initializations ================*/
 
     nxy    = nx1*ny1;
-    maxval = (int *)calloc(nxy,sizeof(int));
-    xrcv   = (int *)calloc(nxy,sizeof(int));
+    maxval = (long *)calloc(nxy,sizeof(long));
+    xrcv   = (long *)calloc(nxy,sizeof(long));
     
     if (file_out==NULL) fp_out = stdout;
     else {
@@ -206,7 +207,7 @@ int main (int argc, char **argv)
 
     k=1;
     while (nxy > 0) {
-        if (verbose) vmess("processing input gather %d", k);
+        if (verbose) vmess("processing input gather %li", k);
 
 /*================ loop over all shot records ================*/
 
@@ -267,7 +268,7 @@ int main (int argc, char **argv)
             }
         }
         maxval[iymax*nx1+ixmax] = jmax;
-        if (verbose >= 3) vmess("Mute max at src-trace x=%d y=%d is sample %d", ixmax, iymax, maxval[iymax*nx1+ixmax]);
+        if (verbose >= 3) vmess("Mute max at src-trace x=%li y=%li is sample %li", ixmax, iymax, maxval[iymax*nx1+ixmax]);
 
         /* search forward in x-trace direction from maximum in file */
         for (i = ixmax+1; i < nx1; i++) {
@@ -312,7 +313,7 @@ int main (int argc, char **argv)
                 }
             }
             maxval[i*nx1+ixmax] = jmax;
-            if (verbose >= 8) vmess("Mute max at src-trace x=%d y=%d is sample %d", ixmax, i, maxval[i*nx1+ixmax]);
+            if (verbose >= 8) vmess("Mute max at src-trace x=%li y=%li is sample %li", ixmax, i, maxval[i*nx1+ixmax]);
             /* search forward in x-trace direction from maximum in file */
             for (l = ixmax+1; l < nx1; l++) {
                 tstart = MAX(0, (maxval[i*nx1+l-1]-hw));
@@ -357,7 +358,7 @@ int main (int argc, char **argv)
                 }
             }
             maxval[i*nx1+ixmax] = jmax;
-            if (verbose >= 8) vmess("Mute max at src-trace x=%d y=%d is sample %d", ixmax, i, maxval[i*nx1+ixmax]);
+            if (verbose >= 8) vmess("Mute max at src-trace x=%li y=%li is sample %li", ixmax, i, maxval[i*nx1+ixmax]);
             /* search forward in x-trace direction from maximum in file */
             for (l = ixmax+1; l < nx1; l++) {
                 tstart = MAX(0, (maxval[i*nx1+l-1]-hw));
@@ -411,11 +412,11 @@ int main (int argc, char **argv)
 
 /*================ apply mute window ================*/
         
-        applyMute(tmpdata2, maxval, smooth, above, 1, nx2*ny2, nt2, xrcv, nx2*ny2, shift);
+        applyMute3D(tmpdata2, maxval, smooth, above, 1, nx2*ny2, nt2, xrcv, nx2*ny2, shift);
 
 /*================ write result to output file ================*/
 
-        ret = writeData(fp_out, tmpdata2, hdrs_in2, nt2, nx2*ny2);
+        ret = writeData3D(fp_out, tmpdata2, hdrs_in2, nt2, nx2*ny2);
         if (ret < 0 ) verr("error on writing output file.");
 
         /* put mute window in file to check correctness of mute */
@@ -434,7 +435,7 @@ int main (int argc, char **argv)
                     }
                 }
             }
-            ret = writeData(fp_chk, tmpdata, hdrs_in1, nt1, nx1*ny1);
+            ret = writeData3D(fp_chk, tmpdata, hdrs_in1, nt1, nx1*ny1);
             if (ret < 0 ) verr("error on writing check file.");
             for (l=0; l<ny1; l++) {
                 for (i=0; i<nx1; i++) {
@@ -463,10 +464,10 @@ int main (int argc, char **argv)
                 }
                 break;
             }
-            nt1 = (int)hdrs_in1[0].ns;
-            if (nt1 > ntmax) verr("n_samples (%d) greater than ntmax", nt1);
-            if (nx1 > nxmax) verr("n_traces  (%d) greater than nxmax", nx1);
-            if (ny1 > nymax) verr("n_traces  (%d) greater than nymax", ny1);
+            nt1 = (long)hdrs_in1[0].ns;
+            if (nt1 > ntmax) verr("n_samples (%li) greater than ntmax", nt1);
+            if (nx1 > nxmax) verr("n_traces  (%li) greater than nxmax", nx1);
+            if (ny1 > nymax) verr("n_traces  (%li) greater than nymax", ny1);
             if (verbose) {
                 disp_fileinfo3D(file_mute, nt1, nx1, ny1, ft1, fx1, fy1, dt, dx1, dy1, hdrs_in1);
             }
@@ -481,10 +482,10 @@ int main (int argc, char **argv)
             fclose(fp_in2);
             break;
         }
-        nt2 = (int)hdrs_in2[0].ns;
-        if (nt2 > ntmax) verr("n_samples (%d) greater than ntmax", nt2);
-        if (nx2 > nxmax) verr("n_traces  (%d) greater than nxmax", nx2);
-        if (ny2 > nymax) verr("n_traces  (%d) greater than nymax", ny2);
+        nt2 = (long)hdrs_in2[0].ns;
+        if (nt2 > ntmax) verr("n_samples (%li) greater than ntmax", nt2);
+        if (nx2 > nxmax) verr("n_traces  (%li) greater than nxmax", nx2);
+        if (ny2 > nymax) verr("n_traces  (%li) greater than nymax", ny2);
         if (verbose) {
             disp_fileinfo3D(file_shot, nt2, nx2, ny2, ft2, fx2, fy2, dt, dx2, dy2, hdrs_in2);
         }

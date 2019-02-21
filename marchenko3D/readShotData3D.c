@@ -9,22 +9,22 @@ typedef struct { /* complex number */
         float r,i;
 } complex;
 
-#define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
+#define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 
 int optncr(int n);
 void cc1fft(complex *data, int n, int sign);
 void rc1fft(float *rdata, complex *cdata, int n, int sign);
 
-int readShotData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float *ysrc, float *zsrc, int *xnx, complex *cdata, int nw, int nw_low, int nshots, int nx, int ny, int ntfft, int mode, float scale, int verbose)
+long readShotData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float *ysrc, float *zsrc, long *xnx, complex *cdata, long nw, long nw_low, long nshots, long nx, long ny, long ntfft, long mode, float scale, long verbose)
 {
 	FILE *fp;
 	segy hdr;
 	size_t nread;
-	int fldr_shot, sx_shot, sy_shot, itrace, one_shot, igath, iw;
-	int end_of_file, nt, nxy;
-	int *isx, *igx, *isy, *igy, k, l, m, j;
-	int samercv, samesrc, nxrk, nxrm, maxtraces, ixsrc;
+	long fldr_shot, sx_shot, sy_shot, itrace, one_shot, igath, iw;
+	long end_of_file, nt, nxy;
+	long *isx, *igx, *isy, *igy, k, l, m, j;
+	long samercv, samesrc, nxrk, nxrm, maxtraces, ixsrc;
 	float scl, scel, *trace, dt;
 	complex *ctrace;
 
@@ -58,10 +58,10 @@ int readShotData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float 
 
 	trace  = (float *)calloc(ntfft,sizeof(float));
 	ctrace = (complex *)malloc(ntfft*sizeof(complex));
-	isx = (int *)malloc((nxy*nshots)*sizeof(int));
-	igx = (int *)malloc((nxy*nshots)*sizeof(int));
-	isy = (int *)malloc((nxy*nshots)*sizeof(int));
-	igy = (int *)malloc((nxy*nshots)*sizeof(int));
+	isx = (long *)malloc((nxy*nshots)*sizeof(long));
+	igx = (long *)malloc((nxy*nshots)*sizeof(long));
+	isy = (long *)malloc((nxy*nshots)*sizeof(long));
+	igy = (long *)malloc((nxy*nshots)*sizeof(long));
 
 
 	end_of_file = 0;
@@ -101,7 +101,7 @@ int readShotData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float 
 			if (ntfft > hdr.ns) 
 			memset( &trace[nt-1], 0, sizeof(float)*(ntfft-nt) );
 
-			rc1fft(trace,ctrace,ntfft,-1);
+			rc1fft(trace,ctrace,(int)ntfft,-1);
 			for (iw=0; iw<nw; iw++) {
 				cdata[igath*nxy*nw+iw*nxy+itrace].r = scale*ctrace[nw_low+iw].r;
 				cdata[igath*nxy*nw+iw*nxy+itrace].i = scale*mode*ctrace[nw_low+iw].i;
@@ -119,7 +119,7 @@ int readShotData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float 
 			if ((sx_shot != hdr.sx) || (sy_shot != hdr.sy) || (fldr_shot != hdr.fldr)) break;
 		}
 		if (verbose>2) {
-			vmess("finished reading shot x=%d y=%d (%d) with %d traces",sx_shot,sy_shot,igath,itrace);
+			vmess("finished reading shot x=%li y=%li (%li) with %li traces",sx_shot,sy_shot,igath,itrace);
 		}
 
 		if (itrace != 0) { /* end of shot record */
