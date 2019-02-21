@@ -1,0 +1,145 @@
+#!/bin/bash
+#PBS -N fdelmod
+#PBS -q verylong
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+#
+# Illustrates how dispersion and instability is presented in snapshots, used in Figure 1 of the manual
+
+export PATH=../../bin:$PATH
+
+#OK: no taper
+ntaper=0
+
+export filecp=model_cp.su
+export filecs=model_cs.su
+export filero=model_ro.su
+
+#OK: no dispersion and stable
+dt=0.0002
+dx=1
+cp=1500
+
+makewave file_out=wavelet.su dt=$dt nt=1024 fp=85 shift=1 w=g2 verbose=1
+makemod file_base=model.su \
+       cp0=$cp ro0=1000 cs0=600 sizex=2100 sizez=2100 \
+       dx=$dx dz=$dx orig=0,0 \
+
+../fdelmodc \
+	file_cp=$filecp file_cs=$filecs file_den=$filero \
+	ischeme=1 \
+	file_src=wavelet.su verbose=2 \
+	file_rcv=rec.su \
+	file_snap=snap_nodisp.su \
+	xrcv1=0 xrcv2=2100 dxrcv=15 \
+	zrcv1=400 zrcv2=400 \
+	dtrcv=0.004 \
+	xsrc=1000 zsrc=1700 nshot=1 \
+	src_type=1 tmod=1.0  \
+	ntaper=$ntaper \
+	left=4 right=4 bottom=4 top=4 \
+	tsnap1=0.1 tsnap2=1.0 dtsnap=0.4 \
+	sna_type_ss=1 sna_type_pp=1 fmax=25
+
+suwind < snap_nodisp_sp.su key=fldr min=2 max=2 | \
+    convert trinc=3 saminc=3 | \
+    supsimage labelsize=10 hbox=4 wbox=4 clip=1e-5 \
+    label1="z [m]" label2="x [m]" f1=0 f2=0 d1=3 d2=3 > snap_nodisp_sp.eps
+
+
+#Dispersion 1:
+dt=0.001
+dx=3
+cp=1500
+
+makewave file_out=wavelet.su dt=$dt nt=1024 fp=85 shift=1 w=g2 verbose=1
+makemod file_base=model.su \
+       cp0=$cp ro0=1000 cs0=600 sizex=2100 sizez=2100 \
+       dx=$dx dz=$dx orig=0,0 \
+
+../fdelmodc \
+	file_cp=$filecp file_cs=$filecs file_den=$filero \
+	ischeme=1 \
+	file_src=wavelet.su verbose=2 \
+	file_rcv=rec.su \
+	file_snap=snap_disp1.su \
+	xrcv1=0 xrcv2=2100 dxrcv=15 \
+	zrcv1=400 zrcv2=400 \
+	dtrcv=0.004 \
+	xsrc=1000 zsrc=1700 nshot=1 \
+	src_type=1 tmod=1.0  \
+	ntaper=$ntaper \
+	left=4 right=4 bottom=4 top=4 \
+	tsnap1=0.1 tsnap2=1.0 dtsnap=0.4 \
+	sna_type_ss=1 sna_type_pp=1 fmax=25
+
+suwind < snap_disp1_sp.su key=fldr min=2 max=2 | \
+    supsimage labelsize=10 hbox=4 wbox=4 clip=1e-5 \
+    label1="z [m]" label2="x [m]" f1=0 f2=0 > snap_disp_sp.eps
+
+#Dispersion 2:
+dt=0.0002
+dx=1
+cp=300
+
+makewave file_out=wavelet.su dt=$dt nt=1024 fp=85 shift=1 w=g2 verbose=1
+makemod file_base=model.su \
+	   cp0=$cp ro0=1000 cs0=600 sizex=2100 sizez=2100 \
+	   dx=$dx dz=$dx orig=0,0 \
+
+../fdelmodc \
+	file_cp=$filecp file_cs=$filecs file_den=$filero \
+	ischeme=1 \
+	file_src=wavelet.su verbose=2 \
+	file_rcv=rec.su \
+	file_snap=snap_disp2.su \
+	xrcv1=0 xrcv2=2100 dxrcv=15 \
+	zrcv1=400 zrcv2=400 \
+	dtrcv=0.004 \
+	xsrc=1000 zsrc=1700 nshot=1 \
+	src_type=1 tmod=1.0  \
+	ntaper=$ntaper \
+	left=4 right=4 bottom=4 top=4 \
+	tsnap1=0.1 tsnap2=1.0 dtsnap=0.4 \
+	sna_type_ss=1 sna_type_pp=1 fmax=25
+
+suwind < snap_disp2_sp.su key=fldr min=2 max=2 | \
+    supsimage labelsize=10 hbox=4 wbox=4 clip=2e-4 \
+    x1beg=1400 x1end=2000 x2beg=700 x2end=1300 \
+    label1="z [m]" label2="x [m]" f1=0 f2=0 > snap_disp2_sp.eps
+
+#stability:
+# To run this model one has to disable the error message in ../getParameters.c
+# this can be done with an undocumented parameter disable_check=1.
+# Noramly the program checks stability and then aborts the program using verr().
+dt=0.0008
+dx=1
+cp=1500
+
+makewave file_out=wavelet.su dt=$dt nt=1024 fp=85 shift=1 w=g2 verbose=1
+makemod file_base=model.su \
+       cp0=$cp ro0=1000 cs0=600 sizex=2100 sizez=2100 \
+       dx=$dx dz=$dx orig=0,0 \
+
+../fdelmodc \
+	file_cp=$filecp file_cs=$filecs file_den=$filero \
+	ischeme=1 \
+	file_src=wavelet.su verbose=2 \
+	file_rcv=rec.su \
+	file_snap=snap_stab.su \
+	xrcv1=0 xrcv2=2100 dxrcv=15 \
+	zrcv1=400 zrcv2=400 \
+	dtrcv=0.004 \
+	xsrc=1000 zsrc=1700 nshot=1 \
+	src_type=1 tmod=1.0  \
+	ntaper=$ntaper \
+	left=4 right=4 bottom=4 top=4 \
+	tsnap1=0.1 tsnap2=1.0 dtsnap=0.4 \
+	disable_check=1 \
+	sna_type_ss=1 sna_type_pp=1 fmax=25
+
+suwind < snap_stab_sp.su key=fldr min=1 max=1 | \
+    supsimage labelsize=10 hbox=4 wbox=4 clip=2e+16 \
+    label1="z [m]" label2="x [m]" f1=0 f2=0 > snap_stab_sp.eps
+
