@@ -351,7 +351,7 @@ void xwgreen3D(float *data, int nt, int nx, int ny, float dt, float fmin, float 
 	int    	iomin, iomax, iom, ix, iy, nfreq, i, sign, optn;
 	float  	df, deltom, om, k, r, x, y, invr, phi, phi2, cosphi;
 	float	*rwave, *rdata, cos2, scl, z, kp, ks, sclr;
-	complex	*cwave, *cdata, tmp, tmp2, sum;
+	complex	*cwave, *cdata, tmp, tmp2, ekr, sum;
     complex H02p, H12p, H02s, H12s, Gp, Gs;
 
 	optn	= optncr(nt);
@@ -391,8 +391,8 @@ void xwgreen3D(float *data, int nt, int nx, int ny, float dt, float fmin, float 
 	}
 
 	if (p_vz == 0) {
-		if (far == 0 && dip == 1) {
-			if (verbose) vmess("near and far P field of dipole");
+		if (dip == 1) {
+			if (verbose) vmess("P field of dipole");
 			for (iy = 0; iy < ny; iy++) {
 				for (ix = 0; ix < nx; ix++) {
 					x      = xi[iy*nx+ix] - xsrc;
@@ -404,11 +404,14 @@ void xwgreen3D(float *data, int nt, int nx, int ny, float dt, float fmin, float 
 					phi2   = SGN(x)*phi - (dipx*M_PI/180.0);
 					cosphi = 0.25*cos(phi2)*rho;
 					if (fabs(phi) < maxdip*M_PI/180.0) {
+						/* exp(-jkr) = cos(kr) - j*sin(kr) */
 						for (iom = iomin; iom <= iomax; iom++) {
 							om = iom*deltom;
 							k = om/c;
-							tmp.r = -k*cosphi*y1(k*r);
-							tmp.i = -k*cosphi*j1(k*r);
+							ekr.r = cos(k*r)/(r*r);
+							ekr.i = sin(-k*r)/(r*r);
+							tmp.r = cosphi*(ekr.r - k*r*ekr.i);
+							tmp.i = cosphi*(ekr.i + k*r*ekr.r);
 							cdata[iy*nx*nfreq+ix*nfreq+iom].r = tmp.r*cwave[iom].r - 
 											tmp.i*cwave[iom].i;
 							cdata[iy*nx*nfreq+ix*nfreq+iom].i = tmp.r*cwave[iom].i +
@@ -424,6 +427,7 @@ void xwgreen3D(float *data, int nt, int nx, int ny, float dt, float fmin, float 
 				}
 			}
 		}
+/* There is no far-field definition 'needed' in 3D 
 		else if (far == 1 && dip == 1){
 			if (verbose) vmess("far P field of dipole");
 			for (iy = 0; iy < ny; iy++) {
@@ -458,8 +462,9 @@ void xwgreen3D(float *data, int nt, int nx, int ny, float dt, float fmin, float 
 				}
 			}
 		}
-		else if (far == 0 && dip == 0){
-			if (verbose) vmess("near and far P field of monopole");
+*/
+		else if (dip == 0){
+			if (verbose) vmess("P field of monopole");
 			for (iy = 0; iy < ny; iy++) {
 				for (ix = 0; ix < nx; ix++) {
 					x = xi[iy*nx+ix] - xsrc;
@@ -473,8 +478,8 @@ void xwgreen3D(float *data, int nt, int nx, int ny, float dt, float fmin, float 
 						for (iom = iomin; iom <= iomax; iom++) {
 							om = iom*deltom;
 							k  = om/c;
-							tmp.r = -scl*y0(k*r);
-							tmp.i = -scl*j0(k*r);
+							tmp.r = scl*cos(k*r)/(r);
+							tmp.i = scl*sin(-k*r)/(r);
 
 							cdata[iy*nx*nfreq+ix*nfreq+iom].r = tmp.r*cwave[iom].r - 
 											tmp.i*cwave[iom].i;
@@ -491,6 +496,7 @@ void xwgreen3D(float *data, int nt, int nx, int ny, float dt, float fmin, float 
 				}
 			}
 		}
+/* There is no far-field definition 'needed' in 3D 
 		else if (far == 1 && dip == 0){
 			if (verbose) vmess("far P field of monopole");
 			for (iy = 0; iy < ny; iy++) {
@@ -524,11 +530,11 @@ void xwgreen3D(float *data, int nt, int nx, int ny, float dt, float fmin, float 
 				}
 			}
 		}
+*/
 	}
 	else if (p_vz == 1) {
 		if (dip == 1) {
-	    	if (far == 0) {
-	    		if (verbose) vmess("near and far Vz field of dipole");
+	    		if (verbose) vmess("Vz field of dipole, this is not yet implemented");
 				for (iy = 0; iy < ny; iy++) {
 					for (ix = 0; ix < nx; ix++) {
 						x = xi[iy*nx+ix] - xsrc;
@@ -566,63 +572,29 @@ void xwgreen3D(float *data, int nt, int nx, int ny, float dt, float fmin, float 
 						}
 					}
 				}
-	    	}
-	    	else {
-	    		if (verbose) vmess("far Vz field of dipole");
-				for (iy = 0; iy < ny; iy++) {
-					for (ix = 0; ix < nx; ix++) {
-						x = xi[iy*nx+ix] - xsrc;
-						y = yi[iy*nx+ix] - ysrc;
-						z = fabs(zi[iy*nx+ix] - zsrc);
-						r = sqrt(x*x + y*y + z*z);
-						invr   = -0.5/(c*sqrt(r));
-						if (r != 0) phi = acos(z/r);
-						else phi = M_PI/2;
-						phi2   = SGN(x)*phi - (dipx*M_PI/180.0);
-						cosphi = cos(phi2);
-						cos2 = cosphi*cosphi;
-						if (fabs(phi) < maxdip*M_PI/180.0) {
-							for (iom = iomin; iom <= iomax; iom++) {
-								om = iom*deltom;
-								k = om/c;
-								tmp.r = sqrt(k/(2.0*M_PI))*invr*cos2*cos(k*r-M_PI/4.0);
-								tmp.i = -sqrt(k/(2.0*M_PI))*invr*cos2*sin(k*r-M_PI/4.0);
-
-								cdata[iy*nx*nfreq+ix*nfreq+iom].r = tmp.r*cwave[iom].r -
-												tmp.i*cwave[iom].i;
-								cdata[iy*nx*nfreq+ix*nfreq+iom].i = tmp.r*cwave[iom].i +
-												tmp.i*cwave[iom].r;
-							}
-						}
-						else {
-							for (iom = iomin; iom <= iomax; iom++) {
-								cdata[iy*nx*nfreq+ix*nfreq+iom].r = 0.0;
-								cdata[iy*nx*nfreq+ix*nfreq+iom].i = 0.0;
-							}
-						}
-					}
-				}
-	    	}
 		}
 		else {
-	    	if (verbose) vmess("near and far Vz field of monopole");
+	    	if (verbose) vmess("Vz field of monopole");
 
 			for (iy = 0; iy < ny; iy++) {
 				for (ix = 0; ix < nx; ix++) {
-					x = xi[iy*nx+ix] - xsrc;
-					y = yi[iy*nx+ix] - ysrc;
-					z = fabs(zi[iy*nx+ix] - zsrc);
-					r = sqrt(x*x + y*y + z*z);
+					x      = xi[iy*nx+ix] - xsrc;
+					y      = yi[iy*nx+ix] - ysrc;
+					z      = fabs(zi[iy*nx+ix] - zsrc);
+					r      = sqrt(x*x + y*y + z*z);
 					if (r != 0) phi = acos(z/r);
 					else phi = M_PI/2;
 					phi2   = SGN(x)*phi - (dipx*M_PI/180.0);
-					cosphi = cos(phi2);
+					cosphi = 0.25*cos(phi2)/c;
 					if (fabs(phi) < maxdip*M_PI/180.0) {
+						/* exp(-jkr) = cos(kr) - j*sin(kr) */
 						for (iom = iomin; iom <= iomax; iom++) {
 							om = iom*deltom;
 							k = om/c;
-							tmp.i = -cosphi*y1(k*r)/(4.0*c);
-							tmp.r = cosphi*j1(k*r)/(4.0*c);
+							ekr.r = cos(k*r)/(r*r);
+							ekr.i = sin(-k*r)/(r*r);
+							tmp.r = cosphi*(ekr.r - k*r*ekr.i);
+							tmp.i = cosphi*(ekr.i + k*r*ekr.r);
 							cdata[iy*nx*nfreq+ix*nfreq+iom].r = tmp.r*cwave[iom].r - 
 											tmp.i*cwave[iom].i;
 							cdata[iy*nx*nfreq+ix*nfreq+iom].i = tmp.r*cwave[iom].i +
