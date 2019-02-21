@@ -1,0 +1,59 @@
+#!/bin/bash
+#
+# make postscript file of middle trace after Figure6.scr, 1 s.
+
+shot=shotR_T120_S8000_Dt120_F30_rvz.su
+base=`echo $shot | awk 'BEGIN { FS = "." } ; { print $1 }'`
+echo $base
+
+ntraces=`surange < $shot | grep traces| awk '{print $1 }'`
+echo $ntraces
+middle=$(echo "scale=0; ($ntraces+1)/2"| bc -l)
+echo $middle 
+
+./SIrand.scr $shot
+susum causal.su noncausal.su | \
+    suwind s=1 j=1 tmax=4 f1=0.0 | \
+    sushw key=f1,delrt,d2,fldr a=0.0,0.0,50,8000 | \
+	suwind key=tracl min=$middle max=$middle > Trace.su
+
+shot=shotR_T120_S1000_Dt120_F30_rvz.su
+./SIrand.scr $shot
+susum causal.su noncausal.su | \
+    suwind s=1 j=1 tmax=4 f1=0.0 | \
+    sushw key=f1,delrt,d2,fldr a=0.0,0.0,50,1000 | \
+	suwind key=tracl min=$middle max=$middle >> Trace.su
+
+shot=shotR_T120_S500_Dt120_F30_rvz.su
+./SIrand.scr $shot
+susum causal.su noncausal.su | \
+    suwind s=1 j=1 tmax=4 f1=0.0 | \
+    sushw key=f1,delrt,d2,fldr a=0.0,0.0,50,500 | \
+	suwind key=tracl min=$middle max=$middle >> Trace.su
+
+shot=shotR_T120_S100_Dt120_F30_rvz.su
+./SIrand.scr $shot
+susum causal.su noncausal.su | \
+    suwind s=1 j=1 tmax=4 f1=0.0 | \
+    sushw key=f1,delrt,d2,fldr a=0.0,0.0,50,100 | \
+	suwind key=tracl min=$middle max=$middle >> Trace.su
+
+suwind s=1 j=1 tmax=4 f1=0.0 < shotRef_5000_0_rvz.su | \
+    sushw key=f1,delrt,d2,fldr a=0.0,0.0,50,100 | \
+	suwind key=tracl min=$middle max=$middle >> Trace.su
+
+suwind tmin=1.5 tmax=3.0 f1=0.0 < Trace.su | \
+	sunormalize norm=max | \
+	supsgraph \
+    hbox=4 wbox=3 labelsize=10 x1beg=1.5 x1end=3.0 \
+	linecolor=red,green,blue,emerald,black f1=1.5 d1num=0.5 \
+	> shotTraces_T120_S_Dt120_F30.eps
+
+suwind tmin=1.5 tmax=3.1 f1=0.0 < Trace.su | \
+    sunormalize norm=max | \
+    supswigp \
+    hbox=4 wbox=3 labelsize=10 x1beg=1.5 x1end=3.0 \
+    f1=1.5 d1num=0.5 linewidth=1 fill=0 f2=1 d2=1 \
+	label1='time (s)' label2='number of sources' > shotWiggles_T120_S_Dt120_F30.eps
+
+

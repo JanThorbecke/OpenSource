@@ -1,0 +1,20 @@
+#!/bin/bash
+
+makemod file_base=betonplaat3.su cp0=3700 ro0=2400 cs0=3400 verbose=1 sizex=5000 sizez=300 dx=5.0 dz=5.0
+
+makewave file_out=betonplaatwave.su dt=1.0e-4 nt=10000 w=g2 shift=1 fp=6 verbose=1
+
+../fdelmodc file_cp=betonplaat3_cp.su file_cs=betonplaat3_cs.su \
+file_den=betonplaat3_ro.su file_src=betonplaatwave.su \
+file_rcv=betonplaat2recv.su file_snap=betonplaat2snap.su \
+ischeme=3 tmod=5 \
+top=1 left=4 right=1 bottom=1 \
+src_type=3 xsrc=2500 zsrc=0.0 \
+tsnap1=1.0e-2 tsnap2=5 dtsnap=1.0e-2 dxsnap=5.0 dzsnap=5.0 \
+dtrcv=1.0e-2 verbose=1
+
+!sufrac power=1 < betonplaat3recv_rvz.su > sufracbetonplaat3.su
+!sustrip < sufracbetonplaat3.su | b2a n1=2051 > Sufrac_betonplaat3_Tzz.txt
+!suximage<sufracbetonplaat3.su title="FDM shot record Concrete Slab Sourcetype=Tzz [Left=4 Right=1]" label2="Lateral Position [mm]"
+label1="Time [ms]" wbox=2500 hbox=500 cmap=hsv2 legend=1
+

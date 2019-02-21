@@ -1,0 +1,167 @@
+#!/bin/bash
+# Elastic decomposition
+
+fmax=60
+z0=0
+z1=300
+z1dzu=296
+z1dzd=304
+z2=700
+z3=1000
+cp0=1500
+cp1=2000
+cp2=2500
+cs0=0
+cs0=600
+cs1=700
+cs2=800
+ro0=1000
+ro1=1400
+ro2=1800
+
+
+# Source wavelet
+makewave dt=0.0004 nt=1024 w=fw fmin=0 flef=30 frig=30 fmax=$fmax t0=0.1 > wav.su
+#suxgraph < wav.su style=normal &
+
+# Subsurface model
+
+makemod file_base=model.su \
+	cp0=$cp0 ro0=$ro0 cs0=$cs0 sizex=2000 sizez=1000 \
+	dx=2 dz=2 orig=0,0 writeint=1 \
+	intt=def poly=0 cp=$cp1,$cp1 ro=$ro1,$ro1 cs=$cs1,$cs1 x=0,2000 z=$z1,$z1 \
+	intt=def poly=0 cp=$cp2,$cp2 ro=$ro2,$ro2 cs=$cs2,$cs2 x=0,2000 z=$z2,$z2 \
+	verbose=1
+
+#FD Acoustic modeling, recording at Ocean bottom
+
+../fdelmodc \
+	file_cp=model_cp.su file_den=model_ro.su file_cs=model_cs.su file_src=wav.su \
+	ischeme=1 fmax=$fmax tmod=2 \
+	file_rcv=el_obc.su rec_delay=0.1 \
+	xrcv1=0 xrcv2=2000 dxrcv=10 zrcv1=$z1dzu zrcv2=$z1dzu \
+	rec_type_ud=1 rec_type_vz=1 rec_type_vx=1 rec_type_tzz=1 rec_type_txz=1  \
+	rec_int_vx=2 rec_int_vz=2 dtrcv=0.004 \
+	xsrc=1000 zsrc=10 src_type=1 src_orient=2  nshot=1 \
+	ntaper=200 left=4 right=4 bottom=4 top=4 \
+	verbose=1 
+
+#suximage < el_obc_rtzz.su wbox=400 hbox=500 perc=99.9 windowtitle=Tzz_OBC title="Total Tzz at OBC" &
+#suximage < el_obc_rvz.su wbox=400 hbox=500 perc=99.9 windowtitle=Vz_OBC title="Total Vz at OBC" &
+#suximage < el_obc_rvx.su wbox=400 hbox=500 perc=99.9 windowtitle=Vx_OBC title="Total Vx at OBC" &
+
+#cat el_obc_rvx.su el_obc_rvz.su | \
+#suwind key=offset min=-400 max=400 tmin=0.20 tmax=2 j=60 | \
+#suxwigb xcur=1 wbox=1000 hbox=500 grid1=dash \
+#   title="Zoom of vx and vz with FD. Elastic Modeling" windowtitle=VX_VZ_FD &
+
+
+# Acoustic decomposition above the ocean bottom
+
+# 1- Downgoing wave field
+#	A) Pressure component
+kxdecom file_in=el_obc_rp.su step=1 mode=0 col=1 row=1 cp=$cp0 ro=$ro0 cs=$cs0 nxmax=201 ntmax=501 nxfft=2048 ntfft=2048 alpha=-1 file_out=Pd.su verbose=1
+#	B) Vertical velocity component
+kxdecom file_in=el_obc_rvz.su step=1 mode=0 col=2 row=1 cp=$cp0 ro=$ro0 cs=$cs0 nxmax=201 ntmax=501 nxfft=2048 ntfft=2048 alpha=-1 file_out=Vzd.su verbose=1 
+# 	C) Adding P and Vz to get P_Down, P+= tmp1.su + tmp2.su
+addmul file_in1=Pd.su file_in2=Vzd.su file_out=el_pp_down_obc.su
+
+# 2- Upgoing wave field
+# 	A) Pressure component
+kxdecom file_in=el_obc_rp.su step=1 mode=0 col=1 row=2 cp=$cp0 ro=$ro0 cs=$cs0 nxmax=201 ntmax=501 nxfft=2048 ntfft=2048 alpha=-1 file_out=Pu.su verbose=1
+#	B) Vertical velocity component
+kxdecom file_in=el_obc_rvz.su step=1 mode=0 col=2 row=2 cp=$cp0 ro=$ro0 cs=$cs0 nxmax=201 ntmax=501 nxfft=2048 ntfft=2048 alpha=-1 file_out=Vzu.su verbose=1
+# 	C) Subtracting Vz from P to get P_up, P-= tmp1.su - tmp2.su
+addmul < Pu.su file_in2=Vzu.su > el_pp_up_obc.su verbose=1
+
+#suximage < el_pp_down_obc.su wbox=400 hbox=500 perc=99.9 windowtitle=P_Down_OBC title="Downgoing P at OBC" &
+#suximage < el_pp_up_obc.su wbox=400 hbox=500 perc=99.9 windowtitle=P_Up_OBC title="Upugoing P at OBC" &
+#
+#sleep 4
+#echo " " 1>&2
+#echo " " 1>&2
+#echo "Hit return to continue" 1>&2
+#read cont
+
+exit;
+#-----------------------------------------------------------------------
+
+#FD Elastic modeling, recording just Ocean bottom
+
+fdelmodc \
+	file_cp=model_cp.su file_den=model_ro.su file_cs=model_cs.su file_src=wav.su \
+	ischeme=3 fmax=$fmax tmod=2 \
+	file_rcv=el_obc_d.su rec_delay=0.1 \
+	xrcv1=0 xrcv2=2000 dxrcv=10 zrcv1=$z1dzd zrcv2=$z1dzd rec_type_vz=1 rec_type_vx=1 rec_type_tzz=1 rec_type_txz=1  \
+	rec_int_vx=2 rec_int_vz=2 dtrcv=0.004 \
+	xsrc=1000 zsrc=10 src_type=1 src_orient=2  nshot=1 \
+	ntaper=200 left=4 right=4 bottom=4 top=4 \
+	verbose=1 
+
+# Elastic decomposition below the ocean bottom
+#|P+|       |Vx|       | 0|
+#|S+| = N1+ |Vz| + N2+ |-P|
+
+
+# 1- Downgoing P- wave
+#	A) Pressure component
+kxdecom file_in=el_obc_d_rtzz.su step=1 mode=2 col=2 row=1 cp=$cp1 ro=$ro1 cs=$cs1 fmax=$fmax nxmax=201 ntmax=501 nxfft=2048 ntfft=2048 alpha=-1 file_out=tmp1.su verbose=1
+#	B) Horizontal velocity component
+kxdecom file_in=el_obc_d_rvx.su step=1 mode=1 col=1 row=1 cp=$cp1 ro=$ro1 cs=$cs1 fmax=$fmax nxmax=201 ntmax=501 nxfft=2048 ntfft=2048 alpha=-1 file_out=tmp2.su verbose=1
+#	C) Vertical velocity component
+kxdecom file_in=el_obc_d_rvz.su step=1 mode=1 col=2 row=1 cp=$cp1 ro=$ro1 cs=$cs1 fmax=$fmax nxmax=201 ntmax=501 nxfft=2048 ntfft=2048 alpha=-1 file_out=tmp3.su verbose=1
+# 	D) Adding -P and Vx first, then adding Vz to get Phi_Down,
+addmul < tmp1.su a=-1 file_in2=tmp2.su | addmul file_in2=tmp3.su > P_Wave_Down_obc.su verbose=1
+
+# 2- Upgoing P- wave
+#	A) Pressure component
+kxdecom file_in=el_obc_d_rtzz.su step=1 mode=-2 col=2 row=1 cp=$cp1 ro=$ro1 cs=$cs1 fmax=$fmax nxmax=201 ntmax=501 nxfft=2048 ntfft=2048 alpha=-1 file_out=tmp1.su verbose=1
+#	B) Horizontal velocity component
+kxdecom file_in=el_obc_d_rvx.su step=1 mode=-1 col=1 row=1 cp=$cp1 ro=$ro1 cs=$cs1 fmax=$fmax nxmax=201 ntmax=501 nxfft=2048 ntfft=2048 alpha=-1 file_out=tmp2.su verbose=1
+#	C) Vertical velocity component
+kxdecom file_in=el_obc_d_rvz.su step=1 mode=-1 col=2 row=1 cp=$cp1 ro=$ro1 cs=$cs1 fmax=$fmax nxmax=201 ntmax=501 nxfft=2048 ntfft=2048 alpha=-1 file_out=tmp3.su verbose=1
+# 	D) Adding -P and Vx first, then adding Vz to get Phi_Up,
+addmul < tmp1.su a=-1 file_in2=tmp2.su | addmul file_in2=tmp3.su > P_Wave_Up_obc.su verbose=1
+
+suximage < P_Wave_Down_obc.su wbox=400 hbox=500 perc=99.9 windowtitle=P_Wave_Down_obc title="Downgoing P-wave at OBC" &
+suximage < P_Wave_Up_obc.su wbox=400 hbox=500 perc=99.9 windowtitle=P_Wave_Up_obc title="Upugoing P-wave at OBC" &
+
+sleep 4
+echo " " 1>&2
+echo " " 1>&2
+echo "Hit return to continue" 1>&2
+read cont
+#-----------------------------------------------------------------------
+
+#|P+|       |Vx|       | 0|
+#|S+| = N1+ |Vz| + N2+ |-P|
+
+# 3- Downgoing S- wave
+#	A) Pressure component
+kxdecom file_in=el_obc_d_rtzz.su step=1 mode=2 col=2 row=2 cp=$cp1 ro=$ro1 cs=$cs1 fmax=$fmax nxmax=201 ntmax=501 nxfft=2048 ntfft=2048 alpha=-1 file_out=tmp1.su verbose=1
+#	B) Horizontal velocity component
+kxdecom file_in=el_obc_d_rvx.su step=1 mode=1 col=1 row=2 cp=$cp1 ro=$ro1 cs=$cs1 fmax=$fmax nxmax=201 ntmax=501 nxfft=2048 ntfft=2048 alpha=-1 file_out=tmp2.su verbose=1
+#	C) Vertical velocity component
+kxdecom file_in=el_obc_d_rvz.su step=1 mode=1 col=2 row=2 cp=$cp1 ro=$ro1 cs=$cs1 fmax=$fmax nxmax=201 ntmax=501 nxfft=2048 ntfft=2048 alpha=-1 file_out=tmp3.su verbose=1
+# 	D) Adding -P and Vx first, then adding Vz to get Psi_Down,
+addmul < tmp1.su a=-1 file_in2=tmp2.su | addmul file_in2=tmp3.su > S_Wave_Down_obc.su verbose=1
+
+# 4- Upgoing S- wave
+#	A) Pressure component
+kxdecom file_in=el_obc_d_rtzz.su step=1 mode=-2 col=2 row=2 cp=$cp1 ro=$ro1 cs=$cs1 fmax=$fmax nxmax=201 ntmax=501 nxfft=2048 ntfft=2048 alpha=-1 file_out=tmp1.su verbose=1
+#	B) Horizontal velocity component
+kxdecom file_in=el_obc_d_rvx.su step=1 mode=-1 col=1 row=2 cp=$cp1 ro=$ro1 cs=$cs1 fmax=$fmax nxmax=201 ntmax=501 nxfft=2048 ntfft=2048 alpha=-1 file_out=tmp2.su verbose=1 
+#	C) Vertical velocity component
+kxdecom file_in=el_obc_d_rvz.su step=1 mode=-1 col=2 row=2 cp=$cp1 ro=$ro1 cs=$cs1 fmax=$fmax nxmax=201 ntmax=501 nxfft=2048 ntfft=2048 alpha=-1 file_out=tmp3.su verbose=1
+# 	D) Adding -P and Vx first, then adding Vz to get Psi_Up,
+addmul < tmp1.su a=-1 file_in2=tmp2.su | addmul file_in2=tmp3.su > S_Wave_Up_obc.su verbose=1
+
+suximage < S_Wave_Down_obc.su wbox=400 hbox=500 perc=99.9 windowtitle=S_Wave_Down_obc title="Downgoing S-wave at OBC" &
+suximage < S_Wave_Up_obc.su wbox=400 hbox=500 perc=99.9 windowtitle=S_Wave_Up_obc title="Upugoing S-wave at OBC" &
+
+sleep 5
+echo " " 1>&2
+echo " " 1>&2
+echo "Hit return to close the program" 1>&2
+read cont
+kill 0

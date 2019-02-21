@@ -1,0 +1,48 @@
+#!/bin/bash
+#PBS -N fdelmod
+#PBS -q verylong
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+
+which makewave
+which makemod
+
+cd /Users/jan/src/OpenSource/fdelmodc/demo
+
+cp=2000
+rho=1000
+dx=4
+dt=0.0010
+
+makemod sizex=3000 sizez=1000 dx=$dx dz=$dx cp0=$cp ro0=$rho cs0=1500 \
+	orig=-1500,0 file_base=freesurf.su \
+	intt=def x=-1500,0,1500 z=20,20,20 poly=0 cp=2300 ro=2000 cs=1600 \
+	intt=def x=-1500,0,1500 z=50,50,50 poly=0 cp=2100 ro=1400 cs=1300
+
+makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
+
+../fdelmodc \
+    file_cp=freesurf_cp.su ischeme=3 \
+    file_cs=freesurf_cs.su \
+    file_den=freesurf_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_x0.su \
+    src_type=7 \
+	src_orient=1 \
+	src_injectionrate=1 \
+    rec_type_vz=1 \
+    rec_type_p=1 \
+    rec_type_tzz=0 \
+    rec_int_vz=2 \
+    dtrcv=0.0010 \
+	rec_delay=0.1 \
+    verbose=1 \
+    tmod=1.10 \
+    dxrcv=8.0 \
+    xrcv1=-1500 xrcv2=1500 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=0 \
+    ntaper=300 \
+    left=4 right=4 top=1 bottom=4
+
