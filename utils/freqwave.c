@@ -396,7 +396,7 @@ void freqwave(float *wave, int nt, float dt, float fp, float fmin, float flef, f
     }
     //fprintf(stderr,"scaling factor back FFT=%e\n", max);
     for (i = 0; i < nt; i++) {
-		wave[i]= rwave[i]*max*exp(alpha*i*dt);
+		wave[i]= rwave[i]*max*exp(-alpha*i*dt);
 	}
 
     free(cwave);
