@@ -17,7 +17,7 @@
 #endif
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
-void freqwave(float *wave, int nt, float dt, float fp, float fmin, float flef, float frig, float fmax, float t0, float db, int shift, int cm, int cn, char *w, float scale, int scfft, int inverse, float eps, int verbose);
+void freqwave(float *wave, int nt, float dt, float fp, float fmin, float flef, float frig, float fmax, float t0, float db, int shift, int cm, int cn, char *w, float scale, int scfft, int inverse, float eps, float alpha, int verbose);
 
 /*********************** self documentation **********************/
 char *sdoc[] = {
@@ -49,6 +49,7 @@ char *sdoc[] = {
 "   w=g2 ..................... type of wavelet (g2 gives a Ricker Wavelet)",
 "   inverse=0 ................ compute 1.0/(S(w)+eps)",
 "   eps=1.0 .................. stabilization in inverse",
+"   alpha=0.0 ................ exponential damping factor (alpha<0) for laplace transform",
 "   verbose=0 ................ silent option; >0 display info",
 " ",
 "   Options for w :",
@@ -82,7 +83,7 @@ int main(int argc, char **argv)
 	int 	scfft, inverse;
 	float   dt, fp, fmin, flef, frig, fmax, t0, db;
 	double  ddt;
-	float 	*wavelet, scale, eps;
+	float 	*wavelet, scale, eps, alpha;
 	segy	*hdrs;
 	char    w[10], *file, *file_out;
 
@@ -107,6 +108,7 @@ int main(int argc, char **argv)
 	if(!getparint("shift", &shift)) shift = 0;
 	if(!getparint("inverse", &inverse)) inverse = 0;
 	if(!getparfloat("eps", &eps)) eps = 1.0;
+	if(!getparfloat("alpha", &alpha)) alpha = 0.0;
 	if(!getparfloat("scale", &scale)) scale = 1.0;
 	if(!getparint("scfft", &scfft)) scfft = 1;
 	if(!getparint("cm", &cm)) cm = 10;
@@ -121,7 +123,7 @@ int main(int argc, char **argv)
 	wavelet = (float *)malloc(nt*sizeof(float));
 
 	freqwave(wavelet, nt, dt, fp, fmin, flef, frig, fmax, 
-			t0, db, shift, cm, cn, w, scale, scfft, inverse, eps, verbose);
+			t0, db, shift, cm, cn, w, scale, scfft, inverse, eps, alpha, verbose);
 
 	if (file_out==NULL) fpw=stdout;
 	else fpw = fopen(file_out,"w");
