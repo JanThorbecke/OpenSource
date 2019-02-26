@@ -262,7 +262,7 @@ int main(int argc, char **argv)
     memset(&hdr,0,sizeof(hdr));
     hdr.scalco = -1000;
     hdr.scalel = -1000;
-    hdr.trid   = 1;
+    hdr.trid   = 0;
 
 	t1=wallclock_time();
 	tinit = t1-t0;
