@@ -28,17 +28,17 @@ typedef struct _dcomplexStruct { /* complex number */
 } dcomplex;
 #endif/* complex */
 
-int optncr(int n);
+long loptncr(long n);
 void rc1fft(float *rdata, complex *cdata, int n, int sign);
 void cr1fft(complex *cdata, float *rdata, int n, int sign);
 
-int writesufile(char *filename, float *data, int n1, int n2, float f1, float f2, float d1, float d2);
-int writesufilesrcnwav(char *filename, float **src_nwav, wavPar wav, int n1, int n2, float f1, float f2, float d1, float d2);
+long writesufile3D(char *filename, float *data, long n1, long n2, float f1, float f2, float d1, float d2);
+long writesufilesrcnwav3D(char *filename, float **src_nwav, wavPar wav, long n1, long n2, float f1, float f2, float d1, float d2);
 float gaussGen();
 float normal(double x,double mu,double sigma);
-int comp (const float *a, const float *b);
+long comp (const float *a, const float *b);
 void spline3(float x1, float x2, float z1, float z2, float dzdx1, float dzdx2, float *a, float *b, float *c, float *d);
-int randomWavelet(wavPar wav, srcPar src, float *trace, float tbeg, float tend, int verbose);
+long randomWavelet(wavPar wav, srcPar src, float *trace, float tbeg, float tend, long verbose);
 
 /* random number generators */
 double dcmwc4096();
@@ -50,14 +50,14 @@ void seedCMWC4096(void);
 
 #define     MAX(x,y) ((x) > (y) ? (x) : (y))
 #define     MIN(x,y) ((x) < (y) ? (x) : (y))
-#define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
+#define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 
-int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwav, int reverse, int verbose)
+long defineSource3D(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwav, long reverse, long verbose)
 {
     FILE    *fp;
     size_t  nread;
-    int optn, nfreq, i, j, k, iwmax, tracesToDo;
-    int iw, n1, namp, optnscale, nfreqscale;
+    long optn, nfreq, i, j, k, iwmax, tracesToDo;
+    long iw, n1, namp, optnscale, nfreqscale;
     float scl, d1, df, deltom, om, tshift;
     float amp1, amp2, amp3;
     float *trace, maxampl, scale;
@@ -72,7 +72,6 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwa
         for (i=0; i<8192; i++) {
             amp1 = dcmwc4096();
         }
-
     }
     else {
 
@@ -100,12 +99,12 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwa
         fclose(fp);
     }
 
-    optn = optncr(n1);
+    optn = loptncr(n1);
     nfreq = optn/2 + 1;
     if (wav.nt != wav.ns) {
 		vmess("Sampling in wavelet is %e while for modeling is set to %e", wav.ds, mod.dt);
 		vmess("Wavelet sampling will be FFT-interpolated to sampling of modeling");
-		vmess("file_src Nt=%d sampling after interpolation=%d", wav.ns, wav.nt);
+		vmess("file_src Nt=%li sampling after interpolation=%li", wav.ns, wav.nt);
 		optnscale  = wav.nt;
 		nfreqscale = optnscale/2 + 1;
 	}
@@ -113,7 +112,7 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwa
 		optnscale  = optn;
 		nfreqscale = optnscale/2 + 1;
 	}
-//	fprintf(stderr,"define S optn=%d ns=%d %e nt=%d %e\n", optn, wav.ns, wav.ds, optnscale, wav.dt);
+//	fprintf(stderr,"define S optn=%li ns=%li %e nt=%li %e\n", optn, wav.ns, wav.ds, optnscale, wav.dt);
 
     ctrace = (complex *)calloc(nfreqscale,sizeof(complex));
     trace = (float *)calloc(optnscale,sizeof(float));
@@ -192,7 +191,7 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwa
 					maxampl = MAX(maxampl,fabs(src_nwav[i][j]));
 				}
             }
-			if (verbose > 3) vmess("Wavelet sampling (FFT-interpolated) done for trace %d", i);
+			if (verbose > 3) vmess("Wavelet sampling (FFT-interpolated) done for trace %li", i);
         }
     }
 	/* set values smaller than 1e-5 maxampl to zero */
@@ -212,12 +211,12 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwa
         for (i=0; i<wav.nx; i++) {
             if (src.distribution) {
                 scl = gaussGen()*src.amplitude;
-                k = (int)MAX(MIN(namp*(scl+5*src.amplitude)/(10*src.amplitude),namp-1),0);
+                k = (long)MAX(MIN(namp*(scl+5*src.amplitude)/(10*src.amplitude),namp-1),0);
                 d1 = 10.0*src.amplitude/(namp-1);
             }
             else {
                 scl = (float)(drand48()-0.5)*src.amplitude;
-                k = (int)MAX(MIN(namp*(scl+1*src.amplitude)/(2*src.amplitude),namp-1),0);
+                k = (long)MAX(MIN(namp*(scl+1*src.amplitude)/(2*src.amplitude),namp-1),0);
                 d1 = 2.0*src.amplitude/(namp-1);
             }
 
@@ -229,41 +228,21 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwa
                 src_nwav[i][j] *= scl;
             }
         }
-        if (verbose>2) writesufile("src_ampl.su", trace, namp, 1, -5*src.amplitude, 0.0, d1, 1);
-/*
-        qsort(trace,wav.nx,sizeof(float), comp);
-        for (i=0; i<wav.nx; i++) {
-            scl = trace[i];
-            trace[i] = normal(scl, 0.0, src.amplitude);
-        }
-        if (verbose>2) writesufile("src_ampl.su", trace, wav.nx, 1, -5*src.amplitude, 0.0, d1, 1);
-*/
+        if (verbose>2) writesufile3D("src_ampl.su", trace, namp, 1, -5*src.amplitude, 0.0, d1, 1);
 
         free(trace);
     }
 
-    if (verbose>3) writesufilesrcnwav("src_nwav.su", src_nwav, wav, wav.nt, wav.nx, 0.0, 0.0, wav.dt, 1);
-
-/* set maximum amplitude in source file to 1.0 */
-/*
-    assert(maxampl != 0.0);
-    scl = wav.dt/(maxampl);
-    scl = 1.0/(maxampl);
-    for (i=0; i<wav.nx; i++) {
-        for (j=0; j<n1; j++) {
-            src_nwav[i*n1+j] *= scl;
-        }
-    }
-*/
+    if (verbose>3) writesufilesrcnwav3D("src_nwav.su", src_nwav, wav, wav.nt, wav.nx, 0.0, 0.0, wav.dt, 1);
 
     return 0;
 }
 
 
-int randomWavelet(wavPar wav, srcPar src, float *trace, float tbeg, float tend, int verbose)
+long randomWavelet3D(wavPar wav, srcPar src, float *trace, float tbeg, float tend, long verbose)
 {
-    int optn, nfreq, j, iwmax;
-    int iw, n1, itbeg, itmax, nsmth;
+    long optn, nfreq, j, iwmax;
+    long iw, n1, itbeg, itmax, nsmth;
     float df, amp1;
     float *rtrace;
     float x1, x2, z1, z2, dzdx1, dzdx2, a, b, c, d, t;
@@ -271,7 +250,7 @@ int randomWavelet(wavPar wav, srcPar src, float *trace, float tbeg, float tend, 
     
     n1 = wav.nt; /* this is set to the maximum length (tlength/dt) */
     
-    optn = optncr(2*n1);
+    optn = loptncr(2*n1);
     nfreq = optn/2 + 1;
     ctrace = (complex *)calloc(nfreq,sizeof(complex));
     rtrace = (float *)calloc(optn,sizeof(float));
@@ -322,7 +301,6 @@ int randomWavelet(wavPar wav, srcPar src, float *trace, float tbeg, float tend, 
     dzdx1 = 0.0;
     x2 = nsmth;
     z2 = rtrace[itbeg+nsmth];
-//    dzdx2 = (rtrace[itbeg+(nsmth+1)]-rtrace[itbeg+(nsmth-1)])/(2.0);
     dzdx2 = (rtrace[itbeg+nsmth-2]-8.0*rtrace[itbeg+nsmth-1]+
              8.0*rtrace[itbeg+nsmth+1]-rtrace[itbeg+nsmth+2])/(12.0);
     spline3(x1, x2, z1, z2, dzdx1, dzdx2, &a, &b, &c, &d);
@@ -333,19 +311,16 @@ int randomWavelet(wavPar wav, srcPar src, float *trace, float tbeg, float tend, 
             
     x1 = 0.0;
     z1 = rtrace[itmax-nsmth];
-//    dzdx1 = (rtrace[itmax-(nsmth-1)]-rtrace[itmax-(nsmth+1)])/(2.0);
     dzdx1 = (rtrace[itmax-nsmth-2]-8.0*rtrace[itmax-nsmth-1]+
              8.0*rtrace[itmax-nsmth+1]-rtrace[itmax-nsmth+2])/(12.0);
     x2 = nsmth;
     z2 = 0.0;
     dzdx2 = 0.0;
             
-//    fprintf(stderr,"x1=%f z1=%f d=%f x2=%f, z2=%f d=%f\n",x1,z1,dzdx1,x2,z2,dzdx2);
     spline3(x1, x2, z1, z2, dzdx1, dzdx2, &a, &b, &c, &d);
     for (j=0; j<nsmth; j++) {
         t = j;
         rtrace[itmax-nsmth+j] = a*t*t*t+b*t*t+c*t+d;
-//        fprintf(stderr,"a=%f b=%f c=%f d=%f rtrace%d=%f \n",a,b,c,d,j,rtrace[itmax-nsmth+j]);
     }
             
     for (j=itbeg; j<itmax; j++) trace[j-itbeg] = rtrace[j];
@@ -361,7 +336,7 @@ float normal(double x,double mu,double sigma)
     return (float)(1.0/(2.0*M_PI*sigma*sigma))*exp(-1.0*(((x-mu)*(x-mu))/(2.0*sigma*sigma)) );
 }
 
-int comp (const float *a, const float *b)
+long comp (const float *a, const float *b)
 {
     if (*a==*b)
         return 0;

@@ -17,7 +17,10 @@ SRCT	= marchenko3D.c \
 		synthesis3D.c \
 		applyMute3D.c \
 		writeData3D.c \
+		makeWindow3D.c \
 		ampest3D.c \
+		imaging3D.c \
+		readSnapData3D.c \
 		writeDataIter.c \
 		wallclock_time.c \
 		name_ext.c  \

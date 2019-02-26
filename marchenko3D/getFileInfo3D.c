@@ -72,7 +72,7 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, fl
     /* check to find out number of traces in shot gather */
 
     one_shot = 1;
-    itrace   = 0;
+    itrace   = 1;
     igy      = 1;
     fldr_shot = hdr.fldr;
     sx_shot  = hdr.sx;
@@ -86,7 +86,6 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, fl
     while (one_shot) {
         nread = fread( trace, sizeof(float), hdr.ns, fp );
         assert (nread == hdr.ns);
-        itrace++;
         if (hdr.gy != gy_end) {
             gy_end = hdr.gy;
             igy++;
@@ -95,13 +94,24 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, fl
         nread = fread( &hdr, 1, TRCBYTES, fp );
         if (nread==0) break;
         if ((sx_shot != hdr.sx) || (sy_shot != hdr.sy) || (fldr_shot != hdr.fldr) ) break;
+        itrace++;
     }
 
     if (itrace>1) {
         *n2 = itrace/igy;
         *n3 = igy;
-        dxrcv  = (float)(gx_end - gx_start)/(float)(*n2-1);
-        dyrcv = (float)(gy_end - gy_start)/(float)(*n3-1);
+        if (*n2>1) {
+            dxrcv  = (float)(gx_end - gx_start)/(float)(*n2-1);
+        }
+        else {
+            dxrcv  = 1.0/scl;
+        }
+        if (*n3>1) {
+            dyrcv = (float)(gy_end - gy_start)/(float)(*n3-1);
+        }
+        else {
+            dyrcv  = 1.0/scl;
+        }
         *d2 = fabs(dxrcv)*scl;
         *d3 = fabs(dyrcv)*scl;
         if (NINT(dxrcv*1e3) != NINT(fabs(hdr.d2)*1e3)) {
@@ -113,7 +123,7 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, fl
         *n2 = MAX(hdr.trwf, 1);
         *n3 = 1;
         *d2 = hdr.d2;
-        *d3 = 0.0;
+        *d3 = 1.0;
         dxrcv = hdr.d2;
         dyrcv = 0.0;
     }  
@@ -135,7 +145,6 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, fl
         dyrcv = *d3;
 
         while (!end_of_file) {
-            itrace = 0;
             nread = fread( &hdr, 1, TRCBYTES, fp );
             if (nread != TRCBYTES) { break; }
     		fldr_shot = hdr.fldr;
@@ -146,11 +155,10 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, fl
             gy_start  = hdr.gy;
             gy_end    = hdr.gy;
     
-            itrace = 0;
+            itrace = 1;
             igy = 1;
             while (one_shot) {
                 fseeko( fp, data_sz, SEEK_CUR );
-                itrace++;
                 if (hdr.gx != gx_end) dxrcv = MIN(dxrcv,abs(hdr.gx-gx_end));
                 if (hdr.gy != gy_end) {
                     igy++;
@@ -165,14 +173,33 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, fl
                     break;
                 }
         		if ((sx_shot != hdr.sx) || (sy_shot != hdr.sy) || (fldr_shot != hdr.fldr)) break;
+                itrace++;
             }
             if (itrace>1) {
                 *n2 = itrace/igy;
                 *n3 = igy;
-                dxrcv  = (float)(gx_end - gx_start)/(float)(*n2-1);
-                dyrcv = (float)(gy_end - gy_start)/(float)(*n3-1);
+                if (*n2>1) {
+                    dxrcv  = (float)(gx_end - gx_start)/(float)(*n2-1);
+                }
+                else {
+                    dxrcv  = 1.0/scl;
+                }
+                if (*n3>1) {
+                    dyrcv = (float)(gy_end - gy_start)/(float)(*n3-1);
+                }
+                else {
+                    dyrcv  = 1.0/scl;
+                }
                 dxsrc  = (float)(hdr.sx - sx_shot)*scl;
                 dysrc = (float)(hdr.sy - sy_shot)*scl;
+            }
+            else {
+                *n2 = MAX(hdr.trwf, 1);
+                *n3 = 1;
+                *d2 = hdr.d2;
+                *d3 = 1.0;
+                dxrcv = hdr.d2/scl;
+                dyrcv = 1.0/scl;
             }
             if (verbose>1) {
                 fprintf(stderr," . Scanning shot %li (%li) with %li traces dxrcv=%.2f dxsrc=%.2f %li %li dyrcv=%.2f dysrc=%.2f %li %li\n",sx_shot,igath,itrace,dxrcv*scl,dxsrc,gx_end,gx_start,dyrcv*scl,dysrc,gy_end,gy_start);
