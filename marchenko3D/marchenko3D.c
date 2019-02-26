@@ -38,11 +38,11 @@ long readShotData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float
     long nw, long nw_low, long nshots, long nx, long ny, long ntfft, long mode, float scale, long verbose);
 long readTinvData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float *ysrc, float *zsrc,
     long *xnx, long Nfoc, long nx, long ny, long ntfft, long mode, long *maxval, float *tinv, long hw, long verbose);
-// int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, float d2, float f2, int n2out, int Nfoc, float *xsyn,
-//     float *zsyn, int *ixpos, int npos, int iter);
 long unique_elements(float *arr, long len);
 
 void name_ext(char *filename, char *extension);
+
+void convol(float *data1, float *data2, float *con, long nrec, long nsam, float dt, long shift);
 
 void applyMute3D(float *data, long *mute, long smooth, long above, long Nfoc, long nxs, long nt, long *xrcvsyn, long npos, long shift);
 
@@ -56,6 +56,9 @@ double wallclock_time(void);
 void AmpEst3D(float *f1d, float *Gd, float *ampest, long Nfoc, long nxs, long nys, long ntfft, long *ixpos, long npos,
     char *file_wav, float dx, float dy, float dt);
 
+void makeWindow3D(char *file_ray, char *file_amp, char *file_wav, float dt, float *xrcv, float *yrcv, float *xsrc, float *ysrc, float *zsrc, 
+    long *xnx, long Nfoc, long nx, long ny, long ntfft, long *maxval, float *tinv, long verbose);
+
 void synthesisPositions3D(long nx, long ny, long nxs, long nys, long Nfoc, float *xrcv, float *yrcv, float *xsrc, float *ysrc,
     long *xnx, float fxse, float fyse, float fxsb, float fysb, float dxs, float dys, long nshots, long nxsrc, long nysrc,
     long *ixpos, long *npos, long reci, long verbose);
@@ -64,6 +67,8 @@ void synthesis3D(complex *Refl, complex *Fop, float *Top, float *iRN, long nx, l
     float fxse, float fxsb, float fyse, float fysb, float dxs, float dys, float dxsrc, float dysrc, 
     float dx, float dy, long ntfft, long nw, long nw_low, long nw_high,  long mode, long reci, long nshots, long nxsrc, long nysrc, 
     long *ixpos, long npos, double *tfft, long *isxcount, long *reci_xsrc,  long *reci_xrcv, float *ixmask, long verbose);
+
+void imaging3D(float *Image, float *Gmin, float *f1plus, long nx, long ny, long nt, float dx, float dy, float dt, long Nfoc, long verbose);
 
 long linearsearch(long *array, size_t N, long value);
 
@@ -119,26 +124,27 @@ NULL};
 
 int main (int argc, char **argv)
 {
-    FILE    *fp_out, *fp_f1plus, *fp_f1min;
-    FILE    *fp_gmin, *fp_gplus, *fp_f2, *fp_pmin;
+    FILE    *fp_out, *fp_f1plus, *fp_f1min, *fp_imag;
+    FILE    *fp_gmin, *fp_gplus, *fp_f2, *fp_pmin, *fp_amp;
     long    i, j, l, k, ret, nshots, nxshot, nyshot, Nfoc, nt, nx, ny, nts, nxs, nys, ngath;
     long    size, n1, n2, n3, ntap, tap, dxi, dyi, ntraces, pad;
     long    nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     long    reci, countmin, mode, n2out, n3out, verbose, ntfft;
     long    iter, niter, tracf, *muteW, ampest;
-    long    hw, smooth, above, shift, *ixpos, npos, ix;
+    long    hw, smooth, above, shift, *ixpos, npos, ix, nzim, nxim, nyim;
     long    nshots_r, *isxcount, *reci_xsrc, *reci_xrcv;
     float   fmin, fmax, *tapersh, *tapersy, fxf, fyf, dxf, dyf, *xsrc, *ysrc, *xrcv, *yrcv, *zsyn, *zsrc, *xrcvsyn, *yrcvsyn;
     double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, energyNi, energyN0;
     float   d1, d2, d3, f1, f2, f3, fxsb, fxse, fysb, fyse, ft, fx, fy, *xsyn, *ysyn, dxsrc, dysrc;
     float   *green, *f2p, *pmin, *G_d, dt, dx, dy, dxs, dys, scl, mem;
     float   *f1plus, *f1min, *iRN, *Ni, *trace, *Gmin, *Gplus;
-    float   xmin, xmax, ymin, ymax, scale, tsq, Q, f0;
-    float   *ixmask, *iymask, *ampscl, *Gd;
+    float   xmin, xmax, ymin, ymax, scale, tsq, Q, f0, *tmpdata;
+    float   *ixmask, *iymask, *ampscl, *Gd, *Image, dzim, dyim, dxim;
     complex *Refl, *Fop;
-    char    *file_tinv, *file_shot, *file_green, *file_iter, *file_wav;
+    char    *file_tinv, *file_shot, *file_green, *file_iter, *file_imag, *file_ampscl;
     char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_pmin;
-    segy    *hdrs_out;
+    char    *file_ray, *file_amp, *file_wav;
+    segy    *hdrs_out, *hdrs_Nfoc;
 
     initargs(argc, argv);
     requestdoc(1);
@@ -148,6 +154,8 @@ int main (int argc, char **argv)
 
     if (!getparstring("file_shot", &file_shot)) file_shot = NULL;
     if (!getparstring("file_tinv", &file_tinv)) file_tinv = NULL;
+    if (!getparstring("file_ray", &file_ray)) file_ray = NULL;
+    if (!getparstring("file_amp", &file_amp)) file_amp = NULL;
     if (!getparstring("file_f1plus", &file_f1plus)) file_f1plus = NULL;
     if (!getparstring("file_f1min", &file_f1min)) file_f1min = NULL;
     if (!getparstring("file_gplus", &file_gplus)) file_gplus = NULL;
@@ -157,6 +165,8 @@ int main (int argc, char **argv)
     if (!getparstring("file_pmin", &file_pmin)) file_pmin = NULL;
     if (!getparstring("file_iter", &file_iter)) file_iter = NULL;
     if (!getparstring("file_wav", &file_wav)) file_wav = NULL;
+    if (!getparstring("file_imag", &file_imag)) file_imag = NULL;
+    if (!getparstring("file_ampscl", &file_ampscl)) file_ampscl = NULL;
     if (!getparlong("verbose", &verbose)) verbose = 0;
     if (file_tinv == NULL && file_shot == NULL) 
         verr("file_tinv and file_shot cannot be both input pipe");
@@ -187,15 +197,28 @@ int main (int argc, char **argv)
 /*================ Reading info about shot and initial operator sizes ================*/
 
     ngath = 0; /* setting ngath=0 scans all traces; n2 contains maximum traces/gather */
-    ret = getFileInfo3D(file_tinv, &n1, &n2, &n3, &ngath, &d1, &d2, &d3, &f1, &f2, &f3, &scl, &ntraces);
-    Nfoc = ngath;
-    nxs  = n2; 
-    nys  = n3;
-    nts  = n1;
-    dxs  = d2;
-    dys  = d3; 
-    fxsb = f2;
-    fysb = f3;
+    if (file_ray!=NULL) {
+        ret = getFileInfo3D(file_ray, &n2, &n1, &n3, &ngath, &d2, &d1, &d3, &f2, &f1, &f3, &scl, &ntraces);
+		Nfoc = ngath;
+        nxs  = n2; 
+        nys  = n3;
+        nts  = n1;
+        dxs  = d2;
+        dys  = d3; 
+        fxsb = f2;
+        fysb = f3;
+    }
+    else {
+        ret = getFileInfo3D(file_tinv, &n1, &n2, &n3, &ngath, &d1, &d2, &d3, &f1, &f2, &f3, &scl, &ntraces);
+        Nfoc = ngath;
+        nxs  = n2; 
+        nys  = n3;
+        nts  = n1;
+        dxs  = d2;
+        dys  = d3; 
+        fxsb = f2;
+        fysb = f3;
+    }
 
     ngath = 0; /* setting ngath=0 scans all traces; nx contains maximum traces/gather */
     ret = getFileInfo3D(file_shot, &nt, &nx, &ny, &ngath, &d1, &dx, &dy, &ft, &fx, &fy, &scl, &ntraces);
@@ -253,12 +276,25 @@ int main (int argc, char **argv)
 
 /*================ Read and define mute window based on focusing operator(s) ================*/
 /* G_d = p_0^+ = G_d (-t) ~ Tinv */
-
-    mode=-1; /* apply complex conjugate to read in data */
-    readTinvData3D(file_tinv, xrcvsyn, yrcvsyn, xsyn, ysyn, zsyn, xnxsyn, Nfoc,
-        nxs, nys, ntfft, mode, muteW, G_d, hw, verbose);
+    if (file_ray!=NULL) {
+        makeWindow3D(file_ray, file_amp, file_wav, dt, xrcvsyn, yrcvsyn, xsyn, ysyn, zsyn, 
+            xnxsyn, Nfoc, nx, ny, ntfft, muteW, G_d, verbose);
+    }
+    else {
+        mode=-1; /* apply complex conjugate to read in data */
+        readTinvData3D(file_tinv, xrcvsyn, yrcvsyn, xsyn, ysyn, zsyn, xnxsyn, Nfoc,
+            nxs, nys, ntfft, mode, muteW, G_d, hw, verbose);
+    }
     /* reading data added zero's to the number of time samples to be the same as ntfft */
     nts   = ntfft;
+
+    /*Determine the shape of the focal positions*/
+    nzim = unique_elements(zsyn,Nfoc);
+    if (nzim>1) dzim = zsyn[1]-zsyn[0];
+    else dzim = 1.0;
+    nyim = unique_elements(ysyn,Nfoc);
+    nxim = unique_elements(xsyn,Nfoc);
+
                              
     /* define tapers to taper edges of acquisition */
     if (tap == 1 || tap == 3) {
@@ -619,7 +655,7 @@ int main (int argc, char **argv)
     applyMute3D(green, muteW, smooth, 4, Nfoc, nxs*nys, nts, ixpos, npos, shift);
 
     /* compute upgoing Green's function G^+,- */
-    if (file_gmin != NULL) {
+    if (file_gmin != NULL || file_imag!= NULL) {
         Gmin    = (float *)calloc(Nfoc*nys*nxs*ntfft,sizeof(float));
 
         /* use f1+ as operator on R in frequency domain */
@@ -675,26 +711,91 @@ int main (int argc, char **argv)
     /* Estimate the amplitude of the Marchenko Redatuming */
 	if (ampest>0) {
         if (verbose>0) vmess("Estimating amplitude scaling");
+        // Create the first arrival data
 		Gd		= (float *)calloc(Nfoc*nxs*nys*ntfft,sizeof(float));
 		memcpy(Gd,Gplus,sizeof(float)*Nfoc*nxs*nys*ntfft);
 		applyMute3D(Gd, muteW, smooth, 2, Nfoc, nxs*nys, nts, ixpos, npos, shift);
-		ampscl	= (float *)calloc(Nfoc,sizeof(float));
-		AmpEst3D(G_d,Gd,ampscl,Nfoc,nxs,nys,ntfft,ixpos,npos,file_wav,dxs,dys,dt);
+        // Determine the amplitude
+		ampscl	= (float *)calloc(nxs*nys*ntfft,sizeof(float));
+        tmpdata = (float *)calloc(nxs*nys*ntfft,sizeof(float));
+        // Scale all wavefields
 		for (l=0; l<Nfoc; l++) {
-			for (j=0; j<nxs*nys*nts; j++) {
-				green[l*nxs*nts+j] *= ampscl[l];
-				if (file_gplus != NULL) Gplus[l*nxs*nys*nts+j] *= ampscl[l];
-    			if (file_gmin != NULL) Gmin[l*nxs*nys*nts+j] *= ampscl[l];
-    			if (file_f2 != NULL) f2p[l*nxs*nys*nts+j] *= ampscl[l];
-    			if (file_pmin != NULL) pmin[l*nxs*nys*nts+j] *= ampscl[l];
-    			if (file_f1plus != NULL) f1plus[l*nxs*nys*nts+j] *= ampscl[l];
-    			if (file_f1min != NULL) f1min[l*nxs*nys*nts+j] *= ampscl[l];
-			}
-            if (verbose>1) vmess("Amplitude of focal position %li is equal to %.3e",l,ampscl[l]);
+		    AmpEst3D(&G_d[l*nxs*nys*ntfft],&Gd[l*nxs*nys*ntfft],ampscl,1,nxs,nys,ntfft,ixpos,npos,file_wav,dxs,dys,dt);
+            for (j=0; j<nxs*nys*nts; j++) {
+                tmpdata[j] = green[l*nxs*nys*nts+j];
+            }
+            convol(tmpdata, ampscl, &green[l*nxs*nys*nts], nxs*nys, ntfft, dt, 0);
+            if (file_gplus != NULL) {
+                for (j=0; j<nxs*nys*nts; j++) {
+                    tmpdata[j] = Gplus[l*nxs*nys*nts+j];
+                }
+                convol(tmpdata, ampscl, &Gplus[l*nxs*nys*nts], nxs*nys, ntfft, dt, 0);
+            }
+            if (file_gmin != NULL || file_imag!=NULL) {
+                for (j=0; j<nxs*nys*nts; j++) {
+                    tmpdata[j] = Gmin[l*nxs*nys*nts+j];
+                }
+                convol(tmpdata, ampscl, &Gmin[l*nxs*nys*nts], nxs*nys, ntfft, dt, 0);
+            }
+            //if (verbose>4) vmess("Amplitude of focal position %li is equal to %.3e",l,ampscl[l]);
 		}
+        free(tmpdata);
+        // if (file_ampscl!=NULL) { //Write the estimation of the amplitude to file
+        //     hdrs_Nfoc = (segy *)calloc(nxim*nyim,sizeof(segy));
+        //     for (l=0; l<nyim; l++){
+        //         for (j=0; j<nxim; j++){
+        //             hdrs_Nfoc[l*nxim+j].ns      = nzim;
+        //             hdrs_Nfoc[l*nxim+j].sx      = xsyn[j];
+        //             hdrs_Nfoc[l*nxim+j].sy      = ysyn[l];
+        //             hdrs_Nfoc[l*nxim+j].sdepth  = zsyn[l];
+        //             hdrs_Nfoc[l*nxim+j].f1      = zsyn[0];
+        //             hdrs_Nfoc[l*nxim+j].d1      = zsyn[1]-zsyn[0];
+        //             hdrs_Nfoc[l*nxim+j].dt      = (int)(hdrs_Nfoc[l*nxim+j].d1*(1E6));
+        //             hdrs_Nfoc[l*nxim+j].trwf    = nxim*nyim;
+        //         }
+        //     }
+        //     // Write the data
+        //     fp_amp = fopen(file_ampscl, "w+");
+        //     if (fp_amp==NULL) verr("error on creating output file %s", file_ampscl);
+        //     ret = writeData3D(fp_amp, (float *)&ampscl[0], hdrs_Nfoc, nzim, nxim*nyim);
+        //     if (ret < 0 ) verr("error on writing output file.");
+        //     fclose(fp_amp);
+        //     free(hdrs_Nfoc);
+        //     free(ampscl);
+        // }
         free(Gd);
         if (file_gplus == NULL) free(Gplus);
 	}
+
+    /* Apply imaging*/
+    if (file_imag!=NULL) {
+        // Determine Image
+        Image = (float *)calloc(Nfoc,sizeof(float));
+        imaging3D(Image, Gmin, f1plus, nxs, nys, ntfft, dxs, dys, dt, Nfoc, verbose);
+        if (file_gmin==NULL) free(Gmin);
+        // Set headers
+        hdrs_Nfoc = (segy *)calloc(nxim*nyim,sizeof(segy));
+        for (l=0; l<nyim; l++){
+            for (j=0; j<nxim; j++){
+                hdrs_Nfoc[l*nxim+j].ns      = nzim;
+                hdrs_Nfoc[l*nxim+j].sx      = xsyn[j];
+                hdrs_Nfoc[l*nxim+j].sy      = ysyn[l];
+                hdrs_Nfoc[l*nxim+j].sdepth  = zsyn[l];
+                hdrs_Nfoc[l*nxim+j].f1      = zsyn[0];
+                hdrs_Nfoc[l*nxim+j].d1      = zsyn[1]-zsyn[0];
+                hdrs_Nfoc[l*nxim+j].dt      = (int)(hdrs_Nfoc[l*nxim+j].d1*(1E6));
+                hdrs_Nfoc[l*nxim+j].trwf    = nxim*nyim;
+            }
+        }
+        // Write out image
+        fp_imag = fopen(file_imag, "w+");
+        if (fp_imag==NULL) verr("error on creating output file %s", file_imag);
+        ret = writeData3D(fp_imag, (float *)&Image[0], hdrs_Nfoc, nzim, nxim*nyim);
+        if (ret < 0 ) verr("error on writing output file.");
+        fclose(fp_imag);
+        free(hdrs_Nfoc);
+        free(Image);
+    }
 
     t2 = wallclock_time();
     if (verbose) {

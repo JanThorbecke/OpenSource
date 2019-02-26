@@ -21,7 +21,7 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 
 long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz, float *l2m, float *lam, float *muu, float *tss, float *tes, float *tep);
 
-long defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwav, long reverse, long verbose);
+long defineSource3D(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwav, long reverse, long verbose);
 
 long writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot);
 
@@ -111,11 +111,6 @@ char *sdoc[] = {
 "   bottom=4 .......... type of boundary on bottom edge of model",
 "   front=4 ........... type of boundary on front edge of model",
 "   back=4 ............ type of boundary on back edge of model",
-//"   tapleft=0 ......... =1: taper left edge of model",
-//"   tapright=0 ........ =1: taper right edge of model",
-//"   taptop=0 .......... =1: taper top edge of model",
-//"   tapbottom=0 ....... =1: taper bottom edge of model",
-//"   cfree=0 ........... 1=free surface",
 "   grid_dir=0 ........ direction of time modeling (1=reverse time)",
 "   Qp=15 ............. global Q-value for P-waves in visco-elastic (ischeme=2,4)",
 "   file_qp= .......... model file Qp values as function of depth",
@@ -135,8 +130,6 @@ char *sdoc[] = {
 "                     - 1=monopole",
 "                     - 2=dipole +/- vertical oriented",
 "                     - 3=dipole - + horizontal oriented",
-//"                     - 4=dipole +/0/-",
-//"                     - 5=dipole + -",
 "   dip=0 ............. dip for double-couple source",
 "   strike=0 .......... strike for double-couple source",
 "   xsrc=middle ....... x-position of (first) shot ",
@@ -221,7 +214,6 @@ char *sdoc[] = {
 "   zrcv2=zrcv1 ....... last z-position of linear receiver array(s)",
 "   dzrcv=0.0 ......... z-position increment of receivers in linear array(s)",
 "   dtrcv=.004 ........ desired sampling in receiver data (seconds)",
-//"   max_nrec=15000 .... maximum number of receivers", not needed anymore 
 "   xrcva= ............ defines receiver array x-positions",
 "   yrcva= ............ defines receiver array y-positions",
 "   zrcva= ............ defines receiver array z-positions",
@@ -231,11 +223,8 @@ char *sdoc[] = {
 "   ozrcv=0.0 ......... z-center position of circle",
 "   dphi=2 ............ angle between receivers on circle ",
 "   rcv_txt=........... text file with receiver coordinates. Col 1: x, Col. 2: z",
-//"   largeSUfile=0 ..... writing large SU file (nt > 64000)",
 "   rec_ntsam=nt ...... maximum number of time samples in file_rcv files",
 "   rec_delay=0 ....... time in seconds to start recording: recorded time = tmod - rec_delay",
-//"   dxspread=0 ........ if nshot > 1: x-shift of rcv spread",
-//"   dzspread=0 ........ if nshot > 1: z-shift of rcv spread",
 "   rec_type_p=1 ...... p registration _rp",
 "   rec_type_vz=1 ..... Vz registration _rvz",
 "   rec_type_vy=0 ..... Vy registration _rvy",
@@ -303,7 +292,7 @@ int main(int argc, char **argv)
 	float sinkvel, npeshot;
 	double t0, t1, t2, t3, tt, tinit;
 	size_t size, sizem, nsamp;
-	long n1, ix, iy, iz, ir, ishot, i;
+	long n1, n2, ix, iy, iz, ir, ishot, i;
 	long ioPx, ioPy, ioPz;
 	long it0, it1, its, it, fileno, isam;
 	long ixsrc, iysrc, izsrc, is0, is1;
@@ -331,6 +320,7 @@ int main(int argc, char **argv)
 	/* allocate arrays for model parameters: the different schemes use different arrays */
 
 	n1 = mod.naz;
+	n2 = mod.nax;
 	sizem=mod.nax*mod.naz*mod.nay;
 
 	rox = (float *)calloc(sizem,sizeof(float));
@@ -386,44 +376,56 @@ int main(int argc, char **argv)
 		}
 	}
 
-	defineSource(wav, src, mod, rec, src_nwav, mod.grid_dir, verbose);
+	defineSource3D(wav, src, mod, rec, src_nwav, mod.grid_dir, verbose);
 
 	/* allocate arrays for wavefield and receiver arrays */
 
 	vx  = (float *)calloc(sizem,sizeof(float));
+	vy  = (float *)calloc(sizem,sizeof(float));
 	vz  = (float *)calloc(sizem,sizeof(float));
 	tzz = (float *)calloc(sizem,sizeof(float)); /* =P field for acoustic */
 	if (mod.ischeme>2) {
 		txz = (float *)calloc(sizem,sizeof(float));
+		txy = (float *)calloc(sizem,sizeof(float));
+		tyz = (float *)calloc(sizem,sizeof(float));
 		txx = (float *)calloc(sizem,sizeof(float));
+		tyy = (float *)calloc(sizem,sizeof(float));
 	}
 	
 	size = rec.n*rec.nt;
 	if (rec.type.vz)  rec_vz  = (float *)calloc(size,sizeof(float));
+	if (rec.type.vy)  rec_vy  = (float *)calloc(size,sizeof(float));
 	if (rec.type.vx)  rec_vx  = (float *)calloc(size,sizeof(float));
 	if (rec.type.p)   rec_p   = (float *)calloc(size,sizeof(float));
 	if (rec.type.txx) rec_txx = (float *)calloc(size,sizeof(float));
+	if (rec.type.tyy) rec_tyy = (float *)calloc(size,sizeof(float));
 	if (rec.type.tzz) rec_tzz = (float *)calloc(size,sizeof(float));
 	if (rec.type.txz) rec_txz = (float *)calloc(size,sizeof(float));
+	if (rec.type.txy) rec_txy = (float *)calloc(size,sizeof(float));
+	if (rec.type.tyz) rec_tyz = (float *)calloc(size,sizeof(float));
 	if (rec.type.pp)  rec_pp  = (float *)calloc(size,sizeof(float));
 	if (rec.type.ss)  rec_ss  = (float *)calloc(size,sizeof(float));
     if (rec.type.ud) { 
 		rec_udvz  = (float *)calloc(mod.nax*rec.nt,sizeof(float));
 		rec_udp   = (float *)calloc(mod.nax*rec.nt,sizeof(float));
 	}
-	/* get velcity and density at first receiver location */
-	ir = mod.ioZz + rec.z[0]+(rec.x[0]+mod.ioZx)*n1;
+	/* get velocity and density at first receiver location */
+	ir = mod.ioZz + rec.z[0]+(rec.x[0]+mod.ioZx)*n1+(rec.y[0]+mod.ioZy)*n1*n2;
 	rec.rho = mod.dt/(mod.dx*roz[ir]);
 	rec.cp  = sqrt(l2m[ir]*(roz[ir]))*mod.dx/mod.dt;
 	
 	if(sna.beam) {
 		size = sna.nz*sna.nx;
 		if (sna.type.vz)  beam_vz  = (float *)calloc(size,sizeof(float));
+		if (sna.type.vy)  beam_vy  = (float *)calloc(size,sizeof(float));
 		if (sna.type.vx)  beam_vx  = (float *)calloc(size,sizeof(float));
 		if (sna.type.p)   beam_p   = (float *)calloc(size,sizeof(float));
 		if (sna.type.txx) beam_txx = (float *)calloc(size,sizeof(float));
+		if (sna.type.tyy) beam_tyy = (float *)calloc(size,sizeof(float));
 		if (sna.type.tzz) beam_tzz = (float *)calloc(size,sizeof(float));
 		if (sna.type.txz) beam_txz = (float *)calloc(size,sizeof(float));
+		if (sna.type.txy) beam_txy = (float *)calloc(size,sizeof(float));
+		if (sna.type.tyz) beam_tyz = (float *)calloc(size,sizeof(float));
 		if (sna.type.pp)  beam_pp  = (float *)calloc(size,sizeof(float));
 		if (sna.type.ss)  beam_ss  = (float *)calloc(size,sizeof(float));
 	}
@@ -446,52 +448,67 @@ int main(int argc, char **argv)
 	   of the first receiver to sink through to the next layer. */
 
     ioPx=mod.ioPx;
+    ioPy=mod.ioPy;
     ioPz=mod.ioPz;
     if (bnd.lef==4 || bnd.lef==2) ioPx += bnd.ntap;
+    if (bnd.fro==4 || bnd.fro==2) ioPy += bnd.ntap;
     if (bnd.top==4 || bnd.top==2) ioPz += bnd.ntap;
-	if (rec.sinkvel) sinkvel=l2m[(rec.x[0]+ioPx)*n1+rec.z[0]+ioPz];
+	if (rec.sinkvel) sinkvel=l2m[(rec.y[0]+ioPy)*n1*n2+(rec.x[0]+ioPx)*n1+rec.z[0]+ioPz];
 	else sinkvel = 0.0;
 
 /* sink receivers to value different than sinkvel */
 	for (ir=0; ir<rec.n; ir++) {
 		iz = rec.z[ir];
+		iy = rec.y[ir];
 		ix = rec.x[ir];
-		while(l2m[(ix+ioPx)*n1+iz+ioPz] == sinkvel) iz++;
+		while(l2m[(iy+ioPy)*n1*n2+(ix+ioPx)*n1+iz+ioPz] == sinkvel) iz++;
 		rec.z[ir]=iz+rec.sinkdepth;
 		rec.zr[ir]=rec.zr[ir]+(rec.z[ir]-iz)*mod.dz;
-//		rec.zr[ir]=rec.z[ir]*mod.dz;
-		if (verbose>3) vmess("receiver position %d at grid[ix=%d, iz=%d] = (x=%f z=%f)", ir, ix+ioPx, rec.z[ir]+ioPz, rec.xr[ir]+mod.x0, rec.zr[ir]+mod.z0);
+		if (verbose>3) vmess("receiver position %li at grid[ix=%li, iy=%li iz=%li] = (x=%f y=%f z=%f)", ir, ix+ioPx, iy+ioPy, rec.z[ir]+ioPz, rec.xr[ir]+mod.x0, rec.yr[ir]+mod.y0, rec.zr[ir]+mod.z0);
 	}
 
 /* sink sources to value different than zero */
 	for (ishot=0; ishot<shot.n; ishot++) {
 		iz = shot.z[ishot];
+		iy = shot.y[ishot];
 		ix = shot.x[ishot];
-		while(l2m[(ix+ioPx)*n1+iz+ioPz] == 0.0) iz++;
+		while(l2m[(iy+ioPy)*n1*n2+(ix+ioPx)*n1+iz+ioPz] == 0.0) iz++;
 		shot.z[ishot]=iz+src.sinkdepth; 
 	}
 
 	/* scan for free surface boundary in case it has a topography */
-	for (ix=0; ix<mod.nx; ix++) {
-		iz = ioPz;
-		while(l2m[(ix+ioPx)*n1+iz] == 0.0) iz++;
-		bnd.surface[ix+ioPx] = iz;
-		if ((verbose>3) && (iz != ioPz)) vmess("Topgraphy surface x=%.2f z=%.2f", mod.x0+mod.dx*ix, mod.z0+mod.dz*(iz-ioPz));
+	for (iy=0; iy<mod.ny; iy++) {
+		for (ix=0; ix<mod.nx; ix++) {
+			iz = ioPz;
+			while(l2m[(iy+ioPy)*n1*n2+(ix+ioPx)*n1+iz] == 0.0) iz++;
+			bnd.surface[(iy+ioPy)*n2+ix+ioPx] = iz;
+			if ((verbose>3) && (iz != ioPz)) vmess("Topgraphy surface x=%.2f y=%.2f z=%.2f", mod.x0+mod.dx*ix, mod.y0+mod.dy*iy, mod.z0+mod.dz*(iz-ioPz));
+		}
 	}
-	for (ix=0; ix<ioPx; ix++) {
-		bnd.surface[ix] = bnd.surface[ioPx];
+	for (iy=0; iy<ioPy; iy++) {
+		for (ix=0; ix<ioPx; ix++) {
+			bnd.surface[iy*n2+ix] = bnd.surface[ioPy*n2+ioPx];
+		}
+		for (ix=ioPx+mod.nx; ix<mod.iePx; ix++) {
+			bnd.surface[iy*n2+ix] = bnd.surface[ioPy*n2+mod.iePx-1];
+		}
 	}
-	for (ix=ioPx+mod.nx; ix<mod.iePx; ix++) {
-		bnd.surface[ix] = bnd.surface[mod.iePx-1];
+	for (iy=ioPy+mod.ny; iy<mod.iePy; iy++) {
+		for (ix=0; ix<ioPx; ix++) {
+			bnd.surface[iy*n2+ix] = bnd.surface[(mod.iePy-1)*n2+ioPx];
+		}
+		for (ix=ioPx+mod.nx; ix<mod.iePx; ix++) {
+			bnd.surface[iy*n2+ix] = bnd.surface[(mod.iePy-1)*n2+mod.iePx-1];
+		}
 	}
-	if (verbose>3) writeSrcRecPos(&mod, &rec, &src, &shot);
+	if (verbose>3) writeSrcRecPos3D(&mod, &rec, &src, &shot);
 
 	/* Outer loop over number of shots */
 #ifdef MPI
     npeshot = MAX((((float)shot.n)/((float)npes)), 1.0);
     is0=ceil(pe*npeshot);
     is1=MIN(ceil((pe+1)*npeshot), shot.n);
-    if (verbose>1) vmess("MPI: pe=%d does shots is0 %d - is1 %d\n", pe, is0, is1);
+    if (verbose>1) vmess("MPI: pe=%li does shots is0 %li - is1 %li\n", pe, is0, is1);
 #else
 	is0=0;
 	is1=shot.n;
@@ -500,10 +517,12 @@ int main(int argc, char **argv)
 	for (ishot=is0; ishot<is1; ishot++) {
 
 		izsrc = shot.z[ishot];
+		iysrc = shot.y[ishot];
 		ixsrc = shot.x[ishot];
 		fileno= 0;
 
 		memset(vx,0,sizem*sizeof(float));
+		memset(vy,0,sizem*sizeof(float));
 		memset(vz,0,sizem*sizeof(float));
 		memset(tzz,0,sizem*sizeof(float));
 		if (mod.ischeme==2) {
@@ -511,7 +530,10 @@ int main(int argc, char **argv)
 		}
 		if (mod.ischeme>2) {
 			memset(txz,0,sizem*sizeof(float));
+			memset(txy,0,sizem*sizeof(float));
+			memset(tyz,0,sizem*sizeof(float));
 			memset(txx,0,sizem*sizeof(float));
+			memset(tyy,0,sizem*sizeof(float));
 		}
 		if (mod.ischeme==4) {
 			memset(r,0,sizem*sizeof(float));
@@ -520,12 +542,14 @@ int main(int argc, char **argv)
 		}
 		if (verbose) {
 			if (!src.random) {
-				vmess("Modeling source %d at gridpoints ix=%d iz=%d", ishot, shot.x[ishot], shot.z[ishot]);
-				vmess(" which are actual positions x=%.2f z=%.2f", mod.x0+mod.dx*shot.x[ishot], mod.z0+mod.dz*shot.z[ishot]);
+				vmess("Modeling source %li at gridpoints ix=%li iy=%li iz=%li", ishot, shot.x[ishot], shot.y[ishot], shot.z[ishot]);
+				vmess(" which are actual positions x=%.2f y=%.2f z=%.2f", mod.x0+mod.dx*shot.x[ishot], mod.y0+mod.dy*shot.y[ishot], mod.z0+mod.dz*shot.z[ishot]);
 			}
-			vmess("Receivers at gridpoint x-range ix=%d - %d", rec.x[0], rec.x[rec.n-1]);
+			vmess("Receivers at gridpoint x-range ix=%li - %li", rec.x[0], rec.x[rec.n-1]);
 			vmess(" which are actual positions x=%.2f - %.2f", mod.x0+rec.xr[0], mod.x0+rec.xr[rec.n-1]);
-			vmess("Receivers at gridpoint z-range iz=%d - %d", rec.z[0], rec.z[rec.n-1]);
+			vmess("Receivers at gridpoint y-range iy=%li - %li", rec.y[0], rec.y[rec.n-1]);
+			vmess(" which are actual positions y=%.2f - %.2f", mod.y0+rec.yr[0], mod.y0+rec.yr[rec.n-1]);
+			vmess("Receivers at gridpoint z-range iz=%li - %li", rec.z[0], rec.z[rec.n-1]);
 			vmess(" which are actual positions z=%.2f - %.2f", mod.z0+rec.zr[0], mod.z0+rec.zr[rec.n-1]);
 		}
 
@@ -548,13 +572,13 @@ int main(int argc, char **argv)
 		for (it=it0; it<it1; it++) {
 
 #pragma omp parallel default (shared) \
-shared (rox, roz, l2m, lam, mul, txx, txz, tzz, vx, vz) \
+shared (rox, roy, roz, l2m, lam, mul, txx, tyy, tzz, txz, tyz, txy, vx, vy, vz) \
 shared (tss, tep, tes, r, q, p) \
 shared (tinit, it0, it1, its) \
-shared(beam_vx, beam_vz, beam_txx, beam_tzz, beam_txz, beam_p, beam_pp, beam_ss) \
-shared(rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, rec_p, rec_pp, rec_ss) \
+shared(beam_vx, beam_vy, beam_vz, beam_txx, beam_tyy, beam_tzz, beam_txz, beam_tyz, beam_txy, beam_p, beam_pp, beam_ss) \
+shared(rec_vx, rec_vy, rec_vz, rec_txx, rec_tyy, rec_tzz, rec_txz, rec_tyz, rec_txy, rec_p, rec_pp, rec_ss) \
 shared (tt, t2, t3) \
-shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
+shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbose)
 {
 			if (it==it0) {
 				threadAffinity();
@@ -618,7 +642,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 #pragma omp master
 {
 			if ( (((it-rec.delay) % rec.skipdt)==0) && (it >= rec.delay) ) {
-				int writeToFile, itwritten;
+				long writeToFile, itwritten;
 
 				writeToFile = ! ( (((it-rec.delay)/rec.skipdt)+1)%rec.nt );
 				itwritten   = fileno*(rec.nt)*rec.skipdt;
@@ -673,14 +697,14 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 		
 		if (rec.scale==1) { /* scale receiver with distance src-rcv */
 			float xsrc, zsrc, Rrec, rdx, rdz;
-			int irec;
+			long irec;
 			xsrc=mod.x0+mod.dx*ixsrc;
 			zsrc=mod.z0+mod.dz*izsrc;
 			for (irec=0; irec<rec.n; irec++) {
 				rdx=mod.x0+rec.xr[irec]-xsrc;
 				rdz=mod.z0+rec.zr[irec]-zsrc;
 				Rrec = sqrt(rdx*rdx+rdz*rdz);
-				fprintf(stderr,"Rec %d is scaled with distance %f R=%.2f,%.2f S=%.2f,%.2f\n", irec, Rrec,rdx,rdz,xsrc,zsrc);
+				fprintf(stderr,"Rec %li is scaled with distance %f R=%.2f,%.2f S=%.2f,%.2f\n", irec, Rrec,rdx,rdz,xsrc,zsrc);
 				for (it=0; it<rec.nt; it++) {
 					rec_p[irec*rec.nt+it] *= sqrt(Rrec);
 				}
