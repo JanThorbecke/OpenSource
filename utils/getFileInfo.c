@@ -1,6 +1,3 @@
-#define _FILE_OFFSET_BITS 64
-#define _LARGEFILE_SOURCE
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
