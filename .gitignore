@@ -21,6 +21,7 @@ utils/makemod
 utils/makewave
 utils/mat2su
 utils/syn2d
+utils/green3D
 fdelmodc/fdelmodc
 include/genfft.h
 Make_include
