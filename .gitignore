@@ -1,4 +1,5 @@
 *.[oa]
+*.eps
 bin/*
 *.su
 *.bin
@@ -29,3 +30,17 @@ marchenko_full/fmute
 marchenko_full/marchenko
 corrvir/corrvir
 fdemmodc/fdemmodc
+FFTlib/test/cc1test
+FFTlib/test/cc2dtest
+FFTlib/test/ccmtest
+FFTlib/test/rc1test
+FFTlib/test/rc2dtest
+FFTlib/test/rcmtest
+marchenko_applications/HomG
+marchenko_applications/MuteSnap
+marchenko_applications/combine
+marchenko_applications/gmshift
+marchenko_applications/iba
+marchenko_applications/marchenko_app
+marchenko_applications/reshape_su
+raytime3d/raytime3d
