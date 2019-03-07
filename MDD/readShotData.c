@@ -5,9 +5,6 @@
 #include "segy.h"
 #include <assert.h>
 
-extern FILE *fopen64 (__const char *__restrict __filename,
-                      __const char *__restrict __modes);
-
 typedef struct { /* complex number */
         float r,i;
 } complex;
@@ -34,7 +31,7 @@ int readShotData(char *filename, float xmin, float dx, float *xrcv, float *xsrc,
 	/* Reading first header  */
 
 	if (filename == NULL) fp = stdin;
-	else fp = fopen64( filename, "r" );
+	else fp = fopen( filename, "r" );
 	if ( fp == NULL ) {
 		fprintf(stderr,"input file %s has an error\n", filename);
 		perror("error in opening file: ");
