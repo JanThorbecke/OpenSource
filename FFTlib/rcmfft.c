@@ -72,6 +72,7 @@ void rcmfft(REAL *rdata, complex *cdata, int n1, int n2, int ldr, int ldc, int s
     static DFTI_DESCRIPTOR_HANDLE handle=0;
     static int nprev=0;
     MKL_LONG Status;
+	int i,j;
 #endif
 
 #if defined(HAVE_LIBSCS)
@@ -160,9 +161,9 @@ void rcmfft(REAL *rdata, complex *cdata, int n1, int n2, int ldr, int ldc, int s
         dfti_status_print(Status);
         printf(" DftiComputeForward FAIL\n");
     }
-	for (int j=0; j<n2; j++) {
+	for (j=0; j<n2; j++) {
     	Status = DftiComputeForward(handle, &rdata[j*ldr], (MKL_Complex8 *)&cdata[j*ldc]);
-    	for (int i=1; i<((n1-1)/2)+1; i++) {
+    	for (i=1; i<((n1-1)/2)+1; i++) {
         	cdata[j*ldc+i].i *= -sign;
     	}
     }

@@ -67,6 +67,7 @@ void ccmfft(complex *data, int n1, int n2, int ld1, int sign)
     static DFTI_DESCRIPTOR_HANDLE handle=0;
     static int nprev=0;
     MKL_LONG Status;
+	int j;
 #endif
 
 #if defined(HAVE_LIBSCS)
@@ -114,12 +115,12 @@ void ccmfft(complex *data, int n1, int n2, int ld1, int sign)
         nprev = n1;
     }
     if (sign < 0) {
-    	for (int j=0; j<n2; j++) {
+    	for (j=0; j<n2; j++) {
         	Status = DftiComputeBackward(handle, &data[j*ld1]);
 		}
     }
     else {
-    	for (int j=0; j<n2; j++) {
+    	for (j=0; j<n2; j++) {
         	Status = DftiComputeForward(handle, &data[j*ld1]);
 		}
     }

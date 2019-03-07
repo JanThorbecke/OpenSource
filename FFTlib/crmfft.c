@@ -75,6 +75,7 @@ void crmfft(complex *cdata, REAL *rdata, int n1, int n2, int ldc, int ldr, int s
     static int nprev=0;
     REAL *tmp;
     MKL_LONG Status;
+	int i, j;
 #endif
 
 #if defined(HAVE_LIBSCS)
@@ -166,10 +167,10 @@ void crmfft(complex *cdata, REAL *rdata, int n1, int n2, int ldc, int ldr, int s
         nprev = n1;
     }
     tmp = (float *)malloc(n1*sizeof(float));
-    for (int j=0; j<n2; j++) {
+    for (j=0; j<n2; j++) {
     	Status = DftiComputeBackward(handle, (MKL_Complex8 *)&cdata[j*ldc], tmp);
     	rdata[j*ldr] = tmp[0];
-    	for (int i=1; i<n1; i++) {
+    	for (i=1; i<n1; i++) {
         	rdata[j*ldr+i] = -sign*tmp[n1-i];
     	}
 	}

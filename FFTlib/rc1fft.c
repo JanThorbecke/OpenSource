@@ -60,6 +60,7 @@ void rc1fft(REAL *rdata, complex *cdata, int n, int sign)
 	static DFTI_DESCRIPTOR_HANDLE handle=0;
 	static int nprev=0;
     MKL_LONG Status;
+	int i;
 #endif
 
 #if defined(HAVE_LIBSCS)
@@ -132,7 +133,7 @@ void rc1fft(REAL *rdata, complex *cdata, int n, int sign)
 		dfti_status_print(Status);
 		printf(" DftiComputeForward FAIL\n");
 	}
-	for (int i=1; i<((n-1)/2)+1; i++) {
+	for (i=1; i<((n-1)/2)+1; i++) {
 		cdata[i].i *= -sign;
 	}
 
