@@ -1,5 +1,9 @@
 #include "genfft.h"
 #include <string.h>
+#ifdef MKL
+#include "mkl_dfti.h"
+void dfti_status_print(MKL_LONG status);
+#endif
 
 /**
 *   NAME:     rcmfft
@@ -64,6 +68,10 @@ void rcmfft(REAL *rdata, complex *cdata, int n1, int n2, int ldr, int ldc, int s
 	static int isys;
 	static REAL *work;
 	REAL scl, *data;
+#elif defined(MKL)
+    static DFTI_DESCRIPTOR_HANDLE handle=0;
+    static int nprev=0;
+    MKL_LONG Status;
 #endif
 
 #if defined(HAVE_LIBSCS)
@@ -120,6 +128,44 @@ void rcmfft(REAL *rdata, complex *cdata, int n1, int n2, int ldr, int ldc, int s
 		cdata[j*ldc+n1/2].i=0.0;
 	}
 	free(data);
+#elif defined(MKL)
+    if (n1 != nprev) {
+        DftiFreeDescriptor(&handle);
+        
+        Status = DftiCreateDescriptor(&handle, DFTI_SINGLE, DFTI_REAL, 1, (MKL_LONG)n1);
+        if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
+            dfti_status_print(Status);
+            printf(" DftiCreateDescriptor FAIL\n");
+        }
+        Status = DftiSetValue(handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+        if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
+            dfti_status_print(Status);
+            printf(" DftiSetValue FAIL\n");
+        }
+        
+        Status = DftiSetValue(handle, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
+        if (! DftiErrorClass(Status, DFTI_NO_ERROR)) {
+            dfti_status_print(Status);
+            printf(" DftiSetValue FAIL\n");
+        }
+        Status = DftiCommitDescriptor(handle);
+        if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
+            dfti_status_print(Status);
+            printf(" DftiCommitDescriptor FAIL\n");
+        }
+        nprev = n1;
+    }
+    Status = DftiComputeForward(handle, rdata, (MKL_Complex8 *)cdata);
+    if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
+        dfti_status_print(Status);
+        printf(" DftiComputeForward FAIL\n");
+    }
+	for (int j=0; j<n2; j++) {
+    	Status = DftiComputeForward(handle, &rdata[j*ldr], (MKL_Complex8 *)&cdata[j*ldc]);
+    	for (int i=1; i<((n1-1)/2)+1; i++) {
+        	cdata[j*ldc+i].i *= -sign;
+    	}
+    }
 #else
 	rcm_fft(rdata, cdata, n1, n2, ldr, ldc, sign);
 #endif
