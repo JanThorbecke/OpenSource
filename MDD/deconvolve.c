@@ -3,6 +3,9 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
+#ifdef MKL
+#include<mkl_cblas.h>
+#endif
 
 typedef struct { /* complex number */
 	float r,i;
