@@ -76,6 +76,12 @@ OPTC += -fopenmp
 #LDFLAGS = -static -Ofast
 
 #############################################################################
+# BLAS and LAPACK libraries 
+MKLROOT=/opt/intel/compilers_and_libraries/mac/mkl/
+
+BLAS = ${MKLROOT}/lib/libmkl_intel_lp64.a ${MKLROOT}/lib/libmkl_sequential.a ${MKLROOT}/lib/libmkl_core.a -lpthread -lm -ldl
+
+#############################################################################
 # FOR FFT LIBRARIES
 #AMD ACML 4.4.0
 #AMDROOT = /home/thorbcke/amdsdk/v1.0/acml/open64_64
