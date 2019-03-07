@@ -77,7 +77,7 @@ OPTC += -fopenmp
 
 #############################################################################
 # BLAS and LAPACK libraries 
-MKLROOT=/opt/intel/compilers_and_libraries/mac/mkl/
+MKLROOT=/opt/intel/mkl/
 BLAS = ${MKLROOT}/lib/libmkl_intel_lp64.a ${MKLROOT}/lib/libmkl_sequential.a ${MKLROOT}/lib/libmkl_core.a -lpthread -lm -ldl
 #for intel compilers
 #BLAS = -mkl
@@ -88,6 +88,10 @@ BLAS = ${MKLROOT}/lib/libmkl_intel_lp64.a ${MKLROOT}/lib/libmkl_sequential.a ${M
 #AMDROOT = /home/thorbcke/amdsdk/v1.0/acml/open64_64
 #OPTC += -DACML440 -I$(AMDROOT)/include
 #LIBSM = -L$(AMDROOT)/lib -lacml -lfortran -lffio -lrt -lm
+#Intel MKL
+MKLROOT=/opt/intel/mkl/
+OPTC += -DMKL -I$(MKLROOT)/include
+FFT = ${MKLROOT}/lib/libmkl_intel_lp64.a ${MKLROOT}/lib/libmkl_sequential.a ${MKLROOT}/lib/libmkl_core.a -lpthread -lm -ldl
 
 #############################################################################
 # Some convenient abbreviations
