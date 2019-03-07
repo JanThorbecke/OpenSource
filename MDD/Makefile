@@ -5,9 +5,14 @@ include ../Make_include
 ########################################################################
 # define general include and system library
 ALLINC  = -I.
-LIBS += -mkl -L$L -lgenfft $(LIBSM)
-CFLAGS += -I$(MKLROOT)/include  
+#BLAS libs with Intel compiler
+#LIBS += -mkl -L$L -lgenfft $(LIBSM)
+#General BLAS library
+LIBS += -L$L -lgenfft $(LIBSM)
+#General BLAS library
+LIBS += $(BLAS)
 
+#CFLAGS += -I$(MKLROOT)/include  
 #LIBS += -lblas -llapack -L$L -lgenfft $(LIBSM) -lc -lm
 
 all: mdd 
