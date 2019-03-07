@@ -78,8 +78,9 @@ OPTC += -fopenmp
 #############################################################################
 # BLAS and LAPACK libraries 
 MKLROOT=/opt/intel/compilers_and_libraries/mac/mkl/
-
 BLAS = ${MKLROOT}/lib/libmkl_intel_lp64.a ${MKLROOT}/lib/libmkl_sequential.a ${MKLROOT}/lib/libmkl_core.a -lpthread -lm -ldl
+#for intel compilers
+#BLAS = -mkl
 
 #############################################################################
 # FOR FFT LIBRARIES
