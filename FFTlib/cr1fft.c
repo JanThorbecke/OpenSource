@@ -61,6 +61,7 @@ void cr1fft(complex *cdata, REAL *rdata, int n, int sign)
     static int nprev=0;
 	REAL *tmp;
     MKL_LONG Status;
+	int i;
 #endif
 
 #if defined(HAVE_LIBSCS)
@@ -132,7 +133,7 @@ void cr1fft(complex *cdata, REAL *rdata, int n, int sign)
         printf(" DftiComputeBackward FAIL\n");
     }
     rdata[0] = tmp[0];
-    for (int i=1; i<n; i++) {
+    for (i=1; i<n; i++) {
         rdata[i] = -sign*tmp[n-i];
     }
 	free(tmp);
