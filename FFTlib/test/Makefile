@@ -2,7 +2,7 @@
 
 include ../../Make_include
 
-LIBS    += -L$L -lgenfft -lm
+LIBS += -L$L -lgenfft $(FFT) -lm
 
 ALL: cc1test cc2dtest ccmtest rc1test rc2dtest rcmtest rc1loop cc1loop
 

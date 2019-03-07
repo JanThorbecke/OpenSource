@@ -1,4 +1,8 @@
 #include "genfft.h"
+#ifdef MKL
+#include "mkl_dfti.h"
+void dfti_status_print(MKL_LONG status);
+#endif
 
 /**
 *   NAME:     cc1fft
@@ -56,6 +60,10 @@ void cc1fft(complex *data, int n, int sign)
     static complex *work;
     REAL scl;
 	complex *y;
+#elif defined(MKL)
+	static DFTI_DESCRIPTOR_HANDLE handle=0;
+    static int nprev=0;
+    MKL_LONG Status;
 #endif
 
 #if defined(HAVE_LIBSCS)
@@ -90,6 +98,28 @@ void cc1fft(complex *data, int n, int sign)
 		nprev = n;
     }
 	acmlcc1fft(sign, scl, inpl, n, data, 1, y, 1, work, &isys);
+#elif defined(MKL)
+    if (n != nprev) {
+        DftiFreeDescriptor(&handle);
+
+        Status = DftiCreateDescriptor(&handle, DFTI_SINGLE, DFTI_COMPLEX, 1, (MKL_LONG)n);
+        if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
+            dfti_status_print(Status);
+            printf(" DftiCreateDescriptor FAIL\n");
+        }
+        Status = DftiCommitDescriptor(handle);
+        if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
+            dfti_status_print(Status);
+            printf(" DftiCommitDescriptor FAIL\n");
+        }
+        nprev = n;
+    }
+	if (sign < 0) {
+    	Status = DftiComputeBackward(handle, data);
+	}
+	else {
+    	Status = DftiComputeForward(handle, data);
+	}
 #else
 	cc1_fft(data, n, sign);
 #endif
