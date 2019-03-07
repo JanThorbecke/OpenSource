@@ -8,9 +8,9 @@ ALLINC  = -I.
 #BLAS libs with Intel compiler
 #LIBS += -mkl -L$L -lgenfft $(LIBSM)
 #General BLAS library
-LIBS += -L$L -lgenfft $(LIBSM)
+#LIBS += -L$L -lgenfft $(LIBSM)
 #General BLAS library
-LIBS += $(BLAS)
+#LIBS += $(BLAS)
 
 #CFLAGS += -I$(MKLROOT)/include  
 #LIBS += -lblas -llapack -L$L -lgenfft $(LIBSM) -lc -lm
