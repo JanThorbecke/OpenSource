@@ -113,8 +113,6 @@ void cr1fft(complex *cdata, REAL *rdata, int n, int sign)
         }
 
         Status = DftiSetValue(handle, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
-		//This options is what we would like, but is depreciated in the future
-        //Status = DftiSetValue(handle, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_REAL);
         if (! DftiErrorClass(Status, DFTI_NO_ERROR)) {
             dfti_status_print(Status);
             printf(" DftiSetValue FAIL\n");
@@ -133,9 +131,12 @@ void cr1fft(complex *cdata, REAL *rdata, int n, int sign)
         printf(" DftiComputeBackward FAIL\n");
     }
     rdata[0] = tmp[0];
-    for (i=1; i<n; i++) {
-        rdata[i] = -sign*tmp[n-i];
-    }
+	if (sign < 0) {
+    	for (i=1; i<n; i++) rdata[i] = -sign*tmp[n-i];
+	}
+	else {
+    	for (i=1; i<n; i++) rdata[i] = tmp[i];
+	}
 	free(tmp);
 #else
 	cr1_fft(cdata, rdata, n, sign);

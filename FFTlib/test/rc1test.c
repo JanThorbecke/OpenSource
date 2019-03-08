@@ -24,14 +24,14 @@ int main () {
 
 	N = 16;
 	k = 5.0;
-	sign = 1;
-	isign = -1;
+	sign = -1;
+	isign = 1;
 	while (N <= Nmax) {
 
 		/* Initialize the data */
 
 		for (i=0;i<N;i++) {
-			c_data[i]   = (float)-0.1+0.5*(N/2-i);
+			c_data[i]   = (float)-0.1+0.5*(N/3-i)*sin(i*M_PI/N);
 //			c_data[i]   = 0.0;
 		}
 //		c_data[0]   = 1.0;

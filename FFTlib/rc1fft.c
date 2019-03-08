@@ -115,6 +115,13 @@ void rc1fft(REAL *rdata, complex *cdata, int n, int sign)
 			dfti_status_print(Status);
 			printf(" DftiSetValue FAIL\n");
 		}
+/*
+		Status = DftiSetValue(handle, DFTI_FORWARD_DOMAIN, DFTI_REAL);
+		if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
+			dfti_status_print(Status);
+			printf(" DftiSetValue FAIL\n");
+		}
+*/
 
 		Status = DftiSetValue(handle, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
 		if (! DftiErrorClass(Status, DFTI_NO_ERROR)) {

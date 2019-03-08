@@ -170,9 +170,12 @@ void crmfft(complex *cdata, REAL *rdata, int n1, int n2, int ldc, int ldr, int s
     for (j=0; j<n2; j++) {
     	Status = DftiComputeBackward(handle, (MKL_Complex8 *)&cdata[j*ldc], tmp);
     	rdata[j*ldr] = tmp[0];
-    	for (i=1; i<n1; i++) {
-        	rdata[j*ldr+i] = -sign*tmp[n1-i];
-    	}
+		if (sign < 0) {
+    		for (i=1; i<n1; i++) rdata[j*ldr+i] = -sign*tmp[n1-i];
+		}
+		else {
+    		for (i=1; i<n1; i++) rdata[j*ldr+i] = tmp[i];
+		}
 	}
     free(tmp);
     if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
