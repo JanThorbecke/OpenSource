@@ -201,6 +201,7 @@ typedef struct _boundPar { /* Boundary Parameters */
 	float *tapy;
 	float *tapx;
 	float *tapxz;
+	float *tapxyz;
 	long cfree;
 	long ntap;
 	long *surface;
