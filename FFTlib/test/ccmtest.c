@@ -1,7 +1,7 @@
 #include <genfft.h>
 #include <time.h>
 
-main () {
+int main () {
 
 	int j,i,n,sign, isign;
 	int N, Nmax=4097, Nitcc, Nlot=513, ld1; 
@@ -128,5 +128,6 @@ main () {
 		k += 1.0;
 
    	} 
+	return 0;
 }
 

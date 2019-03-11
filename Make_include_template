@@ -8,6 +8,12 @@
 # the current directory (in vi ":r!pwd")
 ROOT=/Users/jan/src/OpenSource
 
+#############################################################################
+# Some convenient abbreviations
+B = $(ROOT)/bin
+I = $(ROOT)/include
+L = $(ROOT)/lib
+
 ########################################################################
 # C compiler; change this only if you are using a different C-compiler
 
@@ -41,7 +47,7 @@ OPTC += -fopenmp
 ### Linux
 ##OPTC = -O3 -no-prec-div -qopt-report-phase=vec,openmp
 ##OPTF = -O3 -no-prec-div -qopt-report-phase=vec,openmp
-#OPTC = -O3 -no-prec-div -xCORE-AVX2
+#OPTC = -O3 -no-prec-div -xCORE-AVX2 
 #OPTF = -O3 -no-prec-div -xCORE-AVX2
 ##to include parallelisation with OpenMP
 #OPTC += -qopenmp
@@ -76,18 +82,31 @@ OPTC += -fopenmp
 #LDFLAGS = -static -Ofast
 
 #############################################################################
+# BLAS and LAPACK libraries 
+MKLROOT=/opt/intel/mkl/
+#for GNU compilers
+BLAS = ${MKLROOT}/lib/libmkl_gf_lp64.a ${MKLROOT}/lib/libmkl_sequential.a ${MKLROOT}/lib/libmkl_core.a -lpthread -lm -ldl
+#for intel compilers
+#BLAS = -mkl
+
+#############################################################################
 # FOR FFT LIBRARIES
 #AMD ACML 4.4.0
 #AMDROOT = /home/thorbcke/amdsdk/v1.0/acml/open64_64
 #OPTC += -DACML440 -I$(AMDROOT)/include
-#LIBSM = -L$(AMDROOT)/lib -lacml -lfortran -lffio -lrt -lm
+#BLAS = -L$(AMDROOT)/lib -lacml -lfortran -lffio -lrt -lm
+#Intel MKL
+MKLROOT=/opt/intel/mkl/
+OPTC += -DMKL -I$(MKLROOT)/include
+#for GNU compilers
+BLAS = ${MKLROOT}/lib/libmkl_gf_lp64.a ${MKLROOT}/lib/libmkl_sequential.a ${MKLROOT}/lib/libmkl_core.a -lpthread -lm -ldl
+#for intel compilers
+#FFT = ${MKLROOT}/lib/libmkl_intel_lp64.a ${MKLROOT}/lib/libmkl_sequential.a ${MKLROOT}/lib/libmkl_core.a -lpthread -lm -ldl
 
-#############################################################################
-# Some convenient abbreviations
+#LIBARIES
+LIBS= -L$L -lgenfft $(FFT) $(BLAS)
 
-B = $(ROOT)/bin
-I = $(ROOT)/include
-L = $(ROOT)/lib
+
 
 ########################################################################
 # standard CFLAGS

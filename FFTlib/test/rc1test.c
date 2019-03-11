@@ -1,7 +1,7 @@
 #include <genfft.h>
 #include <time.h>
 
-main () {
+int main () {
 
 	int j,i,n,sign, isign;
 	int N, Nmax=8192, Nitcc; 
@@ -24,25 +24,41 @@ main () {
 
 	N = 16;
 	k = 5.0;
-	sign = 1;
-	isign = -1;
+	sign = -1;
+	isign = 1;
 	while (N <= Nmax) {
 
 		/* Initialize the data */
 
 		for (i=0;i<N;i++) {
-			c_data[i]   = (float)-0.1+0.5*(N/2-i);
+			c_data[i]   = (float)-0.1+0.5*(N/3-i)*sin(i*M_PI/N);
 //			c_data[i]   = 0.0;
 		}
 //		c_data[0]   = 1.0;
 		t = 0.0;
 
+/*
+N=16;
+			scl = 1.0/(float)N;
+			for (j=0;j<N;j++) data[j] = c_data[j];
+			rc1fft(data, cdata, N, sign);
+			cr1fft(cdata, data, N, isign);
+			for (i=0; i<N; i++) 
+            fprintf(stderr,"%s: i = %d data = %f Ref-data = %f Complex=%f,%f\n", machine, i, data[i]*scl, c_data[i],cdata[i/2].r,cdata[i/2].i);
+			for (j=0;j<N;j++) data[j] = c_data[j];
+			rc1_fft(data, cdata, N, sign);
+			cr1_fft(cdata, data, N, isign);
+			for (i=0; i<N; i++) 
+            fprintf(stderr,"%s: i = %d data = %f Ref-data = %f Complex=%f,%f\n", machine, i, data[i]*scl, c_data[i],cdata[i/2].r,cdata[i/2].i);
+			return;
+*/
         /* FFT */
 		for (i=0; i<2500; i++) {
 			for (j=0;j<N;j++) data[j] = c_data[j];
 			t0 = wallclock_time();
 			rc1fft(data, cdata, N, sign);
 			cr1fft(cdata, data, N, isign);
+//		cr1_fft(cdata, data, N, isign);
 			t1 = wallclock_time();
 			t += t1-t0;
 		}
@@ -51,9 +67,9 @@ main () {
 		scl = 1.0/(float)N;
 		for (i=0; i<N; i++) {
 /*
-            fprintf(stderr,"%s: i = %d data = %f C-data = %f\n", machine, i, data[i].r*scl, c_data[i].r);
-            fprintf(stderr,"%s: i = %d data = %f C-data = %f\n", machine, i, data[i].i*scl, c_data[i].i);
+            fprintf(stderr,"%s: i = %d data = %f Ref-data = %f Complex=%f,%f\n", machine, i, data[i]*scl, c_data[i],cdata[i/2].r,cdata[i/2].i);
 */
+
 			if (c_data[i] != 0.0) {
 				diff = fabs((data[i]*scl - c_data[i]) / c_data[i]);
 			}
@@ -77,5 +93,6 @@ main () {
 		k += 1.0;
 
    	} 
+	return 0;
 }
 
