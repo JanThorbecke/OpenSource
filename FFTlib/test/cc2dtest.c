@@ -1,7 +1,7 @@
 #include <genfft.h>
 #include <time.h>
 
-main () {
+int main () {
 
 	int j,i,n,sign, isign;
 	int N, Nmax=1024, Nitcc, Nlot=1024, ld1;
@@ -142,5 +142,6 @@ main () {
 		Nlot *= 2;
 
    	} 
+	return 0;
 }
 

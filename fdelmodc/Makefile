@@ -5,8 +5,7 @@ include ../Make_include
 ########################################################################
 # define general include and system library
 ALLINC  = -I.
-LIBS    += -L$L -lgenfft -lm $(LIBSM)
-#LIBS    += -L$L -lgenfft -lm -lc
+#LIBS    += -L$L -lgenfft -lm $(LIBSM)
 #OPTC = -g -Wall -fsignaling-nans -O0 -fopenmp
 #OPTC += -fopenmp -Waddress
 #OPTC := $(subst -O3 -ffast-math, -O1 -g ,$(OPTC))

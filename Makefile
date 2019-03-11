@@ -7,6 +7,7 @@ all: mkdirs
 	cd marchenko	; $(MAKE) install
 	cd corrvir		; $(MAKE) install
 	cd raytime		; $(MAKE) install
+	cd MDD			; $(MAKE) install
 
 mkdirs:
 	-mkdir -p lib
@@ -20,6 +21,7 @@ clean:
 	cd marchenko	; $(MAKE) $@
 	cd corrvir		; $(MAKE) $@
 	cd raytime		; $(MAKE) $@
+	cd MDD			; $(MAKE) $@
 
 realclean:
 	cd FFTlib 		; $(MAKE) $@
@@ -28,6 +30,7 @@ realclean:
 	cd marchenko	; $(MAKE) $@
 	cd corrvir		; $(MAKE) $@
 	cd raytime		; $(MAKE) $@
+	cd MDD			; $(MAKE) $@
 	rm -f lib/*
 	rm -f include/*
 	rm -f bin/*

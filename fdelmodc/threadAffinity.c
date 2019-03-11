@@ -10,6 +10,9 @@
 #include <sched.h>
 #include <sys/types.h>
 #include <sys/sysctl.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #define CPU_SETSIZE	1024
 #define SYSCTL_CORE_COUNT   "machdep.cpu.core_count"

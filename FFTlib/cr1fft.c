@@ -1,4 +1,8 @@
 #include "genfft.h"
+#ifdef MKL
+#include "mkl_dfti.h"
+void dfti_status_print(MKL_LONG status);
+#endif
 
 /**
 *   NAME:     cr1fft
@@ -52,10 +56,12 @@ void cr1fft(complex *cdata, REAL *rdata, int n, int sign)
 	static int isys;
 	static REAL *work, *table, scale=1.0;
 	REAL scl;
-#elif defined(FFTW3)
-	static int nprev=0;
-	int   iopt, ier;
-	static float *work;
+#elif defined(MKL)
+	static DFTI_DESCRIPTOR_HANDLE handle=0;
+    static int nprev=0;
+	REAL *tmp;
+    MKL_LONG Status;
+	int i;
 #endif
 
 #if defined(HAVE_LIBSCS)
@@ -91,6 +97,47 @@ void cr1fft(complex *cdata, REAL *rdata, int n, int sign)
 		nprev = n;
 	}
 	acmlcrfft(one, n, rdata, work, &isys);
+#elif defined(MKL)
+    if (n != nprev) {
+        DftiFreeDescriptor(&handle);
+
+        Status = DftiCreateDescriptor(&handle, DFTI_SINGLE, DFTI_REAL, 1, (MKL_LONG)n);
+        if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
+            dfti_status_print(Status);
+            printf(" DftiCreateDescriptor FAIL\n");
+        }
+        Status = DftiSetValue(handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+        if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
+            dfti_status_print(Status);
+            printf(" DftiSetValue FAIL\n");
+        }
+
+        Status = DftiSetValue(handle, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
+        if (! DftiErrorClass(Status, DFTI_NO_ERROR)) {
+            dfti_status_print(Status);
+            printf(" DftiSetValue FAIL\n");
+        }
+        Status = DftiCommitDescriptor(handle);
+        if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
+            dfti_status_print(Status);
+            printf(" DftiCommitDescriptor FAIL\n");
+        }
+        nprev = n;
+    }
+	tmp = (float *)malloc(n*sizeof(float));
+    Status = DftiComputeBackward(handle, (MKL_Complex8 *)cdata, tmp);
+    if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
+        dfti_status_print(Status);
+        printf(" DftiComputeBackward FAIL\n");
+    }
+    rdata[0] = tmp[0];
+	if (sign < 0) {
+    	for (i=1; i<n; i++) rdata[i] = -sign*tmp[n-i];
+	}
+	else {
+    	for (i=1; i<n; i++) rdata[i] = tmp[i];
+	}
+	free(tmp);
 #else
 	cr1_fft(cdata, rdata, n, sign);
 #endif
