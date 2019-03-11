@@ -52,7 +52,7 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 	float *xsrca, *ysrca, *zsrca, rrcv;
 	float rsrc, oxsrc, oysrc, ozsrc, dphisrc, ncsrc;
 	size_t nsamp;
-	long i, j;
+	long i, j, l;
 	long cfree;
 	long tapleft,tapright,taptop,tapbottom,tapfront, tapback;
 	long nxsrc, nysrc, nzsrc;
@@ -347,10 +347,11 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 	bnd->npml=bnd->ntap;
 
 	if (bnd->ntap) {
-		bnd->tapx  = (float *)malloc(bnd->ntap*sizeof(float));
-        bnd->tapy  = (float *)malloc(bnd->ntap*sizeof(float));
-		bnd->tapz  = (float *)malloc(bnd->ntap*sizeof(float));
-		bnd->tapxz = (float *)malloc(bnd->ntap*bnd->ntap*sizeof(float));
+		bnd->tapx   = (float *)malloc(bnd->ntap*sizeof(float));
+        bnd->tapy   = (float *)malloc(bnd->ntap*sizeof(float));
+		bnd->tapz   = (float *)malloc(bnd->ntap*sizeof(float));
+		bnd->tapxz  = (float *)malloc(bnd->ntap*bnd->ntap*sizeof(float));
+		bnd->tapxyz = (float *)malloc(bnd->ntap*bnd->ntap*bnd->ntap*sizeof(float));
         if(!getparfloat("tapfact",&tapfact)) tapfact=0.30;
 		scl = tapfact/((float)bnd->ntap);
 		for (i=0; i<bnd->ntap; i++) {
@@ -366,6 +367,14 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 			for (i=0; i<bnd->ntap; i++) {
 				wfct = (scl*sqrt(i*i+j*j));
 				bnd->tapxz[j*bnd->ntap+i] = exp(-(wfct*wfct));
+			}
+		}
+		for (j=0; j<bnd->ntap; j++) {
+			for (i=0; i<bnd->ntap; i++) {
+				for (l=0; l<bnd->ntap; i++) {
+					wfct = (scl*sqrt(i*i+j*j+l*l));
+					bnd->tapxyz[l*bnd->ntap*bnd->ntap+j*bnd->ntap+i] = exp(-(wfct*wfct));
+				}
 			}
 		}
 	}
