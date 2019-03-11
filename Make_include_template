@@ -85,7 +85,8 @@ OPTC += -fopenmp
 # BLAS and LAPACK libraries 
 MKLROOT=/opt/intel/mkl/
 #for GNU compilers
-BLAS = ${MKLROOT}/lib/libmkl_gf_lp64.a ${MKLROOT}/lib/libmkl_sequential.a ${MKLROOT}/lib/libmkl_core.a -lpthread -lm -ldl
+#you might need to add intel64 to : ${MKLROOT}/lib/intel64
+BLAS = -L${MKLROOT}/lib/ -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
 #for intel compilers
 #BLAS = -mkl
 
@@ -99,13 +100,13 @@ BLAS = ${MKLROOT}/lib/libmkl_gf_lp64.a ${MKLROOT}/lib/libmkl_sequential.a ${MKLR
 MKLROOT=/opt/intel/mkl/
 OPTC += -DMKL -I$(MKLROOT)/include
 #for GNU compilers
-BLAS = ${MKLROOT}/lib/libmkl_gf_lp64.a ${MKLROOT}/lib/libmkl_sequential.a ${MKLROOT}/lib/libmkl_core.a -lpthread -lm -ldl
+#you might need to add intel64 to : ${MKLROOT}/lib/intel64
+FFT = -L${MKLROOT}/lib/ -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
 #for intel compilers
 #FFT = ${MKLROOT}/lib/libmkl_intel_lp64.a ${MKLROOT}/lib/libmkl_sequential.a ${MKLROOT}/lib/libmkl_core.a -lpthread -lm -ldl
 
 #LIBARIES
 LIBS= -L$L -lgenfft $(FFT) $(BLAS)
-
 
 
 ########################################################################
