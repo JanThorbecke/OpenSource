@@ -2,7 +2,7 @@
 
 include ../Make_include
 
-LIBS    += -L$L -lgenfft -lm $(LIBSM)
+#LIBS    += -L$L -lgenfft -lm $(LIBSM)
 #OPTC += -openmp 
 #OPTC += -g -O0
 

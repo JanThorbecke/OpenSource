@@ -3,7 +3,7 @@
 include ../Make_include
 
 ALLINC  = -I.
-LIBS    += -L$L -lgenfft -lm
+#LIBS    += -L$L -lgenfft -lm
 #OPTC += -g -O0 -m64
 #OPTC = -g -O0 -fno-omit-frame-pointer
 
