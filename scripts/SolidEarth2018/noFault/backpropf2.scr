@@ -1,0 +1,132 @@
+#!/bin/bash
+#SBATCH -J nofault_${xsrc}
+#SBATCH --cpus-per-task=12
+#SBATCH --ntasks=1
+#SBATCH --time=0:55:00
+#SBATCH --hint=nomultithread
+
+export PATH=$HOME/OpenSource/bin/:$PATH:
+
+dx=1.0
+dt=0.0002
+#dt=0.000125
+
+file_cp=nofaultS_cp.su
+file_ro=nofaultS_ro.su
+depth=1450
+
+export OMP_NUM_THREADS=12
+
+# t=0 focal time is at 2.0445 seconds back=propagating (dtrcv*(ns/2-1)+dt)
+# shift f2.su such that t=0 is positioned in the middle of the time axis
+# the extra shift of 0.000250 is needed because of the staggered time implementation of the Finite Difference program.
+ns=`surange <f2.su | grep ns | awk '{print $2}'` 
+dtrcv=`surange < f2.su | grep dt | awk '{print $2/1000000.0}'`
+shift=$(echo "scale=6; ($dtrcv*(($ns)/2.0-1)+$dt)" | bc -l)
+echo $shift
+suwind key=gx min=-2250000 max=2250000 < f2.su > nep.su
+basop choice=shift shift=$shift file_in=nep.su verbose=1 > pplus.su
+
+# the f2.su is sampled with 4ms the FD program needs 0.5ms
+# time axis is interpolated by making use of FFT's: sinc interpolation
+#ftr1d file_in=pplus.su file_out=freq.su
+#sushw <freq.su key=nhs,dt a=8192,500 >fr.su
+#ftr1d file_in=fr.su n1=8194 file_out=pplusdt.su verbose=1
+
+midsnap=4.004
+
+#backpropagate f2.su and collect snapshots
+#fdelmodc \
+    file_cp=$file_cp ischeme=1 iorder=4 \
+    file_den=$file_ro \
+    file_src=pplus.su \
+	dt=$dt \
+    grid_dir=0 \
+    src_type=1 \
+    src_injectionrate=1 \
+	src_orient=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.004 \
+	rec_delay=0.0 \
+    verbose=2 \
+    tmod=4.10 \
+    dxrcv=10.0 \
+    npml=250 \
+    sna_type_vz=0 \
+	dxsnap=$dx dzsnap=$dx zsnap1=0 zsnap2=2750 xsnap1=-1650 xsnap2=1650 \
+	file_snap=backpropf2.su tsnap1=3.992 dtsnap=0.0002 tsnap2=4.040 \
+    sna_type_vz=0 \
+    sna_type_p=1 \
+    left=2 right=2 top=2 bottom=2
+
+file_mod=nofault
+
+sumax < f2.su mode=abs outpar=nep
+clip=`cat nep | awk '{print $1/5}'`
+echo $clip
+skip=12 
+(( d2 = skip*10 ))
+
+suwind s=1 j=$skip < f2.su > nep.su
+ns=`surange <f2.su | grep ns | awk '{print $2}'` 
+dtrcv=`surange < f2.su | grep dt | awk '{print $2/1000000.0}'`
+shift=$(echo "scale=6; ($dtrcv*(($ns)/2.0-1))" | bc -l)
+echo $shift
+basop choice=shift shift=$shift file_in=nep.su verbose=1 > nep2.su
+
+supswigp hbox=4 wbox=6.6 labelsize=10 linewidth=0.0 < nep2.su \
+        n1tic=2 d2=$d2 f1=-4.004 x1beg=-1.5 x1end=1.5 \
+        f2=-2500 f2num=-2000 d2num=1000 clip=$clip > ${file_mod}_f2_d${depth}.eps
+
+sumax < Td_rp.su mode=abs outpar=nep
+clip=`cat nep | awk '{print $1/3}'`
+echo $clip
+skip=12
+(( d2 = skip*10 ))
+ns=1024
+dtrcv=0.004
+suwind j=$skip s=1 < Td_rp.su | \
+suwind itmax=2048 | suwind key=gx min=-2500000 max=2500000 > nep.su 
+shift=$(echo "scale=6; ($dtrcv*(($ns)/2.0-1))" | bc -l)
+echo $shift
+basop choice=shift shift=$shift file_in=nep.su verbose=1 > nep2.su
+
+supswigp hbox=4 wbox=6.6 labelsize=10 linewidth=0.0 < nep2.su\
+        n1tic=2 d2=$d2 f1=-$shift x1beg=-1.5 x1end=1.5 \
+        f2=-2500 f2num=-2000 d2num=1000 clip=$clip > ${file_mod}_P_cent0.eps
+
+#select snapshots at t=0
+suwind key=fldr min=30 max=30 < backpropf2_sp.su > snapt0.su
+
+sumax < snapt0.su mode=abs outpar=nep
+clip=`cat nep | awk '{print $1/4}'`
+echo $clip
+
+supsimage hbox=4.9 wbox=6.6 labelsize=10 < snapt0.su \
+	x1beg=300 x1end=2750 clip=$clip \
+	x2beg=-1650 f2num=-1500 d2num=500 x2end=1650 > ${file_mod}_f2snapt0.eps
+
+
+
+#f2 at 1050
+depth=1050
+sumax < f2$depth.su mode=abs outpar=nep
+
+clip=`cat nep | awk '{print $1/5}'`
+echo $clip
+skip=12 
+(( d2 = skip*10 ))
+
+suwind s=1 j=$skip < f2$depth.su > nep.su
+ns=`surange <f2.su | grep ns | awk '{print $2}'` 
+dtrcv=`surange < f2.su | grep dt | awk '{print $2/1000000.0}'`
+shift=$(echo "scale=6; ($dtrcv*(($ns)/2.0-1))" | bc -l)
+echo $shift
+basop choice=shift shift=$shift file_in=nep.su verbose=1 > nep2.su
+
+supswigp hbox=4 wbox=6.6 labelsize=10 linewidth=0.0 < nep2.su \
+        n1tic=2 d2=$d2 f1=-4.004 x1beg=-1.5 x1end=1.5 \
+        f2=-2500 f2num=-2000 d2num=1000 clip=$clip > ${file_mod}_f2_d${depth}.eps
+

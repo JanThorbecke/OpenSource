@@ -1,0 +1,93 @@
+#!/bin/bash
+#PBS -N fdelmod
+#PBS -q verylong
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+
+# receivers are placed on a circle 
+
+export PATH=../../bin:$PATH:
+
+dt=0.0008
+makewave file_out=wave.su dt=$dt nt=1024 fp=25 shift=1 w=g2 verbose=1
+#makewave w=fw fmin=0 flef=6 frig=89 fmax=95  dt=$dt file_out=wavefw.su nt=16384 t0=0.3 scale=0 scfft=1
+#sufft < wavefw.su | suamp | sugain scale=0.0001 | suxgraph style=normal
+
+makemod file_base=model.su \
+	cp0=1500 ro0=1000 sizex=4000 sizez=4000 dx=2 dz=2 orig=-2000,-2000 \
+	intt=elipse var=1000,1000 x=0 z=0 cp=2000 ro=1000 verbose=1
+
+makemod file_base=hom.su \
+	cp0=1500 ro0=1000 sizex=4000 sizez=4000 dx=2 dz=2 orig=-2000,-2000 verbose=1
+	   
+export filecp=model_cp.su
+export filero=model_ro.su
+file_rcv=circle.su
+
+export OMP_NUM_THREADS=2
+
+set -x
+#../fdelmodc \
+	file_cp=$filecp file_den=$filero \
+	ischeme=1 \
+	file_src=wavefw.su verbose=2 \
+	file_rcv=$file_rcv \
+	rec_type_vz=0 rec_type_p=1 \
+    xrcv1=-2000 xrcv2=2000 zrcv1=-2000 zrcv2=-2000 \
+    dxrcv=10 \
+	dtrcv=0.004 \
+	xsrc=0 zsrc=-2000 nshot=1 nsrc=1 \
+	src_type=1 tmod=1.020 \
+	ntaper=100 \
+	left=2 right=2 bottom=2 top=2
+
+export filecp=hom_cp.su
+export filero=hom_ro.su
+file_rcv=hom.su
+
+fdelmodc \
+	file_cp=$filecp file_den=$filero \
+	ischeme=1 \
+	src_type=7 \
+	file_src=wave.su verbose=2 \
+	file_rcv=$file_rcv \
+	rec_type_vz=1 rec_type_p=1 \
+	rrcv=500 dphi=1 \
+	dtrcv=0.004 \
+	xsrc=0 zsrc=0 nshot=1 nsrc=1 \
+	tmod=1.020 \
+	ntaper=100 \
+	left=2 right=2 bottom=2 top=2
+
+exit
+
+#for exptype in circle square doodle ;
+for exptype in circle ;
+do
+for rectype in rvx rvz rp ;
+do
+   file_rcv=${exptype}_$rectype.su
+   echo $file_rcv
+   supsimage < ${exptype}_$rectype.su hbox=4 wbox=3 titlesize=-1 labelsize=10 titlesize=-1 \
+   perc=99 label1="time [s]" f2=0 d2=2 label2="rotation in degrees" > ${exptype}_$rectype.eps
+
+done
+done
+
+supsimage < model_cp.su \
+	wbox=4 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
+	d2=3 f2=0 wrgb=1.0,0,0 grgb=0,1.0,0 brgb=0,0,1.0 bps=24 \
+	label1="depth [m]" label2="lateral position [m]" > model_plane.eps
+
+supsimage < SrcRecPositions.su \
+	wbox=4 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
+	d2=3 f2=0 wclip=-1 bclip=1 \
+	gabel1="depth [m]" label2="lateral position [m]" > SrcRecCircle.eps
+
+suop2 model_cp.su  SrcRecPositions.su w1=1 w2=2000 op=sum | \
+	supsimage  wclip=1400 bclip=2000 \
+	wbox=4 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
+	d2=3 f2=0 wrgb=1.0,0,0 grgb=0,1.0,0 brgb=0,0,1.0 bps=24 \
+	label1="depth [m]" label2="lateral position [m]" > model_plane_src.eps
+

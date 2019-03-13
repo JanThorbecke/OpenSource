@@ -1,0 +1,61 @@
+The scripts in this directory create Figure 1 of the paper in Scientific Reports
+
+Forward model the data 
+1a) model.scr computes the gridded model
+    => tutodel_dx0.5_ro.su, tutodel_dx0.5_cp.su
+1b) shots_slurm.scr creates jobs to model the shots and submit jobs to slurm workload manager
+    => shotsnew/shots_x*_rp.su : ranging from -3000 to 3000 with dxshot=10
+    => to model one shots takes ~25 minutes, 601 shots are modeled
+1c) check.scr after the jobs on shots_*.scr are finished checks if all shots are there
+2) direct.scr creates the direct arrival to be removed from the shots
+   => direct_rp.su
+3) remove_direct.scr remove the direct wave from the shots 
+   => shotsnew/refl_rp.su
+4) initialFocus.scr model G_d the intitial focusing function 
+   => iniFocusz800x0_rp.su
+
+Apply the marchenko method to compute f2
+5) marchenko.scr perform the Marchenko scheme
+   => f2.su, f1plus.su, f1min.su, Gmin.su, Gplus.su, pgreen.su
+
+Backpropagation of the recorded data from one side and all-sides: snaphots of the wavefield are recorded
+6) back_injrate_planes.scr
+   => snapinj_planevzvxsum_sp.su : backpropagated from all 4 sides of the model
+   => snapinj_surf_sp.su : backpropagated from surface only
+
+Backpropagation of the Marchenko computed result
+7) backpropf2.scr
+   => snapinj_f2_sp.su : backpropagated f2
+
+Generate the postscript files of Figure 1
+8) epsBack.scr
+   => results of backpropagation from all 4 sides: first column of Figure 1
+snapinj_planevzvxsum_-0.60.eps
+snapinj_planevzvxsum_-0.30.eps
+snapinj_planevzvxsum_-0.03.eps
+snapinj_planevzvxsum_0.00.eps
+snapinj_planevzvxsum_0.03.eps
+snapinj_planevzvxsum_0.30.eps
+snapinj_planevzvxsum_0.60.eps
+   => results of backpropagation from surface only: second column of Figure 1
+snapinj_surf_-0.60.eps
+snapinj_surf_-0.30.eps
+snapinj_surf_-0.03.eps
+snapinj_surf_0.00.eps
+snapinj_surf_0.03.eps
+snapinj_surf_0.30.eps
+snapinj_surf_0.60.eps
+   => results of backpropagation of f2 from surface only: third column of Figure 1
+snapinj_f2_-0.60.eps
+snapinj_f2_-0.30.eps
+snapinj_f2_-0.03.eps
+snapinj_f2_0.00.eps
+snapinj_f2_0.03.eps
+snapinj_f2_0.30.eps
+snapinj_f2_0.60.eps
+   => results of symmetrized backpropagation of f2 from surface only: fourth column of Figure 1
+snapinj_f2sum_0.00.eps
+snapinj_f2sum_0.03.eps
+snapinj_f2sum_0.30.eps
+snapinj_f2sum_0.60.eps
+

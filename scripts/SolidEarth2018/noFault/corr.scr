@@ -1,0 +1,82 @@
+#!/bin/bash
+
+suwind key=gx min=0 max=0 < NoiseSources.su > traceA.su
+
+fconv mode=cor1 file_in1=NoiseSources.su file_in2=traceA.su file_out=BwithTraceA.su 
+
+sumax < NoiseSources.su mode=abs outpar=nep
+clip=`cat nep | awk '{print $1/1}'`
+
+suwind j=5 s=1 < NoiseSources.su | \
+	supswigp hbox=2 wbox=4.0 labelsize=10 linewidth=0.0 \
+	x1beg=0 x1end=5.0 clip=$clip f1=0 n1tic=2 \
+	x2beg=-1000 f2num=-1000 d2=50 d2num=500 x2end=1000 > nofault_SI_noiseSources.eps
+
+#convolve with wavelet
+dt=0.004
+makewave fp=25 dt=$dt file_out=wavedt.su nt=1024 t0=0.0 scale=1
+suwind < BwithTraceA.su itmax=1023 > nep1.su 
+fconv mode=cor1 file_in1=nep1.su file_in2=wavedt.su file_out=nep.su 
+mv nep.su BwithTraceA.su
+rm nep1.su 
+
+sumax < BwithTraceA.su mode=abs outpar=nep
+clip=`cat nep | awk '{print $1/5}'`
+
+supsimage hbox=2 wbox=4 labelsize=10 < BwithTraceA.su \
+	x1beg=0 x1end=1.0 clip=$clip f1=0 \
+	x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > nofault_SI_BwithTraceA.eps
+
+sudipfilt < BwithTraceA.su slopes=-0.0007,-0.0001,0,0.0001,0.0007 amps=0,1,1,1,0 | \
+	supsimage hbox=2 wbox=4 labelsize=10 \
+	x1beg=0 x1end=1.0 clip=$clip f1=0 \
+	x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > nofault_SI_BwithTraceA_dipfilt.eps
+
+sudipfilt < BwithTraceA.su slopes=-0.0007,-0.0001,0,0.0001,0.0007 amps=0,1,1,1,0 | \
+	suwind j=5 s=1 | \
+	supswigp hbox=2 wbox=4.0 labelsize=10 linewidth=0.0 \
+	x1beg=0 x1end=1.0 clip=$clip f1=0 n1tic=2 \
+	x2beg=-1000 f2num=-1000 d2=50 d2num=500 x2end=1000 > nofault_SI_BwithTraceA_dipfilt_wiggle.eps
+
+suwind j=5 s=1 < BwithTraceA.su | \
+	supswigp hbox=2 wbox=4.0 labelsize=10 linewidth=0.0 \
+	x1beg=0 x1end=1.0 clip=$clip f1=0 n1tic=2 \
+	x2beg=-1000 f2num=-1000 d2=50 d2num=500 x2end=1000 > nofault_SI_BwithTraceA_dipfilt_wiggle.eps
+
+export OMP_NUM_THREADS=8
+file_rcv=shots_SIref.su
+
+#fdelmodc \
+   		file_cp=nofaultS_cp.su ischeme=1 iorder=4 \
+   		file_den=nofaultS_ro.su \
+   		file_src=wave.su \
+   		file_rcv=$file_rcv \
+		src_type=1 \
+		src_orient=1 \
+		src_injectionrate=1 \
+   		rec_type_vz=0 \
+   		rec_type_p=1 \
+   		rec_int_vz=2 \
+		rec_delay=0.1 \
+   		dtrcv=0.004 \
+   		verbose=2 \
+   		tmod=1.320 \
+   		dxrcv=10.0 \
+   		xrcv1=-2500 xrcv2=2500 \
+   		zrcv1=100 zrcv2=100 \
+   		xsrc=0 zsrc=100 \
+   		ntaper=250 \
+   		left=2 right=2 top=1 bottom=2
+
+sumax < shots_SIref_rp.su mode=abs outpar=nep
+clip=`cat nep | awk '{print $1/5}'`
+
+suwind j=5 s=1 < shots_SIref_rp.su | \
+	supswigp hbox=2 wbox=4.0 labelsize=10 linewidth=0.0 \
+	x1beg=0 x1end=1.0 clip=$clip f1=0 n1tic=2 \
+	x2beg=-1000 f2num=-1000 d2=50 d2num=500 x2end=1000 > nofault_SI_reference_wiggle.eps
+
+supsimage hbox=2 wbox=4 labelsize=10 < shots_SIref_rp.su \
+	x1beg=0 x1end=1.0 clip=$clip f1=0 \
+	x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > nofault_SI_reference.eps
+

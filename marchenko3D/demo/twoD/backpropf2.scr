@@ -1,0 +1,59 @@
+#!/bin/bash
+
+export PATH=$HOME/OpenSource/bin/:$PATH:
+
+dx=2.5
+dt=0.0005
+
+file_cp=syncl_cp.su
+file_ro=syncl_ro.su
+
+export OMP_NUM_THREADS=8
+
+# t=0 focal time is at 2.0445 seconds back=propagating (dtrcv*(ns/2-1)+dt)
+# shift f2.su such that t=0 is positioned in the middle of the time axis
+# the extra shift of 0.000250 is needed because of the staggered time implementation of the Finite Difference program.
+ns=`surange <f2.su | grep ns | awk '{print $2}'` 
+dtrcv=`surange < f2.su | grep dt | awk '{print $2/1000000.0}'`
+suwind key=gx min=-2250000 max=2250000 itmax=1023 < f2.su > nep.su
+shift=$(echo "scale=6; ($dtrcv*(($ns)/2.0-1)+$dt)" | bc -l)
+echo $shift
+basop choice=shift shift=$shift file_in=nep.su verbose=1 > pplus.su
+
+# the f2.su is sampled with 4ms the FD program needs 0.5ms
+# time axis is interpolated by making use of FFT's: sinc interpolation
+#ftr1d file_in=pplus.su file_out=freq.su
+#sushw <freq.su key=nhs,dt a=8192,500 >fr.su
+#ftr1d file_in=fr.su n1=8194 file_out=pplusdt.su verbose=1
+
+midsnap=2.04
+
+#backpropagate f2.su and collect snapshots
+fdelmodc \
+    file_cp=$file_cp ischeme=1 iorder=4 \
+    file_den=$file_ro \
+    file_src=pplus.su \
+    file_rcv=backprop_f2_z1100.su \
+	dt=$dt \
+    grid_dir=0 \
+    src_type=1 \
+    src_injectionrate=1 \
+	src_orient=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.004 \
+	rec_delay=0.0 \
+    verbose=2 \
+    tmod=3.10 \
+    dxrcv=10.0 \
+    xrcv1=-3000 xrcv2=3000 \
+    zrcv1=1100 zrcv2=1100 \
+	zsrc=0 xsrc=0 \
+    npml=101 \
+	file_snap=backpropmar.su tsnap1=`echo "$midsnap-1" | bc -l` dtsnap=0.01 tsnap2=`echo "$midsnap+1" | bc -l` dxsnap=5 dzsnap=5 zsnap1=0 zsnap2=2000 xsnap1=-2250 xsnap2=2250 \
+    sna_type_vz=0 \
+    sna_type_p=1 \
+    left=2 right=2 top=2 bottom=2
+
+

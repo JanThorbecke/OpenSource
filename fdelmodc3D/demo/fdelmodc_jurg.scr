@@ -1,0 +1,55 @@
+#!/bin/bash
+#PBS -l nodes=1
+#PBS -N InterfModeling
+#PBS -q fourweeks
+#PBS -V
+#
+# same as fdelmodc_topography, but with source and receivers on topography of sea-bottom
+
+export PATH=../../bin:$PATH
+
+dt=0.00005
+ntap=120
+
+makemod sizex=160 sizez=10 dx=0.1 dz=0.1 cp0=1000 ro0=1000 cs0=200 file_base=model.su \
+    orig=0,0  verbose=1 \
+    intt=def x=0,160 z=2,2 cp=1000 cs=300 ro=1000 \
+    intt=def x=0,160 z=5,5 cp=1000 cs=400 ro=1000 
+
+
+makewave w=g2 fmax=230 t0=0.10 dt=$dt nt=4096 db=-40 file_out=G2.su verbose=1
+
+#extendModel file_in=model_ro.su nafter=$ntap nbefore=$ntap nabove=0 nbelow=$ntap > vel2_edge_ro.su
+#extendModel file_in=model_cp.su nafter=$ntap nbefore=$ntap nabove=0 nbelow=$ntap > vel2_edge_cp.su
+#extendModel file_in=model_cs.su nafter=$ntap nbefore=$ntap nabove=0 nbelow=$ntap > vel2_edge_cs.su
+
+../fdelmodc \
+    ischeme=3 \
+    src_type=2 \
+    file_cp=vel2_edge_cp.su \
+    file_cs=vel2_edge_cs.su \
+    file_den=vel2_edge_ro.su \
+    file_rcv=shot_xl.su \
+    file_src=G2.su \
+    dtrcv=0.0005 \
+	rec_type_vx=1 \
+	rec_type_vz=0 \
+	rec_type_tzz=0 \
+	rec_type_p=0 \
+	xsrc=80 \
+	zsrc=0 \
+    verbose=4 \
+    tmod=0.60 \
+    dxrcv=0.5 \
+    zrcv1=0 \
+    zrcv2=0 \
+    xrcv1=0 \
+    xrcv2=160 \
+    rec_delay=0.1 \
+    src_random=0 \
+    wav_random=0 \
+	dipsrc=1 \
+    ntaper=$ntap \
+	left=4 right=4 bottom=4 top=1
+
+

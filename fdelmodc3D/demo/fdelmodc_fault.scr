@@ -1,0 +1,48 @@
+#!/bin/bash
+#PBS -l nodes=1
+#PBS -N InterfModeling
+#PBS -q fourweeks
+#PBS -V
+#
+export PATH=$HOME/../thorbcke/src/OpenSource/bin:$PATH
+
+dt=0.0015
+fmax=45
+cp=2000
+
+makemod sizex=6000 sizez=2000 dx=5 dz=5 cp0=$cp ro0=1000 file_base=fault.su orig=0,0  \
+    intt=def poly=2 x=0,600,1000,2000,4000,5000 \
+        z=550,550,550,300,300,500 cp=$cp ro=2000 \
+    intt=def poly=0 x=5000,6000 z=300,200 cp=$cp ro=1500 \
+    intt=def poly=0 x=0,2500 z=900,900 cp=$cp ro=2200 \
+    intt=def poly=0 x=2000,5000 z=1000,300 cp=$cp ro=1500 \
+    intt=def poly=0 x=2000,3000,6000 z=1000,770,770 cp=$cp ro=1800 \
+    intt=def poly=0 x=2000,6000 z=1000,1000 cp=$cp ro=2200 \
+    intt=def poly=0 x=0,6000 z=1400,1400 cp=$cp ro=2400 \
+
+suximage cmap=hsv4 < fault_ro.su &
+
+makewave w=g2 fmax=45 t0=0.10 dt=$dt nt=4096 db=-40 file_out=G2.su verbose=1
+
+../fdelmodc \
+    file_cp=fault_cp.su ischeme=1 \
+    file_den=fault_ro.su \
+    file_rcv=shots.su \
+    file_src=G2.su \
+    src_type=1 \
+    dtrcv=0.003 \
+    verbose=1 \
+    tmod=3.104 \
+	nshot=101 \
+	dxshot=60 \
+	rec_delay=0.1 \
+	rec_type_vz=0 \
+    dxrcv=60.0 \
+    xsrc=0 \
+    zsrc=0 \
+    ntaper=101 \
+    left=2 right=2 top=2 bottom=2
+
+suwind key=offset min=0 max=0 < shots_rp.su | suzero itmax=30 | suximage x1end=2 
+
+

@@ -5,7 +5,7 @@ include ../Make_include
 ########################################################################
 # define general include and system library
 ALLINC  = -I.
-LIBS    += -L$L -lgenfft -lm $(LIBSM)
+#LIBS    += -L$L -lgenfft -lm $(LIBSM)
 #LIBS    += -L$L -lgenfft -lm -lc
 #OPTC = -g -Wall -fsignaling-nans -O0
 #OPTC += -fopenmp -Waddress
@@ -47,16 +47,16 @@ SRCC	= $(PRG).c \
 OBJC	= $(SRCC:%.c=%.o)
 
 $(PRG):	$(OBJC) raytime.h
-	$(CC) $(LDFLAGS) $(CFLAGS) $(OPTC) -o Raytime $(OBJC) $(LIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) $(OPTC) -o raytime $(OBJC) $(LIBS)
 
 install: raytime 
-	cp Raytime $B
+	cp raytime $B
 
 clean:
-		rm -f core $(OBJC) $(OBJM) Raytime 
+		rm -f core $(OBJC) $(OBJM) raytime 
 
 realclean:
-		rm -f core $(OBJC) $(OBJM) $(PRG) $B/Raytime 
+		rm -f core $(OBJC) $(OBJM) $(PRG) $B/raytime 
 
 
 print:	Makefile $(SRC)

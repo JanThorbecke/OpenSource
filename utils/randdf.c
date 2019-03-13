@@ -18,7 +18,7 @@ void diffraction(float *x, float *z, int nxp, float dx, float dz, float **gridcp
 void randdf(float *x, float *z, int nxp, float dx, float dz, float **gridcp, float **gridcs, float **gridro, float **cp, float **cs, float **ro, float *interface, int *zp, int nx, float sizex, float sizez, int ndiff, int diffrwidth, int type)
 {
     float x0, z0, dsx, dsz;
-    int i, rtype;
+    int i, rtype, width;
     long lseed;
     
 	rtype=type;
@@ -38,10 +38,12 @@ void randdf(float *x, float *z, int nxp, float dx, float dz, float **gridcp, flo
         nxp=1;
         if (rtype<0) type=NINT(2*drand48());
 		else type = rtype;
-        x[0] = x0 + diffrwidth*dx+drand48()*(dsx-2*diffrwidth*dx);
-        z[0] = z0 + diffrwidth*dz+drand48()*(dsz-2*diffrwidth*dz);
+		//width = drand48()*diffrwidth;
+		width = diffrwidth;
+        x[0] = x0 + width*dx+drand48()*(dsx-2*width*dx);
+        z[0] = z0 + width*dz+drand48()*(dsz-2*width*dz);
         diffraction(x, z, nxp, dx, dz, gridcp, gridcs, gridro,
-                    cp, cs, ro, interface, zp, nx, diffrwidth, type);
+                    cp, cs, ro, interface, zp, nx, width, type);
     }
 
 	return;

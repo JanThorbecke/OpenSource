@@ -1,0 +1,129 @@
+#!/bin/bash
+
+export PATH=:$HOME/src/OpenSource/bin:$HOME/bin64:$PATH:
+
+dx=1.0
+dt=0.0002
+fast=""
+
+#dx=2.5
+#dt=0.00050
+#fast="fast"
+
+makemod sizex=6000 sizez=1250 dx=$dx dz=$dx cp0=1500  ro0=1000 \
+        orig=-3000,0 file_base=tutodel${fast}.su verbose=2 \
+        intt=def x=-3000,3000 z=240,240 cp=1950 ro=4500 grad=0 \
+        intt=def x=-3000,3000 z=620,620 cp=1500 ro=1000 grad=0 
+
+makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefwfast.su nt=4096 t0=0.4 scale=0 scfft=1
+
+export OMP_NUM_THREADS=8
+makewave fp=30 dt=$dt file_out=wave${fast}.su nt=4096 t0=0.1 scale=1
+
+file_cp=tutodel${fast}_cp.su
+file_ro=tutodel${fast}_ro.su
+
+fdelmodc \
+    file_cp=$file_cp ischeme=1 iorder=4 \
+    file_den=$file_ro \
+    file_src=wave${fast}.su \
+    file_rcv=inj_rate_plane.su \
+    src_type=1 \
+    src_injectionrate=1 \
+    rec_type_vz=1 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    rec_int_vx=2 \
+    dtrcv=$dt \
+    rec_delay=0.0 \
+    verbose=1 \
+    tmod=4.4000 \
+    xrcv1=-3000,-3000 xrcv2=3000,3000 zrcv1=0,1200 zrcv2=0,1200 \
+    dxrcv=2.5,2.5 dzrcv=0,0 \
+    xsrc=0 zsrc=800  \
+    ntaper=400 \
+    left=4 right=4 top=4 bottom=4
+
+#    xrcv1=-3000,-3000,-3000,3000 xrcv2=3000,3000,-3000,3000 zrcv1=0,1200,0,0 zrcv2=0,1200,1200,1200 \
+#    dxrcv=2.5,2.5,0,0 dzrcv=0,0,2.5,2.5 \
+
+scale=1
+scale=0.40760869
+suwind key=tracl min=1 max=2401 < inj_rate_plane_rp.su > inj_rate_plane0_rp.su
+suwind key=tracl min=2402 max=4802 < inj_rate_plane_rp.su | sugain scale=$scale >> inj_rate_plane0_rp.su
+
+scale=-1.0
+suwind key=tracl min=1 max=2401 < inj_rate_plane_rvz.su > inj_rate_planez0_rvz.su
+suwind key=tracl min=2402 max=4802 < inj_rate_plane_rvz.su | sugain scale=$scale >> inj_rate_planez0_rvz.su
+#suwind key=tracl min=2402 max=4802 < inj_rate_plane_rvz.su | sugain scale=$scale > inj_rate_planez1200_rvz.su
+
+#good results with scaled Vz src_type=1 src_injectionrate=0 and Vz snapshots
+# suxmovie < snapinj_rate_plane1vzrate0_sp.su loop=1 clip=30
+#good results with scaled Vz src_type=1 src_injectionrate=1 and Vz snapshots
+# suxmovie < snapinj_rate_plane1vzrate1_sp.su loop=1 clip=4000
+
+fdelmodc \
+    file_cp=$file_cp ischeme=1 iorder=4 \
+    file_den=$file_ro \
+    file_src=inj_rate_planez0_rvz.su \
+    file_rcv=back_inj_rate_planez0.su \
+    file_snap=snapinj_rate1_planevz0.su \
+    grid_dir=1 \
+    src_type=1 \
+    src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_p=0 \
+    dtrcv=$dt \
+    rec_delay=0.0 \
+    verbose=1 \
+    tmod=5.0000 \
+    tsnap1=4.200 tsnap2=4.50 dtsnap=0.004 \
+	xsnap1=-1000 xsnap2=1000 \
+    ntaper=400 \
+    left=4 right=4 top=4 bottom=4
+
+exit
+
+fdelmodc \
+    file_cp=$file_cp ischeme=1 iorder=4 \
+    file_den=$file_ro \
+    file_src=inj_rate_planez1200_rvz.su \
+    file_rcv=back_inj_rate_planez1200.su \
+    file_snap=snapinj_rate_planevz1200.su \
+    grid_dir=1 \
+    src_type=1 \
+    src_injectionrate=0 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_p=0 \
+    dtrcv=$dt \
+    rec_delay=0.0 \
+    verbose=4 \
+    tmod=4.0000 \
+    tsnap1=3.200 tsnap2=3.50 dtsnap=0.004 \
+    ntaper=400 \
+    left=4 right=4 top=4 bottom=4
+
+
+suop2 snapinj_rate_planevz0_sp.su snapinj_rate_planevz1200_sp.su op=sum w1=1 w2=1 > snapinj_rate_planevzsum_sp.su
+
+exit
+sumax < inj_rate_plane0_rvz.su mode=abs outpar=nep
+clip=`cat nep | awk '{print $1/3}'`
+echo $clip
+
+sugain epow=1.2 < inj_rate_plane0_rvz.su | \
+        supsimage hbox=4 wbox=8 labelsize=10 linewidth=0.0 \
+        n1tic=2 d2=2.5 f1=0.0 x1beg=0 x1end=3.004 \
+        f2=0 f2num=0 d2num=1000 clip=$clip > inj_rate_rvz.eps
+
+for fldr in 27 32 22 17 12 7
+do
+suwind key=fldr min=$fldr max=$fldr < snapinj_rate_plane1vzrate0_sp.su | \
+    supsimage hbox=4 wbox=6 labelsize=10 \
+    x1beg=0 x1end=1200.0 clip=30 \
+    n1tic=5 x2beg=-3000 f2num=-3000 d2num=1000 x2end=3000 > snapinj_rate_$fldr.eps
+done
+
+

@@ -79,6 +79,7 @@ extern "C" {
 
 int optncc(int n);
 int optncr(int n);
+long loptncr(long n);
 
 void cc1fft(complex *data, int n, int sign);
 void ccmfft(complex *data, int n1, int n2, int ld1, int sign);

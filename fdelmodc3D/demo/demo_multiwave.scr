@@ -1,0 +1,64 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=2
+#PBS -N InterfModeling
+#PBS -V
+#
+
+#demo for sources with different wavelets for each source postions
+cp=2000
+rho=1000
+dx=2.5
+dt=0.0005
+
+export PATH=../../bin:$PATH
+
+makemod sizex=2000 sizez=2000 dx=$dx dz=$dx cp0=$cp ro0=$rho orig=-1000,0 file_base=simple.su
+
+times=(0.101 0.11 0.2 0.3)
+ampl=(1.0 2.0 3.0 4.0)
+xpos=(-500 0 700 900)
+zpos=(700 800 900 950)
+n=${#times[@]}
+
+rm traces.su
+
+for (( i=0; i < $n; i++ ));
+do
+
+(( gx = ${xpos[i]}*1000 ))
+(( gelev = ${zpos[i]}*-1000 ))
+echo $gx $gelev ${times[i]} ${ampl[i]}
+
+makewave fp=15 dt=$dt nt=4096 t0=${times[i]} | \
+  sugain scale=${ampl[i]} | \
+  sushw key=gx,gelev,scalco,scalel a=$gx,$gelev,-1000,-1000 >> traces.su 
+
+done
+
+#suxgraph < traces.su 
+
+######### MONOPOLE ACOUSTIC #######
+
+fdelmodc \
+    file_cp=simple_cp.su ischeme=1 \
+    file_den=simple_ro.su \
+    file_src=traces.su \
+    src_multiwav=1 \
+    file_rcv=shot_fd.su \
+    src_type=1 \
+    rec_type_p=1 \
+    rec_type_vz=0 \
+    rec_int_vz=2 \
+    dtrcv=0.004 \
+    verbose=4 \
+    tmod=4.000 \
+    dxrcv=5.0 \
+    xrcv1=-1000 xrcv2=1000 \
+    zrcv1=0 zrcv2=0 \
+    ntaper=100 \
+    tsnap1=0.0 tsnap2=0.4 dtsnap=0.05 \
+    left=4 right=4 bottom=4 top=4
+
+suximage < shot_fd_rp.su
+
+suxmovie < snap_sp.su loop=1 clip=100 

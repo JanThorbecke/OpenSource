@@ -1,0 +1,10 @@
+Description of files:
+1a) model.scr computes the model
+1b) shots_slurm/pbs.scr creates the shots and submit jobs to slurm or PBS
+1c) check.scr after the jobs on shots_*.scr are finished checks if all shots are there
+2) direct.scr creates the direct arrival to be removed from the shots
+3) remove_direct.scr remove the direct wave from the shots 
+4) initialFocus.scr model G_d the intitial focusing function => iniFocus_z1100_x0_rp.su
+5) referenceShot.scr creates the reference Green's function at focal point => referenceP_rp.su
+6) marchenko.scr perform the Marchenko scheme
+

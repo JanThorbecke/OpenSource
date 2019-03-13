@@ -1,0 +1,44 @@
+
+unset contour
+
+load "stat.inc"
+
+print ""
+print "Simple Monte Carlo simulation"
+print ""
+print "The first curve is a histogram where the binned frequency of occurence"
+print "of a pseudo random variable distributed according to the normal"
+print "(Gaussian) law is scaled such that the histogram converges to the"
+print "normal probability density function with increasing number of samples"
+print "used in the Monte Carlo simulation.  The second curve is the normal"
+print "probability density function with unit variance and zero mean."
+print ""
+nsamp = 5000
+binwidth = 20
+xlow = -3.0
+xhigh = 3.0
+scale = (binwidth/(xhigh-xlow))
+# A somewhat inelegant way of generating N random data points.  A future
+# non-pressing plot-command feature addition may address this issue.
+set parametric
+set samples nsamp
+set format "%8.5g"
+set table "random.tmp"
+plot invnorm(rand(0)),(1.0*scale/nsamp)
+unset table
+unset format
+#
+unset parametric
+set samples 200
+tstring(n) = sprintf("Histogram of %d random samples from a univariate\nGaussian PDF with unit variance and zero mean", n)
+set title tstring(nsamp)
+set key
+set grid
+set xrange [-3:3]
+set yrange [0:0.45]
+bin(x) = (1.0/scale)*floor(x*scale)
+plot "random.tmp" using (bin($1)):2 smooth frequency with steps \
+                title "scaled bin frequency", \
+                normal(x,0,1) with lines title "Gaussian p.d.f."
+
+

@@ -1,0 +1,55 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=2
+#PBS -N InterfModeling
+#PBS -q long
+#PBS -V
+#
+# calls fdelmodc_long.scr, can not be reproduced; software in test phase
+
+echo " This Figure can not be reproduced completely" 
+echo " The progrom corrsmp used is still in test phase"
+echo " Mail j.w.thorbecke@tudelft.nl if you want to reproduce this Figure."
+
+exit;
+./fdelmodc_long.scr
+
+export OMP_NUM_THREADS=1
+~/src/CorrSMP_FD_Files/corrsmp \
+	file_base=long/shotAcoustic_T3600_S1500_Dt500_F30_001_rvz.su \
+	nc=1 nstation=201 fullcorr=1 dt=0.008 \
+	nt=16384 verbose=1 ntc=4096 file_out=outI.su causal=1
+
+#results long recordings and using corrsmp
+suwind s=1 j=1 tmax=4 f1=0.0 key=fldr min=101 max=101 < outI_cc1.su | \
+    sushw key=f1,delrt,d2 a=0.0,0.0,50 | \
+	sufilter amps=0,0.5,1,1,0 f=0,2,3,50,60 | \
+    supsimage perc=99 f1=0 f2=-5000 hbox=4 wbox=3 \
+	label1='time (s)' label2='lateral position (m)' \
+    labelsize=10 f2num=-5000 d2num=2500 > long_Corr_I.eps
+
+~/src/CorrSMP_FD_Files/corrsmp \
+	file_base=long/shotAcoustic_T3600_S1500_Dt500_F30_001_rvz.su \
+	nc=1 nstation=201 fullcorr=1 dt=0.008 \
+	nt=16384 verbose=1 ntc=4096 file_out=outII causal=2
+
+suwind s=1 j=1 tmax=4 f1=0.0 key=fldr min=101 max=101 < outII_cc1.su | \
+    sushw key=f1,delrt,d2 a=0.0,0.0,50 | \
+	sufilter amps=0,0.5,1,1,0 f=0,2,3,50,60 | \
+    supsimage perc=99 f1=0 f2=-5000 hbox=4 wbox=3 \
+	label1='time (s)' label2='lateral position (m)' \
+    labelsize=10 f2num=-5000 d2num=2500 > long_Corr_II.eps
+
+~/src/CorrSMP_FD_Files/corrsmp \
+	file_base=long/shotAcoustic_T3600_S1500_Dt500_F30_001_rvz.su \
+	nc=1 nstation=201 fullcorr=1 dt=0.008 \
+	nt=16384 verbose=1 ntc=4096 file_out=outIII causal=4
+
+suwind s=1 j=1 tmax=4 f1=0.0 key=fldr min=101 max=101 < outIII_cc1.su | \
+    sushw key=f1,delrt,d2 a=0.0,0.0,50 | \
+	sufilter amps=0,0.5,1,1,0 f=0,2,3,50,60 | \
+    supsimage perc=99 f1=0 f2=-5000 hbox=4 wbox=3 \
+	label1='time (s)' label2='lateral position (m)' \
+    labelsize=10 f2num=-5000 d2num=2500 > long_Corr_III.eps
+
+
+

@@ -1,4 +1,8 @@
 #include "genfft.h"
+#ifdef MKL
+#include "mkl_dfti.h"
+void dfti_status_print(MKL_LONG status);
+#endif
 
 /**
 *   NAME:     cc2dfft
@@ -60,6 +64,10 @@ void cc2dfft(complex *data, int nx, int ny, int ldx, int sign)
 	REAL scl;
 	complex *y;
 	complex *tmp;
+#elif defined(MKL)
+    static DFTI_DESCRIPTOR_HANDLE handle=0;
+    static int nxprev=0, nyprev=0;
+    MKL_LONG Status, N[2];
 #else
 	int i, j;
 	complex *tmp;
@@ -110,6 +118,30 @@ void cc2dfft(complex *data, int nx, int ny, int ldx, int sign)
 	else {
 		cc1fft(data, nx, sign);
 	}
+#elif defined(MKL)
+	if (nx != nxprev || ny != nyprev) {
+        DftiFreeDescriptor(&handle);
+          
+		N[0] = nx; N[1] = ny;
+        Status = DftiCreateDescriptor(&handle, DFTI_SINGLE, DFTI_COMPLEX, 2, N);
+        if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
+            dfti_status_print(Status);
+            printf(" DftiCreateDescriptor FAIL\n");
+        } 
+        Status = DftiCommitDescriptor(handle);
+        if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
+            dfti_status_print(Status);
+            printf(" DftiCommitDescriptor FAIL\n");
+        }
+        nxprev = nx;
+        nyprev = ny;
+    }
+    if (sign < 0) {
+    	Status = DftiComputeBackward(handle, data);
+    }
+    else {
+    	Status = DftiComputeForward(handle, data);
+    }   
 #else 
 	if (ny != 1) {
 		ccmfft(data, nx, ny, ldx, sign);
