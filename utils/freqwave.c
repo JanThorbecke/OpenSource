@@ -31,7 +31,7 @@ float gauss1freq(float f, float freq);
 float gauss0freq(float f, float freq);
 void hilbertTrans(float *data, int nsam);
 
-void freqwave(float *wave, int nt, float dt, float fp, float fmin, float flef, float frig, float fmax, float t0, float db, int shift, int cm, int cn, char *w, float scale, int scfft, int inverse, float eps, int verbose)
+void freqwave(float *wave, int nt, float dt, float fp, float fmin, float flef, float frig, float fmax, float t0, float db, int shift, int cm, int cn, char *w, float scale, int scfft, int inverse, float eps, float alpha, int verbose)
 {
     int        it, iof, nfreq, nf, i, j, sign, optn, stored;
     int        ifmin1, ifmin2, ifmax1, ifmax2;
@@ -395,7 +395,10 @@ void freqwave(float *wave, int nt, float dt, float fp, float fmin, float flef, f
         else max = df;
     }
     //fprintf(stderr,"scaling factor back FFT=%e\n", max);
-    for (i = 0; i < nt; i++) wave[i]= rwave[i]*max;
+    for (i = 0; i < nt; i++) {
+        tt=(float)i*dt;
+		wave[i]= rwave[i]*max*exp(-alpha*tt);
+	}
 
     free(cwave);
     free(rwave);

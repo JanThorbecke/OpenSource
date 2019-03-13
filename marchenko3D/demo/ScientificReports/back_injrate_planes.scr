@@ -1,0 +1,141 @@
+#!/bin/bash
+
+export PATH=:$HOME/src/OpenSource/bin:$HOME/bin:$PATH:
+
+export OMP_NUM_THREADS=8
+dt=0.00050
+dx=2.5
+
+dt=0.00010
+dx=0.5
+
+makewave fp=30 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=1
+./model.scr $dx
+ntr=$(echo "scale=0; 1+6000/${dx}" | bc -l)
+echo $ntr
+
+ix1a=1
+ix1b=$(echo "scale=0; ${ix1a}+6000/${dx}" | bc -l)
+ix2a=$(echo "scale=0; ${ix1b}+1" | bc -l)
+ix2b=$(echo "scale=0; ${ix2a}+6000/${dx}" | bc -l)
+ix3a=$(echo "scale=0; ${ix2b}+1" | bc -l)
+ix3b=$(echo "scale=0; ${ix3a}+1200/${dx}" | bc -l)
+ix4a=$(echo "scale=0; ${ix3b}+1" | bc -l)
+ix4b=$(echo "scale=0; ${ix4a}+1200/${dx}" | bc -l)
+
+file_cp=tutodel_dx${dx}_cp.su
+file_ro=tutodel_dx${dx}_ro.su
+
+#model data to be propagated back into medium
+fdelmodc \
+    file_cp=$file_cp ischeme=1 iorder=4 \
+    file_den=$file_ro \
+    file_src=wave.su \
+    file_rcv=inj_rate_plane_dx${dx}.su \
+    src_type=1 \
+    src_injectionrate=1 \
+    rec_type_vz=1 \
+    rec_type_vx=1 \
+    rec_type_p=0 \
+    rec_int_vz=2 \
+    rec_int_vx=2 \
+    dtrcv=$dt \
+    rec_delay=0.1 \
+    verbose=1 \
+    tmod=4.4000 \
+    xrcv1=-3000,-3000,-3000,3000 xrcv2=3000,3000,-3000,3000 zrcv1=0,1200,0,0 zrcv2=0,1200,1200,1200 \
+    dxrcv=$dx,$dx,0,0 dzrcv=0,0,$dx,$dx \
+    xsrc=0 zsrc=800  \
+    ntaper=400 \
+    left=2 right=2 top=2 bottom=2
+
+
+##################################
+# back propagate from all sides
+# scale with -1 for outward pointing vector
+scale=-1.0
+suwind key=tracl min=$ix1a max=$ix1b < inj_rate_plane_dx${dx}_rvz.su | sugain scale=$scale > inj_rate_plane_dx${dx}vz.su
+suwind key=tracl min=$ix2a max=$ix2b < inj_rate_plane_dx${dx}_rvz.su  >> inj_rate_plane_dx${dx}vz.su
+
+suwind < inj_rate_plane_dx${dx}_rvx.su key=tracl min=$ix3a max=$ix3b | sugain scale=$scale > inj_rate_plane_dx${dx}vx.su
+suwind < inj_rate_plane_dx${dx}_rvx.su key=tracl min=$ix4a max=$ix4b >> inj_rate_plane_dx${dx}vx.su
+
+# at 4.3000 seconds (tmod - rec_delay) the focus is at t=0 
+fdelmodc \
+    file_cp=$file_cp ischeme=1 iorder=4 \
+    file_den=$file_ro \
+    file_src=inj_rate_plane_dx${dx}vz.su \
+    file_snap=snapinj_planevz.su \
+    grid_dir=1 \
+    src_type=1 \
+    src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_p=0 \
+    dtrcv=$dt \
+    rec_delay=0.0 \
+    verbose=3 \
+    tmod=5.004 \
+    tsnap1=3.000 tsnap2=5.00 dtsnap=0.01 \
+    xsnap1=-1000 xsnap2=1000 dxsnap=2.5 dzsnap=2.5 \
+    sna_type_vz=0 \
+    sna_type_p=1 \
+    ntaper=400 \
+    left=2 right=2 top=2 bottom=2
+
+#    tsnap1=4.200 tsnap2=4.50 dtsnap=0.004 \
+
+fdelmodc \
+    file_cp=$file_cp ischeme=1 iorder=4 \
+    file_den=$file_ro \
+    file_src=inj_rate_plane_dx${dx}vx.su \
+    file_snap=snapinj_planevx.su \
+    grid_dir=1 \
+    src_type=1 \
+    src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_p=0 \
+    dtrcv=$dt \
+    rec_delay=0.0 \
+    verbose=1 \
+    tmod=5.004 \
+    tsnap1=3.000 tsnap2=5.00 dtsnap=0.01 \
+    xsnap1=-1000 xsnap2=1000 dxsnap=2.5 dzsnap=2.5 \
+    sna_type_vz=0 \
+    sna_type_p=1 \
+    ntaper=400 \
+    left=2 right=2 top=2 bottom=2
+
+#    tsnap1=4.200 tsnap2=4.50 dtsnap=0.004 \
+
+suop2 snapinj_planevz_sp.su snapinj_planevx_sp.su op=sum w1=1 w2=1 > snapinj_planevzvxsum_sp.su
+
+##################################
+# back propagate from surface only
+scale=-1.0
+suwind key=tracl min=1 max=$ntr < inj_rate_plane_dx${dx}_rvz.su | sutaper tr1=100 tr2=100 ntr=$ntr | sugain scale=$scale > inj_rate_surf_dx${dx}_rvz.su
+
+# at 4.3000 seconds the focus is at t=0 
+fdelmodc \
+    file_cp=$file_cp ischeme=1 iorder=4 \
+    file_den=$file_ro \
+    file_src=inj_rate_surf_dx${dx}_rvz.su \
+    file_snap=snapinj_surf.su \
+    grid_dir=1 \
+    src_type=1 \
+    src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_p=0 \
+    dtrcv=$dt \
+    rec_delay=0.0 \
+    verbose=1 \
+    tmod=5.004 \
+    tsnap1=3.000 tsnap2=5.00 dtsnap=0.01 \
+    xsnap1=-1000 xsnap2=1000 dxsnap=2.5 dzsnap=2.5 \
+    sna_type_vz=0 \
+    sna_type_p=1 \
+    ntaper=400 \
+    left=2 right=2 top=2 bottom=2
+

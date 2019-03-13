@@ -1,0 +1,33 @@
+#!/bin/bash
+#
+# calls FigureCCsources.scr and compute cross-correlation used in Figure 10 of manual, 1600 s.
+
+
+./FigureCCsources.scr
+
+traclrange=`surange < src_nwav.su | grep tracl` 
+trace1=`echo $traclrange | cut -f2 -d" " `
+trace2=`echo $traclrange | cut -f3 -d" " `
+
+echo "tracerange = $trace1 $trace2"
+
+rm corr2d.bin
+for (( trace = $trace1; trace<=$trace2; trace+=1 )) do
+	echo $trace
+	suwind < src_nwav.su key=tracl min=$trace max=$trace  > trace.su 
+	fconv file_in1=src_nwav.su file_in2=trace.su file_out=cross.su mode=cor1 fmax=31 fmin=0
+	suwind < cross.su itmax=0 itmin=0 | sustrip >> corr2d.bin
+done
+
+suaddhead < corr2d.bin n1=100 | sugain pbal=1 dt=1 | suop op=abs | \
+	sugain scale=0.1005 dt=1 | \
+	supsimage  legend=1 hbox=3 wbox=3 \
+	titlesize=-1 labelsize=10 label1="source number" label2="source number" \
+	d1=1 f1=1 f1num=0 d1num=20 d2num=20 > cross2d.eps
+
+	supswigb<src_nwav.su hbox=3 wbox=8 \
+	titlesize=-1 labelsize=10 label1="time in seconds" label2="source number" \
+	d2num=20 > src_before_cross.eps
+
+#suaddhead < corr2d.bin n1=100 | sugain pbal=1 dt=1 | suop op=abs | \
+#    sugain scale=0.1005 dt=1 |sustrip > corr2d_scl.bin

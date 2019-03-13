@@ -1,0 +1,58 @@
+#!/bin/bash
+#PBS -N fdelmodc
+#PBS -k eo
+#PBS -j eo
+#
+# Models plane wave at depth to receivers at the surface, including snapshots
+ set -vx
+export PATH=../../utils:$PATH:
+
+makewave file_out=wavelet.su dt=0.001 nt=1024 fp=13 t0=0.1 w=g2 verbose=1
+
+makemod file_base=model.su \
+       cp0=1500 ro0=1000 cs0=600 sizex=1200 sizez=1200 \
+        dx=3 dz=3 orig=0,0
+
+export filecp=model_cp.su
+export filecs=model_cs.su
+export filero=model_ro.su
+
+export OMP_NUM_THREADS=1
+
+../fdelmodc \
+	file_cp=$filecp file_cs=$filecs file_den=$filero \
+	ischeme=3 \
+	src_type=1 src_orient=1 tmod=2.0  \
+	file_src=wavelet.su verbose=2 \
+	file_rcv=recS.su \
+	file_snap=snapS.su \
+	xrcv1=0 xrcv2=2100 dxrcv=15 \
+	zrcv1=400 zrcv2=400 \
+	rec_type_vx=1 rec_type_pp=1 rec_type_ss=1 rec_int_vx=1 \
+	dtrcv=0.004 \
+	xsrc=600 zsrc=600 \
+	tapfact=0.20 \
+	top=1 left=1 right=1 bottom=1 \
+	tsnap1=0.1 tsnap2=3.0 dtsnap=0.1 \
+	sna_type_ss=1 sna_type_p=1 sna_type_txz=1 sna_type_tzz=1
+
+exit;
+../fdelmodc \
+	file_cp=$filecp file_cs=$filecs file_den=$filero \
+	ischeme=3 \
+	file_src=wavelet.su verbose=4 \
+	file_rcv=recP.su \
+	file_snap=snapP.su \
+	xrcv1=0 xrcv2=2100 dxrcv=15 \
+	zrcv1=400 zrcv2=400 \
+	rec_type_vx=1 rec_type_pp=1 rec_type_ss=1 rec_int_vx=1 \
+	dtrcv=0.004 \
+	xsrc=1000 zsrc=1700 \
+	src_type=8 src_orient=1 tmod=2.0  \
+	top=4 left=4 right=4 bottom=4 \
+	tsnap1=0.1 tsnap2=3.0 dtsnap=0.1 \
+	sna_type_ss=1 sna_type_pp=1
+
+
+exit;
+

@@ -1,0 +1,66 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=2
+#PBS -N InterfModeling
+#PBS -V
+#
+# simulates 8000 short (2.5 s) sources, 3.5 hours
+
+export PATH=../../bin:$PATH
+
+makemod sizex=10000 sizez=5000 dx=5 dz=5 cp0=1500 ro0=1000 file_base=simple.su \
+   intt=def poly=0 x=0,10000 z=1300,1300 cp=2000 ro=1400 \
+   intt=def poly=2 x=0,2000,3000,5000,7000,8000,10000 \
+   z=2000,2000,2000,2500,2000,2000,2000 cp=4000 ro=2000 \
+   intt=def poly=0 x=0,10000 z=3000,3000 cp=3000 ro=1500 \
+   intt=def poly=0 x=0,10000 z=3500,3500 cp=5500 ro=2200
+
+suwind itmin=181 < simple_cp.su | sushw key=f1 a=0 > vel_cp.su
+suwind itmin=181 < simple_ro.su | sushw key=f1 a=0 > vel_ro.su
+
+xsrc1=100
+xsrc2=9900
+
+#volume
+tmod=120
+tsrc2=120
+fmax=30
+
+zsrc1=500
+zsrc2=4090
+tlength=5
+nsrc=8000
+
+file_shot=shotR_T${tmod}_S${nsrc}_Dt${tlength}_F${fmax}.su
+
+fdelmodc \
+    file_cp=vel_cp.su ischeme=1 \
+    file_den=vel_ro.su \
+    file_rcv=$file_shot \
+    rec_type_p=0 \
+    dtrcv=0.008 \
+    rec_ntsam=16384 \
+    dt=0.0005 \
+    verbose=2 \
+    tmod=$tmod \
+    dxrcv=50.0 \
+    plane_wave=0 \
+    amplitude=0 \
+    xsrc=5000 zsrc=2700 \
+    src_random=1 \
+    wav_random=1 \
+    fmax=$fmax \
+    xsrc1=$xsrc1 \
+    xsrc2=$xsrc2 \
+    zsrc1=$zsrc1 \
+    zsrc2=$zsrc2 \
+    tsrc1=0.0 \
+    tsrc2=$tsrc2 \
+    tlength=$tlength \
+    nsrc=$nsrc \
+    ntaper=45 \
+    left=4 right=4 top=1 bottom=4 
+
+	base=`echo $file_shot | awk 'BEGIN { FS = "." } ; { print $1 }'`
+	echo $base
+	SIrand.scr ${base}_rvz.su
+

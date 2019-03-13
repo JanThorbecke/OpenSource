@@ -1,8 +1,7 @@
 #include <genfft.h>
 #include <time.h>
-#include <kiss_fft.h>
 
-main () {
+int main () {
 
 	int j,i,n,sign, isign;
 	int N, Nmax=600, Nitcc; 
@@ -65,5 +64,6 @@ main () {
 		N += 1;
 
    	} 
+	return 0;
 }
 

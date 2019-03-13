@@ -1,0 +1,66 @@
+#!/bin/bash
+#PBS -N fdelmod
+#PBS -q verylong
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+#
+# illustrates source and receiver positions, used in Figure 10 of the manual
+
+export PATH=../../utils:$PATH:
+
+#OK:
+dt=0.0005
+dx=5
+ntaper=10
+
+makewave file_out=wavelet.su dt=$dt nt=1024 shift=1 fmax=10 verbose=1
+
+# build a model with a steep salt-like flank of the side
+./model_flank.scr
+
+export filecp=grad_salt.su
+export filero=salt_ro.su
+
+#model 50 shots for sources on a horizontal line left from the flank
+
+../fdelmodc \
+        file_cp=$filecp file_den=$filero \
+        ischeme=1 \
+        file_src=wavelet.su verbose=4 \
+        file_rcv=rec.su \
+        xrcv1=6000 xrcv2=6000 dxrcv=0 \
+        zrcv1=100 zrcv2=6000 dzrcv=100 \
+        rec_type_vz=0 rec_int_vx=1 \
+        dtrcv=0.004 \
+        xsrc=500 zsrc=100 nshot=50 dxshot=100 dzshot=0 \
+        src_type=1 tmod=0.001  \
+        ntaper=$ntaper \
+	    left=4 right=4 bottom=4 top=1 \
+        fmax=10
+
+sugain < SrcRecPositions.su scale=5000 > nep.su 
+
+susum nep.su  grad_salt.su > sum.su 
+
+supsimage < sum.su bclip=5000 wclip=0 \
+    wbox=4 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
+    label1="depth [m]" label2="lateral position [m]" blockinterp=1 \
+	> salt_mod_srcrec.eps
+
+exit;
+
+#alternative ways of plotting src and receiver positions
+supsimage < SrcRecPositions.su \
+	grgb=1.0,1.0,1.0 brgb=1.0,0.0,0.0 wrgb=0.0,1.0,0.0 \
+	ghls=1.0,1.0,0.0 bhls=1.0,1.0,0.0 whls=1.0,1.0,0.0 \
+    wbox=4 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
+        label1="time [s]" label2="lateral position [m]" blockinterp=1 \
+	> salt_mod_srcrec.eps
+
+supsimage < grad_salt.su \
+        wbox=4 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
+        label1="time [s]" label2="lateral position [m]" > salt.eps
+
+
+

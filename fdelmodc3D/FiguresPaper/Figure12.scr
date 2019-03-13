@@ -1,0 +1,46 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=2
+#PBS -N InterfModeling
+#PBS -q long
+#PBS -V
+#
+# calls fdelmodc_amplitude.scr, can not be reproduced; software in test phase
+
+echo " This Figure can not be reproduced completely" 
+echo " The progrom corrsmp used is still in test phase"
+echo " Mail j.w.thorbecke@tudelft.nl if you want to reproduce this Figure."
+exit;
+
+./fdelmodc_amplitude.scr
+
+#amplitude distribution of sources
+supsgraph wbox=3 hbox=4 style=seimic < src_ampl.su \
+    f1=-250 d1=5.05 linecolor=black labelsize=10 titlesize=10  \
+    label1=amplitude label2=occurence > amplitudeDistr.eps
+
+export OMP_NUM_THREADS=1
+~/src/CorrSMP_FD_Files/corrsmp \
+	file_base=long/shotAcousticA500_T3600_S1500_Dt500_F30_001_rvz.su \
+	nc=1 nstation=201 fullcorr=1 dt=0.008 \
+	nt=16384 verbose=1 ntc=4096 file_out=outA.su causal=1
+
+suwind key=fldr min=101 max=101 < outA.su_cc1.su > outA_Station101_Comp1.su
+
+
+suwind s=1 j=1 tmax=4 f1=0.0 < outA_Station101_Comp1.su | \
+    sushw key=f1,delrt,d2 a=0.0,0.0,50 | \
+	sufilter amps=0,0.5,1,1,0 f=0,2,3,50,60 | \
+    supsimage perc=99 f1=0 f2=-5000 hbox=4 wbox=3 \
+	label1='time (s)' label2='lateral position (m)' \
+    labelsize=10 f2num=-5000 d2num=2500 > longA_Corr_I.eps
+
+suwind s=1 j=1 tmax=4 f1=0.0 < outA_Station101_Comp1.su | \
+    sushw key=f1,delrt,d2 a=0.0,0.0,50 | \
+	sufilter amps=0,0.5,1,1,0 f=0,2,3,50,60 | \
+    sunormalize norm=rms | \
+    supsimage perc=99 f1=0 f2=-5000 hbox=4 wbox=3 \
+	label1='time (s)' label2='lateral position (m)' \
+    labelsize=10 f2num=-5000 d2num=2500 > longA_norm_Corr_I.eps
+
+
+

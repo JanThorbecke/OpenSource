@@ -1,0 +1,52 @@
+#!/bin/bash
+
+#first run this script to generate the output which contains the source signatures
+./fdelmodc_rand.scr
+
+#generate the pictures used in the manual
+supsgraph < G2.su hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='time' \
+	titlesize=-1 d1num=1 d1num=0.05 x1end=0.2 > G2_time.eps
+
+sufft < G2.su | suamp| supsgraph hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='frequency' x1end=100 \
+	titlesize=-1 x2end=40 d1num=10 > G2_ampl.eps
+
+supswigp < src_nwav.su \
+	labelsize=10 label1='time' label2='source number' x1end=6 \
+	d2=1 d2num=1 hbox=4 wbox=6 fill=0 \
+	titlesize=-1 > src_nwav.eps
+
+suwind < src_nwav.su key=tracl min=11 max=11 | \
+	supsgraph hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='time' \
+	titlesize=-1 d1num=1.0 > src11_wiggle.eps
+	
+suwind < src_nwav.su key=tracl min=11 max=11 | \
+	supsgraph hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='time' \
+	titlesize=-1 x1end=0.05 > src11_wiggle_zbeg.eps
+	
+suwind < src_nwav.su key=tracl min=11 max=11 | \
+	supsgraph hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='time' \
+	titlesize=-1 x1beg=3.65 x1end=3.70 > src11_wiggle_zend.eps
+	
+suwind < src_nwav.su key=tracl min=11 max=11 | \
+	sufft | suamp| supsgraph hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='frequency' \
+	titlesize=-1 x1end=100 d1num=10 > src11_ampl.eps
+
+fconv file_in1=src_nwav.su auto=1 shift=1 mode=cor1 | \
+	sugain qbal=1 | \
+	supswigp x1beg=-1 x1end=1 d2num=1 hbox=4 wbox=6 \
+	labelsize=10 label2='source number' label1='time (s)' \
+	titlesize=-1 fill=0 > src_nwav_autoCorr_Norm.eps
+
+#type of tapers 
+supsgraph < tapx.su hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='grid points' \
+	 d1=1 f1=1 f1num=1 x2beg=0.0 \
+	linecolor=blue,red,green,yellow,voilet,maroon,brown,sepia,limegreen,skyblue,blueviolet,orangered,goldenrod,orchid,wildstrawberry,royalpurple,pinegreen,bluegreen,magenta,redorange > tapers_0.1.eps
+
+exit;

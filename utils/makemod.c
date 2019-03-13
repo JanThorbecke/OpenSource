@@ -646,6 +646,7 @@ int main(int argc, char **argv)
 	float Wsmooth[5][5], C, iC, xx, xz, *dataS, smooth;
 	int ixi, izi, nxout, nzout;
 
+	C=0;
 	sigma = -1.0*log(sigma)/(dx*(powf(0.25*2.0,2.0)));
     for(ixi = -2; ixi < 3; ixi++) {
       for(izi = -2; izi < 3; izi++) {

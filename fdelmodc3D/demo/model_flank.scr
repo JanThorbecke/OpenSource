@@ -1,0 +1,22 @@
+#!/bin/bash
+#
+# builds a model which has a steep flank on the side, used in fdelmodc_srcrec.scr
+#
+
+sizex=8000 
+dx=5
+dz=5
+
+makemod sizex=$sizex sizez=8000 dx=$dx dz=$dz cp0=1500 ro0=1500 \
+	intt=def grad=6000 cp=3900,3900 ro=1500,1500 x=0,$sizex z=0,0\
+	file_base=flank.su
+
+makemod file_base=salt.su makemod sizex=8000 sizez=8000 dx=$dx dz=$dz cp0=0 ro0=1500 intt=def poly=1 cp=4500,4500 ro=1500 x=1000,1500,2000,5000 z=6500,7200,7500,7000 intt=def poly=1 cp=4500 ro=1500 x=750,1000,1250 z=8000,6500,8000 
+suflip flip=0 < salt_cp.su > saltT.su
+
+suop2 saltT.su flank_cp.su op=diff > nep.su
+suop op=posonly < nep.su > nep2.su
+suop2 nep2.su flank_cp.su op=sum > grad_salt.su
+rm nep.su nep2.su
+
+

@@ -1,0 +1,22 @@
+#!/bin/bash -x
+#PBS -N fdelmod
+#PBS -q verylong
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+export OMP_NUM_THREADS=8
+
+#for backprop.scr use fast model (with stair-case interfaces)
+#for backprop.scr use pml model (with 0.5 fine-grids)
+
+smooth=3
+
+fmute file_shot=iniFocusz800x0_rp.su file_out=p0plus.su above=-1 shift=-10 verbose=1 check=1 hw=4
+
+marchenko file_shot=shotsnew/refl_rp.su file_tinv=p0plus.su nshots=601 \
+	file_green=pgreen.su verbose=1 tap=0 ntap=10 niter=15 hw=4 shift=10 smooth=$smooth \
+	file_gplus=Gplus.su file_gmin=Gmin.su  file_f1plus=f1plus.su file_f1min=f1min.su \
+	file_f2=f2.su fmax=90 file_f1plus=f1plus.su 
+

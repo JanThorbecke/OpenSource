@@ -2,6 +2,7 @@
 #ifdef SGI
 #include "sgintab.h"
 int optnfft(int n);
+long loptnfft(long n);
 #endif
 
 #if defined(CRAY_MPP_64)
@@ -78,6 +79,45 @@ int optnfft(int n)
 		i=13;
 		nmax=NTAB+3;
 		while (nmax < n) { nmax=(int)pow(2.0,(double)++i); }
+		return nmax;
+	}
+
+	nmax = NTAB;
+	for (i=0; i<NTAB-1 && ntab[i].n<n; ++i);
+	for (j=i+1; j<NTAB-1 && ntab[j].n<=n+nmax; ++j)
+	if (ntab[j].c<ntab[i].c) i = j;
+	return ntab[i].n;
+}
+#endif
+
+long loptncr(long n)
+{
+
+#ifdef SGI
+	return loptnfft(n);
+#else
+	long n2, n3;
+
+	n2 = pow(2.0, 1.0*(long)(log((float)n)/log(2.0)+0.9999));
+	if (n2 != n) {
+		n3 = npfar(n);
+		if((n3-n) < (n2-n)) return npfar(n);
+		else return n2;
+	}
+	else return n;
+#endif
+}
+
+	
+#ifdef SGI
+long loptnfft(long n)
+{
+	long i,j, nmax;
+
+	if (n > NTAB+3) {
+		i=13;
+		nmax=NTAB+3;
+		while (nmax < n) { nmax=(long)pow(2.0,(double)++i); }
 		return nmax;
 	}
 

@@ -1,0 +1,73 @@
+#!/bin/bash
+#
+
+export PATH=:$HOME/src/OpenSource/bin:$HOME/bin:$PATH:
+
+cd /vardim/home/thorbcke/data/Kees/Marchenko/SolidEarth/noFault
+#make model a bit smaller
+suwind key=gx min=-2500000 max=2500000 < nofault_cp.su | sushw key=f2 a=-2500 > nofaultS_cp.su
+suwind key=gx min=-2500000 max=2500000 < nofault_ro.su | sushw key=f2 a=-2500 > nofaultS_ro.su
+
+dt=0.0002
+makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3 scale=0
+
+mkdir -p shotsNoise
+mkdir -p jobs
+
+zsrc=2100
+dxshot=10
+ishot=0
+nshots=901
+
+while (( ishot < nshots ))
+do
+
+		(( xsrc = -4500 + ${ishot}*${dxshot} ))
+
+		echo ishot=$ishot xsrc=$xsrc zsrc=$zsrc
+
+  cat << EOF > jobs/job_$ishot.job 
+#!/bin/bash
+#
+#SBATCH -J nofault_${xsrc}
+#SBATCH --cpus-per-task=8
+#SBATCH --ntasks=1
+#SBATCH --time=1:50:00
+#SBATCH --hint=nomultithread
+
+cd \$SLURM_SUBMIT_DIR
+
+export PATH=:\$HOME/src/OpenSource/bin:\$HOME/bin:\$PATH:
+
+export OMP_NUM_THREADS=8
+file_rcv=shotsNoise/shots_${xsrc}.su
+
+fdelmodc \
+   		file_cp=nofault_cp.su ischeme=1 iorder=4 \
+   		file_den=nofault_ro.su \
+   		file_src=wavefw.su \
+   		file_rcv=\$file_rcv \
+		src_type=1 \
+		src_orient=1 \
+		src_injectionrate=1 \
+   		rec_type_vz=0 \
+   		rec_type_p=1 \
+   		rec_int_vz=2 \
+		rec_delay=0.3 \
+   		dtrcv=0.004 \
+   		verbose=2 \
+   		tmod=4.392 \
+   		dxrcv=10.0 \
+   		xrcv1=-4500 xrcv2=4500 \
+   		zrcv1=100 zrcv2=100 \
+   		xsrc=$xsrc zsrc=$zsrc \
+   		ntaper=250 \
+   		left=2 right=2 top=1 bottom=2
+EOF
+
+sbatch jobs/job_$ishot.job
+
+   		(( ishot = $ishot + 1))
+
+done
+

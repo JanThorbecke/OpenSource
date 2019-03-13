@@ -1,0 +1,92 @@
+#!/bin/bash
+#PBS -l nodes=1
+#PBS -N InterfModeling
+#PBS -q fourweeks
+#PBS -V
+#
+
+export PATH=../../bin:$PATH
+which fdelmodc
+
+makemod sizex=10000 sizez=4100 dx=10 dz=10 cp0=1500 ro0=1000 file_base=simple.su \
+	intt=def poly=0 x=0,10000 z=400,400 cp=2000 ro=1400 \
+	intt=def poly=2 x=0,2000,3000,5000,7000,8000,10000 \
+		z=1100,1100,1100,1600,1100,1100,1100 cp=4000 ro=2000 \
+	intt=def poly=0 x=0,10000 z=2100,2100 cp=3000 ro=1500 \
+	intt=def poly=0 x=0,10000 z=2600,2600 cp=5500 ro=2200
+
+makewave w=g2 fmax=45 t0=0.10 dt=0.001 nt=4096 db=-40 file_out=G2.su verbose=1
+
+xsrc1=100
+xsrc2=9900
+zsrc1=2100
+zsrc2=4000
+ 
+file_shot=shotRandomPos${xsrc}_${zsrc1}.su
+
+fdelmodc \
+	file_cp=simple_cp.su ischeme=1 \
+	file_den=simple_ro.su \
+	file_rcv=$file_shot \
+	dtrcv=0.008 \
+	dt=0.0010 \
+	verbose=4 \
+	tmod=10.000 \
+	dxrcv=20.0 \
+	zrcv1=10 \
+	zrcv2=10 \
+	xrcv1=0 \
+	xrcv2=10000 \
+	src_random=1 \
+	wav_random=1 \
+	fmax=30 \
+	xsrc1=$xsrc1 \
+	xsrc2=$xsrc2 \
+	zsrc1=$zsrc1 \
+	zsrc2=$zsrc2 \
+	tsrc1=0.0 \
+	tsrc2=5.0 \
+	nsrc=20 \
+	dipsrc=0 \
+	ntaper=45 \
+	tsnap1=0.1 tsnap2=6.0 dtsnap=0.2 \
+    left=4 right=4 top=1 bottom=4 \
+    nxmax=2500 nzmax=1400 ntmax=10000
+
+psgraph < srcTimeLengthN\=10001.bin n1=10001 \
+    labelsize=12 d1=0.001 style=normal linecolor=blue \
+    label1="start time (s)" label2="source duration (s)" \
+    d1num=1 d2num=1 wbox=8 hbox=4 x1end=5 > srcTimeLength.eps
+
+supswigp < src_nwav.su \
+	labelsize=10 label1='time (s)' label2='source number' x1end=6 \
+	d2=1 d2num=1 hbox=4 wbox=6 fill=0 \
+	titlesize=-1 > src_nwav.eps
+
+suwind < src_nwav.su key=tracl min=11 max=11 | \
+	supsgraph hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='time (s)' \
+	titlesize=-1 d1num=1.0 > src11_wiggle.eps
+	
+suwind < src_nwav.su key=tracl min=11 max=11 | \
+	supsgraph hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='time (s)' \
+	titlesize=-1 x1end=0.05 > src11_wiggle_zbeg.eps
+	
+suwind < src_nwav.su key=tracl min=11 max=11 | \
+	supsgraph hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='time (s)' \
+	titlesize=-1 x1beg=3.60 x1end=3.65 > src11_wiggle_zend.eps
+
+suwind < src_nwav.su key=tracl min=11 max=11 | \
+	sufft | suamp| supsgraph hbox=2 wbox=4 style=normal \
+	labelsize=10 label2='amplitude' label1='frequency (Hz)' \
+	titlesize=-1 x1end=100 d1num=10 > src11_ampl.eps
+
+fconv file_in1=src_nwav.su auto=1 shift=1 mode=cor1 | \
+	sugain qbal=1 | \
+	supswigp x1beg=-1 x1end=1 d2num=1 hbox=4 wbox=6 \
+	labelsize=10 label2='source number' label1='time (s)' \
+	titlesize=-1 fill=0 > src_nwav_autoCorr_Norm.eps
+
+

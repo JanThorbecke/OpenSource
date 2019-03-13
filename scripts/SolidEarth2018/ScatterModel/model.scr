@@ -1,0 +1,101 @@
+#!/bin/bash
+#
+#SBATCH -J model
+#SBATCH --cpus-per-task=8
+#SBATCH --ntasks=1
+#SBATCH --time=1:00:00
+
+export PATH=:$HOME/src/OpenSource/utils:$HOME/bin:$PATH:
+
+cd /vardim/home/thorbcke/data/Kees/Marchenko/SolidEarth/ScatterModel
+
+dx=2.5
+dt=0.0005
+
+#shots3=var=3000,5
+#shots=var=6000,5
+
+#high contrast model
+makemod sizex=5000 sizez=1200 dx=$dx dz=$dx cp0=1900 ro0=1200 \
+        orig=-2500,0 file_base=scatter.su \
+        intt=randdf x=-2500 z=200 cp=1900 ro=4700 var=4001,11 \
+        intt=def x=-2500,0,2500 z=700,700,700 cp=1900 ro=1200 \
+        verbose=4
+
+#low contrast model
+#makemod sizex=5000 sizez=1200 dx=$dx dz=$dx cp0=1900 ro0=1200 \
+#        orig=-2500,0 file_base=scatter.su \
+#        intt=randdf x=-2500 z=200 cp=1900 ro=2400 var=4001,11 \
+#        intt=def x=-2500,0,2500 z=700,700,700 cp=1900 ro=1200 \
+#        verbose=4
+
+makemod sizex=5000 sizez=1200 dx=$dx dz=$dx cp0=1900 ro0=1200 \
+        orig=-2500,0 file_base=hom verbose=2 
+
+makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3 scale=0
+
+supsimage hbox=4 wbox=6 labelsize=10 < scatter_ro.su\
+        x1beg=0 x1end=1000.0 legend=0 threecolor=1  \
+        d1s=1.0 d2s=1.0 \
+        wrgb=1.0,.5,0 grgb=0,.7,1.0 brgb=0,1.0,0 \
+        bps=24  bclip=2400 wclip=1500 blockinterp=1 legend=1 \
+        n1tic=5 x2beg=-2500 f2num=-2000 d2num=1000 x2end=2500 > modelscatter_ro.eps
+
+exit;
+
+export OMP_NUM_THREADS=8
+
+makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=1
+
+~/src/OpenSource/bin/fdelmodc \
+    file_cp=scatter_cp.su ischeme=1 iorder=4 \
+    file_den=scatter_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_fd.su \
+    src_type=1 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.0010 \
+    rec_delay=0.1 \
+    verbose=2 \
+    tmod=4.195 \
+    dxrcv=2.5 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=0 \
+    ntaper=200 \
+    left=2 right=2 top=2 bottom=2 
+
+
+#    tsnap1=3.1 tsnap2=2.5 dtsnap=0.1 \
+
+makemod sizex=5000 sizez=1000 dx=$dx dz=$dx cp0=1900  ro0=1200 \
+        orig=-2500,0 file_base=hom.su 
+
+~/src/OpenSource/bin/fdelmodc \
+    file_cp=hom_cp.su ischeme=1 iorder=4 \
+    file_den=hom_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_hom_fd.su \
+    src_type=1 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.0010 \
+    rec_delay=0.1 \
+    verbose=2 \
+    tmod=4.195 \
+    dxrcv=10.0 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=0 \
+    ntaper=200 \
+    left=2 right=2 top=2 bottom=2 
+
+sudiff shot_fd_rp.su shot_hom_fd_rp.su > shot_rp.su
+

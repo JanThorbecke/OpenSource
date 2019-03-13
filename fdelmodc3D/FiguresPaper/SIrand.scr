@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# the middle trace is correlated with all the output traces to compute the SI result
+
+export PATH=../../bin:$PATH
+
+echo "SIrand.scr"
+
+if [[ $2 != "" ]]; then
+    dxrcv=$2
+else
+	dxrcv=50
+fi
+
+shot=$1
+base=`echo $shot | awk 'BEGIN { FS = ".su" } ; { print $1 }'`
+echo $base
+
+suwind s=1 j=1 tmax=4 f1=0.0 < $shot | \
+    sushw key=f1,delrt,d2 a=0.0,0.0,$dxrcv | \
+    supsimage perc=99 f1=0 f2=-5000 hbox=4 wbox=3 \
+	label1='time (s)' label2='lateral position (m)' \
+    labelsize=10 f2num=-5000 d2num=2500 > ${base}.eps
+
+ntraces=`surange < $shot | grep traces| awk '{print $1 }'`
+echo $ntraces
+middle=$(echo "scale=0; ($ntraces+1)/2"| bc -l)
+echo $middle 
+suwind key=tracl min=$middle max=$middle < $shot > middleTrace.su
+
+fconv verbose=1 file_in1=$shot file_in2=middleTrace.su mode=cor1 shift=1 > corr.su 
+
+#fconv ntfft=16384 file_in1=$shot file_in2=middleTrace.su mode=cor1 shift=1  | \
+#	sufilter amps=0,0.5,1,1,0 f=0,2,3,50,60 > corr.su 
+
+ns=`surange < corr.su | grep ns | awk '{print $2 }'`
+odd=$(( ns % 2))
+if [[ $odd == 1 ]]; then
+  ns2=$(echo "scale=0; ($ns-1)/2"| bc -l)
+  ns=$(echo "scale=0; $ns-1"| bc -l)
+else
+  ns2=$(echo "scale=0; ($ns)/2"| bc -l)
+fi
+
+echo $ns $odd
+echo $ns2
+
+suwind < corr.su itmin=0 itmax=$ns2 | suflip flip=3 > noncausal.su
+suwind < corr.su itmin=$ns2 itmax=$ns  > causal.su
+
+#susum causal.su noncausal.su | \
+#	suwind s=1 j=5 tmax=4 f1=0.0 | \
+#    sushw key=f1,delrt,d2 a=0.0,0.0,250 | \
+#    supswigp perc=99 f1=0 f2=-5000 hbox=8 wbox=6 \
+#    labelsize=10 f2num=-5000 d2num=1000 > ${base}.eps
+#
+#suwind s=1 j=1 tmax=4 f1=0.0 < causal.su | \
+#    sushw key=f1,delrt,d2 a=0.0,0.0,50 | \
+#    supsimage perc=99 f1=0 f2=-5000 hbox=4 wbox=3 \
+#    labelsize=10 f2num=-5000 d2num=2500 > ${base}_Causal.eps
+#
+#suwind s=1 j=1 tmax=4 f1=0.0 < causal.su | \
+#    sushw key=f1,delrt,d2 a=0.0,0.0,50 | \
+#    supsimage perc=99 f1=0 f2=-5000 hbox=4 wbox=3 \
+#    labelsize=10 f2num=-5000 d2num=2500 > ${base}_NonCausal.eps
+
+susum causal.su noncausal.su | \
+	suwind s=1 j=1 tmax=4 f1=0.0 | \
+    sushw key=f1,delrt,d2 a=0.0,0.0,$dxrcv | \
+    supsimage perc=99 f1=0 f2=-5000 hbox=4 wbox=3 \
+	label1='time (s)' label2='lateral position (m)' \
+    labelsize=10 f2num=-5000 d2num=2500 > ${base}_add.eps
+
+f1=`surange < corr.su | grep f1 | awk '{print $2 }'`
+echo $f1
+
+suwind s=1 j=1 tmin=-1.0 tmax=1 f1=$f1 < corr.su | \
+    sushw key=f1,delrt,d2 a=-1.0,0.0,$dxrcv | \
+    supsimage f1=-1.0 f2=-5000 hbox=3 wbox=3 \
+	label1='time (s)' label2='lateral position (m)' \
+    labelsize=10 f2num=-5000 d2num=2500 > ${base}_corr.eps
+
