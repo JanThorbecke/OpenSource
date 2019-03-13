@@ -1,0 +1,42 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=2
+#PBS -N InterfModeling
+#PBS -V
+#
+
+cp=2000
+rho=1000
+dx=2.5
+dt=0.0005
+
+export PATH=../../bin:$PATH
+
+makemod sizex=2000 sizez=2000 dx=$dx dz=$dx cp0=$cp ro0=$rho orig=-1000,0 file_base=simple.su
+makewave fp=15 dt=$dt file_out=wave.su nt=4096 t0=0.1
+
+green c=$cp rho=$rho file_src=wave.su zsrc1=500 xrcv=-1000,1000 dxrcv=$dx nt=4096 dip=0 > shot_green_rp.su  
+basop  choice=5 file_in=shot_green_rp.su file_out=shot_green_cj.su
+
+######### MONOPOLE ACOUSTIC #######
+
+../fdelmodc \
+    file_cp=simple_cp.su ischeme=1 \
+    file_den=simple_ro.su \
+    file_src=shot_green_cj.su \
+    file_rcv=shot_fd.su \
+	grid_dir=0 \
+    src_type=1 \
+    rec_type_p=1 \
+    rec_type_vz=0 \
+    rec_int_vz=2 \
+    dtrcv=0.004 \
+    verbose=2 \
+    tmod=4.000 \
+    dxrcv=5.0 \
+    xrcv1=-100 xrcv2=1000 \
+    zrcv1=500 zrcv2=500 \
+    ntaper=100 \
+    sna_type_vz=0 \
+    file_snap=back0.su tsnap1=0 dtsnap=0.05 tsnap2=4.0 dxsnap=5 dzsnap=5 zsnap1=0 zsnap2=2000 xsnap1=-1000 xsnap2=1000 \
+	left=4 right=4 bottom=4 top=4
+

@@ -1,0 +1,92 @@
+#!/bin/bash
+#
+#SBATCH -J ClassicTimeReverse
+#SBATCH --cpus-per-task=8
+#SBATCH --ntasks=1
+#SBATCH --time=1:00:00
+
+export PATH=:$HOME/src/OpenSource/bin:$HOME/bin:$PATH:
+which makewave
+which makemod
+which fdelmodc
+
+cd /vardim/home/thorbcke/data/Kees/Marchenko/SolidEarth/ScatterModel
+
+#makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
+#makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3
+
+dx=2.5
+dt=0.0005
+depth=700
+
+ix1a=1
+ix1b=$(echo "scale=0; ${ix1a}+6000/${dx}" | bc -l)
+base=$(echo "scale=0; ${depth}/${dx}" | bc -l)
+
+makewave fp=25 dt=$dt file_out=wave.su nt=1024 t0=0.1 scale=1
+
+file_mod=scat
+
+export OMP_NUM_THREADS=8
+
+app=2250
+fileshom=shom_${app}.su
+suwind < shom_rp.su key=gx min=-${app}000 max=${app}000 > $fileshom
+
+fdelmodc \
+    file_cp=hom_cp.su ischeme=1 iorder=4 \
+    file_den=scatter_ro.su \
+    file_src=$fileshom \
+    grid_dir=1 \
+    src_type=1 \
+    src_injectionrate=1 \
+	src_orient=1 \
+	rec_delay=0.0 \
+    verbose=2 \
+    tmod=4.51 \
+	file_snap=${file_mod}_BackProp.su \
+	tsnap1=3.4950 dtsnap=0.05 tsnap2=4.5005 sna_type_vz=0 \
+	dxsnap=$dx dzsnap=$dx zsnap1=0 zsnap2=1200 xsnap1=-2250 xsnap2=2250 \
+    npml=250 \
+    left=2 right=2 top=2 bottom=2
+
+#	tsnap1=4.0905 dtsnap=0.0005 tsnap2=4.1005 sna_type_vz=0 \
+#	dxsnap=$dx dzsnap=$dx zsnap1=0 zsnap2=1000 xsnap1=-500 xsnap2=500 \
+
+
+#    curve=curve1,curve2,curve3 npair=25,25,25 curvecolor=black,black,black curvedash=3,3,3 \
+
+for file in ${file_mod}_BackProp 
+do
+	sumax < ${file}_sp.su mode=abs outpar=nep
+	clip=`cat nep | awk '{print $1/10}'`
+	echo $clip
+
+	for fldr in 10 13 16
+	do
+		times=$(echo "scale=2; 0.05*(13-${fldr})" | bc -l)
+		atime=`printf "%4.2f" $times`
+		suwind key=fldr min=$fldr max=$fldr < ${file}_sp.su | \
+    		supsimage hbox=4 wbox=4.7 labelsize=10 \
+    		x1beg=0 x1end=1200 clip=$clip \
+    		n1tic=4 x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > ${file}_$atime.eps
+	done
+	
+	suwind itmin=$base itmax=$base key=fldr min=13 max=13 < ${file}_sp.su | sumax mode=abs outpar=nep
+	scl=`cat nep | awk '{print 1.0/$1}'`
+	echo scale for trace = $scl 
+	suwind itmin=$base itmax=$base key=fldr min=13 max=13 < ${file}_sp.su | sugain scale=$scl | sustrip > trace.bin
+    suaddhead < trace.bin n1=1801 dt=$dx | supsgraph hbox=2 wbox=6 labelsize=10 \
+    f1=-2250 d1=$dx x1beg=-500 x1end=500 f1num=-500 d1num=500 style=normal > ${file}_z${depth}_t0.eps
+
+	(( imin = base - 50 ))
+	(( imax = base + 50 ))
+	echo $base $imin $imax
+	suwind key=fldr min=13 max=13 < ${file}_sp.su | \
+	suwind itmin=$imin itmax=$imax key=gx min=-125000 max=125000 | \
+	sustrip > ${file}_t0.bin
+
+	python3 readbin.py ${file}_t0.bin
+done
+
+rm nep trace.bin

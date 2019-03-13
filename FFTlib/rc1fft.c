@@ -1,5 +1,9 @@
 #include "genfft.h"
 #include <string.h>
+#ifdef MKL
+#include "mkl_dfti.h"
+void dfti_status_print(MKL_LONG status);
+#endif
 
 /**
 *   NAME:     rc1fft
@@ -52,6 +56,11 @@ void rc1fft(REAL *rdata, complex *cdata, int n, int sign)
 	static int isys;
 	static REAL *work, *table, scale=1.0;
 	REAL scl, *data;
+#elif defined(MKL)
+	static DFTI_DESCRIPTOR_HANDLE handle=0;
+	static int nprev=0;
+    MKL_LONG Status;
+	int i;
 #endif
 
 #if defined(HAVE_LIBSCS)
@@ -92,12 +101,67 @@ void rc1fft(REAL *rdata, complex *cdata, int n, int sign)
 	}
 	cdata[n/2].i=0.0;
 	free(data);
+#elif defined(MKL)
+	if (n != nprev) {
+		DftiFreeDescriptor(&handle);
+
+		Status = DftiCreateDescriptor(&handle, DFTI_SINGLE, DFTI_REAL, 1, (MKL_LONG)n);
+    	if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
+        	dfti_status_print(Status);
+        	printf(" DftiCreateDescriptor FAIL\n");
+    	}
+		Status = DftiSetValue(handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+		if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
+			dfti_status_print(Status);
+			printf(" DftiSetValue FAIL\n");
+		}
+/*
+		Status = DftiSetValue(handle, DFTI_FORWARD_DOMAIN, DFTI_REAL);
+		if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
+			dfti_status_print(Status);
+			printf(" DftiSetValue FAIL\n");
+		}
+*/
+
+		Status = DftiSetValue(handle, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
+		if (! DftiErrorClass(Status, DFTI_NO_ERROR)) {
+			dfti_status_print(Status);
+			printf(" DftiSetValue FAIL\n");
+		}
+		Status = DftiCommitDescriptor(handle);
+		if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
+			dfti_status_print(Status);
+			printf(" DftiCommitDescriptor FAIL\n");
+		}
+		nprev = n;
+	}
+	Status = DftiComputeForward(handle, rdata, (MKL_Complex8 *)cdata);
+	if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
+		dfti_status_print(Status);
+		printf(" DftiComputeForward FAIL\n");
+	}
+	for (i=1; i<((n-1)/2)+1; i++) {
+		cdata[i].i *= -sign;
+	}
+
 #else
 	rc1_fft(rdata, cdata, n, sign);
 #endif
 
 	return;
 }
+
+#ifdef MKL
+void dfti_status_print(MKL_LONG status)
+{
+    MKL_LONG class_error;
+    char*   error_message;
+
+    error_message = DftiErrorMessage(status);
+     printf("error_message = %s \n", error_message);
+    return;
+}
+#endif
 
 
 /****************** NO COMPLEX DEFINED ******************/

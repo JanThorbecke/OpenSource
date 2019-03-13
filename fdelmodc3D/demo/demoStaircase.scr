@@ -1,0 +1,85 @@
+#!/bin/bash
+
+#export PATH=$HOME/bin:$HOME/src/OpenSource/utils:$PATH:
+
+cp=2000
+rho=2500
+dx=2.5
+dt=0.0005
+
+#dx=5
+#dt=0.0005
+
+makemod sizex=5000 sizez=2500 dx=$dx dz=$dx cp0=$cp ro0=$rho \
+	orig=-2500,0 file_base=tilt.su \
+	intt=def x=-2500,0,2500 z=2000,1200,400 cp=2500 ro=5500 
+
+makemod sizex=5000 sizez=2500 dx=$dx dz=$dx cp0=$cp ro0=$rho \
+	orig=-2500,0 file_base=hom.su
+
+makewave w=g1 fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
+
+export OMP_NUM_THREADS=2
+
+zsrc=1100
+zsrc=0
+
+../fdelmodc \
+    file_cp=tilt_cp.su ischeme=1 iorder=4 \
+    file_den=tilt_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_fd.su \
+    src_type=7 \
+	src_orient=1 \
+	src_injectionrate=0 \
+    rec_type_vz=1 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.004 \
+	rec_delay=0.1 \
+    verbose=2 \
+    tmod=2.01 \
+    dxrcv=10.0 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=$zsrc \
+	file_snap=snapF_$zsrc \
+	tsnap1=0.1 tsnap2=2.0 dtsnap=0.05 dxsnap=5 dzsnap=5 \
+    ntaper=101 \
+	snapwithbnd=1 \
+    left=2 right=2 top=2 bottom=2
+
+#suxmovie < snapF_${zsrc}_svz.su loop=1 clip=1e-13
+sugain scale=-1 < snapF_0_svz.su | sustrip > snapF_0_dx${dx}_svz.bin
+
+exit;
+../fdelmodc \
+    file_cp=hom_cp.su ischeme=1 iorder=4 \
+    file_den=hom_ro.su \
+    file_src=wave.su \
+    file_rcv=shoth_fd.su \
+    src_type=7 \
+    src_orient=1 \
+    src_injectionrate=0 \
+    rec_type_vz=1 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.004 \
+    rec_delay=0.1 \
+    verbose=2 \
+    tmod=2.01 \
+    dxrcv=10.0 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=$zsrc \
+    file_snap=snapH_$zsrc \
+    tsnap1=0.1 tsnap2=2.0 dtsnap=0.05 dxsnap=5 dzsnap=5 \
+    ntaper=101 \
+    snapwithbnd=1 \
+    left=2 right=2 top=2 bottom=2
+
+sudiff snapF_${zsrc}_svz.su snapH_${zsrc}_svz.su > snap_svz.su
+
+sugain scale=-1 < snap_svz.su | sustrip > snap_svz.bin
+
+suxmovie < snap_svz.su loop=1 clip=1e-13

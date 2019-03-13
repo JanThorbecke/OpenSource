@@ -5,7 +5,7 @@ void crdft(complex *cdata, REAL *rdata, int n, int sign);
 void rcdft(REAL *rdata, complex *cdata, int n, int sign);
 
 
-main () {
+int main () {
 
 	int j,i,n,k,sign, isign;
 	int N, Nmax=600, Nitcc; 
@@ -94,5 +94,6 @@ main () {
 		N += 1;
 
    	} 
+	return 0;
 }
 

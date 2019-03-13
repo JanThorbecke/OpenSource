@@ -1,0 +1,88 @@
+#!/bin/bash
+
+cp=2000
+rho=1000
+dx=5
+dt=0.0010
+
+makemod sizex=500 sizez=600 dx=$dx dz=$dx cp0=$cp ro0=$rho \
+	orig=-250,0 file_base=freesurf.su \
+	intt=def x=-250,250 z=200,200 poly=0 cp=2300 ro=2000 \
+    verbose=1 
+
+makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1 
+
+../fdelmodc \
+    file_cp=freesurf_cp.su ischeme=1 \
+    file_den=freesurf_ro.su \
+    file_src=wave.su \
+    file_rcv=shotP_x0z0.su \
+    src_type=1 \
+    verbose=2 \
+	src_injectionrate=1 \
+    rec_int_vz=0 \
+    dtrcv=$dt \
+	rec_delay=0.1 \
+    tmod=1.10 \
+    dxrcv=$dx \
+    xrcv1=-250 xrcv2=250 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=0 \
+    npml=51 \
+    left=2 right=2 top=1 bottom=2
+
+fdacmod file_vel=freesurf_cp.su file_den=freesurf_ro.su \
+	file_src=wave.su file_rcv=fdac_shotP_x0z0.su tmod=1.10 tapleft=1 tapright=1 tapbottom=1 \
+	xsrc=0 zsrc=0
+
+exit
+makemod sizex=500 sizez=600 dx=$dx dz=$dx cp0=$cp ro0=$rho \
+	orig=-250,-100 file_base=surf.su \
+	intt=def x=-250,250 z=200,200 poly=0 cp=2300 ro=2000 \
+    verbose=1 
+
+../fdelmodc \
+    file_cp=surf_cp.su ischeme=1 \
+    file_den=surf_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_x0zdx.su \
+    src_type=1 \
+    verbose=2 \
+	src_injectionrate=1 \
+    rec_int_vz=0 \
+    dtrcv=$dt \
+	rec_delay=0.1 \
+    tmod=1.10 \
+    dxrcv=$dx \
+    xrcv1=-250 xrcv2=250 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=$dx \
+    npml=51 \
+    left=2 right=2 top=2 bottom=2
+
+../fdelmodc \
+    file_cp=surf_cp.su ischeme=1 \
+    file_den=surf_ro.su \
+    file_src=wave.su \
+    file_rcv=shot_x0z-dx.su \
+    src_type=1 \
+    verbose=2 \
+	src_injectionrate=1 \
+    rec_int_vz=0 \
+    dtrcv=$dt \
+	rec_delay=0.1 \
+    tmod=1.10 \
+    dxrcv=$dx \
+    xrcv1=-250 xrcv2=250 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=-$dx \
+    npml=51 \
+    left=2 right=2 top=2 bottom=2
+
+suop2 shot_x0zdx_rvz.su shot_x0z-dx_rvz.su op=diff > shot_x0diff_rvz.su
+
+suop2 shot_x0diff_rvz.su shotF_x0zdx_rvz.su op=diff w1=1 w2=2 > shotF_x0diff_rvz.su
+
+(suwind key=gx min=0 max=0 < shot_x0zdx_rvz.su | sugain scale=2; suwind key=gx min=0 max=0 < shotF_x0zdx_rvz.su)  | suxgraph title "with and without Free-surface "
+
+(suwind key=gx min=0 max=0 < shot_x0diff_rvz.su | sugain scale=2 ; suwind key=gx min=0 max=0 < shotF_x0zdx_rvz.su)  | suxgraph 
