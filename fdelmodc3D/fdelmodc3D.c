@@ -639,29 +639,33 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
                 /* Note that time step it=0 (t=0 for t**-fields t=-1/2 dt for v*-field) is not recorded */
 				isam        = (it-rec.delay-itwritten)/rec.skipdt+1;
 				/* store time at receiver positions */
-				getRecTimes(mod, rec, bnd, it, isam, vx, vz, tzz, txx, txz, 
-					l2m, rox, roz, 
-					rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
+				getRecTimes3D(mod, rec, bnd, it, isam, vx, vy, vz,
+					tzz, tyy, txx, txz, txy, tyz,
+					l2m, rox, roy, roz,
+					rec_vx, rec_vy, rec_vz,
+					rec_txx, rec_tyy, rec_tzz, rec_txz, rec_txy, rec_tyz,
 					rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose);
 			
 				/* at the end of modeling a shot, write receiver array to output file(s) */
 				if (writeToFile && (it+rec.skipdt <= it1-1) ) {
 					fileno = ( ((it-rec.delay)/rec.skipdt)+1)/rec.nt;
-					writeRec(rec, mod, bnd, wav, ixsrc, izsrc, isam+1, ishot, fileno,
-						rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
-						rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose);
+					writeRec3D(rec, mod, bnd, wav, ixsrc, iysrc, izsrc, isam+1, ishot, fileno, 
+             			rec_vx, rec_vy, rec_vz, rec_txx, rec_tyy, rec_tzz, rec_txz, rec_tyz, rec_txy,
+             			rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose);
 				}
 			}
 
 			/* write snapshots to output file(s) */
 			if (sna.nsnap) {
-				writeSnapTimes(mod, sna, bnd, wav, ixsrc, izsrc, it, vx, vz, tzz, txx, txz, verbose);
+				writeSnapTimes3D(mod, sna, bnd, wav, ixsrc, iysrc, izsrc, it,
+								vx, vy, vz, tzz, tyy, txx, txz, tyz, txy, verbose);
+
 			}
 
 			/* calculate beams */
 			if(sna.beam) {
-				getBeamTimes(mod, sna, vx, vz, tzz, txx,  txz, 
-					beam_vx, beam_vz, beam_txx, beam_tzz, beam_txz, 
+				getBeamTimes3D(mod, sna, vx, vy, vz, tzz, tyy, txx, txz, tyz, txy,
+				 	beam_vx, beam_vy, beam_vz, beam_txx, beam_tyy, beam_tzz, beam_txz, beam_tyz, beam_txy,
 					beam_p, beam_pp, beam_ss, verbose);
 			}
 }
@@ -686,27 +690,29 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
 		if (fileno) fileno++;
 		
 		if (rec.scale==1) { /* scale receiver with distance src-rcv */
-			float xsrc, zsrc, Rrec, rdx, rdz;
+			float xsrc, ysrc, zsrc, Rrec, rdx, rdy, rdz;
 			long irec;
 			xsrc=mod.x0+mod.dx*ixsrc;
+			ysrc=mod.y0+mod.dy*iysrc;
 			zsrc=mod.z0+mod.dz*izsrc;
 			for (irec=0; irec<rec.n; irec++) {
 				rdx=mod.x0+rec.xr[irec]-xsrc;
+				rdy=mod.y0+rec.yr[irec]-ysrc;
 				rdz=mod.z0+rec.zr[irec]-zsrc;
-				Rrec = sqrt(rdx*rdx+rdz*rdz);
-				fprintf(stderr,"Rec %li is scaled with distance %f R=%.2f,%.2f S=%.2f,%.2f\n", irec, Rrec,rdx,rdz,xsrc,zsrc);
+				Rrec = sqrt(rdx*rdx+rdy*rdy+rdz*rdz);
+				fprintf(stderr,"Rec %li is scaled with distance %f R=%.2f,%.2f,%.2f S=%.2f,%.2f,%.2f\n", irec, Rrec,rdx,rdy,rdz,xsrc,ysrc,zsrc);
 				for (it=0; it<rec.nt; it++) {
 					rec_p[irec*rec.nt+it] *= sqrt(Rrec);
 				}
 			}
 		}
-		writeRec(rec, mod, bnd, wav, ixsrc, izsrc, isam+1, ishot, fileno,
-			rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
-			rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose);
+		writeRec3D(rec, mod, bnd, wav, ixsrc, iysrc, izsrc, isam+1, ishot, fileno, 
+            rec_vx, rec_vy, rec_vz, rec_txx, rec_tyy, rec_tzz, rec_txz, rec_tyz, rec_txy,
+            rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose);
 		
-		writeBeams(mod, sna, ixsrc, izsrc, ishot, fileno, 
-				   beam_vx, beam_vz, beam_txx, beam_tzz, beam_txz, 
-				   beam_p, beam_pp, beam_ss, verbose);
+		writeBeams3D(mod, sna, ixsrc, iysrc, izsrc, ishot, fileno, 
+			   		beam_vx, beam_vy, beam_vz, beam_txx, beam_tyy, beam_tzz, beam_txz, beam_tyz, beam_txy, 
+			   		beam_p, beam_pp, beam_ss, verbose);
 		
 
 	} /* end of loop over number of shots */
@@ -721,20 +727,26 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
 
 	initargs(argc,argv); /* this will free the arg arrays declared */
 	free(rox);
+	free(roy);
 	free(roz);
 	free(l2m);
 	free(src_nwav[0]);
 	free(src_nwav);
 	free(vx);
+	free(vy);
 	free(vz);
 	free(tzz);
 	freeStoreSourceOnSurface();
 	if (rec.type.vz)  free(rec_vz);
+	if (rec.type.vy)  free(rec_vy);
 	if (rec.type.vx)  free(rec_vx);
 	if (rec.type.p)   free(rec_p);
 	if (rec.type.txx) free(rec_txx);
+	if (rec.type.tyy) free(rec_tyy);
 	if (rec.type.tzz) free(rec_tzz);
 	if (rec.type.txz) free(rec_txz);
+	if (rec.type.tyz) free(rec_tyz);
+	if (rec.type.txy) free(rec_txy);
 	if (rec.type.pp)  free(rec_pp);
 	if (rec.type.ss)  free(rec_ss);
 	if (rec.type.ud)  {
@@ -743,11 +755,15 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
 	}
 	if(sna.beam) {
 		if (sna.type.vz)  free(beam_vz);
+		if (sna.type.vy)  free(beam_vy);
 		if (sna.type.vx)  free(beam_vx);
 		if (sna.type.p)   free(beam_p);
 		if (sna.type.txx) free(beam_txx);
+		if (sna.type.tyy) free(beam_tyy);
 		if (sna.type.tzz) free(beam_tzz);
 		if (sna.type.txz) free(beam_txz);
+		if (sna.type.tyz) free(beam_tyz);
+		if (sna.type.txy) free(beam_txy);
 		if (sna.type.pp)  free(beam_pp);
 		if (sna.type.ss)  free(beam_ss);
 	}
@@ -761,7 +777,10 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
 		free(lam);
 		free(mul);
 		free(txz);
+		free(tyz);
+		free(txy);
 		free(txx);
+		free(tyy);
 	}
 	if (mod.ischeme==4) {
 		free(tss);
