@@ -589,51 +589,41 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
 //						vx, vz, tzz, rox, roz, l2m, verbose);
 //					break;
 				case -1 : /* Acoustic dissipative media FD kernel */
-					acoustic4_qr(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
-						vx, vz, tzz, rox, roz, l2m, verbose);
+					vmess("Acoustic dissipative not yet available");
 					break;
 				case 1 : /* Acoustic FD kernel */
 					if (mod.iorder==2) {
-						acoustic2(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
-							vx, vz, tzz, rox, roz, l2m, verbose);
+						vmess("Acoustic order 2 not yet available");
 					}
 					else if (mod.iorder==4) {
                         if (mod.sh) {
-                            acousticSH4(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
-                                  vx, vz, tzz, rox, roz, l2m, verbose);
+                            vmess("SH order 4 not yet available");
                         }
                         else {
-                            acoustic4(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
-                                      vx, vz, tzz, rox, roz, l2m, verbose);
+							acoustic4_3D(mod, src, wav, bnd, it, ixsrc, iysrc, izsrc, src_nwav,
+									vx, vy, vz, tzz, rox, roy, roz, l2m, verbose);
                         }
 					}
 					else if (mod.iorder==6) {
-						acoustic6(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
-							vx, vz, tzz, rox, roz, l2m, verbose);
+						vmess("Acoustic order 6 not yet available");
 					}
 					break;
 				case 2 : /* Visco-Acoustic FD kernel */
-					viscoacoustic4(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
-							vx, vz, tzz, rox, roz, l2m, tss, tep, q, verbose);
+						vmess("Visco-Acoustic order 4 not yet available");
 					break;
 				case 3 : /* Elastic FD kernel */
                     if (mod.iorder==4) {
-                        elastic4(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
-                            vx, vz, tzz, txx, txz, rox, roz, l2m, lam, mul, verbose);
+						vmess("Elastic order 4 not yet available");
 					}
 					else if (mod.iorder==6) {
-                        elastic6(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
-							vx, vz, tzz, txx, txz, rox, roz, l2m, lam, mul, verbose);
+						vmess("Elastic order 6 not yet available");
                     }
 					break;
 				case 4 : /* Visco-Elastic FD kernel */
-					viscoelastic4(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
-						vx, vz, tzz, txx, txz, rox, roz, l2m, lam, mul, 
-						tss, tep, tes, r, q, p, verbose);
+						vmess("Visco-Elastic order 4 not yet available");
 					break;
 				case 5 : /* Elastic FD kernel with S-velocity set to zero*/
-                     elastic4dc(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
-                            vx, vz, tzz, txx, txz, rox, roz, l2m, lam, mul, verbose);
+						vmess("DC-Elastic order 4 not yet available");
 					break;
 			}
 
