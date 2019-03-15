@@ -425,6 +425,14 @@ int main (int argc, char **argv)
                     G_d[l*nxs*nts+i*nts+j] = 0.0;
                 }
             }
+            for (i = 0; i < npos; i++) {
+                    j = 0;
+                    ix = ixpos[i];
+                    f1min[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts+j];
+                    for (j = 1; j < nts; j++) {
+                       f1min[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts+nts-j];
+                  }
+            }
         }
     	memcpy(Ni, G_d, Nfoc*nxs*ntfft*sizeof(float));
 
@@ -455,77 +463,40 @@ int main (int argc, char **argv)
             }
 
             /* primaries only scheme */
-            if (iter==0) {
-                /* apply muting for the acausal part */
+            if (iter % 2 == 0) { /* even iterations: => f_1^-(t) */
+            	/* apply muting for the acausal part */
                 for (l = 0; l < Nfoc; l++) {
                     for (i = 0; i < npos; i++) {
-                        for (j = ii-shift; j < nts; j++) { 
+                        for (j = ii-shift; j < nts; j++) {
                             Ni[l*nxs*nts+i*nts+j] = 0.0;
                         }
-                        for (j = 0; j < shift; j++) { 
-                           Ni[l*nxs*nts+i*nts+j] = 0.0;
+                        for (j = 0; j < shift; j++) {
+                            Ni[l*nxs*nts+i*nts+j] = 0.0;
                         }
                     }
                 }
             }
-		    else if (iter==1) {
+            else {/* odd iterations: => f_1^+(t)  */
                 for (l = 0; l < Nfoc; l++) {
                     for (i = 0; i < npos; i++) {
                         j = 0;
-                        ix = ixpos[i];
-                        f1min[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts+j] - Ni[l*nxs*nts+i*nts+j];
+                        f1min[l*nxs*nts+i*nts+j] -= Ni[l*nxs*nts+i*nts+j];
                         for (j = 1; j < nts; j++) {
-                           f1min[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts+nts-j] - Ni[l*nxs*nts+i*nts+nts-j];
+                            f1min[l*nxs*nts+i*nts+j] -= Ni[l*nxs*nts+i*nts+nts-j];
                         }
                     }
                 }
                 for (l = 0; l < Nfoc; l++) {
                     for (i = 0; i < npos; i++) {
-                         for (j = nts-shift; j < nts; j++) { 
-                             Ni[l*nxs*nts+i*nts+j] = 0.0;
-                         }
-                         for (j = 0; j < nts-ii+shift; j++) { 
-                             Ni[l*nxs*nts+i*nts+j] = 0.0;
-                         }
-                    }
-                }
-            }
-            else {
-                if (iter % 2 == 0) { /* even iterations: => f_1^-(t) */
-                /*muting the acausal part */
-                    for (l = 0; l < Nfoc; l++) {
-                        for (i = 0; i < npos; i++) {
-                            for (j = ii-shift; j < nts; j++) {
-                                Ni[l*nxs*nts+i*nts+j] = 0.0;
-                            }
-                            for (j = 0; j < shift; j++) {
-                                Ni[l*nxs*nts+i*nts+j] = 0.0;
-                            }
+                        for (j = nts-shift; j < nts; j++) {
+                            Ni[l*nxs*nts+i*nts+j] = 0.0;
+                        }
+                        for (j = 0; j < nts-ii+shift; j++) {
+                            Ni[l*nxs*nts+i*nts+j] = 0.0;
                         }
                     }
                 }
-                else {/* odd iterations: => f_1^+(t)  */
-                    for (l = 0; l < Nfoc; l++) {
-                        for (i = 0; i < npos; i++) {
-                            j = 0;
-                            f1min[l*nxs*nts+i*nts+j] -= Ni[l*nxs*nts+i*nts+j];
-                            for (j = 1; j < nts; j++) {
-                                f1min[l*nxs*nts+i*nts+j] -= Ni[l*nxs*nts+i*nts+nts-j];
-                            }
-                        }
-                    }
-                    for (l = 0; l < Nfoc; l++) {
-                        for (i = 0; i < npos; i++) {
-                            for (j = nts-shift; j < nts; j++) {
-                                Ni[l*nxs*nts+i*nts+j] = 0.0;
-                            }
-                            for (j = 0; j < nts-ii+shift; j++) {
-                                Ni[l*nxs*nts+i*nts+j] = 0.0;
-                            }
-                        }
-                    }
-			    }
-            } /* end else (iter!=0) branch */
+            } /* end else (iter) branch */
 
             t2 = wallclock_time();
             tcopy +=  t2 - t3;
@@ -543,7 +514,7 @@ int main (int argc, char **argv)
         if (verbose) {
             t3=wallclock_time();
             tii=(t3-t1)*((float)(iend-istart)/(ii-istart+1.0))-(t3-t1);
-            vmess("Estimated compute time at sample %d = %.2f s.",ii, tii);
+            vmess("Remaining compute time at time-sample %d = %.2f s.",ii, tii);
         }
 
 	} /* end of time iterations ii */
