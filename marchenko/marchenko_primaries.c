@@ -68,16 +68,21 @@ char *sdoc[] = {
 " ",
 " Required parameters: ",
 " ",
-"   file_tinv= ............... direct arrival from focal point: G_d",
 "   file_shot= ............... Reflection response: R",
 " ",
 " Optional parameters: ",
 " ",
 " INTEGRATION ",
+"   ishot=nshots/2 ........... shot position(s) to remove internal multiples ",
+"   file_src=spike ........... convolve ishot(s) with source wavelet",
+"   file_tinv= ............... use file_tinv to remove internal multiples",
+" COMPUTATION",
+"   cgemm=0 .................. 1: use BLAS's cgemm to compute R*ishot",
 "   tap=0 .................... lateral taper focusing(1), shot(2) or both(3)",
 "   ntap=0 ................... number of taper points at boundaries",
 "   fmin=0 ................... minimum frequency in the Fourier transform",
 "   fmax=70 .................. maximum frequency in the Fourier transform",
+"   file_src= ................ optional source wavelet to convolve selected ishot's",
 " MARCHENKO ITERATIONS ",
 "   niter=10 ................. number of iterations",
 "   istart=20 ................ start sample of iterations for primaries",
@@ -106,26 +111,27 @@ NULL};
 
 int main (int argc, char **argv)
 {
-    FILE    *fp_out, *fp_rr;
+    FILE    *fp_out, *fp_rr, *fp_w;
+    size_t nread;
     int     i, j, l, ret, nshots, Nfoc, nt, nx, nts, nxs, ngath;
     int     size, n1, n2, ntap, tap, di, ntraces, pad;
     int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     int     reci, countmin, mode, n2out, verbose, ntfft;
     int     iter, niter, tracf, *muteW, *tsynW;
-	int		hw, ii, ishot, istart, iend;
-    int     smooth, shift, *ixpos, npos, ix;
+	int		hw, ii, ishot, istart, iend, k, m;
+    int     smooth, shift, *ixpos, npos, ix, cgemm;
     int     nshots_r, *isxcount, *reci_xsrc, *reci_xrcv;
     float   fmin, fmax, *tapersh, *tapersy, fxf, dxf, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
     double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, tii, energyNi, energyN0;
     float   d1, d2, f1, f2, fxsb, fxse, ft, fx, *xsyn, dxsrc;
     float   *G_d, *DD, *RR, dt, dx, dxs, scl, mem, T;
-    float   *f1min, *iRN, *Ni, *trace;
+    float   *f1min, *iRN, *Ni, *rtrace, *tmpdata;
     float   xmin, xmax, scale, tsq, Q, f0;
     float   *ixmask;
     float   grad2rad, p, src_angle, src_velo;
-    complex *Refl, *Fop;
-    char    *file_tinv, *file_shot, *file_rr;
-    segy    *hdrs_out;
+    complex *Refl, *Fop, *ctrace, *cwave;
+    char    *file_tinv, *file_shot, *file_rr, *file_src;
+    segy    *hdrs_out, hdr;
 
     initargs(argc, argv);
     requestdoc(1);
@@ -135,6 +141,7 @@ int main (int argc, char **argv)
 
     if (!getparstring("file_shot", &file_shot)) file_shot = NULL;
     if (!getparstring("file_tinv", &file_tinv)) file_tinv = NULL;
+    if(!getparstring("file_src", &file_src)) file_src = NULL;
     if (!getparstring("file_rr", &file_rr)) file_rr = NULL;
     if (!getparint("verbose", &verbose)) verbose = 0;
     if (file_tinv == NULL && file_shot == NULL) 
@@ -161,28 +168,39 @@ int main (int argc, char **argv)
     if(!getparint("hw", &hw)) hw = 15;
     if(!getparint("smooth", &smooth)) smooth = 5;
     if(!getparint("shift", &shift)) shift=20;
+    if(!getparint("cgemm", &cgemm)) cgemm=0;
 
     if (reci && ntap) vwarn("tapering influences the reciprocal result");
 
 /*================ Reading info about shot and initial operator sizes ================*/
 
-    ngath = 0; /* setting ngath=0 scans all traces; n2 contains maximum traces/gather */
-    ret = getFileInfo(file_tinv, &n1, &n2, &ngath, &d1, &d2, &f1, &f2, &xmin, &xmax, &scl, &ntraces);
-    Nfoc = ngath;
-    nxs  = n2; 
-    nts  = n1;
-    dxs  = d2; 
-    fxsb = f2; 
-
     ngath = 0; /* setting ngath=0 scans all traces; nx contains maximum traces/gather */
     ret = getFileInfo(file_shot, &nt, &nx, &ngath, &d1, &dx, &ft, &fx, &xmin, &xmax, &scl, &ntraces);
     nshots = ngath;
-    assert (nxs >= nshots);
+//    assert (nxs >= nshots);
 
     if (!getparfloat("dt", &dt)) dt = d1;
-    if(!getparint("ishot", &ishot)) ishot=(nshots)/2;
     if(!getparint("istart", &istart)) istart=20;
     if(!getparint("iend", &iend)) iend=nt;
+
+	if (file_tinv != NULL) {
+    	ngath = 0; /* setting ngath=0 scans all traces; n2 contains maximum traces/gather */
+    	ret = getFileInfo(file_tinv, &n1, &n2, &ngath, &d1, &d2, &f1, &f2, &xmin, &xmax, &scl, &ntraces);
+        Nfoc = ngath;
+        nxs  = n2;
+        nts  = n1;
+        dxs  = d2;
+        fxsb = f2;
+	}
+	else {
+		/* 'G_d' is one of the shot records */
+    	if(!getparint("ishot", &ishot)) ishot=(nshots)/2;
+    	Nfoc = 1;
+    	nxs  = nx; 
+    	nts  = nt;
+    	dxs  = dx; 
+    	fxsb = fx; 
+	}
 
     ntfft = optncr(MAX(nt+pad, nts+pad)); 
     nfreq = ntfft/2+1;
@@ -190,8 +208,42 @@ int main (int argc, char **argv)
     nw_low = MAX(nw_low, 1);
     nw_high = MIN((int)(fmax*ntfft*dt), nfreq-1);
     nw  = nw_high - nw_low + 1;
-    scl   = 1.0/((float)ntfft);
     if (!getparint("countmin", &countmin)) countmin = 0.3*nx;
+
+/* ========================= Opening wavelet file ====================== */
+
+    cwave = (complex *)calloc(ntfft,sizeof(complex));
+    if (file_src != NULL){
+        if (verbose) vmess("Reading wavelet from file %s.", file_src);
+
+        fp_w = fopen(file_src, "r");
+        if (fp_w == NULL) verr("error on opening input file_src=%s", file_src);
+    	nread = fread(&hdr, 1, TRCBYTES, fp_w);
+        assert (nread == TRCBYTES);
+        tmpdata = (float *)malloc(hdr.ns*sizeof(float));
+        nread = fread(tmpdata, sizeof(float), hdr.ns, fp_w);
+        assert (nread == hdr.ns);
+        fclose(fp_w);
+
+        dt = d1; // To Do check dt wavelet is the same as reflection data
+    	rtrace = (float *)calloc(ntfft,sizeof(float));
+
+		/* To Do add samples in middle */
+        if (hdr.ns <= ntfft) {
+            for (i = 0; i < hdr.ns; i++) rtrace[i] = tmpdata[i];
+            for (i = hdr.ns; i < ntfft; i++) rtrace[i] = 0.0;
+        }
+        else {
+            vwarn("file_src has more samples than reflection data: truncated to ntfft = %d", ntfft);
+            for (i = 0; i < ntfft; i++) rtrace[i] = tmpdata[i];
+        }
+        rc1fft(rtrace, cwave, ntfft, -1);
+        free(tmpdata);
+        free(rtrace);
+    }
+	else {
+        for (i = 0; i < nfreq; i++) cwave[i].r = 1.0;
+	}
     
 /*================ Allocating all data arrays ================*/
 
@@ -204,7 +256,6 @@ int main (int argc, char **argv)
     RR      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     muteW   = (int *)calloc(Nfoc*nxs,sizeof(int));
     tsynW   = (int *)malloc(Nfoc*nxs*sizeof(int)); // time-shift for Giovanni's plane-wave on non-zero times
-    trace   = (float *)malloc(ntfft*sizeof(float));
     tapersy = (float *)malloc(nxs*sizeof(float));
     xrcvsyn = (float *)calloc(Nfoc*nxs,sizeof(float)); // x-rcv postions of focal points
     xsyn    = (float *)malloc(Nfoc*sizeof(float)); // x-src position of focal points
@@ -224,64 +275,6 @@ int main (int argc, char **argv)
         reci_xrcv = (int *)malloc((nxs*nxs)*sizeof(int));
         isxcount  = (int *)calloc(nxs,sizeof(int));
         ixmask  = (float *)calloc(nxs,sizeof(float));
-    }
-
-/*================ Read and define mute window based on focusing operator(s) ================*/
-/* G_d = p_0^+ = G_d (-t) ~ Tinv */
-
-    mode=-1; /* apply complex conjugate to read in data */
-    readTinvData(file_tinv, xrcvsyn, xsyn, zsyn, xnxsyn, Nfoc, nxs, ntfft, 
-         mode, muteW, G_d, hw, verbose);
-    /* reading data added zero's to the number of time samples to be the same as ntfft */
-    nts   = ntfft;
-                             
-	/* compute time shift for tilted plane waves */
-	/* just fill with zero's */
-	for (i=0; i<nxs*Nfoc; i++) {
-		tsynW[i] = 0;
-	}
-
-    /* define tapers to taper edges of acquisition */
-    if (tap == 1 || tap == 3) {
-        for (j = 0; j < ntap; j++)
-            tapersy[j] = (cos(PI*(j-ntap)/ntap)+1)/2.0;
-        for (j = ntap; j < nxs-ntap; j++)
-            tapersy[j] = 1.0;
-        for (j = nxs-ntap; j < nxs; j++)
-            tapersy[j] =(cos(PI*(j-(nxs-ntap))/ntap)+1)/2.0;
-    }
-    else {
-        for (j = 0; j < nxs; j++) tapersy[j] = 1.0;
-    }
-    if (tap == 1 || tap == 3) {
-        if (verbose) vmess("Taper for operator applied ntap=%d", ntap);
-        for (l = 0; l < Nfoc; l++) {
-            for (i = 0; i < nxs; i++) {
-                for (j = 0; j < nts; j++) {
-                    G_d[l*nxs*nts+i*nts+j] *= tapersy[i];
-                }   
-            }   
-        }   
-    }
-
-/* copy G_d to DD */
-    for (l = 0; l < Nfoc; l++) {
-         for (i = 0; i < nxs; i++) {
-              for (j = 0; j < nts; j++) {
-                   DD[l*nxs*nts+i*nts+j]  = G_d[l*nxs*nts+i*nts+j];
-                   G_d[l*nxs*nts+i*nts+j] = 0.0;
-              }
-         }
-    }
-
-    /* check consistency of header values */
-    if (xrcvsyn[0] != 0 || xrcvsyn[1] != 0 ) fxsb = xrcvsyn[0];
-    fxse = fxsb + (float)(nxs-1)*dxs;
-    dxf = (xrcvsyn[nxs-1] - xrcvsyn[0])/(float)(nxs-1);
-    if (NINT(dxs*1e3) != NINT(fabs(dxf)*1e3)) {
-        vmess("dx in hdr.d1 (%.3f) and hdr.gx (%.3f) not equal",d2, dxf);
-        if (dxf != 0) dxs = fabs(dxf);
-        vmess("dx in operator => %f", dxs);
     }
 
 /*================ Reading shot records ================*/
@@ -330,6 +323,104 @@ int main (int argc, char **argv)
     if (dxsrc == 0) {
         vwarn("sx hdrs are not filled in!!");
         dxsrc = dx;
+    }
+
+/*================ Define focusing operator(s) ================*/
+/* G_d = -R(ishot,-t)*/
+
+/* select ishot from R */
+//        for (k=0; k<nFoc; k++) {
+
+/*================ Read and define mute window based on focusing operator(s) ================*/
+/* G_d = p_0^+ = G_d (-t) ~ Tinv */
+
+	if (file_tinv != NULL) {
+    	mode=-1; /* apply complex conjugate to read in data */
+    	readTinvData(file_tinv, xrcvsyn, xsyn, zsyn, xnxsyn, Nfoc, nxs, ntfft,
+         	mode, muteW, G_d, hw, verbose);
+    	/* reading data added zero's to the number of time samples to be the same as ntfft */
+    	nts   = ntfft;
+        /* copy G_d to DD */
+        for (l = 0; l < Nfoc; l++) {
+            for (i = 0; i < nxs; i++) { 
+				for (j = 0; j < nts; j++) { 
+					DD[l*nxs*nts+i*nts+j]  = G_d[l*nxs*nts+i*nts+j]; 
+					G_d[l*nxs*nts+i*nts+j] = 0.0; 
+				}
+			} 
+		}
+        /* check consistency of header values */
+        if (xrcvsyn[0] != 0 || xrcvsyn[1] != 0 ) fxsb = xrcvsyn[0];
+        fxse = fxsb + (float)(nxs-1)*dxs;
+        dxf = (xrcvsyn[nxs-1] - xrcvsyn[0])/(float)(nxs-1);
+        if (NINT(dxs*1e3) != NINT(fabs(dxf)*1e3)) {
+            vmess("dx in hdr.d1 (%.3f) and hdr.gx (%.3f) not equal",d2, dxf);
+            if (dxf != 0) dxs = fabs(dxf);
+            vmess("dx in operator => %f", dxs);
+        }
+	}
+	else { /* use ishot from Refl and optionally convolve with wavelet */
+        /* reading data added zero's to the number of time samples to be the same as ntfft */
+        nts   = ntfft;
+
+        l = 0;
+        k = ishot;    
+        scl   = 1.0/((float)ntfft);
+        rtrace = (float *)calloc(ntfft,sizeof(float));
+        ctrace = (complex *)calloc(ntfft,sizeof(complex));
+        memset(&ctrace[0].r,0,nfreq*2*sizeof(float));
+        for (i = 0; i < xnx[k]; i++) {
+            for (j = nw_low, m = 0; j <= nw_high; j++, m++) {
+                ctrace[j].r =  Refl[k*nw*nx+m*nx+i].r*cwave[j].r + Refl[k*nw*nx+m*nx+i].i*cwave[j].i;
+                ctrace[j].i = -Refl[k*nw*nx+m*nx+i].i*cwave[j].r + Refl[k*nw*nx+m*nx+i].r*cwave[j].i;;
+            }
+    	    /* transfrom result back to time domain */
+            cr1fft(ctrace, rtrace, ntfft, 1);
+            for (j = 0; j < nts; j++) {
+                DD[l*nxs*nts+i*nts+j] = -1.0*scl*rtrace[j];
+            }
+        }
+	    free(ctrace);
+	    free(rtrace);
+
+	    fxse = fxsb = xrcv[0];
+        /* check consistency of header values */
+        for (k=0; k<nshots; k++) {
+            for (i = 0; i < nx; i++) {
+                fxsb = MIN(xrcv[k*nx+i],fxsb);
+                fxse = MAX(xrcv[k*nx+i],fxse);
+            }
+        }
+        fxse = fxsb + (float)(nxs-1)*dxs;
+        dxf = dx;
+	}
+
+	/* just fill with zero's */
+	for (i=0; i<nxs*Nfoc; i++) {
+		tsynW[i] = 0;
+	}
+
+    /* define tapers to taper edges of acquisition */
+    if (tap == 1 || tap == 3) {
+        for (j = 0; j < ntap; j++)
+            tapersy[j] = (cos(PI*(j-ntap)/ntap)+1)/2.0;
+        for (j = ntap; j < nxs-ntap; j++)
+            tapersy[j] = 1.0;
+        for (j = nxs-ntap; j < nxs; j++)
+            tapersy[j] =(cos(PI*(j-(nxs-ntap))/ntap)+1)/2.0;
+    }
+    else {
+        for (j = 0; j < nxs; j++) tapersy[j] = 1.0;
+    }
+    if (tap == 1 || tap == 3) {
+        if (verbose) vmess("Taper for operator applied ntap=%d", ntap);
+        for (l = 0; l < Nfoc; l++) {
+            for (i = 0; i < nxs; i++) {
+                for (j = 0; j < nts; j++) {
+                    DD[l*nxs*nts+i*nts+j] *= tapersy[i];
+                }   
+            }   
+        }   
     }
 
 /*================ Check the size of the files ================*/
@@ -415,6 +506,8 @@ int main (int argc, char **argv)
     for (ii=istart; ii<iend; ii++) {
 
 /*================ initialization ================*/
+
+		/* To Do copy to G_d is not needed */
 
         for (l = 0; l < Nfoc; l++) {
             for (i = 0; i < nxs; i++) {
@@ -510,6 +603,8 @@ int main (int argc, char **argv)
                  RR[l*nxs*nts+i*nts+ii] = f1min[l*nxs*nts+i*nts+ii];
             }
         }
+
+		/* To Do optional write intermediate RR results to file */
 
         if (verbose) {
             t3=wallclock_time();
