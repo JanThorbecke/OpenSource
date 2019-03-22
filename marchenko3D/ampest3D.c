@@ -22,41 +22,82 @@ void scl_data(float *data, long nsam, long nrec, float scl, float *datout, long 
 void pad_data(float *data, long nsam, long nrec, long nsamout, float *datout);
 void corr(float *data1, float *data2, float *cov, long nrec, long nsam, float dt, long shift);
 void convol(float *data1, float *data2, float *con, long nrec, long nsam, float dt, long shift);
-void deconv(float *data1, float *data2, float *decon, long nrec, long nsam, 
-		 float dt, float eps, float reps, long shift);
 
 void AmpEst3D(float *f1d, float *Gd, float *ampest, long Nfoc, long nxs, long nys, long ntfft, long *ixpos, long npos,
     char *file_wav, float dx, float dy, float dt)
 {
 	
 	long 	l, i, ix, iw, nfreq;
-	float 	scl, sclt, *f1dsamp;
-	float   dtm, dxm, cpm, rom, *trace, eps, reps;
+	float 	scl, sclt, *wavelet, *scaled, *conv, *f1dsamp;
+	float   dtm, dxm, cpm, rom, *trace;
 	FILE 	*fp_wav;
 	segy 	*hdrs_wav;
-
-	if(!getparfloat("eps", &eps)) eps=0.01;
-	if(!getparfloat("reps", &reps)) reps=0.0;
 
 	scl = dx*dy;
     sclt = 1.0*dt/((float)ntfft);
 
+	conv	= (float *)calloc(nys*nxs*ntfft,sizeof(float));
+	wavelet	= (float *)calloc(ntfft,sizeof(float));
+	scaled	= (float *)calloc(ntfft,sizeof(float));
 	f1dsamp	= (float *)calloc(nys*nxs*ntfft,sizeof(float));
+
+	if (file_wav!=NULL) {
+		trace	= (float *)calloc(ntfft,sizeof(float));
+		hdrs_wav = (segy *)calloc(1, sizeof(segy));
+    	fp_wav = fopen(file_wav, "r");
+        if (fp_wav==NULL) verr("error on opening wavelet file %s", file_wav);
+    	readData3D(fp_wav, trace, hdrs_wav, 0);
+    	fclose(fp_wav);
+		corr(trace, trace, wavelet,  1, ntfft, dt, 0);
+		free(hdrs_wav); free(trace);
+		/* For a monopole source the scaling is (2.0*dt*cp*cp*rho)/(dx*dx) */
+		for (iw=0; iw<ntfft; iw++){
+			wavelet[iw] *= dt;
+		}
+	}
 
 	for (l=0; l<Nfoc; l++) {
 		for (i=0; i<npos; i++) {
 			ix = ixpos[i];
-			iw = 0;
-			f1dsamp[i*ntfft+iw] = f1d[l*nxs*nys*ntfft+ix*ntfft+iw];
-			for (iw=1; iw<ntfft; iw++) {
-				f1dsamp[i*ntfft+iw] = f1d[l*nxs*nys*ntfft+ix*ntfft+ntfft-iw];
+			for (iw=0; iw<ntfft; iw++) {
+				f1dsamp[i*ntfft+iw] = f1d[l*nxs*nys*ntfft+ix*ntfft+iw];
 			}
 		}
-		deconv(&f1dsamp[0], &Gd[l*nxs*nys*ntfft], &ampest[l*nxs*nys*ntfft], nxs*nys, ntfft, dt, eps, reps, 0);
+		if (file_wav==NULL){
+			corr(f1dsamp, f1dsamp, conv,  nxs*nys, ntfft, dt, 0);
+			for (i=0; i<nxs*nys; i++) {
+				for (iw=0; iw<ntfft; iw++) {
+					wavelet[iw] += dt*scl*conv[i*ntfft+iw];
+				}
+			}
+		}
+		memset(&conv[0],0.0, sizeof(float)*ntfft*nxs*nys);
+		convol(f1dsamp, &Gd[l*nxs*nys*ntfft], conv, nxs*nys, ntfft, dt, 0);
+		for (i=0; i<nxs*nys; i++) {
+			for (iw=0; iw<ntfft; iw++) {
+				scaled[iw] += dt*scl*conv[i*ntfft+iw];
+			}
+		}
+		ampest[l] = sqrtf(wavelet[0]/scaled[0]);
+		memset(&conv[0],0.0,    sizeof(float)*ntfft*nxs*nys);
+		memset(&scaled[0],0.0,  sizeof(float)*ntfft);
 	}
-	free(f1dsamp);
+	free(wavelet);free(scaled);free(conv);free(f1dsamp);
 
 	return;
+}
+
+long maxest3D(float *data, long nt)
+{
+	float maxt;
+	long it;
+
+	maxt = data[0];
+	for (it = 0; it < nt; it++) {
+		if (fabs(data[it]) > fabs(maxt)) maxt=data[it];
+	}
+
+	return maxt;
 }
 
 /**
@@ -254,112 +295,4 @@ void scl_data(float *data, long nsam, long nrec, float scl, float *datout, long 
 		for (it = 0 ; it < nsamout ; it++)
 			datout[ix*nsamout+it] = scl*data[ix*nsam+it];
 	}
-}
-
-/**
-* Calculates the time deconvolution of two arrays by 
-* transforming the arrayis to frequency domain,
-* divides the arrays and transform back to time.
-*
-**/
-
-void deconv(float *data1, float *data2, float *decon, long nrec, long nsam, 
-		 float dt, float eps, float reps, long shift)
-{
-	long 	i, j, n, optn, nfreq, sign;
-	float  	df, dw, om, tau, *den, scl;
-	float 	*qr, *qi, *p1r, *p1i, *p2r, *p2i, *rdata1, *rdata2, maxden, leps;
-	complex *cdata1, *cdata2, *cdec, tmp;
-	
-	optn = loptncr(nsam);
-	nfreq = optn/2+1;
-
-	cdata1 = (complex *)malloc(nfreq*nrec*sizeof(complex));
-	if (cdata1 == NULL) verr("memory allocation error for cdata1");
-	cdata2 = (complex *)malloc(nfreq*nrec*sizeof(complex));
-	if (cdata2 == NULL) verr("memory allocation error for cdata2");
-	cdec = (complex *)malloc(nfreq*nrec*sizeof(complex));
-	if (cdec == NULL) verr("memory allocation error for ccov");
-	
-	rdata1 = (float *)malloc(optn*nrec*sizeof(float));
-	if (rdata1 == NULL) verr("memory allocation error for rdata1");
-	rdata2 = (float *)malloc(optn*nrec*sizeof(float));
-	if (rdata2 == NULL) verr("memory allocation error for rdata2");
-	den = (float *)malloc(nfreq*nrec*sizeof(float));
-	if (den == NULL) verr("memory allocation error for rdata1");
-	
-	/* pad zeroes until Fourier length is reached */
-	pad_data(data1, nsam, nrec, optn, rdata1);
-	pad_data(data2, nsam, nrec, optn, rdata2);
-
-	/* forward time-frequency FFT */
-	sign = -1;
-	rcmfft(&rdata1[0], &cdata1[0], optn, nrec, optn, nfreq, sign);
-	rcmfft(&rdata2[0], &cdata2[0], optn, nrec, optn, nfreq, sign);
-
-	/* apply deconvolution */
-	p1r = (float *) &cdata1[0];
-	p2r = (float *) &cdata2[0];
-	p1i = p1r + 1;
-	p2i = p2r + 1;
-	n = nrec*nfreq;
-	maxden=0.0;
-	for (j = 0; j < n; j++) {
-		den[j] = *p2r**p2r + *p2i**p2i;
-		maxden = MAX(den[j], maxden);
-		p2r += 2;
-		p2i += 2;
-	}
-	p1r = (float *) &cdata1[0];
-	p2r = (float *) &cdata2[0];
-	qr = (float *) &cdec[0].r;
-	p1i = p1r + 1;
-	p2i = p2r + 1;
-    qi = qr + 1;
-	leps = reps*maxden+eps;
-	for (j = 0; j < n; j++) {
-
-		if (fabs(*p2r)>=fabs(*p2i)) {
-			*qr = (*p2r**p1r+*p2i**p1i)/(den[j]+leps);
-			*qi = (*p2r**p1i-*p2i**p1r)/(den[j]+leps);
-		} else {
-			*qr = (*p1r**p2r+*p1i**p2i)/(den[j]+leps);
-			*qi = (*p1i**p2r-*p1r**p2i)/(den[j]+leps);
-		}
-		qr += 2;
-		qi += 2;
-		p1r += 2;
-		p1i += 2;
-		p2r += 2;
-		p2i += 2;
-	}
-	free(cdata1);
-	free(cdata2);
-	free(den);
-
-	if (shift) {
-		df = 1.0/(dt*optn);
-		dw = 2*PI*df;
-		tau = dt*(nsam/2);
-		for (j = 0; j < nrec; j++) {
-			om = 0.0;
-			for (i = 0; i < nfreq; i++) {
-				tmp.r = cdec[j*nfreq+i].r*cos(om*tau) + cdec[j*nfreq+i].i*sin(om*tau);
-				tmp.i = cdec[j*nfreq+i].i*cos(om*tau) - cdec[j*nfreq+i].r*sin(om*tau);
-				cdec[j*nfreq+i] = tmp;
-				om += dw;
-			}
-		}
-	}
-
-	/* inverse frequency-time FFT and scale result */
-	sign = 1;
-	scl = 1.0/(float)optn;
-	crmfft(&cdec[0], &rdata1[0], optn, nrec, nfreq, optn, sign);
-	scl_data(rdata1,optn,nrec,scl,decon,nsam);
-
-	free(cdec);
-	free(rdata1);
-	free(rdata2);
-	return;
 }

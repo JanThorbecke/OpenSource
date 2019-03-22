@@ -711,58 +711,51 @@ int main (int argc, char **argv)
     /* Estimate the amplitude of the Marchenko Redatuming */
 	if (ampest>0) {
         if (verbose>0) vmess("Estimating amplitude scaling");
-        // Create the first arrival data
+
+        // Allocate memory and copy data
+        ampscl	= (float *)calloc(Nfoc,sizeof(float));
 		Gd		= (float *)calloc(Nfoc*nxs*nys*ntfft,sizeof(float));
 		memcpy(Gd,Gplus,sizeof(float)*Nfoc*nxs*nys*ntfft);
 		applyMute3D(Gd, muteW, smooth, 2, Nfoc, nxs*nys, nts, ixpos, npos, shift);
-        // Determine the amplitude
-		ampscl	= (float *)calloc(nxs*nys*ntfft,sizeof(float));
-        tmpdata = (float *)calloc(nxs*nys*ntfft,sizeof(float));
-        // Scale all wavefields
+
+        // Determine amplitude and apply scaling
+		AmpEst3D(G_d,Gd,ampscl,Nfoc,nxs,nys,ntfft,ixpos,npos,file_wav,dxs,dys,dt);
 		for (l=0; l<Nfoc; l++) {
-		    AmpEst3D(&G_d[l*nxs*nys*ntfft],&Gd[l*nxs*nys*ntfft],ampscl,1,nxs,nys,ntfft,ixpos,npos,file_wav,dxs,dys,dt);
-            for (j=0; j<nxs*nys*nts; j++) {
-                tmpdata[j] = green[l*nxs*nys*nts+j];
-            }
-            convol(tmpdata, ampscl, &green[l*nxs*nys*nts], nxs*nys, ntfft, dt, 0);
-            if (file_gplus != NULL) {
-                for (j=0; j<nxs*nys*nts; j++) {
-                    tmpdata[j] = Gplus[l*nxs*nys*nts+j];
-                }
-                convol(tmpdata, ampscl, &Gplus[l*nxs*nys*nts], nxs*nys, ntfft, dt, 0);
-            }
-            if (file_gmin != NULL || file_imag!=NULL) {
-                for (j=0; j<nxs*nys*nts; j++) {
-                    tmpdata[j] = Gmin[l*nxs*nys*nts+j];
-                }
-                convol(tmpdata, ampscl, &Gmin[l*nxs*nys*nts], nxs*nys, ntfft, dt, 0);
-            }
-            //if (verbose>4) vmess("Amplitude of focal position %li is equal to %.3e",l,ampscl[l]);
+			for (j=0; j<nxs*nys*nts; j++) {
+				green[l*nxs*nts+j] *= ampscl[l];
+				if (file_gplus != NULL) Gplus[l*nxs*nys*nts+j] *= ampscl[l];
+    			if (file_gmin != NULL) Gmin[l*nxs*nys*nts+j] *= ampscl[l];
+    			if (file_f2 != NULL) f2p[l*nxs*nys*nts+j] *= ampscl[l];
+    			if (file_pmin != NULL) pmin[l*nxs*nys*nts+j] *= ampscl[l];
+    			if (file_f1plus != NULL) f1plus[l*nxs*nys*nts+j] *= ampscl[l];
+    			if (file_f1min != NULL) f1min[l*nxs*nys*nts+j] *= ampscl[l];
+			}
+            if (verbose>1) vmess("Amplitude of focal position %li is equal to %.3e",l,ampscl[l]);
 		}
-        free(tmpdata);
-        // if (file_ampscl!=NULL) { //Write the estimation of the amplitude to file
-        //     hdrs_Nfoc = (segy *)calloc(nxim*nyim,sizeof(segy));
-        //     for (l=0; l<nyim; l++){
-        //         for (j=0; j<nxim; j++){
-        //             hdrs_Nfoc[l*nxim+j].ns      = nzim;
-        //             hdrs_Nfoc[l*nxim+j].sx      = xsyn[j];
-        //             hdrs_Nfoc[l*nxim+j].sy      = ysyn[l];
-        //             hdrs_Nfoc[l*nxim+j].sdepth  = zsyn[l];
-        //             hdrs_Nfoc[l*nxim+j].f1      = zsyn[0];
-        //             hdrs_Nfoc[l*nxim+j].d1      = zsyn[1]-zsyn[0];
-        //             hdrs_Nfoc[l*nxim+j].dt      = (int)(hdrs_Nfoc[l*nxim+j].d1*(1E6));
-        //             hdrs_Nfoc[l*nxim+j].trwf    = nxim*nyim;
-        //         }
-        //     }
-        //     // Write the data
-        //     fp_amp = fopen(file_ampscl, "w+");
-        //     if (fp_amp==NULL) verr("error on creating output file %s", file_ampscl);
-        //     ret = writeData3D(fp_amp, (float *)&ampscl[0], hdrs_Nfoc, nzim, nxim*nyim);
-        //     if (ret < 0 ) verr("error on writing output file.");
-        //     fclose(fp_amp);
-        //     free(hdrs_Nfoc);
-        //     free(ampscl);
-        // }
+
+        if (file_ampscl!=NULL) { //Write the estimation of the amplitude to file
+            hdrs_Nfoc = (segy *)calloc(nxim*nyim,sizeof(segy));
+            for (l=0; l<nyim; l++){
+                for (j=0; j<nxim; j++){
+                    hdrs_Nfoc[l*nxim+j].ns      = nzim;
+                    hdrs_Nfoc[l*nxim+j].sx      = xsyn[j];
+                    hdrs_Nfoc[l*nxim+j].sy      = ysyn[l];
+                    hdrs_Nfoc[l*nxim+j].sdepth  = zsyn[l];
+                    hdrs_Nfoc[l*nxim+j].f1      = zsyn[0];
+                    hdrs_Nfoc[l*nxim+j].d1      = zsyn[1]-zsyn[0];
+                    hdrs_Nfoc[l*nxim+j].dt      = (int)(hdrs_Nfoc[l*nxim+j].d1*(1E6));
+                    hdrs_Nfoc[l*nxim+j].trwf    = nxim*nyim;
+                }
+            }
+            // Write the data
+            fp_amp = fopen(file_ampscl, "w+");
+            if (fp_amp==NULL) verr("error on creating output file %s", file_ampscl);
+            ret = writeData3D(fp_amp, (float *)&ampscl[0], hdrs_Nfoc, nzim, nxim*nyim);
+            if (ret < 0 ) verr("error on writing output file.");
+            fclose(fp_amp);
+            free(hdrs_Nfoc);
+            free(ampscl);
+        }
         free(Gd);
         if (file_gplus == NULL) free(Gplus);
 	}
