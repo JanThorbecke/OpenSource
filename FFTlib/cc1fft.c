@@ -61,9 +61,16 @@ void cc1fft(complex *data, int n, int sign)
     REAL scl;
 	complex *y;
 #elif defined(MKL)
-	static DFTI_DESCRIPTOR_HANDLE handle=0;
-    static int nprev=0;
+	static DFTI_DESCRIPTOR_HANDLE handle[MAX_NUMTHREADS];
+	static int nprev[MAX_NUMTHREADS];
     MKL_LONG Status;
+	int id;
+#endif
+
+#ifdef _OPENMP
+	id = omp_get_thread_num();
+#else
+	id = 0;
 #endif
 
 #if defined(HAVE_LIBSCS)
@@ -99,26 +106,26 @@ void cc1fft(complex *data, int n, int sign)
     }
 	acmlcc1fft(sign, scl, inpl, n, data, 1, y, 1, work, &isys);
 #elif defined(MKL)
-    if (n != nprev) {
-        DftiFreeDescriptor(&handle);
+    if (n != nprev[id]) {
+        DftiFreeDescriptor(&handle[id]);
 
-        Status = DftiCreateDescriptor(&handle, DFTI_SINGLE, DFTI_COMPLEX, 1, (MKL_LONG)n);
+        Status = DftiCreateDescriptor(&handle[id], DFTI_SINGLE, DFTI_COMPLEX, 1, (MKL_LONG)n);
         if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
             dfti_status_print(Status);
             printf(" DftiCreateDescriptor FAIL\n");
         }
-        Status = DftiCommitDescriptor(handle);
+        Status = DftiCommitDescriptor(handle[id]);
         if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
             dfti_status_print(Status);
             printf(" DftiCommitDescriptor FAIL\n");
         }
-        nprev = n;
+        nprev[id] = n;
     }
 	if (sign < 0) {
-    	Status = DftiComputeBackward(handle, data);
+    	Status = DftiComputeBackward(handle[id], data);
 	}
 	else {
-    	Status = DftiComputeForward(handle, data);
+    	Status = DftiComputeForward(handle[id], data);
 	}
 #else
 	cc1_fft(data, n, sign);
