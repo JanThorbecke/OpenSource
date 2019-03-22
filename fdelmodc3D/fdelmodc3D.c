@@ -17,66 +17,54 @@ double wallclock_time(void);
 
 void threadAffinity(void);
 
-long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, shotPar *shot, bndPar *bnd, long verbose);
+long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, 
+	shotPar *shot, bndPar *bnd, long verbose);
 
-long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz, float *l2m, float *lam, float *muu, float *tss, float *tes, float *tep);
+long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
+    float *l2m, float *lam, float *muu, float *tss, float *tes, float *tep);
 
-long defineSource3D(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwav, long reverse, long verbose);
+long defineSource3D(wavPar wav, srcPar src, modPar mod, recPar rec, 
+	float **src_nwav, long reverse, long verbose);
 
-long writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot);
+long writeSrcRecPos3D(modPar *mod, recPar *rec, srcPar *src, shotPar *shot);
 
-long acoustic6(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long izsrc, float **src_nwav, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, long verbose);
+long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
+    long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz,
+    float *p, float *rox, float *roy, float *roz, float *l2m, long verbose);
 
-long acoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long izsrc, float **src_nwav, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, long verbose);
-
-long acoustic4pml(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long izsrc, float **src_nwav, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, long verbose);
-
-long acousticSH4(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long izsrc, float **src_nwav, float *tx, float *tz, float *vz, float *rox, float *roz, float *mul, long verbose);
-
-long acoustic4_qr(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long izsrc, float **src_nwav, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, long verbose);
-
-long acoustic2(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long izsrc, float **src_nwav, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, long verbose);
-
-long acoustic4Block(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long izsrc, float **src_nwav, float *vx,
-float *vz, float *p, float *rox, float *roz, float *l2m, long verbose);
-
-long viscoacoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long izsrc, float **src_nwav, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, float *tss, float *tep, float *q, long verbose);
-
-long elastic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long izsrc, float **src_nwav, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, long verbose);
-
-long elastic4dc(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long izsrc, float **src_nwav, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, long verbose);
-
-long viscoelastic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long izsrc, float **src_nwav, float *vx, float
-*vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, float *ts, float *tep, float
-*tes, float *r, float *q, float *p, long verbose);
-
-long elastic6(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long izsrc, 
-    float **src_nwav, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, 
-    float *roz, float *l2m, float *lam, float *mul, long verbose);
-
-long getRecTimes(modPar mod, recPar rec, bndPar bnd, long itime, long isam, float *vx, float *vz, float *tzz, float *txx, 
-	float *txz, float *l2m, float *rox, float *roz,
-	float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
+long getRecTimes3D(modPar mod, recPar rec, bndPar bnd, long itime, long isam, 
+	float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx,
+	float *txz, float *txy, float *tyz, float *l2m, 
+	float *rox, float *roy, float *roz, float *rec_vx, float *rec_vy, float *rec_vz, 
+	float *rec_txx, float *rec_tyy, float *rec_tzz, float *rec_txz, float *rec_txy, float *rec_tyz, 
 	float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, long verbose);
 
-long writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, long ixsrc, long izsrc, long nsam, long ishot, long fileno, 
-			 float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
-			 float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, long verbose);
+long writeRec3D(recPar rec, modPar mod, bndPar bnd, wavPar wav, 
+    long ixsrc, long iysrc, long izsrc, long nsam, long ishot, long fileno, 
+    float *rec_vx, float *rec_vy, float *rec_vz, float *rec_txx, float *rec_tyy, float *rec_tzz,
+    float *rec_txz,  float *rec_tyz,  float *rec_txy, 
+    float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, long verbose);
 
-long writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, wavPar wav,long ixsrc, long izsrc, long itime, 
-				   float *vx, float *vz, float *tzz, float *txx, float *txz, long verbose);
+long writeSnapTimes3D(modPar mod, snaPar sna, bndPar bnd, wavPar wav, 
+	long ixsrc, long iysrc, long izsrc, long itime, float *vx, float *vy, float *vz, 
+	float *tzz, float *tyy, float *txx, float *txz, float *tyz, float *txy, long verbose);
 
-long getBeamTimes(modPar mod, snaPar sna, float *vx, float *vz, float *tzz, float *txx, float *txz, 
-				 float *beam_vx, float *beam_vz, float *beam_txx, float *beam_tzz, float *beam_txz, 
-				 float *beam_p, float *beam_pp, float *beam_ss, long verbose);
+long getBeamTimes3D(modPar mod, snaPar sna, float *vx, float *vy, float *vz, 
+    float *tzz, float *tyy, float *txx, float *txz, float *tyz, float *txy,
+	float *beam_vx, float *beam_vy, float *beam_vz,
+    float *beam_txx, float *beam_tyy, float *beam_tzz,
+    float *beam_txz, float *beam_tyz, float *beam_txy,
+	float *beam_p, float *beam_pp, float *beam_ss, long verbose);
 
-long writeBeams(modPar mod, snaPar sna, long ixsrc, long izsrc, long ishot, long fileno, 
-			   float *beam_vx, float *beam_vz, float *beam_txx, float *beam_tzz, float *beam_txz, 
-			   float *beam_p, float *beam_pp, float *beam_ss, long verbose);
+long writeBeams3D(modPar mod, snaPar sna, long ixsrc, long iysrc, long izsrc, long ishot, 
+    long fileno, float *beam_vx, float *beam_vy, float *beam_vz,
+    float *beam_txx, float *beam_tyy, float *beam_tzz,
+    float *beam_txz, float *beam_tyz, float *beam_txy, 
+	float *beam_p, float *beam_pp, float *beam_ss, long verbose);
 
-long allocStoreSourceOnSurface(srcPar src);
+long allocStoreSourceOnSurface3D(srcPar src);
 
-long freeStoreSourceOnSurface(void);
+long freeStoreSourceOnSurface3D(void);
 
 /* Self documentation */
 char *sdoc[] = {
@@ -736,7 +724,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
 	free(vy);
 	free(vz);
 	free(tzz);
-	freeStoreSourceOnSurface();
+	freeStoreSourceOnSurface3D();
 	if (rec.type.vz)  free(rec_vz);
 	if (rec.type.vy)  free(rec_vy);
 	if (rec.type.vx)  free(rec_vx);

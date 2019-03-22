@@ -30,7 +30,9 @@ int traceWrite(segy *hdr, float *data, int n, FILE *fp);
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 
-long writeSnapTimes3D(modPar mod, snaPar sna, bndPar bnd, wavPar wav, long ixsrc, long iysrc, long izsrc, long itime, float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *tyz, float *txy, long verbose)
+long writeSnapTimes3D(modPar mod, snaPar sna, bndPar bnd, wavPar wav, 
+	long ixsrc, long iysrc, long izsrc, long itime, float *vx, float *vy, float *vz, 
+	float *tzz, float *tyy, float *txx, float *txz, float *tyz, float *txy, long verbose)
 {
 	FILE    *fpvx, *fpvy, *fpvz, *fptxx, *fptyy, *fptzz, *fptxz, *fptyz, *fptxy, *fpp, *fppp, *fpss;
 	long append, isnap;

@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <string.h>
 #include "par.h"
-#include "fdelmodc.h"
+#include "fdelmodc3D.h"
 #include "SUsegy.h"
 #include "segy.h"
 
