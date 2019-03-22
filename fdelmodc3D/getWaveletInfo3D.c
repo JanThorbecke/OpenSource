@@ -34,7 +34,8 @@ void rc1fft(float *rdata, complex *cdata, int n, int sign);
 #define     MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 
-long getWaveletInfo3D(char *file_src, long *n1, long *n2, float *d1, float *d2, float *f1, float *f2, float *fmax, long *nxm, long verbose)
+long getWaveletInfo3D(char *file_src, long *n1, long *n2, float *d1, float *d2, 
+	float *f1, float *f2, float *fmax, long *nxm, long verbose)
 {
     FILE    *fp;
     size_t  nread, trace_sz;

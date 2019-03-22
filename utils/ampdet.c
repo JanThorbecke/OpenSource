@@ -25,9 +25,6 @@ int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
 int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 void complex_sqrt(complex *z);
-void deconv_small(complex *c1, complex *c2, complex *c3, float nkx, float nfreq, float reps, float eps);
-void conv_small(complex *c1, complex *c2, complex *c3, float nkx, float nfreq);
-void corr_small(complex *c1, complex *c2, complex *c3, float nkx, float nfreq);
 void scl_data(float *data, int nsam, int nrec, float scl, float *datout, int nsamout);
 void pad2d_data(float *data, int nsam, int nrec, int nsamout, int nrecout, float *datout);
 void pad_data(float *data, int nsam, int nrec, int nsamout, float *datout);
@@ -50,18 +47,18 @@ int main (int argc, char **argv)
 	char    *file_gp, *file_fp, *file_wav;
     int     nx, nt, ngath, ntraces, ret, size, nxwav;
     int     ntfft, nfreq, nxfft, nkx, i, j, n;
-    float   dx, dt, fx, ft, xmin, xmax, scl;
-    float   df, dw, dkx, eps, reps;
-    float   *Gpd, *f1pd, *G_pad, *f_pad, *wav, *wav_pad;
+    float   dx, dt, fx, ft, xmin, xmax, scl, *den, dentmp;
+    float   df, dw, dkx, eps, reps, leps, sclfk;
+    float   *Gpd, *f1pd, *G_pad, *f_pad, *wav, *wav_pad, *outdata;
     complex *G_w, *f_w, *Gf, *amp, *wav_w, *S, *ZS, *SS;
-    segy    *hdr_gp, *hdr_fp, *hdr_wav;
+    segy    *hdr_gp, *hdr_fp, *hdr_wav, *hdr_out;
 
 	initargs(argc, argv);
 	requestdoc(1);
 
 	if(!getparstring("file_gp", &file_gp)) file_gp=NULL;
     if (file_gp==NULL) verr("file %s does not exist",file_gp);
-    if(!getparstring("file_gp", &file_fp)) file_fp=NULL;
+    if(!getparstring("file_fp", &file_fp)) file_fp=NULL;
     if (file_fp==NULL) verr("file %s does not exist",file_fp);
     if(!getparstring("file_wav", &file_wav)) file_wav=NULL;
     if (file_wav==NULL) verr("file %s does not exist",file_wav);
@@ -93,7 +90,6 @@ int main (int argc, char **argv)
 	if (fp == NULL) verr("error on opening input file_in1=%s", file_fp);
     nxwav   = readData(fp, wav, hdr_wav, nt);
     fclose(fp);
-    vmess("test:%d",nxwav);
 
     /* Start the scaling */
     ntfft   = optncr(nt);
@@ -102,66 +98,102 @@ int main (int argc, char **argv)
     dw      = 2.0*PI*df;
 	nkx     = optncc(nx);
 	dkx     = 2.0*PI/(nkx*dx);
+	sclfk   = dt*(dt*dx)*(dt*dx);
 
-    vmess("ntfft:%d, nfreq:%d, nkx:%d",ntfft,nfreq,nkx);
+    vmess("ntfft:%d, nfreq:%d, nkx:%d dx:%.3f dt:%.3f",ntfft,nfreq,nkx,dx,dt);
 
     /* Allocate the arrays */
-    G_pad = (float *)malloc(ntfft*nkx*sizeof(float));
+    G_pad = (float *)calloc(ntfft*nkx,sizeof(float));
 	if (G_pad == NULL) verr("memory allocation error for G_pad");
-    f_pad = (float *)malloc(ntfft*nkx*sizeof(float));
+    f_pad = (float *)calloc(ntfft*nkx,sizeof(float));
 	if (f_pad == NULL) verr("memory allocation error for f_pad");
-    wav_pad = (float *)malloc(ntfft*sizeof(float));
+    wav_pad = (float *)calloc(ntfft,sizeof(float));
 	if (wav_pad == NULL) verr("memory allocation error for wav_pad");
-    G_w   = (complex *)malloc(nfreq*nkx*sizeof(complex));
+    G_w   = (complex *)calloc(nfreq*nkx,sizeof(complex));
 	if (G_w == NULL) verr("memory allocation error for G_w");
-    f_w   = (complex *)malloc(nfreq*nkx*sizeof(complex));
+    f_w   = (complex *)calloc(nfreq*nkx,sizeof(complex));
 	if (f_w == NULL) verr("memory allocation error for f_w");
-    Gf    = (complex *)malloc(nfreq*nkx*sizeof(complex));
+    Gf    = (complex *)calloc(nfreq*nkx,sizeof(complex));
 	if (Gf == NULL) verr("memory allocation error for Gf");
-    wav_w = (complex *)malloc(nfreq*nkx*sizeof(complex));
+    wav_w = (complex *)calloc(nfreq*nkx,sizeof(complex));
 	if (wav_w == NULL) verr("memory allocation error for wav_w");
-    amp   = (complex *)malloc(nfreq*nkx*sizeof(complex));
+    amp   = (complex *)calloc(nfreq*nkx,sizeof(complex));
 	if (amp == NULL) verr("memory allocation error for amp");
-    S   = (complex *)malloc(nfreq*nkx*sizeof(complex));
+    S   = (complex *)calloc(nfreq*nkx,sizeof(complex));
 	if (S == NULL) verr("memory allocation error for S");
-    ZS   = (complex *)malloc(nfreq*nkx*sizeof(complex));
+    ZS   = (complex *)calloc(nfreq*nkx,sizeof(complex));
 	if (ZS == NULL) verr("memory allocation error for ZS");
-    SS   = (complex *)malloc(nfreq*nkx*sizeof(complex));
+    SS   = (complex *)calloc(nfreq*nkx,sizeof(complex));
 	if (SS == NULL) verr("memory allocation error for SS");
+    den   = (float *)calloc(nfreq*nkx,sizeof(float));
+	if (den == NULL) verr("memory allocation error for den");
 
     /* pad zeroes in 2 directions to reach FFT lengths */
 	pad2d_data(Gpd, nt,nx,ntfft,nkx,G_pad);
 	pad2d_data(f1pd,nt,nx,ntfft,nkx,f_pad);
-    pad_data(wav, nt, 1, ntfft, wav_pad);
+    pad_data(  wav, nt, 1,ntfft,  wav_pad);
 
     /* double forward FFT */
 	xt2wkx(&G_pad[0], &G_w[0], ntfft, nkx, ntfft, nkx, 0);
 	xt2wkx(&f_pad[0], &f_w[0], ntfft, nkx, ntfft, nkx, 0);
-    rcmfft(&wav_pad[0], &wav_w[0], ntfft, 1, ntfft, nfreq, -1);
+    rcmfft(&wav_pad[0], &Gf[0], ntfft, 1, ntfft, nfreq, -1);
 
-    for (i=1; i<nkx; i++) {
+    for (i=0; i<nkx; i++) {
         for (j=0; j<nfreq; j++) {
-            wav_w[i*nfreq+j] = wav_w[j];
-        }
+            wav_w[j*nkx+i].r = Gf[j].r;
+            wav_w[j*nkx+i].i = Gf[j].i;	
+		}
     }
 
-    /* Create Z*(|S|*)/(|S|*(|S|*)) */
-    conv_small(  G_w,   f_w,   Gf,  nkx, nfreq); // Z
-    corr_small(  wav_w, wav_w, S,   nkx, nfreq); //|S|
-    corr_small(  Gf,    G_w,   ZS,  nkx, nfreq); // Z *(|S|*)
-    corr_small(  G_w,   G_w,   SS,  nkx, nfreq); //|S|*(|S|*)
-    deconv_small(ZS,    SS,    amp, nkx, nfreq, reps, eps); // amp
+	for (i = 0; i < nkx*nfreq; i++) {
+		Gf[i].r = (G_w[i].r*f_w[i].r - G_w[i].i*f_w[i].i);
+		Gf[i].i = (G_w[i].r*f_w[i].i + G_w[i].i*f_w[i].r);
 
-    for (i=0; i<nkx*nfreq; i++) {
-        complex_sqrt(&amp[i]);
-    }
+		S[i].r = (wav_w[i].r*wav_w[i].r + wav_w[i].i*wav_w[i].i);
+		S[i].i = (wav_w[i].r*wav_w[i].i - wav_w[i].i*wav_w[i].r);
+
+		ZS[i].r = (Gf[i].r*S[i].r + Gf[i].i*S[i].i);
+		ZS[i].i = (Gf[i].r*S[i].i - Gf[i].i*S[i].r);
+
+		SS[i].r = (S[i].r*S[i].r + S[i].i*S[i].i);
+		SS[i].i = (S[i].r*S[i].i - S[i].i*S[i].r);
+
+		if (i==0) dentmp=SS[i].r;
+		else dentmp=MAX(dentmp,SS[i].r);
+	}
+
+	leps = reps*dentmp+eps;
+	vmess("dentmp:%.4e leps:%.4e",dentmp,leps);
+
+	for (i = 0; i < nkx*nfreq; i++) {
+		S[i].r = (ZS[i].r*SS[i].r+ZS[i].i*SS[i].i)/(SS[i].r*SS[i].r+SS[i].i*SS[i].i+leps);
+		S[i].i = (ZS[i].i*SS[i].r-ZS[i].r*SS[i].i)/(SS[i].r*SS[i].r+SS[i].i*SS[i].i+leps);
+
+		amp[i].r = sqrtf(S[i].r*S[i].r+S[i].i*S[i].i);
+		amp[i].i = 0.0;
+		
+		// complex_sqrt(&amp[i]);
+		if (isnan(amp[i].r)) amp[i].r = 0;
+		if (isnan(amp[i].i)) amp[i].i = 0;
+		if (isinf(amp[i].r)) amp[i].r = 0;
+		if (isinf(amp[i].i)) amp[i].i = 0;
+
+		Gf[i].r = (G_w[i].r*amp[i].r - G_w[i].i*amp[i].i);
+		Gf[i].i = (G_w[i].r*amp[i].i + G_w[i].i*amp[i].r);
+	}
+
+	// for (i=0; i<nfreq; i++) {
+	// 	for (j=0; j<nkx; j++) {
+	// 		Gpd[j*nfreq+i] = sqrtf(amp[i*nkx+j].r*amp[i*nkx+j].r+amp[i*nkx+j].i*amp[i*nkx+j].i);
+	// 	}
+	// }
     
-    conv_small(G_w, amp, Gf, nkx, nfreq); // Scaled data
+    // conv_small(G_w, amp, Gf, nkx, nfreq); // Scaled data
 
     /* inverse double FFT */
 	wkx2xt(&Gf[0], &G_pad[0], ntfft, nkx, nkx, ntfft, 0);
 	/* select original samples and traces */
-	scl = 1.0;
+	scl = (1.0)/(nkx*ntfft);
 	scl_data(G_pad,ntfft,nx,scl,Gpd ,nt);
 
     fp      = fopen("out.su", "w+");
@@ -169,108 +201,17 @@ int main (int argc, char **argv)
 	if (ret < 0 ) verr("error on writing output file.");
     fclose(fp);
 
+	// fp      = fopen("wav.su", "w+");
+	// for (j=0; j<nkx; j++) {
+	// 	hdr_gp[j].ns = nfreq;
+	// }
+    // ret = writeData(fp, Gpd, hdr_gp, nfreq, nkx);
+	// if (ret < 0 ) verr("error on writing output file.");
+    // fclose(fp);
+
     free(f1pd);free(Gpd);free(hdr_gp);free(hdr_fp);
 
 	return 0;
-}
-
-void conv_small(complex *c1, complex *c2, complex *c3, float nkx, float nfreq)
-{
-
-    float   *qr, *qi, *p1r, *p1i, *p2r, *p2i;
-    int     n, j;
-
-    /* apply convolution */
-	p1r = (float *) &c1[0];
-	p2r = (float *) &c2[0];
-	qr = (float *) &c3[0].r;
-	p1i = p1r + 1;
-	p2i = p2r + 1;
-	qi = qr + 1;
-	n = nkx*nfreq;
-	for (j = 0; j < n; j++) {
-		*qr = (*p2r**p1r - *p2i**p1i);
-		*qi = (*p2r**p1i + *p2i**p1r);
-		qr += 2;
-		qi += 2;
-		p1r += 2;
-		p1i += 2;
-		p2r += 2;
-		p2i += 2;
-	}
-}
-
-void corr_small(complex *c1, complex *c2, complex *c3, float nkx, float nfreq)
-{
-
-    float   *qr, *qi, *p1r, *p1i, *p2r, *p2i;
-    int     n, j;
-
-    /* apply convolution */
-	p1r = (float *) &c1[0];
-	p2r = (float *) &c2[0];
-	qr = (float *) &c3[0].r;
-	p1i = p1r + 1;
-	p2i = p2r + 1;
-	qi = qr + 1;
-	n = nkx*nfreq;
-	for (j = 0; j < n; j++) {
-		*qr = (*p2r**p1r + *p2i**p1i);
-		*qi = (*p2r**p1i - *p2i**p1r);
-		qr += 2;
-		qi += 2;
-		p1r += 2;
-		p1i += 2;
-		p2r += 2;
-		p2i += 2;
-	}
-}
-
-void deconv_small(complex *c1, complex *c2, complex *c3, float nkx, float nfreq, float reps, float eps)
-{
-
-    float   *qr, *qi, *p1r, *p1i, *p2r, *p2i, maxden, *den, leps;
-    int     n, j;
-
-    den = (float *)malloc(nfreq*nkx*sizeof(float));
-	if (den == NULL) verr("memory allocation error for den");
-
-    /* apply deconvolution */
-	p1r = (float *) &c1[0];
-	p2r = (float *) &c2[0];
-	p1i = p1r + 1;
-	p2i = p2r + 1;
-	n = nkx*nfreq;
-	maxden=0.0;
-	for (j = 0; j < n; j++) {
-		den[j] = *p2r**p2r + *p2i**p2i;
-		maxden = MAX(den[j], maxden);
-		p2r += 2;
-		p2i += 2;
-	}
-	p1r = (float *) &c1[0];
-	p2r = (float *) &c2[0];
-	qr = (float *) &c3[0].r;
-	p1i = p1r + 1;
-	p2i = p2r + 1;
-    qi = qr + 1;
-	leps = reps*maxden+eps;
-	for (j = 0; j < n; j++) {
-
-		if (fabs(*p2r)>=fabs(*p2i)) {
-			*qr = (*p2r**p1r+*p2i**p1i)/(den[j]+leps);
-			*qi = (*p2r**p1i-*p2i**p1r)/(den[j]+leps);
-		} else {
-			*qr = (*p1r**p2r+*p1i**p2i)/(den[j]+leps);
-			*qi = (*p1i**p2r-*p1r**p2i)/(den[j]+leps);
-		}
-		qr += 2;
-		qi += 2;
-		p1r += 2;
-		p1i += 2;
-		p2r += 2;
-		p2i += 2;
-	}
 }
 
 void complex_sqrt(complex *z)
