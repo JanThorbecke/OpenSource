@@ -75,8 +75,9 @@ void crmfft(complex *cdata, REAL *rdata, int n1, int n2, int ldc, int ldr, int s
 	static int nprev[MAX_NUMTHREADS];
     REAL *tmp;
     MKL_LONG Status;
-	int i, j, id;
+	int i, j;
 #endif
+	int id;
 
 #ifdef _OPENMP
 	id = omp_get_thread_num();
