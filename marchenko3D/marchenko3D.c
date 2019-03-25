@@ -82,6 +82,7 @@ char *sdoc[] = {
 " Required parameters: ",
 " ",
 "   file_tinv= ............... direct arrival from focal point: G_d",
+"   file_ray= ................ direct arrival from raytimes",
 "   file_shot= ............... Reflection response: R",
 " ",
 " Optional parameters: ",
@@ -94,6 +95,7 @@ char *sdoc[] = {
 " MARCHENKO ITERATIONS ",
 "   niter=10 ................. number of iterations",
 " MUTE-WINDOW ",
+"   file_amp= ................ amplitudes for the raytime estimation",
 "   above=0 .................. mute above(1), around(0) or below(-1) the first travel times of file_tinv",
 "   shift=12 ................. number of points above(positive) / below(negative) travel time for mute",
 "   hw=8 ..................... window in time samples to look for maximum in next trace",
@@ -112,6 +114,8 @@ char *sdoc[] = {
 "   file_f2= ................. output file with f2 (=p+) ",
 "   file_pplus= .............. output file with p+ ",
 "   file_pmin= ............... output file with p- ",
+"   file_imag= ............... output file with image ",
+"   file_ampscl= ............. output file with estimated amplitudes ",
 "   file_iter= ............... output file with -Ni(-t) for each iteration",
 "   verbose=0 ................ silent option; >0 displays info",
 " ",
@@ -203,7 +207,7 @@ int main (int argc, char **argv)
         nxs  = n2; 
         nys  = n3;
         nts  = n1;
-        dxs  = d2;
+        dxs  = d2*1e3;
         dys  = d3; 
         fxsb = f2;
         fysb = f3;
@@ -327,6 +331,7 @@ int main (int argc, char **argv)
     if (nxs>1) { 
         fxse = fxsb + (float)(nxs-1)*dxs;
         dxf = (xrcvsyn[nys*nxs-1] - xrcvsyn[0])/(float)(nxs-1);
+        vmess("fxsb%.3f fxse:%.3f dxf:%.3f",fxsb,fxse,dxf);
     }
     else {
         fxse = fxsb;
