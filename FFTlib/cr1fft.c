@@ -61,8 +61,9 @@ void cr1fft(complex *cdata, REAL *rdata, int n, int sign)
 	static int nprev[MAX_NUMTHREADS];
 	REAL *tmp;
     MKL_LONG Status;
-	int i, id;
+	int i;
 #endif
+	int id;
 
 #ifdef _OPENMP
 	id = omp_get_thread_num();
