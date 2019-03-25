@@ -72,8 +72,9 @@ void rcmfft(REAL *rdata, complex *cdata, int n1, int n2, int ldr, int ldc, int s
 	static DFTI_DESCRIPTOR_HANDLE handle[MAX_NUMTHREADS];
 	static int nprev[MAX_NUMTHREADS];
     MKL_LONG Status;
-	int i, j, id;
+	int i, j;
 #endif
+	int id;
 
 #ifdef _OPENMP
 	id = omp_get_thread_num();
