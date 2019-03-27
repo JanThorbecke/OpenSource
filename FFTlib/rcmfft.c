@@ -69,11 +69,19 @@ void rcmfft(REAL *rdata, complex *cdata, int n1, int n2, int ldr, int ldc, int s
 	static REAL *work;
 	REAL scl, *data;
 #elif defined(MKL)
-    static DFTI_DESCRIPTOR_HANDLE handle=0;
-    static int nprev=0;
+	static DFTI_DESCRIPTOR_HANDLE handle[MAX_NUMTHREADS];
+	static int nprev[MAX_NUMTHREADS];
     MKL_LONG Status;
-	int i,j;
+	int i, j;
 #endif
+	int id;
+
+#ifdef _OPENMP
+	id = omp_get_thread_num();
+#else
+	id = 0;
+#endif
+
 
 #if defined(HAVE_LIBSCS)
 	nmp = mp_my_threadnum();
@@ -130,39 +138,39 @@ void rcmfft(REAL *rdata, complex *cdata, int n1, int n2, int ldr, int ldc, int s
 	}
 	free(data);
 #elif defined(MKL)
-    if (n1 != nprev) {
-        DftiFreeDescriptor(&handle);
+    if (n1 != nprev[id]) {
+        DftiFreeDescriptor(&handle[id]);
         
-        Status = DftiCreateDescriptor(&handle, DFTI_SINGLE, DFTI_REAL, 1, (MKL_LONG)n1);
+        Status = DftiCreateDescriptor(&handle[id], DFTI_SINGLE, DFTI_REAL, 1, (MKL_LONG)n1);
         if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
             dfti_status_print(Status);
             printf(" DftiCreateDescriptor FAIL\n");
         }
-        Status = DftiSetValue(handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+        Status = DftiSetValue(handle[id], DFTI_PLACEMENT, DFTI_NOT_INPLACE);
         if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
             dfti_status_print(Status);
             printf(" DftiSetValue FAIL\n");
         }
         
-        Status = DftiSetValue(handle, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
+        Status = DftiSetValue(handle[id], DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
         if (! DftiErrorClass(Status, DFTI_NO_ERROR)) {
             dfti_status_print(Status);
             printf(" DftiSetValue FAIL\n");
         }
-        Status = DftiCommitDescriptor(handle);
+        Status = DftiCommitDescriptor(handle[id]);
         if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
             dfti_status_print(Status);
             printf(" DftiCommitDescriptor FAIL\n");
         }
-        nprev = n1;
+        nprev[id] = n1;
     }
-    Status = DftiComputeForward(handle, rdata, (MKL_Complex8 *)cdata);
+    Status = DftiComputeForward(handle[id], rdata, (MKL_Complex8 *)cdata);
     if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
         dfti_status_print(Status);
         printf(" DftiComputeForward FAIL\n");
     }
 	for (j=0; j<n2; j++) {
-    	Status = DftiComputeForward(handle, &rdata[j*ldr], (MKL_Complex8 *)&cdata[j*ldc]);
+    	Status = DftiComputeForward(handle[id], &rdata[j*ldr], (MKL_Complex8 *)&cdata[j*ldc]);
     	for (i=1; i<((n1-1)/2)+1; i++) {
         	cdata[j*ldc+i].i *= -sign;
     	}

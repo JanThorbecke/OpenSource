@@ -71,12 +71,20 @@ void crmfft(complex *cdata, REAL *rdata, int n1, int n2, int ldc, int ldr, int s
     static REAL *work;
     REAL scl, *data;
 #elif defined(MKL)
-    static DFTI_DESCRIPTOR_HANDLE handle=0;
-    static int nprev=0;
+	static DFTI_DESCRIPTOR_HANDLE handle[MAX_NUMTHREADS];
+	static int nprev[MAX_NUMTHREADS];
     REAL *tmp;
     MKL_LONG Status;
 	int i, j;
 #endif
+	int id;
+
+#ifdef _OPENMP
+	id = omp_get_thread_num();
+#else
+	id = 0;
+#endif
+
 
 #if defined(HAVE_LIBSCS)
 	nmp = mp_my_threadnum();
@@ -138,37 +146,37 @@ void crmfft(complex *cdata, REAL *rdata, int n1, int n2, int ldc, int ldr, int s
         memcpy(&rdata[j*ldr],&data[j*n1],n1*sizeof(REAL));
     }
 #elif defined(MKL)
-    if (n1 != nprev) {
-        DftiFreeDescriptor(&handle);
+    if (n1 != nprev[id]) {
+        DftiFreeDescriptor(&handle[id]);
 
-        Status = DftiCreateDescriptor(&handle, DFTI_SINGLE, DFTI_REAL, 1, (MKL_LONG)n1);
+        Status = DftiCreateDescriptor(&handle[id], DFTI_SINGLE, DFTI_REAL, 1, (MKL_LONG)n1);
         if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
             dfti_status_print(Status);
             printf(" DftiCreateDescriptor FAIL\n");
         }
-        Status = DftiSetValue(handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+        Status = DftiSetValue(handle[id], DFTI_PLACEMENT, DFTI_NOT_INPLACE);
         if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
             dfti_status_print(Status);
             printf(" DftiSetValue FAIL\n");
         }
 
-        Status = DftiSetValue(handle, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
+        Status = DftiSetValue(handle[id], DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
         //This options is what we would like, but is depreciated in the future
-        //Status = DftiSetValue(handle, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_REAL);
+        //Status = DftiSetValue(handle[id], DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_REAL);
         if (! DftiErrorClass(Status, DFTI_NO_ERROR)) {
             dfti_status_print(Status);
             printf(" DftiSetValue FAIL\n");
         }
-        Status = DftiCommitDescriptor(handle);
+        Status = DftiCommitDescriptor(handle[id]);
         if(! DftiErrorClass(Status, DFTI_NO_ERROR)){
             dfti_status_print(Status);
             printf(" DftiCommitDescriptor FAIL\n");
         }
-        nprev = n1;
+        nprev[id] = n1;
     }
     tmp = (float *)malloc(n1*sizeof(float));
     for (j=0; j<n2; j++) {
-    	Status = DftiComputeBackward(handle, (MKL_Complex8 *)&cdata[j*ldc], tmp);
+    	Status = DftiComputeBackward(handle[id], (MKL_Complex8 *)&cdata[j*ldc], tmp);
     	rdata[j*ldr] = tmp[0];
 		if (sign < 0) {
     		for (i=1; i<n1; i++) rdata[j*ldr+i] = -sign*tmp[n1-i];
