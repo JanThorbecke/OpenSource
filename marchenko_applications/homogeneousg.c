@@ -115,9 +115,9 @@ void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int 
 #pragma omp for
 	for (l = 0; l < Nsyn; l++) {
 
-		count+=1;
+		//count+=1;
 
-		if (verbose > 2) vmess("Creating Homogeneous G at location %d out of %d",count,Nsyn);
+		if (verbose > 2) vmess("Creating Homogeneous G at location %d out of %d",l,Nsyn);
 		if (scheme==3) vmess("Looping over %d source positions",n_source);
 
 		if (scheme==0) { //Marchenko representation
@@ -166,27 +166,31 @@ void homogeneousg(float *HomG, float *green, complex *Refl, int nx, int nt, int 
 			for (is=0; is<n_source; is++) {
             	convol(&green[is*nxs*nts], &f2p[l*nxs*nts], conv, nxs, nts, dt, 0);
             	timeDiff(conv, ntfft, nshots, dt, fmin, fmax, -3);
-				//shift_num = is*((int)(source_shift/dt));
             	if (kxwfilt) {
                 	kxwfilter(conv, ntfft, nshots, dt, dx, fmin, fmax, alpha, cp, perc);
             	}
             	for (i=0; i<npossyn; i++) {
-					/*for (j = nts/2+1; j < nts; j++) {
-                    	tmp1[i*nts+j] = 0.0;
-                    }
-					for (j = shift_num; j < nts; j++) {
-                        tmp1[i*nts+j] = conv[i*nts+j-shift_num];;
-                    }
-					for (j = shift_num; j < nts; j++) {
-                        tmp1[i*nts+j] = conv[i*nts+nts-shift_num+j];;
-                    }*/
-					//HomG[(nts/2-1)*Nsyn+synpos[l]] += tmp1[i*nts+nts-1]/rho;
                 	for (j=0; j<nts/2; j++) {
-                    	//HomG[(j+nts/2)*Nsyn+synpos[l]] += tmp1[i*nts+j]/rho;
                     	HomG[is*nts*Nsyn+(j+nts/2)*Nsyn+synpos[l]] += conv[i*nts+j]/rho;
                     	HomG[is*nts*Nsyn+j*Nsyn+synpos[l]] += conv[i*nts+(j+nts/2)]/rho;
                 	}
 				}
+            }
+        }
+		if (scheme==4) { //Marchenko representation with multiple shot gathers
+            depthDiff(&f2p[l*nxs*nts], ntfft, nshots, dt, dx, fmin, fmax, cp, 1);
+            for (is=0; is<n_source; is++) {
+                convol(&green[is*nxs*nts], &f2p[l*nxs*nts], conv, nxs, nts, dt, 0);
+                timeDiff(conv, ntfft, nshots, dt, fmin, fmax, -1);
+                if (kxwfilt) {
+                    kxwfilter(conv, ntfft, nshots, dt, dx, fmin, fmax, alpha, cp, perc);
+                }
+                for (i=0; i<npossyn; i++) {
+                    for (j=0; j<nts/2; j++) {
+                        HomG[is*nts*Nsyn+(j+nts/2)*Nsyn+synpos[l]] += conv[i*nts+j]/rho;
+                        HomG[is*nts*Nsyn+j*Nsyn+synpos[l]] += conv[i*nts+(j+nts/2)]/rho;
+                    }
+                }
             }
         }
 	}
