@@ -176,7 +176,7 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, fl
                 itrace++;
             }
             if (itrace>1) {
-                *n2 = itrace/igy;
+                *n2 = MAX(itrace/igy,*n2);
                 *n3 = igy;
                 if (*n2>1) {
                     dxrcv  = (float)(gx_end - gx_start)/(float)(*n2-1);
@@ -194,7 +194,7 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, fl
                 dysrc = (float)(hdr.sy - sy_shot)*scl;
             }
             else {
-                *n2 = MAX(hdr.trwf, 1);
+                *n2 = MAX(MAX(hdr.trwf, 1),*n2);
                 *n3 = 1;
                 *d2 = hdr.d2;
                 *d3 = 1.0;
