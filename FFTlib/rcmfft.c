@@ -74,7 +74,7 @@ void rcmfft(REAL *rdata, complex *cdata, int n1, int n2, int ldr, int ldc, int s
     MKL_LONG Status;
 	int i, j;
 #endif
-    int id;
+	int id;
 
 #ifdef _OPENMP
 	id = omp_get_thread_num();
