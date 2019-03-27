@@ -66,6 +66,7 @@ void cc1fft(complex *data, int n, int sign)
     MKL_LONG Status;
 #endif
 	int id;
+
 #ifdef _OPENMP
 	id = omp_get_thread_num();
 #else
