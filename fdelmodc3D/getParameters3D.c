@@ -218,8 +218,8 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 		stabfactor = 1.0/sqrt(2.0);
 	}
 	else {
-		dispfactor = 5;
-		stabfactor = 0.606; /* courant number */
+		dispfactor = 6;
+		stabfactor = 0.496; /* courant number */
 	}
     
 
@@ -377,7 +377,7 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 		}
 		for (j=0; j<bnd->ntap; j++) {
 			for (i=0; i<bnd->ntap; i++) {
-				for (l=0; l<bnd->ntap; i++) {
+				for (l=0; l<bnd->ntap; l++) {
 					wfct = (scl*sqrt(i*i+j*j+l*l));
 					bnd->tapxyz[l*bnd->ntap*bnd->ntap+j*bnd->ntap+i] = exp(-(wfct*wfct));
 				}
@@ -1047,7 +1047,7 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 			vmess("*******************************************");
 			vmess("tsnap1  = %f tsnap2  = %f ", tsnap1, tsnap2);
 			vmess("dtsnap  = %f Nsnap   = %li ", dtsnap, sna->nsnap);
-			vmess("nzsnap  = %li nysnap  = %li nxsnap  = %li ", sna->nz, sna->nz, sna->nx);
+			vmess("nzsnap  = %li nysnap  = %li nxsnap  = %li ", sna->nz, sna->ny, sna->nx);
 			vmess("dzsnap  = %f dysnap  = %f dxsnap  = %f ", dzsnap, dysnap, dxsnap);
 			vmess("zmin    = %f zmax    = %f ", sub_z0+dz*sna->z1, sub_z0+dz*sna->z2);
 			vmess("ymin    = %f ymax    = %f ", sub_y0+dy*sna->y1, sub_y0+dy*sna->y2);
