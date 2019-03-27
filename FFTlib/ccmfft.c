@@ -69,7 +69,7 @@ void ccmfft(complex *data, int n1, int n2, int ld1, int sign)
     MKL_LONG Status;
 	int j;
 #endif
-    int id;
+	int id;
 
 #ifdef _OPENMP
 	id = omp_get_thread_num();

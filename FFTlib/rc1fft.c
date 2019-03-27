@@ -62,7 +62,7 @@ void rc1fft(REAL *rdata, complex *cdata, int n, int sign)
     MKL_LONG Status;
 	int i;
 #endif
-    int id;
+	int id;
 
 #ifdef _OPENMP
 	id = omp_get_thread_num();
