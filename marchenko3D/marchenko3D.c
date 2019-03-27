@@ -282,7 +282,7 @@ int main (int argc, char **argv)
 /* G_d = p_0^+ = G_d (-t) ~ Tinv */
     if (file_ray!=NULL) {
         makeWindow3D(file_ray, file_amp, file_wav, dt, xrcvsyn, yrcvsyn, xsyn, ysyn, zsyn, 
-            xnxsyn, Nfoc, nx, ny, ntfft, muteW, G_d, verbose);
+            xnxsyn, Nfoc, nxs, nys, ntfft, muteW, G_d, verbose);
     }
     else {
         mode=-1; /* apply complex conjugate to read in data */
@@ -330,8 +330,7 @@ int main (int argc, char **argv)
     if (yrcvsyn[0] != 0 || yrcvsyn[nys*nxs-1] != 0 )  fysb = yrcvsyn[0];
     if (nxs>1) { 
         fxse = fxsb + (float)(nxs-1)*dxs;
-        dxf = (xrcvsyn[nys*nxs-1] - xrcvsyn[0])/(float)(nxs-1);
-        vmess("fxsb%.3f fxse:%.3f dxf:%.3f",fxsb,fxse,dxf);
+        dxf = (fxse - fxsb)/(float)(nxs-1);
     }
     else {
         fxse = fxsb;
@@ -342,7 +341,7 @@ int main (int argc, char **argv)
     }
     if (nys>1) {
         fyse = fysb + (float)(nys-1)*dys;
-        dyf = (yrcvsyn[nys*nxs-1] - yrcvsyn[0])/(float)(nys-1);
+        dyf = (fyse - fysb)/(float)(nys-1);
     }
     else {
         fyse = fysb;

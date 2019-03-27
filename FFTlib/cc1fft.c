@@ -64,9 +64,8 @@ void cc1fft(complex *data, int n, int sign)
 	static DFTI_DESCRIPTOR_HANDLE handle[MAX_NUMTHREADS];
 	static int nprev[MAX_NUMTHREADS];
     MKL_LONG Status;
-	int id;
 #endif
-
+	int id;
 #ifdef _OPENMP
 	id = omp_get_thread_num();
 #else
