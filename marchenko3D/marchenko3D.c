@@ -742,13 +742,24 @@ int main (int argc, char **argv)
             for (l=0; l<nyim; l++){
                 for (j=0; j<nxim; j++){
                     hdrs_Nfoc[l*nxim+j].ns      = nzim;
-                    hdrs_Nfoc[l*nxim+j].sx      = xsyn[j];
-                    hdrs_Nfoc[l*nxim+j].sy      = ysyn[l];
-                    hdrs_Nfoc[l*nxim+j].sdepth  = zsyn[l];
+                    hdrs_Nfoc[l*nxim+j].fldr    = 1;
+                    hdrs_Nfoc[l*nxim+j].tracl   = 1;
+                    hdrs_Nfoc[l*nxim+j].tracf   = l*nxim+j+1;
+                    hdrs_Nfoc[l*nxim+j].trid    = 1;
+                    hdrs_Nfoc[l*nxim+j].scalco  = -1000;
+                    hdrs_Nfoc[l*nxim+j].scalel  = -1000;
+                    hdrs_Nfoc[l*nxim+j].sx      = xsyn[j]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].sy      = ysyn[l]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].gx      = xsyn[j]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].gy      = ysyn[l]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].sdepth  = zsyn[l]*(1e3);
                     hdrs_Nfoc[l*nxim+j].f1      = zsyn[0];
+                    hdrs_Nfoc[l*nxim+j].f2      = xsyn[0];
                     hdrs_Nfoc[l*nxim+j].d1      = zsyn[1]-zsyn[0];
+                    hdrs_Nfoc[l*nxim+j].d2      = xsyn[1]-xsyn[0];
                     hdrs_Nfoc[l*nxim+j].dt      = (int)(hdrs_Nfoc[l*nxim+j].d1*(1E6));
                     hdrs_Nfoc[l*nxim+j].trwf    = nxim*nyim;
+                    hdrs_Nfoc[l*nxim+j].ntr     = nxim*nyim;
                 }
             }
             // Write the data
@@ -775,13 +786,24 @@ int main (int argc, char **argv)
         for (l=0; l<nyim; l++){
             for (j=0; j<nxim; j++){
                 hdrs_Nfoc[l*nxim+j].ns      = nzim;
-                hdrs_Nfoc[l*nxim+j].sx      = xsyn[j];
-                hdrs_Nfoc[l*nxim+j].sy      = ysyn[l];
-                hdrs_Nfoc[l*nxim+j].sdepth  = zsyn[l];
+                hdrs_Nfoc[l*nxim+j].fldr    = 1;
+                hdrs_Nfoc[l*nxim+j].tracl   = 1;
+                hdrs_Nfoc[l*nxim+j].tracf   = l*nxim+j+1;
+                hdrs_Nfoc[l*nxim+j].trid    = 1;
+                hdrs_Nfoc[l*nxim+j].scalco  = -1000;
+                hdrs_Nfoc[l*nxim+j].scalel  = -1000;
+                hdrs_Nfoc[l*nxim+j].sx      = xsyn[j]*(1e3);
+                hdrs_Nfoc[l*nxim+j].sy      = ysyn[l]*(1e3);
+                hdrs_Nfoc[l*nxim+j].gx      = xsyn[j]*(1e3);
+                hdrs_Nfoc[l*nxim+j].gy      = ysyn[l]*(1e3);
+                hdrs_Nfoc[l*nxim+j].sdepth  = zsyn[l]*(1e3);
                 hdrs_Nfoc[l*nxim+j].f1      = zsyn[0];
+                hdrs_Nfoc[l*nxim+j].f2      = xsyn[0];
                 hdrs_Nfoc[l*nxim+j].d1      = zsyn[1]-zsyn[0];
+                hdrs_Nfoc[l*nxim+j].d2      = xsyn[1]-xsyn[0];
                 hdrs_Nfoc[l*nxim+j].dt      = (int)(hdrs_Nfoc[l*nxim+j].d1*(1E6));
                 hdrs_Nfoc[l*nxim+j].trwf    = nxim*nyim;
+                hdrs_Nfoc[l*nxim+j].ntr     = nxim*nyim;
             }
         }
         // Write out image
