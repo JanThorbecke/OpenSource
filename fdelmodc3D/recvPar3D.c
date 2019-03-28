@@ -24,7 +24,8 @@
 
 void name_ext(char *filename, char *extension);
 
-long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0, float dx, float dy, float dz, long nx, long ny, long nz)
+long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0, 
+	float dx, float dy, float dz, long nx, long ny, long nz)
 {
 	float   *xrcv1, *xrcv2, *yrcv1, *yrcv2, *zrcv1, *zrcv2;
 	long    i, ix, ir, verbose;

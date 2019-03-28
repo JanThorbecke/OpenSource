@@ -22,7 +22,9 @@
 *           The Netherlands 
 **/
 
-long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3, float *d1, float *d2, float *d3, float *f1, float *f2, float *f3, float *min, float *max, long *axis, long zeroch, long verbose)
+long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3, 
+    float *d1, float *d2, float *d3, float *f1, float *f2, float *f3,
+    float *min, float *max, long *axis, long zeroch, long verbose)
 {
     FILE    *fp;
     size_t  nread, trace_sz;

@@ -82,7 +82,7 @@ long readTinvData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float
         gy1         = gy0;
 		xsrc[isyn]  = sx_shot*scl;
 		ysrc[isyn]  = sy_shot*scl;
-		zsrc[isyn]  = hdr.selev*scel;
+		zsrc[isyn]  = -hdr.selev*scel;
 		xnx[isyn]   = 0;
         ig = isyn*nxy*ntfft;
         ny1 = 1;

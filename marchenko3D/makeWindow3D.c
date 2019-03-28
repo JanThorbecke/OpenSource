@@ -59,7 +59,7 @@ void makeWindow3D(char *file_ray, char *file_amp, char *file_wav, float dt, floa
 	    wavtmp = (float *)calloc(ntwav,sizeof(float));
         readData3D(fp, wavtmp, &hdr, ntwav);
         //Fit the wavelet into the same time-axis as the Marchenko scheme
-        for (i=0; i<ntwav; i++) {
+        for (i=0; i<(ntfft/2); i++) {
             wavelet[i] = wavtmp[i];
             wavelet[ntfft-1-i] = wavtmp[ntwav-1-i];
         }

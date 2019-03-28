@@ -21,7 +21,10 @@ void vmess(char *fmt, ...);
  *
  **********************************************************************/
 
-long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, float *rox, float *roy, float *roz, float *l2m, float **src_nwav, long verbose)
+long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
+	long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz,
+	float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
+	float *rox, float *roy, float *roz, float *l2m, float **src_nwav, long verbose)
 {
 	long is0, ibndz, ibndy, ibndx;
 	long isrc, ix, iy, iz, n1, n2;

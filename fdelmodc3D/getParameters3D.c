@@ -24,15 +24,21 @@ float gaussGen();
 
 long loptncr(long n);
 
-long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3, float *d1, float *d2, float *d3, float *f1, float *f2, float *f3, float *min, float *max, long *axis, long zeroch, long verbose);
+long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3, 
+    float *d1, float *d2, float *d3, float *f1, float *f2, float *f3,
+    float *min, float *max, long *axis, long zeroch, long verbose);
 
-long getWaveletInfo3D(char *file_src, long *n1, long *n2, float *d1, float *d2, float *f1, float *f2, float *fmax, long *nxm, long verbose);
- 
-long getWaveletHeaders3D(char *file_src, long n1, long n2, float *gx, float *sx, float *gy, float *sy, float *gelev, float *selev, long verbose);
+long getWaveletInfo3D(char *file_src, long *n1, long *n2, float *d1, float *d2, 
+	float *f1, float *f2, float *fmax, long *nxm, long verbose);
 
-long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0, float dx, float dy, float dz, long nx, long ny, long nz);
+long getWaveletHeaders3D(char *file_src, long n1, long n2, float *gx, float *sx, 
+	float *gy, float *sy, float *gelev, float *selev, long verbose);
 
-long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, shotPar *shot, bndPar *bnd, long verbose)
+long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0, 
+	float dx, float dy, float dz, long nx, long ny, long nz);
+
+long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, 
+	shotPar *shot, bndPar *bnd, long verbose)
 {
 	long isnapmax1, isnapmax2, isnapmax, sna_nrsna;
 	long n1, n2, n3, nx, ny, nz, nsrc, ix, axis, ioPz, is0, optn;
@@ -212,8 +218,8 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 		stabfactor = 1.0/sqrt(2.0);
 	}
 	else {
-		dispfactor = 5;
-		stabfactor = 0.606; /* courant number */
+		dispfactor = 6;
+		stabfactor = 0.496; /* courant number */
 	}
     
 
@@ -371,7 +377,7 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 		}
 		for (j=0; j<bnd->ntap; j++) {
 			for (i=0; i<bnd->ntap; i++) {
-				for (l=0; l<bnd->ntap; i++) {
+				for (l=0; l<bnd->ntap; l++) {
 					wfct = (scl*sqrt(i*i+j*j+l*l));
 					bnd->tapxyz[l*bnd->ntap*bnd->ntap+j*bnd->ntap+i] = exp(-(wfct*wfct));
 				}
@@ -1041,7 +1047,7 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 			vmess("*******************************************");
 			vmess("tsnap1  = %f tsnap2  = %f ", tsnap1, tsnap2);
 			vmess("dtsnap  = %f Nsnap   = %li ", dtsnap, sna->nsnap);
-			vmess("nzsnap  = %li nysnap  = %li nxsnap  = %li ", sna->nz, sna->nz, sna->nx);
+			vmess("nzsnap  = %li nysnap  = %li nxsnap  = %li ", sna->nz, sna->ny, sna->nx);
 			vmess("dzsnap  = %f dysnap  = %f dxsnap  = %f ", dzsnap, dysnap, dxsnap);
 			vmess("zmin    = %f zmax    = %f ", sub_z0+dz*sna->z1, sub_z0+dz*sna->z2);
 			vmess("ymin    = %f ymax    = %f ", sub_y0+dy*sna->y1, sub_y0+dy*sna->y2);
@@ -1145,7 +1151,7 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 	
 	/* calculates the receiver coordinates */
 	
-	recvPar(rec, sub_x0, sub_y0, sub_z0, dx, dy, dz, nx, ny, nz);
+	recvPar3D(rec, sub_x0, sub_y0, sub_z0, dx, dy, dz, nx, ny, nz);
 
 	if (!getparlong("rec_type_vz", &rec->type.vz)) rec->type.vz=1;
 	if (!getparlong("rec_type_vy", &rec->type.vy)) rec->type.vy=0;

@@ -26,7 +26,8 @@
 **/
 
 
-long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz, float *l2m, float *lam, float *muu, float *tss, float *tes, float *tep)
+long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
+    float *l2m, float *lam, float *muu, float *tss, float *tes, float *tep)
 {
     FILE    *fpcp, *fpcs, *fpro;
 	FILE    *fpqp=NULL, *fpqs=NULL;
