@@ -37,6 +37,8 @@ FFTlib/test/ccmtest
 FFTlib/test/rc1test
 FFTlib/test/rc2dtest
 FFTlib/test/rcmtest
+FFTlib/test/rc1loop
+FFTlib/test/cc1loop
 marchenko_applications/HomG
 marchenko_applications/MuteSnap
 marchenko_applications/combine
