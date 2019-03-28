@@ -20,34 +20,26 @@ all: fdelmodc3D
 PRG = fdelmodc3D
 
 SRCC	= $(PRG).c \
-		acoustic2.c \
-		acoustic4.c \
-		acousticSH4.c \
-		acoustic4_qr.c \
-		acoustic6.c \
-		viscoacoustic4.c \
-		elastic4.c \
-		elastic4dc.c \
-		elastic6.c \
-		viscoelastic4.c \
-		defineSource.c  \
-		getParameters.c  \
-		getWaveletInfo.c  \
-		getModelInfo.c  \
-		applySource.c  \
-		getRecTimes.c  \
-		getBeamTimes.c  \
-		writeSnapTimes.c  \
-		writeRec.c  \
-		writeSrcRecPos.c  \
+		acoustic4_3D.c \
+		defineSource3D.c  \
+		getParameters3D.c  \
+		getWaveletInfo3D.c  \
+		getModelInfo3D.c  \
+		applySource3D.c  \
+		getRecTimes3D.c  \
+		getBeamTimes3D.c  \
+		writeSnapTimes3D.c  \
+		writeRec3D.c  \
+		writeSrcRecPos3D.c  \
 		decomposition.c  \
 		fileOpen.c  \
-		recvPar.c  \
-		readModel.c  \
-		sourceOnSurface.c  \
-		getWaveletHeaders.c  \
-		boundaries.c  \
+		recvPar3D.c  \
+		readModel3D.c  \
+		sourceOnSurface3D.c  \
+		getWaveletHeaders3D.c  \
+		boundaries3D.c  \
 		verbosepkg.c  \
+		writesufile3D.c  \
 		writesufile.c  \
 		gaussGen.c  \
 		spline3.c  \
@@ -61,7 +53,7 @@ SRCC	= $(PRG).c \
 
 OBJC	= $(SRCC:%.c=%.o)
 
-$(PRG):	$(OBJC) fdelmodc.h
+$(PRG):	$(OBJC) fdelmodc3D.h
 	$(CC) $(LDFLAGS) $(CFLAGS) $(OPTC) -o fdelmodc3D $(OBJC) $(LIBS)
 
 install: fdelmodc3D 

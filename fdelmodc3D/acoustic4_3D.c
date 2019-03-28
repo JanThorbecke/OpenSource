@@ -6,17 +6,32 @@
 
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 
-long applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long izsrc, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float **src_nwav, long verbose);
+long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
+	long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz,
+	float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
+	float *rox, float *roy, float *roz, float *l2m, float **src_nwav, long verbose);
 
-long storeSourceOnSurface(modPar mod, srcPar src, bndPar bnd, long ixsrc, long izsrc, float *vx, float *vz, float *tzz, float *txx, float *txz, long verbose);
+long storeSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd,
+    long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz, 
+    float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, long verbose);
 
-long reStoreSourceOnSurface(modPar mod, srcPar src, bndPar bnd, long ixsrc, long izsrc, float *vx, float *vz, float *tzz, float *txx, float *txz, long verbose);
+long reStoreSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd, 
+    long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz,
+    float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, long verbose);
 
-long boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, long itime, long verbose);
+long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz,
+	float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
+	float *rox, float *roy, float *roz, float *l2m, float *lam, float *mul,
+	long itime, long verbose);
 
-long boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, long itime, long verbose);
+long boundariesV3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz,
+	float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
+	float *rox, float *roy, float *roz, float *l2m, float *lam, float *mul,
+	long itime, long verbose);
 
-long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz, float *p, float *rox, float *roy, float *roz, float *l2m, long verbose)
+long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
+    long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz,
+    float *p, float *rox, float *roy, float *roz, float *l2m, long verbose)
 {
 /*********************************************************************
        COMPUTATIONAL OVERVIEW OF THE 4th ORDER STAGGERED GRID: 
