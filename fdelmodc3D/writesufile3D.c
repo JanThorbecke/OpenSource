@@ -22,7 +22,8 @@
 #define ISODD(n) ((n) & 01)
 #define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 
-long writesufile3D(char *filename, float *data, long n1, long n2, float f1, float f2, float d1, float d2)
+long writesufile3D(char *filename, float *data, long n1, long n2, 
+	float f1, float f2, float d1, float d2)
 {
 	FILE    *file_out;
 	size_t  nwrite, itrace;
@@ -70,7 +71,8 @@ long writesufile3D(char *filename, float *data, long n1, long n2, float f1, floa
 *
 **/
 
-long writesufilesrcnwav3D(char *filename, float **src_nwav, wavPar wav, long n1, long n2, float f1, float f2, float d1, float d2)
+long writesufilesrcnwav3D(char *filename, float **src_nwav, wavPar wav, long n1, long n2, 
+	float f1, float f2, float d1, float d2)
 {
 	FILE    *file_out;
 	size_t  nwrite, itrace;
