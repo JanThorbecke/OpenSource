@@ -88,6 +88,8 @@ MKLLIB=${MKLROOT}/lib
 #for GNU compilers
 #you might need to add intel64 to : ${MKLROOT}/lib/intel64
 BLAS = -L${MKLROOT}/lib/ -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
+#for GNU on OSX
+#BLAS = -L${MKLROOT}/lib/ -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
 #on linux you want to use groups and MKL is in lib/intel64
 #MKLLIB=${MKLROOT}/lib/intel64
 #BLAS = -Wl,-rpath ${MKLLIB} -Wl,--start-group -L${MKLLIB} -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group -lpthread -lm -ldl
@@ -106,11 +108,13 @@ MKLLIB=${MKLROOT}/lib
 OPTC += -DMKL -I$(MKLROOT)/include
 #for GNU compilers
 FFT = -Wl,-rpath ${MKLLIB} -L${MKLLIB} -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
+#for GNU on OSX
+#FFT = -L${MKLROOT}/lib/ -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
 #on linux you want to use groups and MKL is in lib/intel64
 #MKLLIB=${MKLROOT}/lib/intel64
 #FFT = -Wl,-rpath ${MKLLIB} -Wl,--start-group -L${MKLLIB} -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group -lpthread -lm -ldl
 #for Intel compilers
-#FFT = -Wl,-rpath ${MKLLIB} -Wl,--start-group -L${MKLLIB} -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group -lpthread -lm -ldl
+#FFT = -Wl,-rpath ${MKLLIB} -L${MKLLIB} -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
 
 #LIBARIES
 LIBS= -L$L -lgenfft $(FFT) $(BLAS)
