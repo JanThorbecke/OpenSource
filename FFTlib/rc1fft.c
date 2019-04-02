@@ -158,7 +158,7 @@ void dfti_status_print(MKL_LONG status)
     char*   error_message;
 
     error_message = DftiErrorMessage(status);
-     printf("error_message = %s \n", error_message);
+    printf("error_message = %s \n", error_message);
     return;
 }
 #endif
