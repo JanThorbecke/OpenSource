@@ -70,6 +70,8 @@ void synthesis3D(complex *Refl, complex *Fop, float *Top, float *iRN, long nx, l
 
 void imaging3D(float *Image, float *Gmin, float *f1plus, long nx, long ny, long nt, float dx, float dy, float dt, long Nfoc, long verbose);
 
+void homogeneousg3D(float *HomG, float *green, float *f2, long nx, long ny, long nt, float dx, float dy, float dt, long Nfoc, long verbose);
+
 long linearsearch(long *array, size_t N, long value);
 
 /*********************** self documentation **********************/
@@ -105,6 +107,11 @@ char *sdoc[] = {
 "   pad=0 .................... amount of samples to pad the reflection series",
 "   reci=0 ................... 1; add receivers as shots 2; only use receivers as shot positions",
 "   countmin=0 ............... 0.3*nxrcv; minumum number of reciprocal traces for a contribution",
+" HOMOGENEOUS GREEN'S FUNCTION RETRIEVAL OPTIONS ",
+"   file_inp= ................ Input source function for the retrieval",
+"   scheme=0 ................. Scheme for homogeneous Green's function retrieval",
+"   .......................... Scheme for homogeneous Green's function retrieval",
+"   kxwfilt=0 ................ Apply a dip filter before integration",
 " OUTPUT DEFINITION ",
 "   file_green= .............. output file with full Green function(s)",
 "   file_gplus= .............. output file with G+ ",
@@ -115,6 +122,7 @@ char *sdoc[] = {
 "   file_pplus= .............. output file with p+ ",
 "   file_pmin= ............... output file with p- ",
 "   file_imag= ............... output file with image ",
+"   file_homg= ............... output file with homogeneous Green's function ",
 "   file_ampscl= ............. output file with estimated amplitudes ",
 "   file_iter= ............... output file with -Ni(-t) for each iteration",
 "   verbose=0 ................ silent option; >0 displays info",
@@ -728,10 +736,10 @@ int main (int argc, char **argv)
 			for (j=0; j<nxs*nys*nts; j++) {
 				green[l*nxs*nts+j] *= ampscl[l];
 				if (file_gplus != NULL) Gplus[l*nxs*nys*nts+j] *= ampscl[l];
-    			if (file_gmin != NULL) Gmin[l*nxs*nys*nts+j] *= ampscl[l];
+    			if (file_gmin != NULL || file_imag != NULL) Gmin[l*nxs*nys*nts+j] *= ampscl[l];
     			if (file_f2 != NULL) f2p[l*nxs*nys*nts+j] *= ampscl[l];
     			if (file_pmin != NULL) pmin[l*nxs*nys*nts+j] *= ampscl[l];
-    			if (file_f1plus != NULL) f1plus[l*nxs*nys*nts+j] *= ampscl[l];
+    			if (file_f1plus != NULL || file_imag != NULL) f1plus[l*nxs*nys*nts+j] *= ampscl[l];
     			if (file_f1min != NULL) f1min[l*nxs*nys*nts+j] *= ampscl[l];
 			}
             if (verbose>1) vmess("Amplitude of focal position %li is equal to %.3e",l,ampscl[l]);

@@ -22,7 +22,7 @@
 *           The Netherlands 
 **/
 
-long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3, 
+long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3,
     float *d1, float *d2, float *d3, float *f1, float *f2, float *f3,
     float *min, float *max, long *axis, long zeroch, long verbose)
 {
@@ -49,7 +49,7 @@ long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3,
     *f2 = hdr.f2;
 
     gy0 = hdr.gy;
-    *f3 = gy0;
+    *f3 = gy0/1000.0;
     ny = 1;
     gy = hdr.gy;
 
@@ -99,6 +99,9 @@ long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3,
         }
         nread = fread( &hdr, 1, TRCBYTES, fp );
         if (nread==0) break;
+
+        //printf("Now ny=%d gx=%d gy=%d hdr.gy=%d\n", ny, hdr.gx, gy, hdr.gy); //del
+
         if (hdr.gy != gy) {
             gy = hdr.gy;
             ny++;
@@ -109,16 +112,18 @@ long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3,
 
     *n3 = ny;
     *n2 = ntraces/ny;
-    *d3 = ((float)(gy-gy0))/((float)ny);
+    //*d3 = ((float)(gy-gy0))/((float)ny); //correcting
+    *d3 = ((float)(gy-gy0))/(((float)(ny-1))*1000); //del
 
     if ( NINT(100.0*((*d1)/(*d3)))!=100 ) {
-        verr("dx and dy are different in the model !");
+        verr("dx and dy are different in the model !"); 
     }
 
     if (verbose>2) {
         vmess("For file %s", file_name);
         vmess("nz=%li nx=%li ny=%li", *n1, *n2, *n3);
-        vmess("dz=%f dx=%f dy=%li", *d1, *d2, *d3);
+        //vmess("dz=%f dx=%f dy=%li", *d1, *d2, *d3); //check correction
+        vmess("dz=%f dx=%f dy=%f", *d1, *d2, *d3); //check correction
         vmess("min=%f max=%f", *min, *max);
         vmess("zstart=%f xstart=%f ystart=%f", *f1, *f2, *f3);
         if (*axis) vmess("sample represent z-axis\n");

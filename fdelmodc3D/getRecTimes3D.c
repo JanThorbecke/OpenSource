@@ -17,12 +17,12 @@
 *           The Netherlands 
 **/
 
-long getRecTimes3D(modPar mod, recPar rec, bndPar bnd, long itime, long isam, 
+long getRecTimes3D(modPar mod, recPar rec, bndPar bnd, long itime, long isam,
 	float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx,
-	float *txz, float *txy, float *tyz, float *l2m, 
-	float *rox, float *roy, float *roz, float *rec_vx, float *rec_vy, float *rec_vz, 
-	float *rec_txx, float *rec_tyy, float *rec_tzz, float *rec_txz, float *rec_txy, float *rec_tyz, 
-	float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, long verbose)
+	float *txz, float *txy, float *tyz, float *l2m, float *rox, float *roy, float *roz,
+	float *rec_vx, float *rec_vy, float *rec_vz, float *rec_txx, float *rec_tyy, float *rec_tzz,
+	float *rec_txz, float *rec_txy, float *rec_tyz, float *rec_p, float *rec_pp, float *rec_ss,
+	float *rec_udp, float *rec_udvz, long verbose)
 {
 	long n1, n2, ibndx, ibndy, ibndz;
 	long irec, ix, iy, iz, ix2, iy2, iz2, ix1, iy1, iz1;

@@ -19,7 +19,7 @@
 *           The Netherlands 
 **/
 
-long writesufile3D(char *filename, float *data, long n1, long n2, 
+long writesufile3D(char *filename, float *data, long n1, long n2,
 	float f1, float f2, float d1, float d2);
 
 long writeSrcRecPos3D(modPar *mod, recPar *rec, srcPar *src, shotPar *shot)

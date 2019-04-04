@@ -41,11 +41,11 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 
-long writeRec3D(recPar rec, modPar mod, bndPar bnd, wavPar wav, 
-    long ixsrc, long iysrc, long izsrc, long nsam, long ishot, long fileno, 
-    float *rec_vx, float *rec_vy, float *rec_vz, float *rec_txx, float *rec_tyy, float *rec_tzz,
-    float *rec_txz,  float *rec_tyz,  float *rec_txy, 
-    float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, long verbose)
+long writeRec3D(recPar rec, modPar mod, bndPar bnd, wavPar wav, long ixsrc, long iysrc, long izsrc,
+    long nsam, long ishot, long fileno, float *rec_vx, float *rec_vy, float *rec_vz,
+    float *rec_txx, float *rec_tyy, float *rec_tzz, float *rec_txz,  float *rec_tyz, 
+    float *rec_txy, float *rec_p, float *rec_pp, float *rec_ss,
+    float *rec_udp, float *rec_udvz, long verbose)
 {
     FILE    *fpvx, *fpvy, *fpvz, *fptxx, *fptyy, *fptzz, *fptxz, *fptyz, *fptxy, *fpp, *fppp, *fpss, *fpup, *fpdown;
     float *rec_up, *rec_down, *trace, *rec_vze, *rec_pe;

@@ -25,19 +25,19 @@ float gaussGen();
 long loptncr(long n);
 
 long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3, 
-    float *d1, float *d2, float *d3, float *f1, float *f2, float *f3,
-    float *min, float *max, long *axis, long zeroch, long verbose);
+	float *d1, float *d2, float *d3, float *f1, float *f2, float *f3,
+	float *min, float *max, long *axis, long zeroch, long verbose);
 
-long getWaveletInfo3D(char *file_src, long *n1, long *n2, float *d1, float *d2, 
+long getWaveletInfo3D(char *file_src, long *n1, long *n2, float *d1, float *d2,
 	float *f1, float *f2, float *fmax, long *nxm, long verbose);
-
-long getWaveletHeaders3D(char *file_src, long n1, long n2, float *gx, float *sx, 
+ 
+long getWaveletHeaders3D(char *file_src, long n1, long n2, float *gx, float *sx,
 	float *gy, float *sy, float *gelev, float *selev, long verbose);
 
-long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0, 
+long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 	float dx, float dy, float dz, long nx, long ny, long nz);
 
-long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, 
+long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src,
 	shotPar *shot, bndPar *bnd, long verbose)
 {
 	long isnapmax1, isnapmax2, isnapmax, sna_nrsna;
@@ -97,6 +97,8 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 	
 	getModelInfo3D(mod->file_cp, &nz, &nx, &ny, &dz, &dx, &dy, &sub_z0, &sub_x0, &sub_y0, &cp_min, &cp_max, &axis, 1, verbose);
 	getModelInfo3D(mod->file_ro, &n1, &n2, &n3, &d1, &d2, &d3, &zstart, &xstart, &ystart, &ro_min, &ro_max, &axis, 0, verbose);
+
+
 	mod->cp_max = cp_max;
 	mod->cp_min = cp_min;
 	mod->ro_max = ro_max;
@@ -144,11 +146,15 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 	mod->nz = nz;
 	mod->nx = nx;
 	mod->ny = ny;
-	
-	/* define wavelet(s), modeling time and wavelet maximum frequency */
 
+
+
+// end of part1 ################################################################################################
+
+	/* define wavelet(s), modeling time and wavelet maximum frequency */ 
 	if (wav->file_src!=NULL) {
 		getWaveletInfo3D(wav->file_src, &wav->ns, &wav->nx, &wav->ds, &d2, &f1, &f2, &fmax, &ntraces, verbose);
+
 		if (wav->ds <= 0.0) {
 			vwarn("dt in wavelet (file_src) equal to 0.0 or negative.");
 			vwarn("Use parameter dt= to overule dt from file_src.");
@@ -157,6 +163,7 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 		wav->dt = wav->ds;
 		if(!getparfloat("tmod",&mod->tmod)) mod->tmod = (wav->nt-1)*wav->dt;
 		if(!getparfloat("dt",&mod->dt)) mod->dt=wav->dt;
+
         if (NINT(wav->ds*1000000) != NINT(mod->dt*1000000)) {
 			if (wav->dt > mod->dt) {
 				scaledt = wav->dt/mod->dt;
@@ -219,9 +226,15 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 	}
 	else {
 		dispfactor = 6;
-		stabfactor = 0.496; /* courant number */
+		//stabfactor = 0.606; /* courant number */
+		stabfactor = 0.496; //Joeri check: number changes in 3D case. Sei&Simes, 1995.
+		/*However as we will see in the sequel, the stability condition
+has only an indicative role. We will have to choose p = c. A t/Ax much less
+than the maximum allowed by the stability condition to fulfill the precision
+criteria we have imposed.*/
 	}
     
+// end of part2 ################################################################################################
 
     /* origin of model in real (non-grid) coordinates */
 	mod->x0 = sub_x0;
@@ -248,7 +261,7 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 		vmess("*************** model info ****************");
 		vmess("*******************************************");
 		vmess("nz      = %li    ny      = %li nx      = %li", nz, ny, nx);
-		vmess("dz      = %8.4f  dy      = %li dx      = %8.4f", dz, dy, dx);
+		vmess("dz      = %8.4f  dy      = %8.4f dx      = %8.4f", dz, dy, dx);
 		vmess("zmin    = %8.4f  zmax    = %8.4f", sub_z0, zmax);
 		vmess("ymin    = %8.4f  ymax    = %8.4f", sub_y0, ymax);
 		vmess("xmin    = %8.4f  xmax    = %8.4f", sub_x0, xmax);
@@ -352,6 +365,7 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 	if (!getparfloat("m",&bnd->m)) bnd->m=2.0;
 	bnd->npml=bnd->ntap;
 
+
 	if (bnd->ntap) {
 		bnd->tapx   = (float *)malloc(bnd->ntap*sizeof(float));
         bnd->tapy   = (float *)malloc(bnd->ntap*sizeof(float));
@@ -369,22 +383,25 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 			wfct = (scl*(i+0.5));
 			bnd->tapz[i] = exp(-(wfct*wfct));
 		}
+		//corner
 		for (j=0; j<bnd->ntap; j++) {
 			for (i=0; i<bnd->ntap; i++) {
 				wfct = (scl*sqrt(i*i+j*j));
 				bnd->tapxz[j*bnd->ntap+i] = exp(-(wfct*wfct));
 			}
 		}
+
+		//double corner
 		for (j=0; j<bnd->ntap; j++) {
 			for (i=0; i<bnd->ntap; i++) {
 				for (l=0; l<bnd->ntap; l++) {
 					wfct = (scl*sqrt(i*i+j*j+l*l));
-					bnd->tapxyz[l*bnd->ntap*bnd->ntap+j*bnd->ntap+i] = exp(-(wfct*wfct));
+					bnd->tapxyz[l*(bnd->ntap)*(bnd->ntap)+j*(bnd->ntap)+i] = exp(-(wfct*wfct));
 				}
 			}
 		}
 	}
-    
+
     /* Vx: rox */
 	mod->ioXx=mod->iorder/2;
     mod->ioXy=mod->iorder/2-1;
@@ -492,8 +509,8 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
     if (bnd->top==4 || bnd->top==2) ioPz=mod->ioPz - bnd->ntap;
 	else ioPz=mod->ioPz;
 	ioPz=mod->ioPz;
-	bnd->surface = (long *)malloc((mod->nax+mod->nay+mod->naz)*sizeof(long));
-	for (ix=0; ix<mod->nax+mod->nay+mod->naz; ix++) {
+	bnd->surface = (long *)malloc((mod->nax*mod->nay+mod->naz)*sizeof(long));
+	for (ix=0; ix<mod->nax*mod->nay+mod->naz; ix++) {
 		bnd->surface[ix] = ioPz;
 	}
 
@@ -508,14 +525,14 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 		vmess("Bottom boundary : %li",bnd->bot);
 		vmess("Front boundary  : %li",bnd->fro);
 		vmess("Back boundary   : %li",bnd->bac);
-        vmess("taper lenght = %li points",bnd->ntap);
+        vmess("taper length = %li points",bnd->ntap);
 	}
 
 	/* define the number and type of shots to model */
 	/* each shot can have multiple sources arranged in different ways */
     
 	if (!getparfloat("xsrc",&xsrc)) xsrc=sub_x0+((nx-1)*dx)/2.0;
-	if (!getparfloat("ysrc",&xsrc)) ysrc=sub_y0+((ny-1)*dy)/2.0;
+	if (!getparfloat("ysrc",&ysrc)) ysrc=sub_y0+((ny-1)*dy)/2.0;
 	if (!getparfloat("zsrc",&zsrc)) zsrc=sub_z0;
 
 	if (!getparlong("nshot",&shot->n)) shot->n=1;
@@ -1151,7 +1168,10 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 	
 	/* calculates the receiver coordinates */
 	
+
 	recvPar3D(rec, sub_x0, sub_y0, sub_z0, dx, dy, dz, nx, ny, nz);
+
+	 
 
 	if (!getparlong("rec_type_vz", &rec->type.vz)) rec->type.vz=1;
 	if (!getparlong("rec_type_vy", &rec->type.vy)) rec->type.vy=0;

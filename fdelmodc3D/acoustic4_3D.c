@@ -6,32 +6,22 @@
 
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 
-long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
-	long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz,
-	float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
-	float *rox, float *roy, float *roz, float *l2m, float **src_nwav, long verbose);
+long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, float *rox, float *roy, float *roz, float *l2m, float **src_nwav, long verbose);
+//long applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long izsrc, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float **src_nwav, long verbose);
 
-long storeSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd,
-    long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz, 
-    float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, long verbose);
+long storeSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd, long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, long verbose);
+//long storeSourceOnSurface(modPar mod, srcPar src, bndPar bnd, long ixsrc, long izsrc, float *vx, float *vz, float *tzz, float *txx, float *txz, long verbose);
 
-long reStoreSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd, 
-    long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz,
-    float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, long verbose);
+long reStoreSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd, long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, long verbose);
+//long reStoreSourceOnSurface(modPar mod, srcPar src, bndPar bnd, long ixsrc, long izsrc, float *vx, float *vz, float *tzz, float *txx, float *txz, long verbose);
 
-long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz,
-	float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
-	float *rox, float *roy, float *roz, float *l2m, float *lam, float *mul,
-	long itime, long verbose);
+long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, float *rox, float *roy, float *roz, float *l2m, float *lam, float *mul, long itime, long verbose);
+//long boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, long itime, long verbose);
 
-long boundariesV3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz,
-	float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
-	float *rox, float *roy, float *roz, float *l2m, float *lam, float *mul,
-	long itime, long verbose);
+long boundariesV3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, float *rox, float *roy, float *roz, float *l2m, float *lam, float *mul, long itime, long verbose);
+//long boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, long itime, long verbose);
 
-long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
-    long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz,
-    float *p, float *rox, float *roy, float *roz, float *l2m, long verbose)
+long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz, float *p, float *rox, float *roy, float *roz, float *l2m, long verbose)
 {
 /*********************************************************************
        COMPUTATIONAL OVERVIEW OF THE 4th ORDER STAGGERED GRID: 
@@ -87,13 +77,14 @@ long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 	c1 = 9.0/8.0; 
 	c2 = -1.0/24.0;
 	n1  = mod.naz;
-    n2  = mod.nay;
+    n2  = mod.nax;
 
 	/* calculate vx for all grid points except on the virtual boundary*/
 #pragma omp for private (ix, iy, iz) nowait schedule(guided,1)
 	for (iy=mod.ioXy; iy<mod.ieXy; iy++) {
-#pragma ivdep
+//#pragma ivdep
         for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
+       #pragma ivdep //deletar 
             for (iz=mod.ioXz; iz<mod.ieXz; iz++) {
                 vx[iy*n2*n1+ix*n1+iz] -= rox[iy*n2*n1+ix*n1+iz]*(
                     c1*(p[iy*n2*n1+ix*n1+iz]     - p[iy*n2*n1+(ix-1)*n1+iz]) +
@@ -105,8 +96,9 @@ long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 	/* calculate vy for all grid points except on the virtual boundary*/
 #pragma omp for private (ix, iy, iz) nowait schedule(guided,1)
 	for (iy=mod.ioYy; iy<mod.ieYy; iy++) {
-#pragma ivdep
+//#pragma ivdep
         for (ix=mod.ioYx; ix<mod.ieYx; ix++) {
+            #pragma ivdep //deletar
             for (iz=mod.ioYz; iz<mod.ieYz; iz++) {
                 vy[iy*n2*n1+ix*n1+iz] -= roy[iy*n2*n1+ix*n1+iz]*(
                     c1*(p[iy*n2*n1+ix*n1+iz]     - p[(iy-1)*n2*n1+ix*n1+iz]) +
@@ -118,23 +110,27 @@ long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 	/* calculate vz for all grid points except on the virtual boundary */
 #pragma omp for private (ix, iy, iz) schedule(guided,1) 
 	for (iy=mod.ioZy; iy<mod.ieZy; iy++) {
-#pragma ivdep
+//#pragma ivdep
         for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
+            #pragma ivdep //deletar
             for (iz=mod.ioZz; iz<mod.ieZz; iz++) {
                 vz[iy*n2*n1+ix*n1+iz] -= roz[iy*n2*n1+ix*n1+iz]*(
                     c1*(p[iy*n2*n1+ix*n1+iz]   - p[iy*n2*n1+ix*n1+iz-1]) +
                     c2*(p[iy*n2*n1+ix*n1+iz+1] - p[iy*n2*n1+ix*n1+iz-2]));
             }
-        }
+        } 
     }
-        
+
+
 	/* boundary condition clears velocities on boundaries */
     boundariesP3D(mod, bnd, vx, vy, vz, p, NULL, NULL, NULL, NULL, NULL, rox, roy, roz, l2m, NULL, NULL, itime, verbose);
+    
 
 	/* Add force source */
 	if (src.type > 5) {
          applySource3D(mod, src, wav, bnd, itime, ixsrc, iysrc, izsrc, vx, vy, vz, p, NULL, NULL, NULL, NULL, NULL, rox, roy, roz, l2m, src_nwav, verbose);
 	}
+
 
 	/* this is needed because the P fields are not using tapered boundaries (bnd....=4) */
     if (bnd.top==2) mod.ioPz += bnd.npml;
@@ -149,8 +145,9 @@ long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 //#pragma omp for private (ix, iz) schedule(dynamic) 
 #pragma ivdep
 	for (ix=mod.ioPx; ix<mod.iePx; ix++) {
-#pragma ivdep
+//#pragma ivdep
 		for (iy=mod.ioPy; iy<mod.iePy; iy++) {
+            #pragma ivdep //deletar
             for (iz=mod.ioPz; iz<mod.iePz; iz++) {
                 p[iy*n1*n2+ix*n1+iz] -= l2m[iy*n1*n2+ix*n1+iz]*(
                             c1*(vx[iy*n1*n2+(ix+1)*n1+iz] - vx[iy*n1*n2+ix*n1+iz]) +
@@ -159,6 +156,11 @@ long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
                             c2*(vy[(iy+2)*n1*n2+ix*n1+iz] - vy[(iy-1)*n1*n2+ix*n1+iz]) +
                             c1*(vz[iy*n1*n2+ix*n1+iz+1]   - vz[iy*n1*n2+ix*n1+iz]) +
                             c2*(vz[iy*n1*n2+ix*n1+iz+2]   - vz[iy*n1*n2+ix*n1+iz-1]));
+
+                                //checking //deletar   
+                if(iz==(izsrc+mod.ioPz+bnd.ntap) && ix==(ixsrc+mod.ioPx+bnd.ntap) && iy==(iysrc+mod.ioPy+bnd.ntap) ){
+                    //vmess("inloop--p[ix=%li,iy=%li,iz=%li] at itime %li has value %e", ix, iy, iz, itime, p[iy*n1*n2+ix*n1+iz]); //deletar
+                }
             }
         }
 	}
@@ -169,11 +171,12 @@ long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
     if (bnd.lef==2) mod.ioPx -= bnd.npml;
     if (bnd.rig==2) mod.iePx += bnd.npml;
 
+
 	/* Add stress source */
 	if (src.type < 6) {
         applySource3D(mod, src, wav, bnd, itime, ixsrc, iysrc, izsrc, vx, vy, vz, p, NULL, NULL, NULL, NULL, NULL, rox, roy, roz, l2m, src_nwav, verbose);
 	}
-    
+
 /* Free surface: calculate free surface conditions for stresses */
 
 	/* check if there are sources placed on the free surface */

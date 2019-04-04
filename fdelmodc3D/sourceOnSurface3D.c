@@ -34,7 +34,7 @@ long freeStoreSourceOnSurface3D(void)
 }
 
 long storeSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd,
-    long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz, 
+    long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz,
     float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, long verbose)
 {
 /**********************************************************************
@@ -303,7 +303,7 @@ long storeSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd,
 
     
     
-long reStoreSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd, 
+long reStoreSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd,
     long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz,
     float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, long verbose)
 {

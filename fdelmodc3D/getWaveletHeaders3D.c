@@ -13,7 +13,7 @@
 *           The Netherlands 
 **/
 
-long getWaveletHeaders3D(char *file_src, long n1, long n2, float *gx, float *sx, 
+long getWaveletHeaders3D(char *file_src, long n1, long n2, float *gx, float *sx,
 	float *gy, float *sy, float *gelev, float *selev, long verbose)
 {
     FILE   *fp;
