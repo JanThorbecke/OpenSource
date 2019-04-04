@@ -30,8 +30,8 @@ int traceWrite(segy *hdr, float *data, int n, FILE *fp);
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 
-long writeSnapTimes3D(modPar mod, snaPar sna, bndPar bnd, wavPar wav, 
-	long ixsrc, long iysrc, long izsrc, long itime, float *vx, float *vy, float *vz, 
+long writeSnapTimes3D(modPar mod, snaPar sna, bndPar bnd, wavPar wav,
+	long ixsrc, long iysrc, long izsrc, long itime, float *vx, float *vy, float *vz,
 	float *tzz, float *tyy, float *txx, float *txz, float *tyz, float *txy, long verbose)
 {
 	FILE    *fpvx, *fpvy, *fpvz, *fptxx, *fptyy, *fptzz, *fptxz, *fptyz, *fptxy, *fpp, *fppp, *fpss;
@@ -134,12 +134,12 @@ long writeSnapTimes3D(modPar mod, snaPar sna, bndPar bnd, wavPar wav,
 
 		/* Decimate, with skipdx and skipdz, the number of gridpoints written to file 
 		   and write to file. */
-		for (iys=sna.y1, l=0; iys<=sna.x2; iys+=sna.skipdx, l++) {
+		for (iys=sna.y1, l=0; iys<=sna.y2; iys+=sna.skipdy, l++) {
 			for (ixs=sna.x1, i=0; ixs<=sna.x2; ixs+=sna.skipdx, i++) {
 				hdr.tracf  = l*sna.nx+i+1;
 				hdr.tracl  = isnap*sna.nx*sna.ny+l*sna.nx+i+1;
 				hdr.gx     = 1000*(mod.x0+ixs*mod.dx);
-				hdr.gy     = 1000*(mod.y0+ixs*mod.dy);
+				hdr.gy     = 1000*(mod.y0+iys*mod.dy);
 				ix  = ixs+ibndx;
 				ix2 = ix+1;
 				iy  = iys+ibndy;

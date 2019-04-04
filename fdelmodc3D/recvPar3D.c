@@ -28,13 +28,13 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 	float dx, float dy, float dz, long nx, long ny, long nz)
 {
 	float   *xrcv1, *xrcv2, *yrcv1, *yrcv2, *zrcv1, *zrcv2;
-	long    i, ix, ir, verbose;
+	long    i, ix, iy, ir, verbose;
 	float   dxrcv, dyrcv, dzrcv, *dxr, *dyr, *dzr;
 	float   rrcv, dphi, oxrcv, oyrcv, ozrcv, arcv;
 	double  circ, h, a, b, e, s, xr, yr, zr, dr, srun, phase;
 	float   xrange, yrange, zrange, sub_x1, sub_y1, sub_z1;
 	long    Nx1, Nx2, Ny1, Ny2, Nz1, Nz2, Ndx, Ndy, Ndz, iarray, nrec, nh;
-	long    nxrcv, nyrcv, nzrcv, ncrcv, nrcv, ntrcv, *nlrcv;
+	long    nxrcv, nyrcv, nzrcv, ncrcv, nrcv, ntrcv, *nlxrcv, *nlyrcv;
 	float   *xrcva, *yrcva, *zrcva;
 	char*   rcv_txt;
 	FILE    *fp;
@@ -47,31 +47,6 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
     sub_z1=sub_z0+(nz-1)*dz;
 
 /* Compute how many receivers are defined and then allocate the receiver arrays */
-
-    /* Receivers on a Circle */
-    if (getparfloat("rrcv",&rrcv)) {
-        if (!getparfloat("dphi",&dphi)) dphi=2.0;
-        ncrcv=NINT(360.0/dphi);
-        if (verbose) vmess("Total number of receivers on a circle: %li",ncrcv);
-    } 
-	else {
-		ncrcv=0;
-	}
-
-    /* Receivers from a File */
-    ntrcv=0;
-    if (!getparstring("rcv_txt",&rcv_txt)) rcv_txt=NULL;
-    if (rcv_txt!=NULL) {
-        /* Open text file */
-        fp=fopen(rcv_txt,"r");
-        assert(fp!=NULL);
-        /* Get number of lines */
-        while (!feof(fp)) if (fgetc(fp)=='\n') ntrcv++;
-        fseek(fp,-1,SEEK_CUR);
-        if (fgetc(fp)!='\n') ntrcv++; /* Checks if last line terminated by /n */
-        if (verbose) vmess("Number of receivers in rcv_txt file: %li",ntrcv);
-        rewind(fp);
-    }
 
     /* Receiver Array */
     nxrcv=countparval("xrcva");
@@ -93,10 +68,11 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
     if (Nx1!=Ny2) verr("Number of receivers starting points in 'xrcv1' (%li) and number of endpoint in 'yrcv2' (%li) are not equal",Nx1,Ny2);
     if (Nx1!=Nz2) verr("Number of receivers starting points in 'xrcv1' (%li) and number of endpoint in 'zrcv2' (%li) are not equal",Nx1,Nz2);
 
-    rec->max_nrec=ncrcv+ntrcv+nxrcv;
+    rec->max_nrec=nyrcv*nxrcv;
 
 	/* no receivers are defined use default linear array of receivers on top of model */
     if (!rec->max_nrec && Nx1==0) Nx1=1; // Default is to use top of model to record data
+    if (!rec->max_nrec && Ny1==0) Ny1=1;
 
     if (Nx1) {
         /* Allocate Start & End Points of Linear Arrays */
@@ -289,24 +265,32 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 
         /* Calculate Number of Receivers */
 		nrcv = 0;
-        nlrcv=(long *)malloc(Nx1*sizeof(long));
+        nlxrcv=(long *)malloc(Nx1*sizeof(long));
+        nlyrcv=(long *)malloc(Nx1*sizeof(long));
 		for (iarray=0; iarray<Nx1; iarray++) {
 			xrange = (xrcv2[iarray]-xrcv1[iarray]); 
 			yrange = (yrcv2[iarray]-yrcv1[iarray]); 
 			zrange = (zrcv2[iarray]-zrcv1[iarray]); 
-			if (dxr[iarray] != 0.0) {
-				nlrcv[iarray] = NINT(fabs(xrange/dxr[iarray]))+1;
+			if (dxr[iarray] != 0.0 && dyr[iarray] != 0.0) {
+				nlxrcv[iarray] = NINT(fabs(xrange/dxr[iarray]))+1;
+				nlyrcv[iarray] = NINT(fabs(yrange/dyr[iarray]))+1;
+			}
+			else if (dxr[iarray] != 0.0) {
+				nlxrcv[iarray] = NINT(fabs(xrange/dxr[iarray]))+1;
+				nlyrcv[iarray] = 1;
 			}
 			else if (dyr[iarray] != 0.0) {
-				nlrcv[iarray] = NINT(fabs(yrange/dyr[iarray]))+1;
+				nlxrcv[iarray] = 1;
+				nlyrcv[iarray] = NINT(fabs(yrange/dyr[iarray]))+1;
 			}
 			else {
 				if (dzr[iarray] == 0) {
 					verr("For receiver array %li: receiver distance dzrcv is not given", iarray);
 				}
-				nlrcv[iarray] = NINT(fabs(zrange/dzr[iarray]))+1;
+				nlxrcv[iarray] = NINT(fabs(zrange/dzr[iarray]))+1;
+				nlyrcv[iarray] = NINT(fabs(zrange/dzr[iarray]))+1;
 			}
-            nrcv+=nlrcv[iarray];
+            nrcv+=nlyrcv[iarray]*nlxrcv[iarray];
 		}
 
         /* Calculate Number of Receivers */
@@ -321,7 +305,8 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
             free(dxr);
             free(dyr);
             free(dzr);
-            free(nlrcv);
+            free(nlxrcv);
+            free(nlyrcv);
         }
         rec->max_nrec+=nrcv;
     } 
@@ -345,102 +330,8 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 /* read in the receiver postions */
 
 	nrec=0;
-    /* Receivers on a Circle */
-    if (ncrcv) {
-		if (!getparfloat("oxrcv",&oxrcv)) oxrcv=0.0;
-		if (!getparfloat("oyrcv",&oyrcv)) oyrcv=0.0;
-		if (!getparfloat("ozrcv",&ozrcv)) ozrcv=0.0;
-		if (!getparfloat("arcv",&arcv)) {
-			arcv=rrcv; 
-			for (ix=0; ix<ncrcv; ix++) {
-				rec->xr[ix] = oxrcv-sub_x0+rrcv*cos(((ix*dphi)/360.0)*(2.0*M_PI));
-				rec->yr[ix] = oyrcv-sub_y0+arcv*cos(((ix*dphi)/360.0)*(2.0*M_PI));
-				rec->zr[ix] = ozrcv-sub_z0+arcv*sin(((ix*dphi)/360.0)*(2.0*M_PI));
-				rec->x[ix] = NINT(rec->xr[ix]/dx);
-				rec->y[ix] = NINT(rec->yr[ix]/dy);
-				rec->z[ix] = NINT(rec->zr[ix]/dz);
-				if (verbose>4) fprintf(stderr,"Receiver Circle: xrcv[%li]=%f yrcv=%f zrcv=%f\n", ix, rec->xr[ix]+sub_x0, rec->yr[ix]+sub_y0, rec->zr[ix]+sub_z0);
-			}
-		}
-		else { /* an ellipse */
-			/* simple numerical solution to find equidistant points on an ellipse */
-			nh  = (ncrcv)*1000; /* should be fine enough for most configurations */
-			h = 2.0*M_PI/nh;
-			a = MAX(rrcv, arcv);
-			b = MIN(rrcv, arcv);
-			e = sqrt(a*a-b*b)/a;
-			circ = 0.0;
-			for (ir=0; ir<nh; ir++) {
-				s = sin(ir*h);
-				circ += sqrt(1.0-e*e*s*s);
-			}
-			circ = a*h*circ;
-			/* define distance between receivers on ellipse */
-			dr = circ/ncrcv;
-			ix = 0;
-			srun = 0.0;
-			if (arcv >= rrcv) phase=0.0;
-			else phase=0.5*M_PI;
-			for (ir=0; ir<nh; ir++) {
-				s = sin(ir*h);
-				srun += sqrt(1.0-e*e*s*s);
-				if (a*h*srun >= ix*dr ) {
-					xr = rrcv*cos(ir*h+phase);
-					yr = rrcv*cos(ir*h+phase);
-					zr = arcv*sin(ir*h+phase);
-					rec->xr[ix] = oxrcv-sub_x0+xr;
-					rec->yr[ix] = oyrcv-sub_y0+yr;
-					rec->zr[ix] = ozrcv-sub_z0+zr;
-					rec->x[ix] = NINT(rec->xr[ix]/dx);
-					rec->y[ix] = NINT(rec->yr[ix]/dy);
-					rec->z[ix] = NINT(rec->zr[ix]/dz);
-					if (verbose>4) fprintf(stderr,"Receiver Ellipse: xrcv[%li]=%f yrcv=%f zrcv=%f\n", ix, rec->xr[ix]+sub_x0, rec->yr[ix]+sub_y0, rec->zr[ix]+sub_z0);
-					ix++;
-				}
-				if (ix == ncrcv) break;
-			}
-		}
-
-		/* check if receivers fit into the model otherwise clip to edges */
-		for (ix=0; ix<ncrcv; ix++) {
-			rec->x[ix] = MIN(nx-1, MAX(rec->x[ix], 0));
-			rec->y[ix] = MIN(ny-1, MAX(rec->y[ix], 0));
-			rec->z[ix] = MIN(nz-1, MAX(rec->z[ix], 0));
-		}
-		nrec += ncrcv;
-	}
-
-    /* Receiver Text File */
-
-    if (ntrcv) {
-		/* Allocate arrays */
-		xrcva = (float *)malloc(ntrcv*sizeof(float));
-		yrcva = (float *)malloc(ntrcv*sizeof(float));
-		zrcva = (float *)malloc(ntrcv*sizeof(float));
-		/* Read in receiver coordinates */
-		for (i=0;i<ntrcv;i++) {
-			if (fscanf(fp,"%e %e %e\n",&xrcva[i],&yrcva[i],&zrcva[i])!=3) vmess("Receiver Text File: Can not parse coordinates on line %li.",i);
-		}
-		/* Close file */
-		fclose(fp);
-		/* Process coordinates */
-		for (ix=0; ix<ntrcv; ix++) {
-			rec->xr[nrec+ix] = xrcva[ix]-sub_x0;
-			rec->yr[nrec+ix] = yrcva[ix]-sub_y0;
-			rec->zr[nrec+ix] = zrcva[ix]-sub_z0;
-			rec->x[nrec+ix] = NINT((xrcva[ix]-sub_x0)/dx);
-			rec->y[nrec+ix] = NINT((yrcva[ix]-sub_y0)/dy);
-			rec->z[nrec+ix] = NINT((zrcva[ix]-sub_z0)/dz);
-			if (verbose>4) vmess("Receiver Text Array: xrcv[%li]=%f yrcv=%f zrcv=%f", ix, rec->xr[nrec+ix]+sub_x0, rec->yr[nrec+ix]+sub_y0, rec->zr[nrec+ix]+sub_z0);
-		}
-		free(xrcva);
-		free(yrcva);
-		free(zrcva);
-		nrec += ntrcv;
-	}
-
     /* Receiver Array */
-	if (nxrcv != 0) {
+	if (nxrcv != 0 && nyrcv != 0) {
 		/* receiver array is defined */
 		xrcva = (float *)malloc(nxrcv*sizeof(float));
 		yrcva = (float *)malloc(nxrcv*sizeof(float));
@@ -448,19 +339,21 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 		getparfloat("xrcva", xrcva);
 		getparfloat("yrcva", yrcva);
 		getparfloat("zrcva", zrcva);
-		for (ix=0; ix<nxrcv; ix++) {
-			rec->xr[nrec+ix] = xrcva[ix]-sub_x0;
-			rec->yr[nrec+ix] = yrcva[ix]-sub_y0;
-			rec->zr[nrec+ix] = zrcva[ix]-sub_z0;
-			rec->x[nrec+ix] = NINT((xrcva[ix]-sub_x0)/dx);
-			rec->y[nrec+ix] = NINT((yrcva[ix]-sub_y0)/dy);
-			rec->z[nrec+ix] = NINT((zrcva[ix]-sub_z0)/dz);
-			if (verbose>4) fprintf(stderr,"Receiver Array: xrcv[%li]=%f yrcv=%f zrcv=%f\n", ix, rec->xr[nrec+ix]+sub_x0, rec->yr[nrec+ix]+sub_y0, rec->zr[nrec+ix]+sub_z0);
-		}
+		for (iy=0; iy<nyrcv; iy++) {
+            for (ix=0; ix<nxrcv; ix++) {
+                rec->xr[nrec+iy*nxrcv+ix] = xrcva[ix]-sub_x0;
+                rec->yr[nrec+iy*nxrcv+ix] = yrcva[iy]-sub_y0;
+                rec->zr[nrec+iy*nxrcv+ix] = zrcva[ix]-sub_z0;
+                rec->x[nrec+iy*nxrcv+ix] = NINT((xrcva[ix]-sub_x0)/dx);
+                rec->y[nrec+iy*nxrcv+ix] = NINT((yrcva[iy]-sub_y0)/dy);
+                rec->z[nrec+iy*nxrcv+ix] = NINT((zrcva[ix]-sub_z0)/dz);
+                if (verbose>4) fprintf(stderr,"Receiver Array: xrcv[%li]=%f yrcv[%li]=%f zrcv=%f\n", ix, rec->xr[nrec+ix]+sub_x0, iy, rec->yr[nrec+ix]+sub_y0, rec->zr[nrec+ix]+sub_z0);
+            }
+        }
 		free(xrcva);
 		free(yrcva);
 		free(zrcva);
-		nrec += nxrcv;
+		nrec += nyrcv*nxrcv;
 	}
 
     /* Linear Receiver Arrays */
@@ -553,10 +446,10 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 			yrange = (yrcv2[iarray]-yrcv1[iarray]); 
 			zrange = (zrcv2[iarray]-zrcv1[iarray]); 
 			if (dxr[iarray] != 0.0) {
-				nrcv = nlrcv[iarray];
+				nrcv = nlyrcv[iarray]*nlxrcv[iarray];
 				dxrcv = dxr[iarray];
-				dyrcv = yrange/(nrcv-1);
-				dzrcv = zrange/(nrcv-1);
+				dyrcv = yrange/(nlyrcv[iarray]-1);
+				dzrcv = zrange/(nlxrcv[iarray]-1);
 				if (dyrcv != dyr[iarray]) {
 					vwarn("For receiver array %li: calculated dyrcv=%f given=%f", iarray, dyrcv, dyr[iarray]);
 					vwarn("The calculated receiver distance %f is used", dyrcv);
@@ -567,10 +460,10 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 				}
 			}
             else if (dyr[iarray] != 0.0) {
-				nrcv = nlrcv[iarray];
-				dxrcv = xrange/(nrcv-1);
+				nrcv = nlyrcv[iarray]*nlxrcv[iarray];
+				dxrcv = xrange/(nlxrcv[iarray]-1);
 				dyrcv = dyr[iarray];
-				dzrcv = zrange/(nrcv-1);
+				dzrcv = zrange/(nlxrcv[iarray]-1);
 				if (dxrcv != dxr[iarray]) {
 					vwarn("For receiver array %li: calculated dxrcv=%f given=%f", iarray, dxrcv, dxr[iarray]);
 					vwarn("The calculated receiver distance %f is used", dxrcv);
@@ -584,7 +477,7 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 				if (dzr[iarray] == 0) {
 					verr("For receiver array %li: receiver distance dzrcv is not given", iarray);
 				}
-				nrcv = nlrcv[iarray];
+				nrcv = nlyrcv[iarray]*nlxrcv[iarray];
 				dxrcv = xrange/(nrcv-1);
 				dyrcv = yrange/(nrcv-1);
 				dzrcv = dzr[iarray];
@@ -599,16 +492,18 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 			}
 
 			// calculate coordinates
-			for (ir=0; ir<nrcv; ir++) {
-				rec->xr[nrec]=xrcv1[iarray]-sub_x0+ir*dxrcv;
-				rec->yr[nrec]=yrcv1[iarray]-sub_y0+ir*dyrcv;
-				rec->zr[nrec]=zrcv1[iarray]-sub_z0+ir*dzrcv;
+			for (iy=0; iy<nlyrcv[iarray]; iy++) {
+                for (ix=0; ix<nlxrcv[iarray]; ix++) {
+                    rec->xr[nrec]=xrcv1[iarray]-sub_x0+ix*dxrcv;
+                    rec->yr[nrec]=yrcv1[iarray]-sub_y0+iy*dyrcv;
+                    rec->zr[nrec]=zrcv1[iarray]-sub_z0+ix*dzrcv;
 
-				rec->x[nrec]=NINT((rec->xr[nrec])/dx);
-				rec->y[nrec]=NINT((rec->yr[nrec])/dy);
-				rec->z[nrec]=NINT((rec->zr[nrec])/dz);
-				nrec++;
-			}
+                    rec->x[nrec]=NINT((rec->xr[nrec])/dx);
+                    rec->y[nrec]=NINT((rec->yr[nrec])/dy);
+                    rec->z[nrec]=NINT((rec->zr[nrec])/dz);
+                    nrec++;
+                }
+            }
 		}
 		free(xrcv1);
 		free(xrcv2);
@@ -619,7 +514,8 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 		free(dxr);
 		free(dyr);
 		free(dzr);
-        free(nlrcv);
+        free(nlxrcv);
+        free(nlyrcv);
 	}
 
     rec->n=rec->max_nrec;
