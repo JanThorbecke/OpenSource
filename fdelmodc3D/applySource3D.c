@@ -20,11 +20,8 @@ void vmess(char *fmt, ...);
  *           The Netherlands 
  *
  **********************************************************************/
-
-long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
-	long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz,
-	float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
-	float *rox, float *roy, float *roz, float *l2m, float **src_nwav, long verbose)
+//      applySource3D(mod, src,            wav,              bnd,        itime,      ixsrc,    iysrc,    izsrc,            vx,     vy,           vz,       p,        NULL,         NULL,         NULL,    NULL,       NULL,         rox,       roy,        roz,        l2m,          src_nwav,     verbose);
+long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, float *rox, float *roy, float *roz, float *l2m, float **src_nwav, long verbose)
 {
 	long is0, ibndz, ibndy, ibndx;
 	long isrc, ix, iy, iz, n1, n2;
@@ -108,7 +105,8 @@ long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 		time = itime*dt - src.tbeg[isrc];
 		id1 = floor(time/dt);
 		id2 = id1+1;
-        
+
+
 		/* delay not reached or no samples left in source wavelet? */
 		if ( (time < 0.0) || ( (itime*dt) >= src.tend[isrc]) ) continue;
 
@@ -363,6 +361,8 @@ long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 			} /* src.type */
 		} /* ischeme */
 	} /* loop over isrc */
+
+
 
 	return 0;
 }

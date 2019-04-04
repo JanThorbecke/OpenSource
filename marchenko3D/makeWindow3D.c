@@ -24,8 +24,6 @@ void findShotInMute(float *xrcvMute, float xrcvShot, long nxs, long *imute);
 long readData3D(FILE *fp, float *data, segy *hdrs, long n1);
 long readSnapData3D(char *filename, float *data, segy *hdrs, long nsnaps, long nx, long ny, long nz, long sx, long ex, long sy, long ey, long sz, long ez);
 
-
-
 void makeWindow3D(char *file_ray, char *file_amp, char *file_wav, float dt, float *xrcv, float *yrcv, float *xsrc, float *ysrc, float *zsrc, 
     long *xnx, long Nfoc, long nx, long ny, long ntfft, long *maxval, float *tinv, long verbose)
 {

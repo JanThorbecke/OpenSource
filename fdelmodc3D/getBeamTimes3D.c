@@ -30,7 +30,7 @@ void vmess(char *fmt, ...);
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 
-long getBeamTimes3D(modPar mod, snaPar sna, float *vx, float *vy, float *vz, 
+long getBeamTimes3D(modPar mod, snaPar sna, float *vx, float *vy, float *vz,
     float *tzz, float *tyy, float *txx, float *txz, float *tyz, float *txy,
 	float *beam_vx, float *beam_vy, float *beam_vz,
     float *beam_txx, float *beam_tyy, float *beam_tzz,
@@ -133,8 +133,8 @@ long getBeamTimes3D(modPar mod, snaPar sna, float *vx, float *vy, float *vz,
 }
 
 
-long writeBeams3D(modPar mod, snaPar sna, long ixsrc, long iysrc, long izsrc, long ishot, 
-    long fileno, float *beam_vx, float *beam_vy, float *beam_vz,
+long writeBeams3D(modPar mod, snaPar sna, long ixsrc, long iysrc, long izsrc,
+    long ishot, long fileno, float *beam_vx, float *beam_vy, float *beam_vz,
     float *beam_txx, float *beam_tyy, float *beam_tzz,
     float *beam_txz, float *beam_tyz, float *beam_txy, 
 	float *beam_p, float *beam_pp, float *beam_ss, long verbose)

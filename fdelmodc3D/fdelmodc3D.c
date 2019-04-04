@@ -17,49 +17,46 @@ double wallclock_time(void);
 
 void threadAffinity(void);
 
-long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, 
+long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src,
 	shotPar *shot, bndPar *bnd, long verbose);
 
 long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
-    float *l2m, float *lam, float *muu, float *tss, float *tes, float *tep);
+	float *l2m, float *lam, float *muu, float *tss, float *tes, float *tep);
 
-long defineSource3D(wavPar wav, srcPar src, modPar mod, recPar rec, 
-	float **src_nwav, long reverse, long verbose);
+long defineSource3D(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwav,
+	long reverse, long verbose);
 
 long writeSrcRecPos3D(modPar *mod, recPar *rec, srcPar *src, shotPar *shot);
 
 long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
-    long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz,
-    float *p, float *rox, float *roy, float *roz, float *l2m, long verbose);
+	long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz,
+	float *p, float *rox, float *roy, float *roz, float *l2m, long verbose);
 
-long getRecTimes3D(modPar mod, recPar rec, bndPar bnd, long itime, long isam, 
+long getRecTimes3D(modPar mod, recPar rec, bndPar bnd, long itime, long isam,
 	float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx,
-	float *txz, float *txy, float *tyz, float *l2m, 
-	float *rox, float *roy, float *roz, float *rec_vx, float *rec_vy, float *rec_vz, 
-	float *rec_txx, float *rec_tyy, float *rec_tzz, float *rec_txz, float *rec_txy, float *rec_tyz, 
-	float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, long verbose);
+	float *txz, float *txy, float *tyz, float *l2m, float *rox, float *roy, float *roz,
+	float *rec_vx, float *rec_vy, float *rec_vz, float *rec_txx, float *rec_tyy, float *rec_tzz,
+	float *rec_txz, float *rec_txy, float *rec_tyz, float *rec_p, float *rec_pp, float *rec_ss,
+	float *rec_udp, float *rec_udvz, long verbose);
 
-long writeRec3D(recPar rec, modPar mod, bndPar bnd, wavPar wav, 
-    long ixsrc, long iysrc, long izsrc, long nsam, long ishot, long fileno, 
-    float *rec_vx, float *rec_vy, float *rec_vz, float *rec_txx, float *rec_tyy, float *rec_tzz,
-    float *rec_txz,  float *rec_tyz,  float *rec_txy, 
-    float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, long verbose);
+long writeRec3D(recPar rec, modPar mod, bndPar bnd, wavPar wav, long ixsrc, long iysrc, long izsrc,
+	long nsam, long ishot, long fileno, float *rec_vx, float *rec_vy, float *rec_vz,
+	float *rec_txx, float *rec_tyy, float *rec_tzz, float *rec_txz,  float *rec_tyz,
+	float *rec_txy, float *rec_p, float *rec_pp, float *rec_ss,
+	float *rec_udp, float *rec_udvz, long verbose);
 
-long writeSnapTimes3D(modPar mod, snaPar sna, bndPar bnd, wavPar wav, 
-	long ixsrc, long iysrc, long izsrc, long itime, float *vx, float *vy, float *vz, 
+long writeSnapTimes3D(modPar mod, snaPar sna, bndPar bnd, wavPar wav,
+	long ixsrc, long iysrc, long izsrc, long itime, float *vx, float *vy, float *vz,
 	float *tzz, float *tyy, float *txx, float *txz, float *tyz, float *txy, long verbose);
 
-long getBeamTimes3D(modPar mod, snaPar sna, float *vx, float *vy, float *vz, 
-    float *tzz, float *tyy, float *txx, float *txz, float *tyz, float *txy,
-	float *beam_vx, float *beam_vy, float *beam_vz,
-    float *beam_txx, float *beam_tyy, float *beam_tzz,
-    float *beam_txz, float *beam_tyz, float *beam_txy,
-	float *beam_p, float *beam_pp, float *beam_ss, long verbose);
+long getBeamTimes3D(modPar mod, snaPar sna, float *vx, float *vy, float *vz, float *tzz,
+	float *tyy, float *txx, float *txz, float *tyz, float *txy, float *beam_vx, float *beam_vy,
+	float *beam_vz, float *beam_txx, float *beam_tyy, float *beam_tzz, float *beam_txz,
+	float *beam_tyz, float *beam_txy, float *beam_p, float *beam_pp, float *beam_ss, long verbose);
 
-long writeBeams3D(modPar mod, snaPar sna, long ixsrc, long iysrc, long izsrc, long ishot, 
-    long fileno, float *beam_vx, float *beam_vy, float *beam_vz,
-    float *beam_txx, float *beam_tyy, float *beam_tzz,
-    float *beam_txz, float *beam_tyz, float *beam_txy, 
+long writeBeams3D(modPar mod, snaPar sna, long ixsrc, long iysrc, long izsrc, long ishot,
+	long fileno, float *beam_vx, float *beam_vy, float *beam_vz, float *beam_txx, float *beam_tyy,
+	float *beam_tzz, float *beam_txz, float *beam_tyz, float *beam_txy, 
 	float *beam_p, float *beam_pp, float *beam_ss, long verbose);
 
 long allocStoreSourceOnSurface3D(srcPar src);
@@ -305,7 +302,8 @@ int main(int argc, char **argv)
 	if (!getparlong("verbose",&verbose)) verbose=0;
 	getParameters3D(&mod, &rec, &sna, &wav, &src, &shot, &bnd, verbose);
 
-	/* allocate arrays for model parameters: the different schemes use different arrays */
+
+	/* allocate arrays for model parameters: the different schemes use different arrays */ 
 
 	n1 = mod.naz;
 	n2 = mod.nax;
@@ -366,6 +364,7 @@ int main(int argc, char **argv)
 
 	defineSource3D(wav, src, mod, rec, src_nwav, mod.grid_dir, verbose);
 
+
 	/* allocate arrays for wavefield and receiver arrays */
 
 	vx  = (float *)calloc(sizem,sizeof(float));
@@ -401,6 +400,7 @@ int main(int argc, char **argv)
 	ir = mod.ioZz + rec.z[0]+(rec.x[0]+mod.ioZx)*n1+(rec.y[0]+mod.ioZy)*n1*n2;
 	rec.rho = mod.dt/(mod.dx*roz[ir]);
 	rec.cp  = sqrt(l2m[ir]*(roz[ir]))*mod.dx/mod.dt;
+
 	
 	if(sna.beam) {
 		size = sna.nz*sna.nx;
@@ -435,6 +435,7 @@ int main(int argc, char **argv)
        (not the source) and uses the velocity 
 	   of the first receiver to sink through to the next layer. */
 
+
     ioPx=mod.ioPx;
     ioPy=mod.ioPy;
     ioPz=mod.ioPz;
@@ -453,6 +454,7 @@ int main(int argc, char **argv)
 		rec.z[ir]=iz+rec.sinkdepth;
 		rec.zr[ir]=rec.zr[ir]+(rec.z[ir]-iz)*mod.dz;
 		if (verbose>3) vmess("receiver position %li at grid[ix=%li, iy=%li iz=%li] = (x=%f y=%f z=%f)", ir, ix+ioPx, iy+ioPy, rec.z[ir]+ioPz, rec.xr[ir]+mod.x0, rec.yr[ir]+mod.y0, rec.zr[ir]+mod.z0);
+		//if (verbose>3) vmess("receiver position %li at grid[ix=%li, iy=%li iz=%li] = (x=%f y=%f z=%f)", ir, ix+ioPx, iy+ioPy, ioPz, rec.xr[ir]+mod.x0, rec.yr[ir]+mod.y0, rec.zr[ir]+mod.z0);
 	}
 
 /* sink sources to value different than zero */
@@ -464,15 +466,17 @@ int main(int argc, char **argv)
 		shot.z[ishot]=iz+src.sinkdepth; 
 	}
 
+
 	/* scan for free surface boundary in case it has a topography */
 	for (iy=0; iy<mod.ny; iy++) {
 		for (ix=0; ix<mod.nx; ix++) {
 			iz = ioPz;
 			while(l2m[(iy+ioPy)*n1*n2+(ix+ioPx)*n1+iz] == 0.0) iz++;
 			bnd.surface[(iy+ioPy)*n2+ix+ioPx] = iz;
-			if ((verbose>3) && (iz != ioPz)) vmess("Topgraphy surface x=%.2f y=%.2f z=%.2f", mod.x0+mod.dx*ix, mod.y0+mod.dy*iy, mod.z0+mod.dz*(iz-ioPz));
+			if ((verbose>3) && (iz != ioPz)) vmess("Topography surface x=%.2f y=%.2f z=%.2f", mod.x0+mod.dx*ix, mod.y0+mod.dy*iy, mod.z0+mod.dz*(iz-ioPz));
 		}
 	}
+
 	for (iy=0; iy<ioPy; iy++) {
 		for (ix=0; ix<ioPx; ix++) {
 			bnd.surface[iy*n2+ix] = bnd.surface[ioPy*n2+ioPx];
@@ -501,6 +505,7 @@ int main(int argc, char **argv)
 	is0=0;
 	is1=shot.n;
 #endif
+
 
 	for (ishot=is0; ishot<is1; ishot++) {
 
@@ -588,6 +593,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
                             vmess("SH order 4 not yet available");
                         }
                         else {
+                        	
 							acoustic4_3D(mod, src, wav, bnd, it, ixsrc, iysrc, izsrc, src_nwav,
 									vx, vy, vz, tzz, rox, roy, roz, l2m, verbose);
                         }
@@ -615,6 +621,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
 					break;
 			}
 
+
 			/* write samples to file if rec.nt samples are calculated */
 
 #pragma omp master
@@ -632,7 +639,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
 					l2m, rox, roy, roz,
 					rec_vx, rec_vy, rec_vz,
 					rec_txx, rec_tyy, rec_tzz, rec_txz, rec_txy, rec_tyz,
-					rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose);
+					rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose); 
 			
 				/* at the end of modeling a shot, write receiver array to output file(s) */
 				if (writeToFile && (it+rec.skipdt <= it1-1) ) {

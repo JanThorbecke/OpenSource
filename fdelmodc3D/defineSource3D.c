@@ -32,15 +32,16 @@ long loptncr(long n);
 void rc1fft(float *rdata, complex *cdata, int n, int sign);
 void cr1fft(complex *cdata, float *rdata, int n, int sign);
 
-long writesufile3D(char *filename, float *data, long n1, long n2, 
-	float f1, float f2, float d1, float d2);
-long writesufilesrcnwav3D(char *filename, float **src_nwav, wavPar wav, long n1, long n2, 
-	float f1, float f2, float d1, float d2);
+long writesufile3D(char *filename, float *data, long n1, long n2,
+    float f1, float f2, float d1, float d2);
+long writesufilesrcnwav3D(char *filename, float **src_nwav, wavPar wav,
+    long n1, long n2, float f1, float f2, float d1, float d2);
 float gaussGen();
 float normal(double x,double mu,double sigma);
 long comp (const float *a, const float *b);
-void spline3(float x1, float x2, float z1, float z2, float dzdx1, float dzdx2, float *a, float *b, float *c, float *d);
-long randomWavelet(wavPar wav, srcPar src, float *trace, float tbeg, float tend, long verbose);
+void spline3(float x1, float x2, float z1, float z2, float dzdx1, float dzdx2,
+    float *a, float *b, float *c, float *d);
+long randomWavelet3D(wavPar wav, srcPar src, float *trace, float tbeg, float tend, long verbose);
 
 /* random number generators */
 double dcmwc4096();
@@ -126,7 +127,7 @@ long defineSource3D(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_
 
     for (i=0; i<wav.nx; i++) {
         if (wav.random) {
-            randomWavelet(wav, src, &src_nwav[i][0], src.tbeg[i], src.tend[i], verbose);
+            randomWavelet3D(wav, src, &src_nwav[i][0], src.tbeg[i], src.tend[i], verbose);
         }
         else {
             memset(&ctrace[0].r,0,nfreqscale*sizeof(complex));
@@ -241,7 +242,7 @@ long defineSource3D(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_
 }
 
 
-long randomWavelet(wavPar wav, srcPar src, float *trace, float tbeg, float tend, long verbose)
+long randomWavelet3D(wavPar wav, srcPar src, float *trace, float tbeg, float tend, long verbose)
 {
     long optn, nfreq, j, iwmax;
     long iw, n1, itbeg, itmax, nsmth;
