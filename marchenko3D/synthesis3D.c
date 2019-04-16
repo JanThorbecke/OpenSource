@@ -31,9 +31,9 @@ long linearsearch(long *array, size_t N, long value);
 
 void synthesisPositions3D(long nx, long ny, long nxs, long nys, long Nfoc, float *xrcv, float *yrcv,
 float *xsrc, float *ysrc, long *xnx, float fxse, float fyse, float fxsb, float fysb, float dxs, float dys,
-long nshots, long nxsrc, long nysrc, long *ixpos, long *npos, long reci, long verbose)
+long nshots, long nxsrc, long nysrc, long *ixpos, long *iypos, long *npos, long reci, long verbose)
 {
-    long     j, l, ixsrc, iysrc, isrc, k, *count, nxy;
+    long     j, i, l, ixsrc, iysrc, isrc, k, *count, nxy;
     float   fxb, fxe, fyb, fye;
 
     if (fxsb < 0) fxb = 1.001*fxsb;
@@ -87,12 +87,14 @@ long nshots, long nxsrc, long nysrc, long *ixpos, long *npos, long reci, long ve
                 if ( (xsrc[k] >= fxb) && (xsrc[k] <= fxe) &&
                      (ysrc[k] >= fyb) && (ysrc[k] <= fye) ) {
                     
-				    j = linearsearch(ixpos, *npos, isrc);
-				    if (j < *npos) { /* the position (at j) is already included */
+				    j = linearsearch(ixpos, *npos, ixsrc);
+                    i = linearsearch(iypos, *npos, iysrc);
+				    if ((i*nxs+j) < *npos) { /* the position (at j) is already included */
 					    count[j] += xnx[k];
 				    }
 				    else { /* add new postion */
-            		    ixpos[*npos] =  isrc;
+            		    ixpos[*npos] =  ixsrc;
+                        iypos[*npos] =  iysrc;
 					    count[*npos] += xnx[k];
                    	    *npos += 1;
 				    }
@@ -105,13 +107,14 @@ long nshots, long nxsrc, long nysrc, long *ixpos, long *npos, long reci, long ve
 
     if (verbose>=4) {
 	    for (j=0; j < *npos; j++) { 
-            vmess("ixpos[%li] = %li count=%li", j, ixpos[j], count[j]);
+            vmess("ixpos[%li] = %li iypos = %li ipos = %li count=%li", j, ixpos[j], iypos[j], iypos[j]*nxs+ixpos[j], count[j]);
 		}
     }
     free(count);
 
 /* sort ixpos into increasing values */
-    qsort(ixpos, *npos, sizeof(long), compareInt);
+    // qsort(ixpos, *npos, sizeof(long), compareInt);
+    // qsort(iypos, *npos, sizeof(long), compareInt);
 
 
     return;
@@ -133,15 +136,15 @@ long linearsearch(long *array, size_t N, long value)
 void synthesis3D(complex *Refl, complex *Fop, float *Top, float *iRN, long nx, long ny, long nt, long nxs, long nys, long nts, float dt, float *xsyn, float *ysyn, 
 long Nfoc, float *xrcv, float *yrcv, float *xsrc, float *ysrc, long *xnx, float fxse, float fxsb, float fyse, float fysb, float dxs, float dys, float dxsrc, 
 float dysrc, float dx, float dy, long ntfft, long nw, long nw_low, long nw_high,  long mode, long reci, long nshots, long nxsrc, long nysrc, 
-long *ixpos, long npos, double *tfft, long *isxcount, long *reci_xsrc,  long *reci_xrcv, float *ixmask, long verbose)
+long *ixpos, long *iypos, long npos, double *tfft, long *isxcount, long *reci_xsrc,  long *reci_xrcv, float *ixmask, long verbose)
 {
     long     nfreq, size, inx;
     float   scl;
-    long     i, j, l, m, iw, ix, k, isrc, il, ik, nxy, nxys;
+    long     i, j, l, m, iw, ix, iy, k, isrc, il, ik, nxy, nxys;
     float   *rtrace, idxs, idys, fxb, fyb, fxe, fye;
     complex *sum, *ctrace;
     long     npe;
-    static long first=1, *ircv;
+    static long first=1, *ixrcv, *iyrcv;
     static double t0, t1, t;
 
     if (fxsb < 0) fxb = 1.001*fxsb;
@@ -184,12 +187,13 @@ long *ixpos, long npos, double *tfft, long *isxcount, long *reci_xsrc,  long *re
             /* set Fop to zero, so new operator can be defined within ixpos points */
             memset(&Fop[l*nxys*nw].r, 0, nxys*nw*2*sizeof(float));
             for (i = 0; i < npos; i++) {
-                   rc1fft(&Top[l*size+i*nts],ctrace,ntfft,-1);
-                   ix = ixpos[i];
-                   for (iw=0; iw<nw; iw++) {
-                       Fop[l*nxys*nw+iw*nxys+ix].r = ctrace[nw_low+iw].r;
-                       Fop[l*nxys*nw+iw*nxys+ix].i = mode*ctrace[nw_low+iw].i;
-                   }
+                rc1fft(&Top[l*size+i*nts],ctrace,ntfft,-1);
+                ix = ixpos[i];
+                iy = iypos[i];
+                for (iw=0; iw<nw; iw++) {
+                    Fop[l*nxys*nw+iw*nxys+iy*nxs+ix].r = ctrace[nw_low+iw].r;
+                    Fop[l*nxys*nw+iw*nxys+iy*nxs+ix].i = mode*ctrace[nw_low+iw].i;
+                }
             }
         }
     }
@@ -200,19 +204,21 @@ long *ixpos, long npos, double *tfft, long *isxcount, long *reci_xsrc,  long *re
             /* set Fop to zero, so new operator can be defined within all ix points */
             memset(&Fop[l*nxys*nw].r, 0, nxys*nw*2*sizeof(float));
             for (i = 0; i < nxys; i++) {
-                   rc1fft(&Top[l*size+i*nts],ctrace,ntfft,-1);
-                   for (iw=0; iw<nw; iw++) {
-                       Fop[l*nxys*nw+iw*nxys+i].r = ctrace[nw_low+iw].r;
-                       Fop[l*nxys*nw+iw*nxys+i].i = mode*ctrace[nw_low+iw].i;
-                   }
+                rc1fft(&Top[l*size+i*nts],ctrace,ntfft,-1);
+                for (iw=0; iw<nw; iw++) {
+                    Fop[l*nxys*nw+iw*nxys+i].r = ctrace[nw_low+iw].r;
+                    Fop[l*nxys*nw+iw*nxys+i].i = mode*ctrace[nw_low+iw].i;
+                }
             }
         }
         idxs = 1.0/dxs;
         idys = 1.0/dys;
-        ircv = (long *)malloc(nshots*nxy*sizeof(long));
+        iyrcv = (long *)malloc(nshots*nxy*sizeof(long));
+        ixrcv = (long *)malloc(nshots*nxy*sizeof(long));
         for (k=0; k<nshots; k++) {
             for (i = 0; i < nxy; i++) {
-                ircv[k*nxy+i] = NINT((yrcv[k*nxy+i]-fysb)*idys)*nx+NINT((xrcv[k*nxy+i]-fxsb)*idxs);
+                iyrcv[k*nxy+i] = NINT((yrcv[k*nxy+i]-fysb)*idys);
+                ixrcv[k*nxy+i] = NINT((xrcv[k*nxy+i]-fxsb)*idxs);
             }
         }
     }
@@ -234,8 +240,8 @@ long *ixpos, long npos, double *tfft, long *isxcount, long *reci_xsrc,  long *re
  shared(Refl, Nfoc, reci, xrcv, xsrc, yrcv, ysrc, xsyn, ysyn) \
  shared(fxsb, fxse, fysb, fyse, nxs, nys, nxys, dxs, dys) \
  shared(nx, ny, nxy, dysrc, dxsrc, inx, k, nfreq, nw_low, nw_high) \
- shared(Fop, size, nts, ntfft, scl, ircv, isrc) \
- private(l, ix, j, m, i, sum, rtrace)
+ shared(Fop, size, nts, ntfft, scl, iyrcv, ixrcv, isrc) \
+ private(l, ix, iy, j, m, i, sum, rtrace)
 { /* start of parallel region */
             sum   = (complex *)malloc(nfreq*sizeof(complex));
             rtrace = (float *)calloc(ntfft,sizeof(float));
@@ -247,11 +253,12 @@ long *ixpos, long npos, double *tfft, long *isxcount, long *reci_xsrc,  long *re
                 memset(&sum[0].r,0,nfreq*2*sizeof(float));
                 for (i = 0; i < inx; i++) {
                     for (j = nw_low, m = 0; j <= nw_high; j++, m++) {
-                        ix = ircv[k*nxy+i];
-                        sum[j].r += Refl[k*nw*nxy+m*nxy+i].r*Fop[l*nw*nxys+m*nxys+ix].r -
-                                    Refl[k*nw*nxy+m*nxy+i].i*Fop[l*nw*nxys+m*nxys+ix].i;
-                        sum[j].i += Refl[k*nw*nxy+m*nxy+i].i*Fop[l*nw*nxys+m*nxys+ix].r +
-                                    Refl[k*nw*nxy+m*nxy+i].r*Fop[l*nw*nxys+m*nxys+ix].i;
+                        ix = ixrcv[k*nxy+i];
+                        iy = iyrcv[k*nxy+i];
+                        sum[j].r += Refl[k*nw*nxy+m*nxy+i].r*Fop[l*nw*nxys+m*nxys+iy*nxs+ix].r -
+                                    Refl[k*nw*nxy+m*nxy+i].i*Fop[l*nw*nxys+m*nxys+iy*nxs+ix].i;
+                        sum[j].i += Refl[k*nw*nxy+m*nxy+i].i*Fop[l*nw*nxys+m*nxys+iy*nxs+ix].r +
+                                    Refl[k*nw*nxy+m*nxy+i].r*Fop[l*nw*nxys+m*nxys+iy*nxs+ix].i;
                     }
                 }
 

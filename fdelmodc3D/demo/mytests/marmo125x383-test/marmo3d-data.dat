@@ -1,0 +1,44 @@
+# Scheme and aux vars
+ischeme=1 
+iorder=4
+verbose=4
+
+# Input files
+file_cp=vel125x383-3d.su
+file_den=rho125x383-3d.su
+file_src=wave.su
+file_rcv=shot3d_marmo_fd.su
+
+# Source vars
+src_type=1
+src_orient=1
+src_injectionrate=1
+
+# Rec vars
+rec_type_vz=0
+rec_type_p=1
+rec_int_vz=2
+dtrcv=0.0005
+rec_delay=0.0 # delays seismogram
+
+# Time
+tmod=4.0
+
+# Geometry
+dxrcv=10.0
+xrcv1=0
+xrcv2=920
+zrcv1=0 
+zrcv2=0
+xsrc=0 
+zsrc=0
+
+# ABC vars
+ntaper=30
+left=4 right=4 top=4 bottom=4
+
+# Snap vars
+sna_type_p=1 
+tsnap1=0.1 
+tsnap2=4.0 
+
