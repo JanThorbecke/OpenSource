@@ -1,0 +1,52 @@
+# Scheme and aux vars
+ischeme=1 
+iorder=4
+verbose=1
+
+# Input files
+file_cp=model10_cp-3d.su
+file_den=model10_ro-3d.su
+file_src=wave.su
+file_rcv=shot3d_model10_fd.su
+
+# Source vars
+src_type=1
+src_orient=1
+src_injectionrate=1
+
+# Rec vars
+rec_type_vz=0
+rec_type_p=1
+rec_int_vz=2
+dtrcv=0.004
+rec_delay=0.0 # delays seismogram
+
+# Time
+#tmod=0.9
+tmod=0.8
+
+# Geometry
+dxrcv=10.0
+dyrcv=10.0
+xrcv1=100
+xrcv2=1900
+zrcv1=450 
+zrcv2=450
+yrcv1=50 
+yrcv2=200
+xsrc=1000 
+zsrc=500
+ysrc=125
+
+# ABC vars
+ntaper=60 left=4 right=4 top=4 bottom=4 front=4 back=4
+
+# Snap vars
+sna_type_p=1 
+tsnap1=0.0 
+dtsnap=0.05
+tsnap2=0.5 
+
+
+
+

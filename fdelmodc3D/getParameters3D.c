@@ -581,7 +581,7 @@ criteria we have imposed.*/
 		shot->y[is] = src_iy0+is*idyshot;
 		shot->z[is] = src_iz0+is*idzshot;
 		if (shot->x[is] > nx-1) shot->n = is-1;
-		if (shot->y[is] > nz-1) shot->n = is-1;
+		if (shot->y[is] > ny-1) shot->n = is-1;
 		if (shot->z[is] > nz-1) shot->n = is-1;
 	}
 
