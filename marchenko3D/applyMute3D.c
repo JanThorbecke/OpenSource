@@ -12,11 +12,13 @@
 #endif
 #define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 
-void applyMute3D( float *data, long *mute, long smooth, long above, long Nfoc, long nxs, long nt, long *ixpos, long npos, long shift)
+void applyMute3D( float *data, long *mute, long smooth, long above, long Nfoc, long nxs, long nys, long nt, long *ixpos, long *iypos, long npos, long shift)
 {
-    long ix, iy, i, j, l, isyn;
+    long ix, iy, i, j, l, isyn, nxys;
     float *costaper, scl;
     long imute, tmute;
+
+    nxys = nxs*nys;
 
     if (smooth) {
         costaper = (float *)malloc(smooth*sizeof(float));
@@ -29,80 +31,80 @@ void applyMute3D( float *data, long *mute, long smooth, long above, long Nfoc, l
     for (isyn = 0; isyn < Nfoc; isyn++) {
         if (above==1) {
             for (i = 0; i < npos; i++) {
-                imute = ixpos[i];
-                tmute = mute[isyn*nxs+imute];
+                imute = iypos[i]*nxs+ixpos[i];
+                tmute = mute[isyn*nxys+imute];
                 for (j = 0; j < MAX(0,tmute-shift-smooth); j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                    data[isyn*nxys*nt+i*nt+j] = 0.0;
                 }
                 for (j = MAX(0,tmute-shift-smooth),l=0; j < MAX(0,tmute-shift); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
+                    data[isyn*nxys*nt+i*nt+j] *= costaper[smooth-l-1];
                 }
             }
         }
         else if (above==0){
             for (i = 0; i < npos; i++) {
-                imute = ixpos[i];
+                imute = iypos[i]*nxs+ixpos[i];
                 tmute = mute[isyn*nxs+imute];
                 if (tmute >= nt/2) {
-                    memset(&data[isyn*nxs*nt+i*nt],0, sizeof(float)*nt);
+                    memset(&data[isyn*nxys*nt+i*nt],0, sizeof(float)*nt);
                     continue;
                 }
                 for (j = MAX(0,tmute-shift),l=0; j < MAX(0,tmute-shift+smooth); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[l];
+                    data[isyn*nxys*nt+i*nt+j] *= costaper[l];
                 }
                 for (j = MAX(0,tmute-shift+smooth)+1; j < MIN(nt,nt+1-tmute+shift-smooth); j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                    data[isyn*nxys*nt+i*nt+j] = 0.0;
                 }
                 for (j = MIN(nt,nt-tmute+shift-smooth),l=0; j < MIN(nt,nt-tmute+shift); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
+                    data[isyn*nxys*nt+i*nt+j] *= costaper[smooth-l-1];
                 }
             }
         }
         else if (above==-1){
             for (i = 0; i < npos; i++) {
-                imute = ixpos[i];
-                tmute = mute[isyn*nxs+imute];
+                imute = iypos[i]*nxs+ixpos[i];
+                tmute = mute[isyn*nxys+imute];
                 for (j = MAX(0,tmute-shift),l=0; j < MAX(0,tmute-shift+smooth); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[l];
+                    data[isyn*nxys*nt+i*nt+j] *= costaper[l];
                 }
                 for (j = MAX(0,tmute-shift+smooth); j < nt; j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                    data[isyn*nxys*nt+i*nt+j] = 0.0;
                 }
             }
         }
         else if (above==4) { //Psi gate which is the inverse of the Theta gate (above=0)
             for (i = 0; i < npos; i++) {
-                imute = ixpos[i];
-                tmute = mute[isyn*nxs+imute];
+                imute = iypos[i]*nxs+ixpos[i];
+                tmute = mute[isyn*nxys+imute];
                 for (j = MAX(0,tmute-shift-smooth),l=0; j < MAX(0,tmute-shift); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
+                    data[isyn*nxys*nt+i*nt+j] *= costaper[smooth-l-1];
                 }
                 for (j = 0; j < MAX(0,tmute-shift-smooth-1); j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                    data[isyn*nxys*nt+i*nt+j] = 0.0;
                 }
                 for (j = MIN(nt,nt+1-tmute+shift+smooth); j < nt; j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                    data[isyn*nxys*nt+i*nt+j] = 0.0;
                 }
                 for (j = MIN(nt,nt-tmute+shift),l=0; j < MIN(nt,nt-tmute+shift+smooth); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[l];
+                    data[isyn*nxys*nt+i*nt+j] *= costaper[l];
                 }
             }
         }
         else if (above==2){//Separates the direct part of the wavefield from the coda
             for (i = 0; i < npos; i++) {
-                imute = ixpos[i];
-                tmute = mute[isyn*nxs+imute];
+                imute = iypos[i]*nxs+ixpos[i];
+                tmute = mute[isyn*nxys+imute];
                 for (j = 0; j < MAX(0,tmute-shift-smooth); j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                    data[isyn*nxys*nt+i*nt+j] = 0.0;
                 }
                 for (j = MAX(0,tmute-shift-smooth),l=0; j < MAX(0,tmute-shift); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
+                    data[isyn*nxys*nt+i*nt+j] *= costaper[smooth-l-1];
                 }
                 for (j = MAX(0,tmute+shift),l=0; j < MAX(0,tmute+shift+smooth); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[l];
+                    data[isyn*nxys*nt+i*nt+j] *= costaper[l];
                 }
                 for (j = MAX(0,tmute+shift+smooth); j < nt; j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                    data[isyn*nxys*nt+i*nt+j] = 0.0;
                 }
             }
         }
