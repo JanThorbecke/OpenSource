@@ -11,6 +11,7 @@
 #include <math.h>
 #include <assert.h>
 #include <genfft.h>
+#include "par.h"
 
 int omp_get_max_threads(void);
 int omp_get_num_threads(void);
