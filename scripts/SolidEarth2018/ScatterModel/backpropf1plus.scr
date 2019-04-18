@@ -1,0 +1,88 @@
+#!/bin/bash
+#PBS -N fdelmod
+#PBS -q verylong
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+
+export PATH=:$HOME/src/OpenSource/utils:$HOME/bin64:$PATH:
+which makewave
+which makemod
+tmpdir=/tmp/shotS
+
+cd /home/thorbcke/data/Kees/MultElim/ScatterModel/Redatum
+
+#makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
+#makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3
+
+dx=2.5
+dt=0.0005
+
+makemod sizex=5000 sizez=1100 dx=$dx dz=$dx cp0=1900  ro0=1200 \
+        orig=-2500,0 file_base=scatterf1.su verbose=2 \
+        intt=randdf x=-2500 z=200 cp=2700 ro=4700 var=3000,5 \
+        intt=def x=-2500,0,2500 z=700,700,700 cp=1900 ro=1200 
+
+#        intt=diffr x=-90,0,90 z=900,900,900 cp=2300,2300,2300 ro=2800,2800,2800 var=5 \
+#        verbose=4
+
+makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=1
+
+export OMP_NUM_THREADS=2
+
+interpolate file_in=f1plus0.su d1out=$dt file_out=f1plusdt.su
+
+$HOME/bin64/fdelmodc \
+    file_cp=scatterf1_cp.su ischeme=1 iorder=4 \
+    file_den=scatterf1_ro.su \
+    file_src=f1plusdt.su \
+    file_rcv=backprop_f1plusz800.su \
+    grid_dir=0 \
+    src_type=1 \
+    src_injectionrate=1 \
+	src_orient=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.002 \
+	rec_delay=0.0 \
+    verbose=2 \
+    tmod=4.094 \
+    dxrcv=10.0 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=800 zrcv2=800 \
+    xsrc=0 zsrc=0 \
+    ntaper=250 \
+	file_snap=back.su tsnap1=1.5005 dtsnap=0.05 tsnap2=2.5005 dxsnap=10 dzsnap=10 zsnap1=0 zsnap2=2000 xsnap1=-2250 xsnap2=2250 \
+    left=4 right=4 top=4 bottom=4
+
+
+suwind key=sx min=0 max=0 itmax=1023 < p0plusall.su > p0plus.su
+basop file_in=p0plus.su file_out=p0plusr.su choice=5 verbose=1 
+rotate nrot=512 < p0plusr.su > f1plusi0.su
+interpolate file_in=f1plusi0.su d1out=$dt file_out=f1plusi0dt.su
+
+$HOME/bin64/fdelmodc \
+    file_cp=scatterf1_cp.su ischeme=1 iorder=4 \
+    file_den=scatterf1_ro.su \
+    file_src=f1plusi0dt.su \
+    file_rcv=backprop_f1plusi0z800.su \
+    grid_dir=0 \
+    src_type=1 \
+    src_injectionrate=1 \
+	src_orient=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.002 \
+	rec_delay=0.0 \
+    verbose=2 \
+    tmod=4.094 \
+    dxrcv=10.0 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=800 zrcv2=800 \
+    xsrc=0 zsrc=0 \
+    ntaper=250 \
+	file_snap=backi0.su tsnap1=1.5005 dtsnap=0.05 tsnap2=2.5005 dxsnap=10 dzsnap=10 zsnap1=0 zsnap2=2000 xsnap1=-2250 xsnap2=2250 \
+    left=4 right=4 top=4 bottom=4
+
