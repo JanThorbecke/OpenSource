@@ -1,0 +1,55 @@
+#!/bin/bash -x
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+
+export OMP_NUM_THREADS=1
+depth=850
+
+cd /vardim/home/thorbcke/data/Kees/Marchenko/SolidEarth/ScatterModel
+
+#compute Td
+#fdelmodc \
+    file_cp=hom_cp.su ischeme=1 iorder=4 \
+    file_den=hom_ro.su \
+    file_src=wave.su \
+    file_rcv=Td.su \
+    src_type=1 \
+    src_injectionrate=1 \
+    src_orient=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.004 \
+    rec_delay=0.1 \
+    verbose=2 \
+    tmod=4.1920 \
+    dxrcv=10 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=$depth \
+    npml=250 \
+    left=2 right=2 top=2 bottom=2
+
+#apply the Marchenko algorithm
+marchenko file_shot=shotsRefl/refl_rp.su file_tinv=Td_rp.su nshots=451 verbose=2 \
+	tap=0 niter=15 hw=8 shift=7 smooth=3 \
+    file_green=pgreen.su file_gplus=Gplus.su file_gmin=Gmin.su  \
+    file_f1plus=f1plus.su file_f1min=f1min.su file_f2=f2.su
+
+exit;
+
+#compare Green's funtions on Marhcenko and reference result
+suwind key=gx min=0 max=0 itmax=511 < pgreen.su | sumax mode=abs outpar=nepmg
+suwind key=gx min=0 max=0 itmax=511 < referenceP_rp.su | sumax mode=abs outpar=neprf
+mg=`cat nepmg | awk '{print $1}'`
+rf=`cat neprf | awk '{print $1}'`
+value=${value/[eE][+][0]/*10^}
+mg=${mg/[eE][+][0]/*10^}
+rf=${rf/[eE][+][0]/*10^}
+rm nep*
+scale=$(echo "scale=3; ($rf)/($mg)" | bc -l)
+echo $scale
+
+(suwind key=gx min=0 max=0 itmax=511 < pgreen.su | sugain scale=$scale;  \
+    suwind key=gx min=0 max=0 < referenceP_rp.su) | suxgraph
+

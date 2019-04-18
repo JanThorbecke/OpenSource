@@ -16,30 +16,39 @@ dt=0.0005
 #shots=var=6000,5
 
 #high contrast model
-makemod sizex=5000 sizez=1200 dx=$dx dz=$dx cp0=1900 ro0=1200 \
-        orig=-2500,0 file_base=scatter.su \
-        intt=randdf x=-2500 z=200 cp=1900 ro=4700 var=4001,11 \
-        intt=def x=-2500,0,2500 z=700,700,700 cp=1900 ro=1200 \
-        verbose=4
-
-#low contrast model
 #makemod sizex=5000 sizez=1200 dx=$dx dz=$dx cp0=1900 ro0=1200 \
 #        orig=-2500,0 file_base=scatter.su \
-#        intt=randdf x=-2500 z=200 cp=1900 ro=2400 var=4001,11 \
+#        intt=randdf x=-2500 z=200 cp=1900 ro=4700 var=4001,11 \
 #        intt=def x=-2500,0,2500 z=700,700,700 cp=1900 ro=1200 \
 #        verbose=4
+
+#low contrast model for Revision 1 in paper
+makemod sizex=5000 sizez=1200 dx=$dx dz=$dx cp0=1900 ro0=1200 \
+        orig=-2500,0 file_base=scatter.su \
+        intt=randdf x=-2500 z=200 cp=1900 ro=2400 var=4001,11 \
+        intt=def x=-2500,0,2500 z=700,700,700 cp=1900 ro=1200 \
+        verbose=4
 
 makemod sizex=5000 sizez=1200 dx=$dx dz=$dx cp0=1900 ro0=1200 \
         orig=-2500,0 file_base=hom verbose=2 
 
 makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3 scale=0
 
-supsimage hbox=4 wbox=6 labelsize=10 < scatter_ro.su\
-        x1beg=0 x1end=1000.0 legend=0 threecolor=1  \
+#supsimage hbox=4 wbox=6 labelsize=10 < scatter_ro.su\
+#        x1beg=0 x1end=1200.0 legend=0 threecolor=1  \
+#        d1s=1.0 d2s=1.0 \
+#        wrgb=1.0,.5,0 grgb=0,.7,1.0 brgb=0,1.0,0 \
+#        bps=24  bclip=2400 wclip=1500 blockinterp=1 legend=1 \
+#        n1tic=5 x2beg=-2500 f2num=-2000 d2num=1000 x2end=2500 > modelscatter_ro.eps
+
+#for R1 on scale with snapshots
+supsimage hbox=4 wbox=6.7 labelsize=10 < scatter_ro.su\
+        legend=0 threecolor=1  \
         d1s=1.0 d2s=1.0 \
         wrgb=1.0,.5,0 grgb=0,.7,1.0 brgb=0,1.0,0 \
-        bps=24  bclip=2400 wclip=1500 blockinterp=1 legend=1 \
-        n1tic=5 x2beg=-2500 f2num=-2000 d2num=1000 x2end=2500 > modelscatter_ro.eps
+    	x1beg=0 x1end=1200 \
+        bps=24  bclip=2400 wclip=1500 legend=1 \
+    	n1tic=4 x2beg=-1000 f2num=-1000 d2num=500 x2end=1000 > modelscatter_ro.eps
 
 exit;
 

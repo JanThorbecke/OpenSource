@@ -1,0 +1,51 @@
+#!/bin/bash
+#PBS -N fdelmod
+#PBS -q verylong
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+
+export PATH=$HOME/bin:$HOME/src/OpenSource/bin:$PATH:
+
+cd /vardim/home/thorbcke/data/Kees/Marchenko/SolidEarth/ScatterModel
+
+dxshot=10
+ishot=0
+nshots=451
+
+file_R=shotsRefl/refl_rp.su
+rm $file_R
+
+while (( ishot < nshots ))
+do
+
+	(( xsrc = -2250 + ${ishot}*${dxshot} ))
+	(( sx = ${xsrc}*1000 ))
+	(( iishot = ${ishot}*${dxshot}/10 ))
+	(( tr1 = 451 - ${iishot} ))
+	(( tr2 = ${tr1} + 450 ))
+	echo xsrc=$xsrc tr1=$tr1 tr2=$tr2
+
+# direct wave
+	suwind < direct_rp.su key=tracl min=$tr1 max=$tr2 > direct.su
+
+# 2D shot
+	file_rcv=shotsRefl/shot_${xsrc}_rp.su
+	#suwind key=tracl min=1 max=601 < $file_rcv > shotz0.su
+	sudiff $file_rcv direct.su | suwind itmax=1023 > refl.su 
+
+# 1D shot
+#	suwind < shot1d${fast}_rp.su key=tracl min=$tr1 max=$tr2 > shotz0.su
+#	sudiff shotz0.su direct.su > refl.su
+
+	(( ishot = $ishot + 1))
+
+    sushw < refl.su key=fldr a=$ishot >> $file_R
+
+done
+
+#rm shotz0.su direct.su refl.su
+
+#make sure nt is number for FFT
+#convert file_in=shots/refl_rp.su saminc=4 | suwind itmax=1539  > shots/refl_4ms.su
+
