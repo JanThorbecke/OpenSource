@@ -53,7 +53,7 @@ Nfoc, float *xrcv, float *xsrc, int *xnx, float fxse, float fxsb, float dxs, flo
 nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int npos, double *tfft, int *isxcount, int
 *reci_xsrc,  int *reci_xrcv, float *ixmask, int verbose);
 
-void synthesiPosistions(int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nfoc, float *xrcv, float *xsrc, int *xnx,
+void synthesisPositions(int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nfoc, float *xrcv, float *xsrc, int *xnx,
 float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos, int *npos, int *isxcount, int countmin, int reci, int verbose);
 
 int linearsearch(int *array, size_t N, int value);
