@@ -29,7 +29,7 @@ sudipfilt < BwithTraceA.su slopes=-0.0007,-0.0001,0,0.0001,0.0007 amps=0,1,1,1,0
 
 
 #optimal results obtained by placing recievers at level of TraceA (virtual shot position) in time-reversal computation 
-#fdelmodc \
+fdelmodc \
     file_cp=hom_cp.su ischeme=1 iorder=4 \
     file_den=scatter_ro.su \
     file_src=ctr_rp.su \
@@ -60,10 +60,13 @@ sudipfilt < SI_reference_timerev_rp.su slopes=-0.0007,-0.0001,0,0.0001,0.0007 am
 
 #plot noisetraces
 
-for offset in -1000 -500 0 500 1000
-do
-suwind key=offset min=$offset max=$offset < noiseTraces.su | \
-    supswigp wbox=1 hbox=5 titlesize=-1 labelsize=-1 axescolor=white > noiseTraces_off${offset}.eps
-done
+#for offset in -1000 -500 0 500 1000
+#do
+#suwind key=offset min=$offset max=$offset < noiseTraces.su | \
+#    supswigp wbox=1 hbox=5 titlesize=-1 labelsize=-1 axescolor=white > noiseTraces_off${offset}.eps
+#done
 
+suwind key=gx j=100000 min=-1000000 max=1000000 < noiseTraces.su | \
+    supswigp wbox=6.7 hbox=4 titlesize=-1 labelsize=8 f2=-1000 d2=100 f2num=-1000 d2num=500 \
+	x1beg=0 x1end=1.0 axescolor=black > noiseTraces.eps 
 

@@ -2,15 +2,15 @@
 
 export PATH=$HOME/src/OpenSource/bin:$PATH:
 
-export OMP_NUM_THREADS=1
+export OMP_NUM_THREADS=40
 
 #mute all events below the first arrival to get the intial focusing field
 fmute file_shot=shots/iniFocus_z1100_x0_rp.su file_out=p0plus.su above=-1 shift=-10 verbose=1 check=1 hw=4
 
 #apply the Marchenko algorithm
-marchenko file_shot=shots/refl_rp.su file_tinv=p0plus.su nshots=601 verbose=1 \
+../../marchenko file_shot=shots/refl_rp.su file_tinv=p0plus.su nshots=601 verbose=1 \
 	tap=0 niter=15 hw=8 shift=7 smooth=3 \
-    file_green=pgreen.su file_gplus=Gplus0.su file_gmin=Gmin0.su  \
+    file_green=pgreen2.su file_gplus=Gplus0.su file_gmin=Gmin0.su  \
     file_f1plus=f1plus0.su file_f1min=f1min0.su file_f2=f2.su
 
 #compare Green's funtions on Marhcenko and reference result
