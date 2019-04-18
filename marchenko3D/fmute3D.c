@@ -26,7 +26,7 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, fl
 long readData3D(FILE *fp, float *data, segy *hdrs, long n1);
 long writeData3D(FILE *fp, float *data, segy *hdrs, long n1, long n2);
 long disp_fileinfo3D(char *file, long n1, long n2, long n3, float f1, float f2, float f3, float d1, float d2, float d3, segy *hdrs);
-void applyMute3D( float *data, long *mute, long smooth, long above, long Nfoc, long nxs, long nt, long *ixpos, long npos, long shift);
+void applyMute3D( float *data, long *mute, long smooth, long above, long Nfoc, long nxs, long nys, long nt, long *ixpos, long *iypos, long npos, long shift);
 double wallclock_time(void);
 
 /*********************** self documentation **********************/
@@ -67,7 +67,7 @@ long main (int argc, char **argv)
     long        verbose, shift, k, nx1, ny1, nt1, nx2, ny2, nt2, nxy;
     long     ntmax, nxmax, nymax, ret, i, j, l, jmax, ixmax, iymax, above, check;
     long     size, ntraces, ngath, *maxval, hw, smooth;
-    long     tstart, tend, scale, *xrcv;
+    long     tstart, tend, scale, *xrcv, *yrcv;
     float   dt, dt1, dx1, dy1, ft1, fx1, fy1, t0, t1, dt2, dx2, dy2, ft2, fx2, fy2;
     float    w1, w2, dxrcv, dyrcv;
     float     *tmpdata, *tmpdata2, *costaper;
@@ -179,6 +179,7 @@ long main (int argc, char **argv)
     nxy    = nx1*ny1;
     maxval = (long *)calloc(nxy,sizeof(long));
     xrcv   = (long *)calloc(nxy,sizeof(long));
+    yrcv   = (long *)calloc(nxy,sizeof(long));
     
     if (file_out==NULL) fp_out = stdout;
     else {
@@ -406,13 +407,14 @@ long main (int argc, char **argv)
 
         for (l = 0; l < ny2; l++) {
             for (i = 0; i < nx2; i++) {
-                xrcv[l*nx2+i] = l*nx2+i;
+                xrcv[l*nx2+i] = i;
+                yrcv[l*nx2+i] = l;
             }
         }
 
 /*================ apply mute window ================*/
         
-        applyMute3D(tmpdata2, maxval, smooth, above, 1, nx2*ny2, nt2, xrcv, nx2*ny2, shift);
+        applyMute3D(tmpdata2, maxval, smooth, above, 1, nx2, ny2, nt2, xrcv, yrcv, nx2*ny2, shift);
 
 /*================ write result to output file ================*/
 

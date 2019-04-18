@@ -146,7 +146,7 @@ long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, l
 
 /* in older version added factor 2.0 to be compliant with defined Green's functions in Marchenko algorithm */
 /* this is now set to 1.0 */
-		src_ampl *= (1.0/mod.dx)*l2m[iy*n1*n2+ix*n1+iz];
+		src_ampl *= (1.0/(mod.dx*mod.dx))*l2m[iy*n1*n2+ix*n1+iz];
 
 		if (verbose>5) {
 			vmess("Source %li at grid [ix=%li,iy=%li,iz=%li] at itime %li has value %e",isrc, ix, iy, iz, itime, src_ampl);

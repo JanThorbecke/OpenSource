@@ -28,9 +28,25 @@ long defineSource3D(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_
 
 long writeSrcRecPos3D(modPar *mod, recPar *rec, srcPar *src, shotPar *shot);
 
+long acoustic6_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
+    long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz, 
+	float *p, float *rox, float *roy, float *roz, float *l2m, long verbose);
+
 long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 	long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz,
 	float *p, float *rox, float *roy, float *roz, float *l2m, long verbose);
+
+long acoustic2_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
+    long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz,
+    float *p, float *rox, float *roy, float *roz, float *l2m, long verbose);
+
+long acoustic4_qr_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, 
+    long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz,
+    float *p, float *rox, float *roy, float *roz, float *l2m, long verbose);
+
+long acousticSH4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
+	long ixsrc, long iysrc, long izsrc, float **src_nwav, float *tx, float *ty, float *tz,
+	float *vz, float *rox, float *roy, float *roz, float *mul, long verbose);
 
 long getRecTimes3D(modPar mod, recPar rec, bndPar bnd, long itime, long isam,
 	float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx,
@@ -301,7 +317,6 @@ int main(int argc, char **argv)
 
 	if (!getparlong("verbose",&verbose)) verbose=0;
 	getParameters3D(&mod, &rec, &sna, &wav, &src, &shot, &bnd, verbose);
-
 
 	/* allocate arrays for model parameters: the different schemes use different arrays */ 
 
@@ -577,29 +592,28 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
 				threadAffinity();
 			}
 			switch ( mod.ischeme ) {
-//				case -2 : /* test code for PML */
-//					acoustic4_test(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
-//						vx, vz, tzz, rox, roz, l2m, verbose);
-//					break;
 				case -1 : /* Acoustic dissipative media FD kernel */
-					vmess("Acoustic dissipative not yet available");
+					acoustic4_qr_3D(mod, src, wav, bnd, it, ixsrc, iysrc, izsrc, src_nwav,
+									vx, vy, vz, tzz, rox, roy, roz, l2m, verbose);
 					break;
 				case 1 : /* Acoustic FD kernel */
 					if (mod.iorder==2) {
-						vmess("Acoustic order 2 not yet available");
+						acoustic2_3D(mod, src, wav, bnd, it, ixsrc, iysrc, izsrc, src_nwav,
+								vx, vy, vz, tzz, rox, roy, roz, l2m, verbose);
 					}
 					else if (mod.iorder==4) {
                         if (mod.sh) {
-                            vmess("SH order 4 not yet available");
+                            acousticSH4_3D(mod, src, wav, bnd, it, ixsrc, iysrc, izsrc, src_nwav, 
+                                    vx, vy, vz, tzz, rox, roy, roz, l2m, verbose);
                         }
                         else {
-                        	
 							acoustic4_3D(mod, src, wav, bnd, it, ixsrc, iysrc, izsrc, src_nwav,
 									vx, vy, vz, tzz, rox, roy, roz, l2m, verbose);
                         }
 					}
 					else if (mod.iorder==6) {
-						vmess("Acoustic order 6 not yet available");
+							acoustic6_3D(mod, src, wav, bnd, it, ixsrc, iysrc, izsrc, src_nwav,
+									vx, vy, vz, tzz, rox, roy, roz, l2m, verbose);
 					}
 					break;
 				case 2 : /* Visco-Acoustic FD kernel */

@@ -23,11 +23,11 @@ void pad_data(float *data, long nsam, long nrec, long nsamout, float *datout);
 void corr(float *data1, float *data2, float *cov, long nrec, long nsam, float dt, long shift);
 void convol(float *data1, float *data2, float *con, long nrec, long nsam, float dt, long shift);
 
-void AmpEst3D(float *f1d, float *Gd, float *ampest, long Nfoc, long nxs, long nys, long ntfft, long *ixpos, long npos,
+void AmpEst3D(float *f1d, float *Gd, float *ampest, long Nfoc, long nxs, long nys, long ntfft, long *ixpos, long *iypos, long npos,
     char *file_wav, float dx, float dy, float dt)
 {
 	
-	long 	l, i, ix, iw, nfreq;
+	long 	l, i, ix, iy, iw, nfreq;
 	float 	scl, sclt, *wavelet, *scaled, *conv, *f1dsamp;
 	float   dtm, dxm, cpm, rom, *trace;
 	FILE 	*fp_wav;
@@ -59,8 +59,9 @@ void AmpEst3D(float *f1d, float *Gd, float *ampest, long Nfoc, long nxs, long ny
 	for (l=0; l<Nfoc; l++) {
 		for (i=0; i<npos; i++) {
 			ix = ixpos[i];
+			iy = iypos[i];
 			for (iw=0; iw<ntfft; iw++) {
-				f1dsamp[i*ntfft+iw] = f1d[l*nxs*nys*ntfft+ix*ntfft+iw];
+				f1dsamp[i*ntfft+iw] = f1d[l*nxs*nys*ntfft+iy*nxs*ntfft+ix*ntfft+iw];
 			}
 		}
 		if (file_wav==NULL){
