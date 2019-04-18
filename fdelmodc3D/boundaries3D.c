@@ -9,6 +9,42 @@ void vmess(char *fmt, ...);
 long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, float *rox, float *roy, float *roz, float *l2m, float *lam, float *mul, long itime, long verbose)
 {
 /*********************************************************************
+Joeri's original filling order
+26 minicubes ordered as x-y-z
+x can be left, mid, right
+y can be top, mid, bottom
+z can be front, mid, back
+
+Code ordering:
+TOP 	mid		top 	mid
+		right 	top 	mid
+		right 	top 	back 
+		left  	top 	mid
+		left 	top 	front
+		left 	top 	back
+		mid 	top 	front
+		mid 	top 	back
+
+BOTTOM 	mid  	bottom 	mid
+		right 	bottom 	mid
+		right 	bottom 	front
+		right 	bottom 	back
+		left 	bottom 	mid
+		left 	bottom 	front
+		left 	bottom 	back
+		mid 	bottom 	front
+		mid 	bottom 	back
+
+MID 	left 	mid 	mid
+		left 	mid 	front
+		left 	mid 	back
+		right 	mid 	mid
+		right 	mid 	front
+		right 	mid 	back 
+		mid 	mid 	front
+		mid 	mid 	back
+
+26*3 minicubes total (vz, vx, vy).
 
    AUTHOR:
 		   Jan Thorbecke (janth@xs4all.nl)
@@ -173,6 +209,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 		if (mod.ischeme <= 2) { /* Acoustic scheme */
 			
 			/* Vx field */
+			/* mid top mid vx */
 			ixo = mod.ioXx;
 			ixe = mod.ieXx;
 			iyo = mod.ioXy;
@@ -180,7 +217,6 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			izo = mod.ioXz-bnd.ntap;
 			ize = mod.ioXz;
 	
-
 			ibz = (bnd.ntap+izo-1);
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
@@ -198,7 +234,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			}
 
 
-			/* right top corner */
+			/* right top mid corner vx */
 			if (bnd.rig==4) {
 				ixo = mod.ieXx;
 				ixe = mod.ieXx+bnd.ntap;
@@ -220,7 +256,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 				}
 
 
-				/* right top front corner */
+				/* right top front corner vx */
 				if (bnd.fro==4) {
 					iyo = mod.ioXy-bnd.ntap;
 					iye = mod.ioXy;
@@ -242,7 +278,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 				}
 		
 		
-				/* right top back corner */
+				/* right top back corner vx */
 				if (bnd.bac==4) {
 					iyo = mod.ieXy;
 					iye = mod.ieXy+bnd.ntap;
@@ -271,7 +307,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			izo = mod.ioXz-bnd.ntap;
 			ize = mod.ioXz;
 
-			/* left top corner */
+			/* left top mid corner vx */
 			if (bnd.lef==4) {
 				ixo = mod.ioXx-bnd.ntap;
 				ixe = mod.ioXx;
@@ -292,7 +328,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 
-				/* left top front corner */
+				/* left top front corner vx */
 				if (bnd.fro==4) {
 					iyo = mod.ioXy-bnd.ntap;
 					iye = mod.ioXy;
@@ -314,7 +350,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 				}
 
 
-				/* left top back corner */
+				/* left top back corner vx */
 				if (bnd.bac==4) {
 					iyo = mod.ieXy;
 					iye = mod.ieXy+bnd.ntap;
@@ -337,7 +373,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			}
 
 
-			/* front top corner */
+			/* mid top front corner vx */
 			if (bnd.fro==4) {
 				ixo = mod.ioXx;
 				ixe = mod.ieXx;
@@ -362,7 +398,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			}
 
 
-			/* Back top corner */
+			/* mid top back corner vx */
 			if (bnd.bac==4) {
 				iyo = mod.ieXy;
 				iye = mod.ieXy+bnd.ntap;
@@ -386,6 +422,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 	
 
 			/* Vy field */
+			/* mid top mid vy */
 			ixo = mod.ioYx;
 			ixe = mod.ieYx;
 			iyo = mod.ioYy;
@@ -410,7 +447,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			}
 	
 
-			/* right top corner */
+			/* right top mid corner vy */
 			if (bnd.rig==4) {
 				ixo = mod.ieYx;
 				ixe = mod.ieYx+bnd.ntap;
@@ -430,7 +467,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 						}
 					}
 				}
-				/* right top front corner */
+				/* right top front corner vy */
 				if (bnd.fro==4) {
 					iyo = mod.ioYy-bnd.ntap;
 					iye = mod.ioYy;
@@ -453,7 +490,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 
 	
 
-				/* right top back corner */
+				/* right top back corner vy */
 				if (bnd.bac==4) {
 					iyo = mod.ieYy;
 					iye = mod.ieYy+bnd.ntap;
@@ -482,7 +519,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			ize = mod.ioYz;
 
 
-			/* left top corner */
+			/* left top mid corner vy */
 			if (bnd.lef==4) {
 				ixo = mod.ioYx-bnd.ntap;
 				ixe = mod.ioYx;
@@ -502,7 +539,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 
-				/* left top front corner */
+				/* left top front corner vy */
 				if (bnd.fro==4) {
 					iyo = mod.ioYy-bnd.ntap;
 					iye = mod.ioYy;
@@ -522,7 +559,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 
-				/* left top back corner */
+				/* left top back corner vy */
 				if (bnd.bac==4) {
 					iyo = mod.ieYy;
 					iye = mod.ieYy+bnd.ntap;
@@ -542,7 +579,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 			}
-			/* front top corner */
+			/* front top mid corner vy */
 			if (bnd.fro==4) {
 				ixo = mod.ioYx;
 				ixe = mod.ieYx;
@@ -564,7 +601,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 			}
-			/* Back top corner */
+			/* back top mid corner vy */
 			if (bnd.bac==4) {
 				iyo = mod.ieYy;
 				iye = mod.ieYy+bnd.ntap;
@@ -587,6 +624,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 
 
 			/* Vz field */
+			/* mid top mid vz*/
 			ixo = mod.ioZx;
 			ixe = mod.ieZx;
 			iyo = mod.ioZy;
@@ -608,7 +646,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 			}
-			/* right top corner */
+			/* right top mid corner vz */
 			if (bnd.rig==4) {
 				ixo = mod.ieZx;
 				ixe = ixo+bnd.ntap;
@@ -627,7 +665,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 						}
 					}
 				}
-				/* right top front corner */
+				/* right top front corner vz */
 				if (bnd.fro==4) {
 					iyo = mod.ioZy-bnd.ntap;
 					iye = mod.ioZy;
@@ -646,7 +684,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 						}
 					}
 				}
-				/* right top back corner */
+				/* right top back corner vz */
 				if (bnd.bac==4) {
 					iyo = mod.ieZy;
 					iye = mod.ieZy+bnd.ntap;
@@ -674,7 +712,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			izo = mod.ioZz-bnd.ntap;
 			ize = mod.ioZz;
 
-			/* left top corner */
+			/* left top mid corner vz */
 			if (bnd.lef==4) {
 				ixo = mod.ioZx-bnd.ntap;
 				ixe = mod.ioZx;
@@ -683,15 +721,17 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 #pragma ivdep
-					for (iz=izo; iz<ize; iz++) {
-						vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
-									c1*(tzz[iy*n1*n2+ix*n1+iz]   - tzz[iy*n1*n2+ix*n1+iz-1]) +
-									c2*(tzz[iy*n1*n2+ix*n1+iz+1] - tzz[iy*n1*n2+ix*n1+iz-2]));
-						
-						vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.ntap+(ibz-iz)];
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n1*n2+ix*n1+iz]   - tzz[iy*n1*n2+ix*n1+iz-1]) +
+										c2*(tzz[iy*n1*n2+ix*n1+iz+1] - tzz[iy*n1*n2+ix*n1+iz-2]));
+							
+							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.ntap+(ibz-iz)];
+						}
 					}
 				}
-				/* left top front corner */
+				/* left top front corner vz */
 				if (bnd.fro==4) {
 					iyo = mod.ioZy-bnd.ntap;
 					iye = mod.ioZy;
@@ -705,12 +745,12 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 											c1*(tzz[iy*n1*n2+ix*n1+iz]	 - tzz[iy*n1*n2+ix*n1+iz-1]) +
 											c2*(tzz[iy*n1*n2+ix*n1+iz+1] - tzz[iy*n1*n2+ix*n1+iz-2]));
 			
-								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iby-iy)*(bnd.ntap)*(bnd.ntap)+(ibx-ix)*bnd.ntap+(ibz-iz)];
+								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iby-iy)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(ibz-iz)];
 							}
 						}
 					}
 				}
-				/* left top back corner */
+				/* left top back corner vz */
 				if (bnd.bac==4) {
 					iyo = mod.ieZy;
 					iye = mod.ieZy+bnd.ntap;
@@ -724,13 +764,13 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 											c1*(tzz[iy*n1*n2+ix*n1+iz]	 - tzz[iy*n1*n2+ix*n1+iz-1]) +
 											c2*(tzz[iy*n1*n2+ix*n1+iz+1] - tzz[iy*n1*n2+ix*n1+iz-2]));
 			
-								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*(bnd.ntap)*(bnd.ntap)+(ibx-ix)*bnd.ntap+(ibz-iz)];
+								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(ibz-iz)];
 							}
 						}
 					}
 				}
 			}
-			/* front top corner */
+			/* mid top front corner vz */
 			if (bnd.fro==4) {
 				ixo = mod.ioZx;
 				ixe = mod.ieZx;
@@ -752,7 +792,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 			}
-			/* Back top corner */
+			/* mid top back corner vz */
 			if (bnd.bac==4) {
 				iyo = mod.ieZy;
 				iye = mod.ieZy+bnd.ntap;
@@ -784,6 +824,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 		if (mod.ischeme <= 2) { /* Acoustic scheme */
 			
 			/* Vx field */
+			/* mid bottom mid vx*/
 			ixo = mod.ioXx;
 			ixe = mod.ieXx;
 			iyo = mod.ioXy;
@@ -805,7 +846,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 			}
-			/* right bottom corner */
+			/* right bottom mid corner vx */
 			if (bnd.rig==4) {
 				ixo = mod.ieXx;
 				ixe = mod.ieXx+bnd.ntap;
@@ -824,7 +865,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 						}
 					}
 				}
-				/* right bottom front corner */
+				/* right bottom front corner vx */
 				if (bnd.fro==4) {
 					iyo = mod.ioXy-bnd.ntap;
 					iye = mod.ioXy;
@@ -843,7 +884,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 						}
 					}
 				}
-				/* right bottom back corner */
+				/* right bottom back corner vx */
 				if (bnd.bac==4) {
 					iyo = mod.ieXy;
 					iye = mod.ieXy+bnd.ntap;
@@ -871,7 +912,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			izo = mod.ieXz;
 			ize = mod.ieXz+bnd.ntap;
 
-			/* left bottom corner */
+			/* left bottom mid corner vx*/
 			if (bnd.lef==4) {
 				ixo = mod.ioXx-bnd.ntap;
 				ixe = mod.ioXx;
@@ -890,7 +931,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 						}
 					}
 				}
-				/* left bottom front corner */
+				/* left bottom front corner vx */
 				if (bnd.fro==4) {
 					iyo = mod.ioXy-bnd.ntap;
 					iye = mod.ioXy;
@@ -909,7 +950,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 						}
 					}
 				}
-				/* left bottom back corner */
+				/* left bottom back corner vx*/
 				if (bnd.bac==4) {
 					iyo = mod.ieXy;
 					iye = mod.ieXy+bnd.ntap;
@@ -929,7 +970,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 			}
-			/* front bottom corner */
+			/* mid bottom front corner vx */
 			if (bnd.fro==4) {
 				ixo = mod.ioXx;
 				ixe = mod.ieXx;
@@ -951,7 +992,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 			}
-			/* Back bottom corner */
+			/*  mid bottom back corner vx */
 			if (bnd.bac==4) {
 				iyo = mod.ieXy;
 				iye = mod.ieXy+bnd.ntap;
@@ -974,6 +1015,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 
 
 			/* Vy field */
+			/* mid bottom mid vy */
 			ixo = mod.ioYx;
 			ixe = mod.ieYx;
 			iyo = mod.ioYy;
@@ -981,7 +1023,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			izo = mod.ieYz;
 			ize = mod.ieYz+bnd.ntap;
 	
-			ib = (bnd.ntap+izo-1);
+			ib = (ize-bnd.ntap);
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma ivdep
@@ -995,7 +1037,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 			}
-			/* right bottom corner */
+			/* right bottom mid corner vy */
 			if (bnd.rig==4) {
 				ixo = mod.ieYx;
 				ixe = ixo+bnd.ntap;
@@ -1014,7 +1056,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 						}
 					}
 				}
-				/* right bottom front corner */
+				/* right bottom front corner vy */
 				if (bnd.fro==4) {
 					iyo = mod.ioYy-bnd.ntap;
 					iye = mod.ioYy;
@@ -1033,7 +1075,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 						}
 					}
 				}
-				/* right bottom back corner */
+				/* right bottom back corner vy */
 				if (bnd.bac==4) {
 					iyo = mod.ieYy;
 					iye = mod.ieYy+bnd.ntap;
@@ -1057,10 +1099,10 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			ixe = mod.ieYx;
 			iyo = mod.ioYy;
 			iye = mod.ieYy;
-			izo = mod.ioYz;
-			ize = mod.ioYz+bnd.ntap;
+			izo = mod.ieYz;
+			ize = mod.ieYz+bnd.ntap;
 
-			/* left bottom corner */
+			/* left bottom mid corner vy */
 			if (bnd.lef==4) {
 				ixo = mod.ioYx-bnd.ntap;
 				ixe = mod.ioYx;
@@ -1079,7 +1121,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 						}
 					}
 				}
-				/* left bottom front corner */
+				/* left bottom front corner vy */
 				if (bnd.fro==4) {
 					iyo = mod.ioYy-bnd.ntap;
 					iye = mod.ioYy;
@@ -1098,7 +1140,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 						}
 					}
 				}
-				/* left bottom back corner */
+				/* left bottom back corner vy */
 				if (bnd.bac==4) {
 					iyo = mod.ieYy;
 					iye = mod.ieYy+bnd.ntap;
@@ -1118,7 +1160,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 			}
-			/* front bottom corner */
+			/* mid bottom front corner vy */
 			if (bnd.fro==4) {
 				ixo = mod.ioYx;
 				ixe = mod.ieYx;
@@ -1140,7 +1182,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 			}
-			/* Back bottom corner */
+			/* mid bottom back corner vy */
 			if (bnd.bac==4) {
 				iyo = mod.ieYy;
 				iye = mod.ieYy+bnd.ntap;
@@ -1247,6 +1289,14 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 			}
+			
+			ixo = mod.ioZx;
+			ixe = mod.ieZx;
+			iyo = mod.ioZy;
+			iye = mod.ieZy;
+			izo = mod.ieZz;
+			ize = mod.ieZz+bnd.ntap;
+
 			/* left bottom corner */
 			if (bnd.lef==4) {
 				ixo = mod.ioZx-bnd.ntap;
@@ -1274,7 +1324,6 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
 						for (iy=iyo; iy<iye; iy++) {
 							#pragma ivdep
 							for (iz=izo; iz<ize; iz++) {
@@ -1297,11 +1346,11 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 #pragma ivdep
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
-								vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+								vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
 											c1*(tzz[iy*n1*n2+ix*n1+iz]	 - tzz[iy*n1*n2+ix*n1+iz-1]) +
 											c2*(tzz[iy*n1*n2+ix*n1+iz+1] - tzz[iy*n1*n2+ix*n1+iz-2]));
 			
-								vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(iz-ibz)];
+								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(iz-ibz)];
 							}
 						}
 					}
@@ -1363,6 +1412,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 		if (mod.ischeme <= 2) { /* Acoustic scheme */
 			
 			/* Vx field */
+			/* left mid mid vx */
 			ixo = mod.ioXx-bnd.ntap;
 			ixe = mod.ioXx;
 			iyo = mod.ioXy;
@@ -1371,6 +1421,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			ize = mod.ieXz;
 			
 			ib = (bnd.ntap+ixo-1);
+
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma ivdep
@@ -1379,12 +1430,12 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 						vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
 									c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[iy*n1*n2+(ix-1)*n1+iz]) +
 									c2*(tzz[iy*n1*n2+(ix+1)*n1+iz] - tzz[iy*n1*n2+(ix-2)*n1+iz]));
-						
-						vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapx[ib-ix];
+
+						vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapx[ib-ix]; 
 					}
 				}
 			}
-			/* left front corner */
+			/* left mid front corner vx */
 			if (bnd.fro==4) {
 				iyo = mod.ioXy-bnd.ntap;
 				iye = mod.ioXy;
@@ -1399,12 +1450,12 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 										c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[iy*n1*n2+(ix-1)*n1+iz]) +
 										c2*(tzz[iy*n1*n2+(ix+1)*n1+iz] - tzz[iy*n1*n2+(ix-2)*n1+iz]));
 		
-							vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(ibx-ix)];
+							vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(ibx-ix)]; 
 						}
 					}
 				}
 			}
-			/* left back corner */
+			/* left mid back corner vx */
 			if (bnd.bac==4) {
 				iyo = mod.ieXy;
 				iye = mod.ieXy+bnd.ntap;
@@ -1426,6 +1477,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			}
 
 			/* Vy field */
+			/* left mid mid vy */
 			ixo = mod.ioYx-bnd.ntap;
 			ixe = mod.ioYx;
 			iyo = mod.ioYy;
@@ -1447,7 +1499,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 			}
-			/* left front corner */
+			/* left mid front corner vy */
 			if (bnd.fro==4) {
 				iyo = mod.ioYy-bnd.ntap;
 				iye = mod.ioYy;
@@ -1467,7 +1519,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 			}
-			/* left back corner */
+			/* left mid back corner vy */
 			if (bnd.bac==4) {
 				iyo = mod.ieYy;
 				iye = mod.ieYy+bnd.ntap;
@@ -1489,6 +1541,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			}
 			
 			/* Vz field */
+			/* left mid mid vz */
 			ixo = mod.ioZx-bnd.ntap;
 			ixe = mod.ioZx;
 			iyo = mod.ioZy;
@@ -1497,6 +1550,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			ize = mod.ieZz;
 
 			ib = (bnd.ntap+ixo-1);
+
 #pragma omp for private (ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma ivdep
@@ -1510,7 +1564,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 			}
-			/* left front corner */
+			/* left mid front corner vz*/
 			if (bnd.fro==4) {
 				iyo = mod.ioZy-bnd.ntap;
 				iye = mod.ioZy;
@@ -1530,7 +1584,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 			}
-			/* left back corner */
+			/* left mid back corner vz */
 			if (bnd.bac==4) {
 				iyo = mod.ieZy;
 				iye = mod.ieZy+bnd.ntap;
@@ -1563,6 +1617,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 		if (mod.ischeme <= 2) { /* Acoustic scheme */
 			
 			/* Vx field */
+			/* right mid mid vx */
 			ixo = mod.ieXx;
 			ixe = mod.ieXx+bnd.ntap;
 			iyo = mod.ioXy;
@@ -1571,6 +1626,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			ize = mod.ieXz;
 		
 			ib = (ixo);
+
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma ivdep
@@ -1579,17 +1635,18 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 						vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
 									c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[iy*n1*n2+(ix-1)*n1+iz]) +
 									c2*(tzz[iy*n1*n2+(ix+1)*n1+iz] - tzz[iy*n1*n2+(ix-2)*n1+iz]));
-		
-						vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapx[ix-ib];
+
+						vx[iy*n1*n2+ix*n1+iz] *= bnd.tapx[ix-ib]; 
 					}
 				}
 			}
-			/* Right front corner */
+			/* right mid front corner vx */
 			if (bnd.fro==4) {
 				iyo = mod.ioXy-bnd.ntap;
 				iye = mod.ioXy;
 				ibx = (ixo);
 				iby = (bnd.ntap+iyo-1);
+
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 #pragma ivdep
@@ -1599,17 +1656,18 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 										c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[iy*n1*n2+(ix-1)*n1+iz]) +
 										c2*(tzz[iy*n1*n2+(ix+1)*n1+iz] - tzz[iy*n1*n2+(ix-2)*n1+iz]));
 		
-							vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(ix-ibx)];
+							vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(ix-ibx)]; 
 						}
 					}
 				}
 			}
-			/* Right back corner */
+			/* right mid back corner vx*/
 			if (bnd.bac==4) {
 				iyo = mod.ieXy;
 				iye = mod.ieXy+bnd.ntap;
 				ibx = (ixo);
 				iby = (iyo);
+
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 #pragma ivdep
@@ -1626,6 +1684,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			}
 
 			/* Vy field */
+			/* right mid mid vy */
 			ixo = mod.ieYx;
 			ixe = mod.ieYx+bnd.ntap;
 			iyo = mod.ioYy;
@@ -1634,6 +1693,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			ize = mod.ieYz;
 		
 			ib = (ixo);
+
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma ivdep
@@ -1644,15 +1704,17 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 									c2*(tzz[(iy+1)*n1*n2+ix*n1+iz] - tzz[(iy-2)*n1*n2+ix*n1+iz]));
 		
 						vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapx[ix-ib];
+						//vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapy[ix-ib]; 
 					}
 				}
 			}
-			/* Right front corner */
+			/* right mid front corner vy */
 			if (bnd.fro==4) {
 				iyo = mod.ioYy-bnd.ntap;
 				iye = mod.ioYy;
 				ibx = (ixo);
 				iby = (bnd.ntap+iyo-1);
+
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 #pragma ivdep
@@ -1662,17 +1724,18 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 										c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[(iy-1)*n1*n2+ix*n1+iz]) +
 										c2*(tzz[(iy+1)*n1*n2+ix*n1+iz] - tzz[(iy-2)*n1*n2+ix*n1+iz]));
 		
-							vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(ix-ibx)];
+							vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(ix-ibx)]; 
 						}
 					}
 				}
 			}
-			/* Right back corner */
+			/* right mid back corner vy */
 			if (bnd.bac==4) {
 				iyo = mod.ieYy;
 				iye = mod.ieYy+bnd.ntap;
 				ibx = (ixo);
 				iby = (iyo);
+
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 #pragma ivdep
@@ -1689,6 +1752,8 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			}
 
 			/* Vz field */
+			/* right mid mid vz */
+
 			ixo = mod.ieZx;
 			ixe = mod.ieZx+bnd.ntap;
 			iyo = mod.ioZy;
@@ -1697,6 +1762,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			ize = mod.ieZz;
 			
 			ib = (ixo);
+
 #pragma omp for private (ix,iy,iz) 
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma ivdep
@@ -1706,16 +1772,18 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 									c1*(tzz[iy*n1*n2+ix*n1+iz]   - tzz[iy*n1*n2+ix*n1+iz-1]) +
 									c2*(tzz[iy*n1*n2+ix*n1+iz+1] - tzz[iy*n1*n2+ix*n1+iz-2]));
 		
-						vz[iy*n1*n2+ix*n1+iz] *= bnd.tapz[ix-ib];
+						vz[iy*n1*n2+ix*n1+iz] *= bnd.tapz[ix-ib]; 
+						//vz[iy*n1*n2+ix*n1+iz] *= bnd.tapx[ix-ib]; 
 					}
 				}
 			}
-			/* right front corner */
+			/* right mid front corner vz */
 			if (bnd.fro==4) {
 				iyo = mod.ioZy-bnd.ntap;
 				iye = mod.ioZy;
 				ibx = (ixo);
 				iby = (bnd.ntap+iyo-1);
+
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 #pragma ivdep
@@ -1730,12 +1798,13 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 					}
 				}
 			}
-			/* right back corner */
+			/* right mid back corner vz */
 			if (bnd.bac==4) {
 				iyo = mod.ieZy;
 				iye = mod.ieZy+bnd.ntap;
 				ibx = (ixo);
 				iby = (iyo);
+
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 #pragma ivdep
@@ -1763,6 +1832,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 		if (mod.ischeme <= 2) { /* Acoustic scheme */
 			
 			/* Vx field */
+			/* mid mid front vx */
 			ixo = mod.ioXx;
 			ixe = mod.ieXx;
 			iyo = mod.ioXy-bnd.ntap;
@@ -1780,12 +1850,13 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 									c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[iy*n1*n2+(ix-1)*n1+iz]) +
 									c2*(tzz[iy*n1*n2+(ix+1)*n1+iz] - tzz[iy*n1*n2+(ix-2)*n1+iz]));
 		
-						vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapy[iby-iy];
+						vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapy[iby-iy]; 
 					}
 				}
 			}
 
 			/* Vy field */
+			/* mid mid front vy */
 			ixo = mod.ioYx;
 			ixe = mod.ieYx;
 			iyo = mod.ioYy-bnd.ntap;
@@ -1803,12 +1874,13 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 									c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[(iy-1)*n1*n2+ix*n1+iz]) +
 									c2*(tzz[(iy+1)*n1*n2+ix*n1+iz] - tzz[(iy-2)*n1*n2+ix*n1+iz]));
 		
-						vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapy[iby-iy];
+						vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapy[iby-iy]; 
 					}
 				}
 			}
 
 			/* Vz field */
+			/* mid mid front vz */
 			ixo = mod.ioZx;
 			ixe = mod.ieZx;
 			iyo = mod.ioZy-bnd.ntap;
@@ -1826,7 +1898,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 									c1*(tzz[iy*n1*n2+ix*n1+iz]   - tzz[iy*n1*n2+ix*n1+iz-1]) +
 									c2*(tzz[iy*n1*n2+ix*n1+iz+1] - tzz[iy*n1*n2+ix*n1+iz-2]));
 		
-						vz[iy*n1*n2+ix*n1+iz] *= bnd.tapy[iby-iy];
+						vz[iy*n1*n2+ix*n1+iz] *= bnd.tapy[iby-iy]; 
 					}
 				}
 			}
@@ -1842,6 +1914,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 		if (mod.ischeme <= 2) { /* Acoustic scheme */
 			
 			/* Vx field */
+			/* mid mid back vx */
 			ixo = mod.ioXx;
 			ixe = mod.ieXx;
 			iyo = mod.ieXy;
@@ -1865,6 +1938,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			}
 
 			/* Vy field */
+			/* mid mid back vy */
 			ixo = mod.ioYx;
 			ixe = mod.ieYx;
 			iyo = mod.ieYy;
@@ -1888,6 +1962,7 @@ long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			}
 
 			/* Vz field */
+			/* mid mid back vz */
 			ixo = mod.ioZx;
 			ixe = mod.ieZx;
 			iyo = mod.ieZy;

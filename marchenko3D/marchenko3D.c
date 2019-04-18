@@ -44,7 +44,7 @@ void name_ext(char *filename, char *extension);
 
 void convol(float *data1, float *data2, float *con, long nrec, long nsam, float dt, long shift);
 
-void applyMute3D(float *data, long *mute, long smooth, long above, long Nfoc, long nxs, long nt, long *xrcvsyn, long npos, long shift);
+void applyMute3D(float *data, long *mute, long smooth, long above, long Nfoc, long nxs, long nys, long nt, long *xrcvsyn, long *yrcvsyn, long npos, long shift);
 
 long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, float *d1, float *d2, float *d3, float *f1, float *f2, float *f3,
     float *sclsxgxsygy, long *nxm);
@@ -53,7 +53,7 @@ long writeData3D(FILE *fp, float *data, segy *hdrs, long n1, long n2);
 long disp_fileinfo3D(char *file, long n1, long n2, long n3, float f1, float f2, float f3, float d1, float d2, float d3, segy *hdrs);
 double wallclock_time(void);
 
-void AmpEst3D(float *f1d, float *Gd, float *ampest, long Nfoc, long nxs, long nys, long ntfft, long *ixpos, long npos,
+void AmpEst3D(float *f1d, float *Gd, float *ampest, long Nfoc, long nxs, long nys, long ntfft, long *ixpos, long *iypos, long npos,
     char *file_wav, float dx, float dy, float dt);
 
 void makeWindow3D(char *file_ray, char *file_amp, char *file_wav, float dt, float *xrcv, float *yrcv, float *xsrc, float *ysrc, float *zsrc, 
@@ -61,12 +61,12 @@ void makeWindow3D(char *file_ray, char *file_amp, char *file_wav, float dt, floa
 
 void synthesisPositions3D(long nx, long ny, long nxs, long nys, long Nfoc, float *xrcv, float *yrcv, float *xsrc, float *ysrc,
     long *xnx, float fxse, float fyse, float fxsb, float fysb, float dxs, float dys, long nshots, long nxsrc, long nysrc,
-    long *ixpos, long *npos, long reci, long verbose);
+    long *ixpos, long *iypos, long *npos, long reci, long verbose);
 void synthesis3D(complex *Refl, complex *Fop, float *Top, float *iRN, long nx, long ny, long nt, long nxs, long nys, long nts, float dt,
     float *xsyn, float *ysyn, long Nfoc, float *xrcv, float *yrcv, float *xsrc, float *ysrc, long *xnx,
     float fxse, float fxsb, float fyse, float fysb, float dxs, float dys, float dxsrc, float dysrc, 
     float dx, float dy, long ntfft, long nw, long nw_low, long nw_high,  long mode, long reci, long nshots, long nxsrc, long nysrc, 
-    long *ixpos, long npos, double *tfft, long *isxcount, long *reci_xsrc,  long *reci_xrcv, float *ixmask, long verbose);
+    long *ixpos, long *iypos, long npos, double *tfft, long *isxcount, long *reci_xsrc,  long *reci_xrcv, float *ixmask, long verbose);
 
 void imaging3D(float *Image, float *Gmin, float *f1plus, long nx, long ny, long nt, float dx, float dy, float dt, long Nfoc, long verbose);
 
@@ -143,7 +143,7 @@ int main (int argc, char **argv)
     long    nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     long    reci, countmin, mode, n2out, n3out, verbose, ntfft;
     long    iter, niter, tracf, *muteW, ampest;
-    long    hw, smooth, above, shift, *ixpos, npos, ix, nzim, nxim, nyim;
+    long    hw, smooth, above, shift, *ixpos, *iypos, npos, ix, iy, nzim, nxim, nyim;
     long    nshots_r, *isxcount, *reci_xsrc, *reci_xrcv;
     float   fmin, fmax, *tapersh, *tapersy, fxf, fyf, dxf, dyf, *xsrc, *ysrc, *xrcv, *yrcv, *zsyn, *zsrc, *xrcvsyn, *yrcvsyn;
     double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, energyNi, energyN0;
@@ -269,6 +269,7 @@ int main (int argc, char **argv)
     zsyn    = (float *)malloc(Nfoc*sizeof(float)); // z-src position of focal points
     xnxsyn  = (long *)calloc(Nfoc,sizeof(long)); // number of traces per focal point
     ixpos   = (long *)calloc(nys*nxs,sizeof(long)); // x-position of source of shot in G_d domain (nxs*nys with dxs, dys)
+    iypos   = (long *)calloc(nys*nxs,sizeof(long)); // y-position of source of shot in G_d domain (nxs*nys with dxs, dys)
 
     Refl    = (complex *)malloc(nw*ny*nx*nshots*sizeof(complex));
     tapersh = (float *)malloc(nx*sizeof(float));
@@ -498,7 +499,7 @@ int main (int argc, char **argv)
 
     /* dry-run of synthesis to get all x-positions calcalated by the integration */
     synthesisPositions3D(nx, ny, nxs, nys, Nfoc, xrcv, yrcv, xsrc, ysrc, xnx, 
-        fxse, fyse, fxsb, fysb, dxs, dys, nshots, nxshot, nyshot, ixpos, &npos, reci, verbose);
+        fxse, fyse, fxsb, fysb, dxs, dys, nshots, nxshot, nyshot, ixpos, iypos, &npos, reci, verbose);
     if (verbose) {
         vmess("synthesisPosistions: nxshot=%li nyshot=%li nshots=%li npos=%li", nxshot, nyshot, nshots, npos);
     }
@@ -506,7 +507,7 @@ int main (int argc, char **argv)
 /*================ set variables for output data ================*/
 
     n1 = nts; n2 = n2out; n3 = n3out;
-    f1 = ft; f2 = xrcvsyn[ixpos[0]]; f3 = yrcvsyn[ixpos[0]];
+    f1 = ft; f2 = xrcvsyn[iypos[0]*nxs+ixpos[0]]; f3 = yrcvsyn[iypos[0]*nxs+ixpos[0]];
     d1 = dt;
     if (reci == 0) {      // distance between sources in R
         d2 = dxsrc; 
@@ -552,11 +553,12 @@ int main (int argc, char **argv)
         for (i = 0; i < npos; i++) {
             j = 0;
             ix = ixpos[i]; /* select the traces that have an output trace after integration */
-            f2p[l*nys*nxs*nts+i*nts+j] = G_d[l*nys*nxs*nts+ix*nts+j];
-            f1plus[l*nys*nxs*nts+i*nts+j] = G_d[l*nys*nxs*nts+ix*nts+j];
+            iy = iypos[i]; /* select the traces that have an output trace after integration */
+            f2p[l*nys*nxs*nts+i*nts+j] = G_d[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
+            f1plus[l*nys*nxs*nts+i*nts+j] = G_d[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
             for (j = 1; j < nts; j++) {
-                f2p[l*nys*nxs*nts+i*nts+j] = G_d[l*nys*nxs*nts+ix*nts+j];
-                f1plus[l*nys*nxs*nts+i*nts+j] = G_d[l*nys*nxs*nts+ix*nts+j];
+                f2p[l*nys*nxs*nts+i*nts+j] = G_d[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
+                f1plus[l*nys*nxs*nts+i*nts+j] = G_d[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
             }
         }
     }
@@ -572,7 +574,7 @@ int main (int argc, char **argv)
         synthesis3D(Refl, Fop, Ni, iRN, nx, ny, nt, nxs, nys, nts, dt, xsyn, ysyn,
             Nfoc, xrcv, yrcv, xsrc, ysrc, xnx, fxse, fxsb, fyse, fysb, dxs, dys,
             dxsrc, dysrc, dx, dy, ntfft, nw, nw_low, nw_high, mode, reci, nshots,
-            nxshot, nyshot, ixpos, npos, &tfft, isxcount, reci_xsrc, reci_xrcv,
+            nxshot, nyshot, ixpos, iypos, npos, &tfft, isxcount, reci_xsrc, reci_xrcv,
             ixmask, verbose);
 
         t3 = wallclock_time();
@@ -588,13 +590,14 @@ int main (int argc, char **argv)
             for (i = 0; i < npos; i++) {
                 j = 0;
                 ix = ixpos[i]; 
-                Ni[l*nys*nxs*nts+i*nts+j]    = -iRN[l*nys*nxs*nts+ix*nts+j];
-                pmin[l*nys*nxs*nts+i*nts+j] += iRN[l*nys*nxs*nts+ix*nts+j];
+                iy = iypos[i]; 
+                Ni[l*nys*nxs*nts+i*nts+j]    = -iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
+                pmin[l*nys*nxs*nts+i*nts+j] += iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
                 energyNi += iRN[l*nys*nxs*nts+ix*nts+j]*iRN[l*nys*nxs*nts+ix*nts+j];
                 for (j = 1; j < nts; j++) {
-                    Ni[l*nys*nxs*nts+i*nts+j]    = -iRN[l*nys*nxs*nts+ix*nts+nts-j];
-                    pmin[l*nys*nxs*nts+i*nts+j] += iRN[l*nys*nxs*nts+ix*nts+j];
-                    energyNi += iRN[l*nys*nxs*nts+ix*nts+j]*iRN[l*nys*nxs*nts+ix*nts+j];
+                    Ni[l*nys*nxs*nts+i*nts+j]    = -iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+nts-j];
+                    pmin[l*nys*nxs*nts+i*nts+j] += iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
+                    energyNi += iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j]*iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
                 }
             }
             if (iter==0) energyN0 = energyNi;
@@ -603,7 +606,7 @@ int main (int argc, char **argv)
         }
 
         /* apply mute window based on times of direct arrival (in muteW) */
-        applyMute3D(Ni, muteW, smooth, above, Nfoc, nxs*nys, nts, ixpos, npos, shift);
+        applyMute3D(Ni, muteW, smooth, above, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift);
 
         /* update f2 */
         for (l = 0; l < Nfoc; l++) {
@@ -654,7 +657,7 @@ int main (int argc, char **argv)
         for (i = 0; i < npos; i++) {
             j = 0;
             /* set green to zero if mute-window exceeds nt/2 */
-            if (muteW[l*nys*nxs+ixpos[i]] >= nts/2) {
+            if (muteW[l*nys*nxs+iypos[i]*nxs+ixpos[i]] >= nts/2) {
                 memset(&green[l*nys*nxs*nts+i*nts],0, sizeof(float)*nt);
                 continue;
             }
@@ -664,7 +667,7 @@ int main (int argc, char **argv)
             }
         }
     }
-    applyMute3D(green, muteW, smooth, 4, Nfoc, nxs*nys, nts, ixpos, npos, shift);
+    applyMute3D(green, muteW, smooth, 4, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift);
 
     /* compute upgoing Green's function G^+,- */
     if (file_gmin != NULL || file_imag!= NULL) {
@@ -672,25 +675,35 @@ int main (int argc, char **argv)
 
         /* use f1+ as operator on R in frequency domain */
         mode=1;
-        synthesis3D(Refl, Fop, f1plus, iRN, nx, ny, nt, nxs, nys, nts, dt, xsyn, ysyn,
-            Nfoc, xrcv, yrcv, xsrc, ysrc, xnx, fxse, fxsb, fyse, fysb, dxs, dys,
-            dxsrc, dysrc, dx, dy, ntfft, nw, nw_low, nw_high, mode, reci, nshots,
-            nxshot, nyshot, ixpos, npos, &tfft, isxcount, reci_xsrc, reci_xrcv,
-            ixmask, verbose);
+        if (niter==0) {
+            synthesis3D(Refl, Fop, G_d, iRN, nx, ny, nt, nxs, nys, nts, dt, xsyn, ysyn,
+                Nfoc, xrcv, yrcv, xsrc, ysrc, xnx, fxse, fxsb, fyse, fysb, dxs, dys,
+                dxsrc, dysrc, dx, dy, ntfft, nw, nw_low, nw_high, mode, reci, nshots,
+                nxshot, nyshot, ixpos, iypos, npos, &tfft, isxcount, reci_xsrc, reci_xrcv,
+                ixmask, verbose);
+        }
+        else {
+            synthesis3D(Refl, Fop, f1plus, iRN, nx, ny, nt, nxs, nys, nts, dt, xsyn, ysyn,
+                Nfoc, xrcv, yrcv, xsrc, ysrc, xnx, fxse, fxsb, fyse, fysb, dxs, dys,
+                dxsrc, dysrc, dx, dy, ntfft, nw, nw_low, nw_high, mode, reci, nshots,
+                nxshot, nyshot, ixpos, iypos, npos, &tfft, isxcount, reci_xsrc, reci_xrcv,
+                ixmask, verbose);
+        }
 
         /* compute upgoing Green's G^-,+ */
         for (l = 0; l < Nfoc; l++) {
             for (i = 0; i < npos; i++) {
                 j=0;
                 ix = ixpos[i]; 
-                Gmin[l*nys*nxs*nts+i*nts+j] = iRN[l*nys*nxs*nts+ix*nts+j] - f1min[l*nys*nxs*nts+i*nts+j];
+                iy = iypos[i];
+                Gmin[l*nys*nxs*nts+i*nts+j] = iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j] - f1min[l*nys*nxs*nts+i*nts+j];
                 for (j = 1; j < nts; j++) {
-                    Gmin[l*nys*nxs*nts+i*nts+j] = iRN[l*nys*nxs*nts+ix*nts+j] - f1min[l*nys*nxs*nts+i*nts+j];
+                    Gmin[l*nys*nxs*nts+i*nts+j] = iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j] - f1min[l*nys*nxs*nts+i*nts+j];
                 }
             }
         }
         /* Apply mute with window for Gmin */
-        applyMute3D(Gmin, muteW, smooth, 4, Nfoc, nxs*nys, nts, ixpos, npos, shift);
+        applyMute3D(Gmin, muteW, smooth, 4, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift);
     } /* end if Gmin */
 
     /* compute downgoing Green's function G^+,+ */
@@ -702,7 +715,7 @@ int main (int argc, char **argv)
         synthesis3D(Refl, Fop, f1min, iRN, nx, ny, nt, nxs, nys, nts, dt, xsyn, ysyn,
             Nfoc, xrcv, yrcv, xsrc, ysrc, xnx, fxse, fxsb, fyse, fysb, dxs, dys,
             dxsrc, dysrc, dx, dy, ntfft, nw, nw_low, nw_high, mode, reci, nshots,
-            nxshot, nyshot, ixpos, npos, &tfft, isxcount, reci_xsrc, reci_xrcv,
+            nxshot, nyshot, ixpos, iypos, npos, &tfft, isxcount, reci_xsrc, reci_xrcv,
             ixmask, verbose);
 
         /* compute downgoing Green's G^+,+ */
@@ -710,14 +723,15 @@ int main (int argc, char **argv)
             for (i = 0; i < npos; i++) {
                 j=0;
                 ix = ixpos[i]; 
-                Gplus[l*nys*nxs*nts+i*nts+j] = -iRN[l*nys*nxs*nts+ix*nts+j] + f1plus[l*nys*nxs*nts+i*nts+j];
+                iy = iypos[i];
+                Gplus[l*nys*nxs*nts+i*nts+j] = -iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j] + f1plus[l*nys*nxs*nts+i*nts+j];
                 for (j = 1; j < nts; j++) {
-                    Gplus[l*nys*nxs*nts+i*nts+j] = -iRN[l*nys*nxs*nts+ix*nts+j] + f1plus[l*nys*nxs*nts+i*nts+nts-j];
+                    Gplus[l*nys*nxs*nts+i*nts+j] = -iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j] + f1plus[l*nys*nxs*nts+i*nts+nts-j];
                 }
             }
         }
         /* Apply mute with window for Gplus */
-        applyMute3D(Gplus, muteW, smooth, 4, Nfoc, nxs*nys, nts, ixpos, npos, shift);
+        applyMute3D(Gplus, muteW, smooth, 4, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift);
     } /* end if Gplus */
 
     /* Estimate the amplitude of the Marchenko Redatuming */
@@ -728,10 +742,10 @@ int main (int argc, char **argv)
         ampscl	= (float *)calloc(Nfoc,sizeof(float));
 		Gd		= (float *)calloc(Nfoc*nxs*nys*ntfft,sizeof(float));
 		memcpy(Gd,Gplus,sizeof(float)*Nfoc*nxs*nys*ntfft);
-		applyMute3D(Gd, muteW, smooth, 2, Nfoc, nxs*nys, nts, ixpos, npos, shift);
+		applyMute3D(Gd, muteW, smooth, 2, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift);
 
         // Determine amplitude and apply scaling
-		AmpEst3D(G_d,Gd,ampscl,Nfoc,nxs,nys,ntfft,ixpos,npos,file_wav,dxs,dys,dt);
+		AmpEst3D(G_d, Gd, ampscl, Nfoc, nxs, nys, ntfft, ixpos, iypos, npos, file_wav, dxs, dys, dt);
 		for (l=0; l<Nfoc; l++) {
 			for (j=0; j<nxs*nys*nts; j++) {
 				green[l*nxs*nts+j] *= ampscl[l];

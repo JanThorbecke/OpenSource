@@ -6,7 +6,7 @@ include ../Make_include
 #OPTC += -openmp 
 #OPTC += -g -O0
 
-ALL: makemod makewave extendModel fconv correigen green green3D basop syn2d mat2su ftr1d ampdet
+ALL: makemod makewave extendModel fconv correigen green green3D basop syn2d mat2su ftr1d
 
 SRCM	= \
 		makemod.c  \
@@ -133,15 +133,6 @@ SRCT	= ftr1d.c \
 		docpkge.c \
 		getpars.c
 
-SRCAD	= ampdet.c \
-		getFileInfo.c  \
-		readData.c \
-		writeData.c \
-		verbosepkg.c  \
-		atopkge.c \
-		docpkge.c \
-		getpars.c
-
 OBJM	= $(SRCM:%.c=%.o)
 
 makemod:	$(OBJM) 
@@ -197,11 +188,6 @@ OBJT	= $(SRCT:%.c=%.o)
 ftr1d:	$(OBJT) 
 	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o ftr1d $(OBJT) $(LIBS)
 
-OBJAD	= $(SRCAD:%.c=%.o)
-
-ampdet:	$(OBJAD) 
-	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o ampdet $(OBJAD) $(LIBS)
-
 install: makemod makewave extendModel fconv correigen green green3D basop syn2d mat2su ftr1d 
 	cp makemod $B
 	cp makewave $B
@@ -216,11 +202,7 @@ install: makemod makewave extendModel fconv correigen green green3D basop syn2d 
 	cp ftr1d $B
 
 clean:
-		rm -f core $(OBJM) makemod $(OBJW) makewave $(OBJE) extendModel $(OBJF) fconv $(OBJG) $(OBJC) correigen green $(OBJG3) green3D $(OBJB) basop $(OBJJ) syn2d $(OBJS) mat2su $(OBJA) ftr1d $(OBJT) ampdet $(OBJAD)
+		rm -f core $(OBJM) makemod $(OBJW) makewave $(OBJE) extendModel $(OBJF) fconv $(OBJG) $(OBJC) correigen green $(OBJG3) green3D $(OBJB) basop $(OBJJ) syn2d $(OBJS) mat2su $(OBJA) ftr1d $(OBJT)
 
 realclean: clean
 		rm -f $B/makemod $B/makewave $B/extendModel $B/fconv $B/correigen $B/green $B/green3D $B/basop $B/syn2d $B/mat2su $B/ftr1d
-
-
-
-

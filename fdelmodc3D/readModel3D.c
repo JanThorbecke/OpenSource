@@ -52,6 +52,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 	n3 = mod.nay;
 	fac = mod.dt/mod.dx;
 
+
 	/* Vx: rox */
 	ioXx=mod.ioXx;
 	ioXy=mod.ioXy;
@@ -556,7 +557,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    roy[iy*n2*n1+ix*n1+iz] = rox[iy*n2*n1+ixe*n1+iz];
+                    roy[iy*n2*n1+ix*n1+iz] = roy[iy*n2*n1+ixe*n1+iz];
                 }
             }
         }
@@ -821,7 +822,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    roy[iy*n2*n1+ix*n1+iz] = rox[iye*n2*n1+ix*n1+iz];
+                    roy[iy*n2*n1+ix*n1+iz] = roy[iye*n2*n1+ix*n1+iz];
                 }
             }
         }
@@ -846,8 +847,10 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         /* l2m field */
         ixo = mod.ioPx;
         ixe = mod.iePx;
+        /*
         if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.ntap;
         if (bnd.rig==4 || bnd.rig==2) ixe += bnd.ntap;
+        */
         iyo = mod.ioPy;
         iye = mod.ioPy+bnd.ntap;
         izo = mod.ioPz;
@@ -992,8 +995,10 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         /* l2m field */
         ixo = mod.ioPx;
         ixe = mod.iePx;
+        /*
         if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.ntap;
         if (bnd.rig==4 || bnd.rig==2) ixe += bnd.ntap;
+        */
         iyo = mod.iePy-bnd.ntap;
         iye = mod.iePy;
         izo = mod.ioPz;
@@ -1365,6 +1370,16 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         }
 
     }
+
+
+    FILE *fptest;
+    fptest = fopen("cp-test.bin","w");
+    fwrite(cp, nz*ny*nx, sizeof(float), fptest);
+    fclose(fptest);
+
+    fptest = fopen("ro-test.bin","w");
+    fwrite(ro, nz*ny*nx, sizeof(float), fptest);
+    fclose(fptest);
 
 	free(cp);
 	free(ro);
