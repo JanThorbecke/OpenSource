@@ -146,6 +146,7 @@ int main (int argc, char **argv)
 	if (!getparstring("file_B", &file_B)) file_B=NULL;
 	assert(file_B != NULL);
 	if (!getparstring("file_out", &file_out)) file_out=NULL;
+ 	assert(file_out != NULL);
 	if (!getparstring("file_dmat", &file_dmat)) file_dmat=NULL;
 	if (!getparint("one_file", &one_file)) one_file = 1;
 
