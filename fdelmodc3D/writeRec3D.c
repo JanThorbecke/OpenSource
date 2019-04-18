@@ -86,7 +86,7 @@ long writeRec3D(recPar rec, modPar mod, bndPar bnd, wavPar wav, long ixsrc, long
     hdr.scalco = -1000;
     hdr.scalel = -1000;
     hdr.sx     = 1000*(mod.x0+ixsrc*mod.dx);
-    hdr.sy     = 1000*(mod.y0+ixsrc*mod.dy);
+    hdr.sy     = 1000*(mod.y0+iysrc*mod.dy);
     hdr.sdepth = 1000*(mod.z0+izsrc*mod.dz);
     hdr.selev  = (int)(-1000.0*(mod.z0+izsrc*mod.dz));
     hdr.fldr   = ishot+1;
