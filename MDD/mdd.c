@@ -371,6 +371,7 @@ int main (int argc, char **argv)
 		strcpy(filename, file_out);
 		if (verbose>2) fprintf(stderr,"writing all output shot into file %s\n", filename);
 		fpout = fopen( filename, "w+" );
+ 	    assert(fpout != NULL);
 	}
 //#pragma omp for
 	for (jstation=0; jstation<nstationB; jstation++) {
@@ -434,6 +435,7 @@ int main (int argc, char **argv)
 				name_ext(filename, number);
 				if (verbose>3) fprintf(stderr,"writing to file %s\n", filename);
 				fpout = fopen( filename, "w+" );
+ 	            assert(fpout != NULL);
 			}
 			for (istation=0; istation<nstationA; istation++) {
 				hdr[0].tracl = istation+1;
