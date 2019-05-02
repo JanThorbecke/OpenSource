@@ -7,4 +7,5 @@ Description of files:
 4) initialFocus.scr model G_d the intitial focusing function => iniFocus_z1100_x0_rp.su
 5) referenceShot.scr creates the reference Green's function at focal point => referenceP_rp.su
 6) marchenko.scr perform the Marchenko scheme
+7) primaries.scr computes the primaries only from a selected shot record.
 
