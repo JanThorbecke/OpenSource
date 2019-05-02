@@ -1,0 +1,83 @@
+#!/bin/bash
+
+#adjust this PATH to where the code is installed
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+
+dx=2.0
+dt=0.0005
+
+#define gridded model for FD computations
+makemod sizex=6000 sizez=1500 dx=$dx dz=$dx cp0=1000  ro0=1000 \
+         orig=-3000,0 file_base=invisible.su verbose=2 \
+         intt=def x=-3000,3000 z=100,100 poly=0 cp=1000 ro=2000 \
+         intt=def x=-3000,3000 z=200,200 poly=0 cp=1000 ro=300 \
+         intt=def x=-3000,3000 z=300,300 poly=0 cp=1000 ro=702.34 \
+         intt=def x=-3000,3000 z=400,400 poly=0 cp=1000 ro=412.57 \
+         intt=def x=-3000,3000 z=500,500 poly=0 cp=1000 ro=594.32 \
+         intt=def x=-3000,3000 z=600,600 poly=0 cp=1000 ro=457.94 \
+         intt=def x=-3000,3000 z=700,700 poly=0 cp=1000 ro=553.64 \
+         intt=def x=-3000,3000 z=800,800 poly=0 cp=1000 ro=481.49 \
+         intt=def x=-3000,3000 z=900,900 poly=0 cp=1000 ro=533.88 \
+         intt=def x=-3000,3000 z=1000,1000 poly=0 cp=1000 ro=494.5 \
+         intt=def x=-3000,3000 z=1100,1100 poly=0 cp=1000 ro=523.51 \
+         intt=def x=-3000,3000 z=1200,1200 poly=0 cp=1000 ro=501.77 \
+
+#define wavelet for modeling R
+makewave w=fw fmin=0 flef=5 frig=80 fmax=100 dt=$dt file_out=wavefw.su nt=4096 t0=0.3 scale=0 scfft=1
+
+export OMP_NUM_THREADS=8
+
+#Model shot record in middle of model
+fdelmodc \
+    file_cp=invisible_cp.su ischeme=1 iorder=4 \
+    file_den=invisible_ro.su \
+    file_src=wavefw.su \
+    file_rcv=shot_fd.su \
+    src_type=7 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.004 \
+    rec_delay=0.3 \
+    verbose=2 \
+    tmod=4.392 \
+    dxrcv=4.0 \
+    xrcv1=-3000 xrcv2=3000 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=0 \
+    npml=101 \
+    left=2 right=2 top=2 bottom=2 
+
+#define homogenoeus model to compute direct wave only
+makemod sizex=6000 sizez=1200 dx=$dx dz=$dx cp0=1000 ro0=1000 \
+        orig=-3000,0 file_base=hom.su verbose=2
+
+#Model direct wave only in middle of model
+fdelmodc \
+    file_cp=hom_cp.su ischeme=1 iorder=4 \
+    file_den=hom_ro.su \
+    file_src=wavefw.su \
+    file_rcv=shot_hom_fd.su \
+    src_type=7 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.004 \
+    rec_delay=0.3 \
+    verbose=2 \
+    tmod=4.392 \
+    dxrcv=4.0 \
+    xrcv1=-3000 xrcv2=3000 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=0 \
+    npml=101 \
+    left=2 right=2 top=2 bottom=2 
+
+#subtract direct wave from full model shot record: this defines R
+sudiff shot_fd_rp.su shot_hom_fd_rp.su > shot_rp.su
+
+

@@ -1,0 +1,22 @@
+This is a special model with only (carefully selected) density contrasts.
+
+Description of files:
+1) model.scr computes the model and the 'basis' shot of R => shot_rp.su
+2) p4all.scr create from basis shot full Reflection response matrix => shotsdx4_rp.su (2.3 GB)
+3) primaries.scr perform the Marchenko scheme to remove multiples from a shot record => pred_inv.su
+
+==> run model.scr to generate the data .su files: this will take 3-4 minutes. The files generate are:
+	- hom_cp.su, hom_ro.su
+	- invisible_cp.su invisible_ro.su
+	- shot_fd_rp.su
+	- shot_hom_fd_rp.su
+	- shot_rp.su
+	- wavefw.su
+
+- Compare the invisible_ro.su with the number of refectors that are visible in shot_fd_rp.su
+The multiples overlap with the primary reflections is such a way that most primaries dissapear. 
+
+The primaries.scr computes the primaries only from a selected shot record. => pred_inv.su
+
+suximage < pred_inv.su clip=1
+
