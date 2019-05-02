@@ -1,0 +1,31 @@
+#!/bin/bash -x
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+
+# Generate the full R matrix for a fixed spread geometry.
+
+dxshot=4000 # with scalco factor of 1000
+ishot=0
+nshots=751
+
+echo $1
+
+rm shotsdx4_rp.su 
+
+while (( ishot < nshots ))
+do
+
+	(( xsrc = -1500000 + ${ishot}*${dxshot} ))
+	(( tr1 = 751 - ${ishot} ))
+	(( tr2 = ${tr1} + 750 ))
+	echo xsrc=$xsrc tr1=$tr1 tr2=$tr2
+
+	(( ishot = $ishot + 1))
+
+	suwind < shot_rp.su key=tracl min=$tr1 max=$tr2 | \
+	sushw key=sx,gx,fldr,trwf \
+	a=$xsrc,-1500000,$ishot,751 b=0,$dxshot,0,0 j=0,751,0,0 | \
+	suchw key1=offset key2=gx key3=sx c=-1 d=1000 >> shotsdx4_rp.su
+
+done
+
