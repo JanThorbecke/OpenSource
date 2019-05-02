@@ -19,7 +19,7 @@ suwind key=fldr min=$select max=$select < shots/refl_rp.su > shotsx0.su
 fconv file_in1=shotsx0.su file_in2=wave.su file_out=shotw.su
 
 marchenko_primaries file_shot=shots/refl_rp.su ishot=$select file_src=wave.su \
-	nshots=601 verbose=2 istart=40 iend=1024 fmax=90 \
+	nshots=601 verbose=2 istart=40 iend=650 fmax=90 \
 	niter=22 niterskip=50 shift=20 file_rr=pred_rr.su T=0
 
 #alternative use shotw as input, must first be multiplied by -1 (see theory)
@@ -36,7 +36,7 @@ exit
 (suwind key=offset min=0 max=0 < pred_rr.su ; suwind key=offset min=0 max=0 < shotw.su) | suxgraph
 
 sudiff pred_rr.su shotw.su > diff.su
-suximage < shotw.su  x1end=2 clip=1 title="original shot"&
-suximage < pred_rr.su  x1end=2 clip=1 title="shot with multiples removed"&
-suximage < diff.su   x1end=2 clip=1 title="removed multiples"&
+suximage < shotw.su  x1end=2.5 clip=1 title="original shot"&
+suximage < pred_rr.su  x1end=2.5 clip=1 title="shot with multiples removed"&
+suximage < diff.su   x1end=2.5 clip=1 title="removed multiples"&
 
