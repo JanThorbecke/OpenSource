@@ -59,7 +59,7 @@ char *sdoc[] = {
 " Optional parameters: ",
 " ",
 " INTEGRATION ",
-"   ishot=nshots/2 ........... shot position(s) to remove internal multiples ",
+"   ishot=nshots/2 ........... shot number(s) to remove internal multiples ",
 "   file_src=spike ........... convolve ishot(s) with source wavelet",
 "   file_tinv= ............... use file_tinv to remove internal multiples",
 " COMPUTATION",
@@ -181,7 +181,8 @@ int main (int argc, char **argv)
     if(!getparint("iend", &iend)) iend=nt;
 
     if (file_tinv == NULL) {/* 'G_d' is one of the shot records */
-        if(!getparint("ishot", &ishot)) ishot=(nshots)/2;
+        if(!getparint("ishot", &ishot)) ishot=1+(nshots-1)/2;
+		ishot -= 1; /* shot numbering starts at 0 */
         Nfoc = 1;
         nxs  = nx;
         nts  = nt;
@@ -348,8 +349,7 @@ int main (int argc, char **argv)
         if (verbose) vmess("Selecting G_d from Refl of %s", file_shot);
         nts   = ntfft;
 
-        //scl   = 1.0/((float)ntfft);
-        scl   = 1.0;
+        scl   = 1.0/((float)2.0*ntfft);
         rtrace = (float *)calloc(ntfft,sizeof(float));
         ctrace = (complex *)calloc(nfreq+1,sizeof(complex));
         for (i = 0; i < xnx[ishot]; i++) {
