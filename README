@@ -20,16 +20,21 @@ REFERENCES
 Finite-difference modeling experiments for seismic interferometry
 Jan Thorbecke and Deyan Draganov
 2011, Geophysics, Vol. 76, no. 6 (November-December); p H1--H18, doi: 10.1190/GEO2010-0039.1
+Download: https://janth.home.xs4all.nl/Publications/Articles/ThorbeckeDraganov2012.pdf
 
 -2- If the Machenko code has helped you in your research please refer to our paper in your publications:
 
 Implementation of the Marchenko method
 Jan Thorbecke, Evert Slob, Joeri Brackenhoff, Joost van der Neut, and Kees Wapenaar
 2017, Geophysics, Vol. 82, no. 6 (November-December); p. WB29--WB45, doi: 10.1190/GEO2017-0108.1
+Download: https://janth.home.xs4all.nl/Publications/Articles/ThorbeckeGPY2017.pdf
 
-These papers can be downloaded from:
+-3- When you are using the marchenko_primaries algorithm developed by Lele Zhang please refer to the following paper
 
-http://janth.home.xs4all.nl/Publications/Publications.html
+Free-surface and internal multiple elimination in one step without adaptive subtraction
+Lele Zhang1 and Evert Slob2
+2019, Geophysics, Vol. 84, no. 1 (January-February); p. A7-A11, doi: 10.1190/GEO2018-0548.1
+Download: http://homepage.tudelft.nl/t4n4v/BeyondInterferometry/geo_19h.pdf
 
 
 INSTALLATION
