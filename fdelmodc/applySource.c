@@ -190,6 +190,7 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 		else { /* Elastic scheme */
 			/* Compressional source */
 			if (src.type == 1) {
+				if (src.orient != 1) src_ampl=src_ampl/mod.dx;
 				if (src.orient==1) { /* monopole */
 					txx[ix*n1+iz] += src_ampl;
 					tzz[ix*n1+iz] += src_ampl;
