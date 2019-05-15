@@ -100,9 +100,18 @@ The MDD kernels depend on BLAS and LAPACK calls. Free downloads of these librari
 https://www.netlib.org/blas/index.html
 https://www.netlib.org/lapack/index.html
 
-If you are running on Intel processors you can download (for free) Intel's highly optimised MKL package:
+MKL libraries
+-------------
+If you are running on x64_86 processors you can download (for free) Intel's highly optimised MKL package:
 
 https://software.intel.com/en-us/mkl/choose-download
+ 
+Usually the MKL libraries are installed in $MKL_ROOT. If that variable is not set, you can try to find the correct path by searching for one of the libraries:
+
+find /opt/intel -name libmkl_gf_lp64.so
+
+and adjust MKLROOT in Make_include accordingly. 
+You can also completely disable the use of MKL by commenting out these parts in Make_include. 
 
 
 MISC
