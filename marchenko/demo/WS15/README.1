@@ -1,0 +1,45 @@
+
+*1* Source the setup.sh script that you can find on 
+
+source /home/users/jan/WS15/setup.sh
+
+The setup.sh script completes the following tasks:
+
+-a-Set PATH to find Seismic Unix and Marchenko code 
+export CWPROOT=/home/users/jan/SeisUnix/
+export PATH=.:$CWPROOT/bin:/lus/scratch/$USER/OpenSource/bin:$PATH:
+
+-b- Create working directory 
+/lus/scratch/$USER
+
+-c- set up compilation environment with the Intel compiler
+
+-d- Get the Marchenko software (and other utilities modeling code))
+git clone https://github.com/JanThorbecke/OpenSource.git
+ 
+
+*2* after the set-up the code can be compiled 
+
+cd OpenSource
+cp Make_include_swan Make_include
+make clean
+make 
+
+After succesfull complication the code can be used running the exercises and demo's
+
+*3* Running jobs 
+
+To run example jobs must be submitted to the Workload Manager PBSpro.
+An example script can be found on:
+
+/home/users/jan/WS15/job.pbs
+
+in job.pbs leave the number of nodes set to 1, the code is not MPI parallel and cannot use more than 1 node. The number of OMP_NUM_THREADS can be changed and is currently set to 40.
+Add the ...scr command as the last line in the aprun command line and submit the job to the queue with 'qsub job.pbs'
+
+*4* Usefull job monitor commands specific for Cray
+
+apstat : status of applications running
+xtnodestat : placement of application on system
+xtprocadmin -A : details of installed nodes
+
