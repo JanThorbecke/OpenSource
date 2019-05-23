@@ -79,6 +79,7 @@ int main (int argc, char **argv)
 
     if(!getparstring("file_mute", &file_mute)) file_mute=NULL;
     if(!getparstring("file_shot", &file_shot)) file_shot=NULL;
+	assert(file_shot!=NULL);
     if(!getparstring("file_out", &file_out)) file_out=NULL;
     if(!getparint("ntmax", &ntmax)) ntmax = 1024;
     if(!getparint("nxmax", &nxmax)) nxmax = 512;
