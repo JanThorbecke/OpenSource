@@ -12,6 +12,7 @@ set -x
 cd $PBS_O_WORKDIR
 ulimit -s unlimited
 
+export KMP_AFFINITY=disabled
 export OMP_NUM_THREADS=40
 
 starttime=`date +%s%N`

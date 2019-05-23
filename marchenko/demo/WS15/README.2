@@ -1,9 +1,21 @@
 
-Marchenko demo/twoD: reproduce the figures from the paper, but woth a 2D model.
+Marchenko demo/twoD: reproduce the figures from the paper, but with a 2D model.
 
 cd /lus/scratch/$USER/OpenSource/marchenko/demo/twoD
 
-cp ~jan/WS15/job.pbs .
 # Copy pre-computed shots
 cp -rp /lus/scratch/jan/OpenSource/marchenko/demo/twoD/shots .
+cp /lus/scratch/$USER/OpenSource/marchenko/demo/WS15/job.pbs .
+
+Adapt job.pbs to 
+
+Compute the intial focusing operator placed at a depth of 1100 m by running 
+
+initialFocus.scr
+
+and run the marchenko program
+ 
+marchenko.scr
+
+
 
