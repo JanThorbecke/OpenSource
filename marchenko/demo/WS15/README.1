@@ -1,7 +1,7 @@
 
 *1* Source the setup.sh script that you can find on 
 
-source /home/users/jan/WS15/setup.sh
+source /home/users/jan/WS15setup.sh
 
 The setup.sh script completes the following tasks:
 
@@ -25,7 +25,8 @@ cp Make_include_swan Make_include
 make clean
 make 
 
-After succesfull complication the code can be used running the exercises and demo's
+After succesfull complication the code can be used for running the exercises and demo's
+
 
 *3* Running jobs 
 
@@ -35,9 +36,23 @@ An example script can be found on:
 /home/users/jan/WS15/job.pbs
 
 in job.pbs leave the number of nodes set to 1, the code is not MPI parallel and cannot use more than 1 node. The number of OMP_NUM_THREADS can be changed and is currently set to 40.
-Add the ...scr command as the last line in the aprun command line and submit the job to the queue with 'qsub job.pbs'
+Add the ...scr command (that can be found in the demo directories) as the last line in the aprun command line and submit the job to the queue with 'qsub job.pbs'
 
-*4* Usefull job monitor commands specific for Cray
+*4* Display of results:
+
+suximage < result.su perc=99 &
+
+if X11 display 1s too slow:
+
+supsimage < result.su perc=99 > results.eps
+convert results.eps ~/results.png
+
+copy png file to local machine
+
+scp trxx@swan.cray.com:~/*png . 
+
+
+*5* Usefull job monitor commands specific for Cray
 
 apstat : status of applications running
 xtnodestat : placement of application on system
