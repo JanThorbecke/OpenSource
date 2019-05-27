@@ -25,7 +25,7 @@ makemod sizex=6000 sizez=1500 dx=$dx dz=$dx cp0=1000  ro0=1000 \
 #define wavelet for modeling R
 makewave w=fw fmin=0 flef=5 frig=80 fmax=100 dt=$dt file_out=wavefw.su nt=4096 t0=0.3 scale=0 scfft=1
 
-export OMP_NUM_THREADS=8
+export OMP_NUM_THREADS=12
 
 #Model shot record in middle of model
 fdelmodc \
