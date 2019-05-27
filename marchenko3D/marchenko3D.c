@@ -70,7 +70,7 @@ void synthesis3D(complex *Refl, complex *Fop, float *Top, float *iRN, long nx, l
 
 void imaging3D(float *Image, float *Gmin, float *f1plus, long nx, long ny, long nt, float dx, float dy, float dt, long Nfoc, long verbose);
 
-void homogeneousg3D(float *HomG, float *green, float *f2, long nx, long ny, long nt, float dx, float dy, float dt, long Nfoc, long verbose);
+void homogeneousg3D(float *HomG, float *green, float *f2p, float *zsyn, long nx, long ny, long nt, float dx, float dy, float dt, long Nfoc, long verbose);
 
 long linearsearch(long *array, size_t N, long value);
 
@@ -90,6 +90,7 @@ char *sdoc[] = {
 " Optional parameters: ",
 " ",
 " INTEGRATION ",
+"   ampest=0 ................. Estimate a scalar amplitude correction with depth (=1)",
 "   tap=0 .................... lateral taper focusing(1), shot(2) or both(3)",
 "   ntap=0 ................... number of taper points at boundaries",
 "   fmin=0 ................... minimum frequency in the Fourier transform",
@@ -98,6 +99,7 @@ char *sdoc[] = {
 "   niter=10 ................. number of iterations",
 " MUTE-WINDOW ",
 "   file_amp= ................ amplitudes for the raytime estimation",
+"   file_wav= ................ Wavelet applied to the raytime data",
 "   above=0 .................. mute above(1), around(0) or below(-1) the first travel times of file_tinv",
 "   shift=12 ................. number of points above(positive) / below(negative) travel time for mute",
 "   hw=8 ..................... window in time samples to look for maximum in next trace",
@@ -110,8 +112,16 @@ char *sdoc[] = {
 " HOMOGENEOUS GREEN'S FUNCTION RETRIEVAL OPTIONS ",
 "   file_inp= ................ Input source function for the retrieval",
 "   scheme=0 ................. Scheme for homogeneous Green's function retrieval",
-"   .......................... Scheme for homogeneous Green's function retrieval",
+"   .......................... scheme=0 Marchenko HomG retrieval with time-reversal",
+"   .......................... scheme=1 Classical retrieval scheme",
+"   .......................... scheme=2 Marchenko HomG retrieval without time-reversal",
+"   .......................... scheme=3 Back propagation with multiple sources",
+"   .......................... scheme=4 Marchenko HomG retrieval with multiple sources",
 "   kxwfilt=0 ................ Apply a dip filter before integration",
+"   alpha=65.0 ............... Alpha filter for the kxwfilter",
+"   perc=0.15 ................ Percentage for the kxwfilter",
+"   cp=1000.0 ................ Velocity of upper layer for certain operations",
+"   rho=1000.0 ............... Density of upper layer for certain operations",
 " OUTPUT DEFINITION ",
 "   file_green= .............. output file with full Green function(s)",
 "   file_gplus= .............. output file with G+ ",
@@ -136,7 +146,7 @@ NULL};
 
 int main (int argc, char **argv)
 {
-    FILE    *fp_out, *fp_f1plus, *fp_f1min, *fp_imag;
+    FILE    *fp_out, *fp_f1plus, *fp_f1min, *fp_imag, *fp_homg;
     FILE    *fp_gmin, *fp_gplus, *fp_f2, *fp_pmin, *fp_amp;
     long    i, j, l, k, ret, nshots, nxshot, nyshot, Nfoc, nt, nx, ny, nts, nxs, nys, ngath;
     long    size, n1, n2, n3, ntap, tap, dxi, dyi, ntraces, pad;
@@ -149,12 +159,12 @@ int main (int argc, char **argv)
     double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, energyNi, energyN0;
     float   d1, d2, d3, f1, f2, f3, fxsb, fxse, fysb, fyse, ft, fx, fy, *xsyn, *ysyn, dxsrc, dysrc;
     float   *green, *f2p, *pmin, *G_d, dt, dx, dy, dxs, dys, scl, mem;
-    float   *f1plus, *f1min, *iRN, *Ni, *trace, *Gmin, *Gplus;
+    float   *f1plus, *f1min, *iRN, *Ni, *trace, *Gmin, *Gplus, *HomG;
     float   xmin, xmax, ymin, ymax, scale, tsq, Q, f0, *tmpdata;
     float   *ixmask, *iymask, *ampscl, *Gd, *Image, dzim, dyim, dxim;
     complex *Refl, *Fop;
-    char    *file_tinv, *file_shot, *file_green, *file_iter, *file_imag, *file_ampscl;
-    char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_pmin;
+    char    *file_tinv, *file_shot, *file_green, *file_iter, *file_imag, *file_homg, *file_ampscl;
+    char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_pmin, *file_inp;
     char    *file_ray, *file_amp, *file_wav;
     segy    *hdrs_out, *hdrs_Nfoc;
 
@@ -178,6 +188,9 @@ int main (int argc, char **argv)
     if (!getparstring("file_iter", &file_iter)) file_iter = NULL;
     if (!getparstring("file_wav", &file_wav)) file_wav = NULL;
     if (!getparstring("file_imag", &file_imag)) file_imag = NULL;
+    if (!getparstring("file_homg", &file_homg)) file_homg = NULL;
+    if (!getparstring("file_inp", &file_inp)) file_inp = NULL;
+    if (file_homg!=NULL && file_inp==NULL) verr("Cannot create HomG if no file_inp is given");
     if (!getparstring("file_ampscl", &file_ampscl)) file_ampscl = NULL;
     if (!getparlong("verbose", &verbose)) verbose = 0;
     if (file_tinv == NULL && file_shot == NULL) 
@@ -205,6 +218,12 @@ int main (int argc, char **argv)
     if(!getparlong("shift", &shift)) shift=12;
 
     if (reci && ntap) vwarn("tapering influences the reciprocal result");
+
+    if (file_inp!=NULL) {
+        fp_out = fopen( file_inp, "r" );
+        if (fp_out == NULL) verr("File %s does not exist or cannot be opened", file_inp);
+        fclose(fp_out);
+    }
 
 /*================ Reading info about shot and initial operator sizes ================*/
 
@@ -303,11 +322,10 @@ int main (int argc, char **argv)
 
     /*Determine the shape of the focal positions*/
     nzim = unique_elements(zsyn,Nfoc);
-    if (nzim>1) dzim = zsyn[1]-zsyn[0];
-    else dzim = 1.0;
     nyim = unique_elements(ysyn,Nfoc);
     nxim = unique_elements(xsyn,Nfoc);
-
+    if (nzim>1) dzim = zsyn[nyim*nxim]-zsyn[0];
+    else dzim = 1.0;
                              
     /* define tapers to taper edges of acquisition */
     if (tap == 1 || tap == 3) {
@@ -456,7 +474,7 @@ int main (int argc, char **argv)
     if (nt != nts) 
         vmess("Time samples in shot (%li) and focusing operator (%li) are not equal",nt, nts);
     if (verbose) {
-        vmess("Number of focusing operators    = %li", Nfoc);
+        vmess("Number of focusing operators    = %li, x:%li, y%li, z:%li", Nfoc, nxim, nyim, nzim);
         vmess("Number of receivers in focusop  = x:%li y:%li total:%li", nxs, nys, nxs*nys);
         vmess("number of shots                 = %li", nshots);
         vmess("number of receiver/shot         = x:%li y:%li total:%li", nx, ny, nx*ny);
@@ -749,12 +767,12 @@ int main (int argc, char **argv)
 		for (l=0; l<Nfoc; l++) {
 			for (j=0; j<nxs*nys*nts; j++) {
 				green[l*nxs*nts+j] *= ampscl[l];
+    			f2p[l*nxs*nys*nts+j] *= ampscl[l];
+    			pmin[l*nxs*nys*nts+j] *= ampscl[l];
+    			f1plus[l*nxs*nys*nts+j] *= ampscl[l];
+    			f1min[l*nxs*nys*nts+j] *= ampscl[l];
 				if (file_gplus != NULL) Gplus[l*nxs*nys*nts+j] *= ampscl[l];
     			if (file_gmin != NULL || file_imag != NULL) Gmin[l*nxs*nys*nts+j] *= ampscl[l];
-    			if (file_f2 != NULL) f2p[l*nxs*nys*nts+j] *= ampscl[l];
-    			if (file_pmin != NULL) pmin[l*nxs*nys*nts+j] *= ampscl[l];
-    			if (file_f1plus != NULL || file_imag != NULL) f1plus[l*nxs*nys*nts+j] *= ampscl[l];
-    			if (file_f1min != NULL) f1min[l*nxs*nys*nts+j] *= ampscl[l];
 			}
             if (verbose>1) vmess("Amplitude of focal position %li is equal to %.3e",l,ampscl[l]);
 		}
@@ -770,15 +788,15 @@ int main (int argc, char **argv)
                     hdrs_Nfoc[l*nxim+j].trid    = 1;
                     hdrs_Nfoc[l*nxim+j].scalco  = -1000;
                     hdrs_Nfoc[l*nxim+j].scalel  = -1000;
-                    hdrs_Nfoc[l*nxim+j].sx      = xsyn[j]*(1e3);
-                    hdrs_Nfoc[l*nxim+j].sy      = ysyn[l]*(1e3);
-                    hdrs_Nfoc[l*nxim+j].gx      = xsyn[j]*(1e3);
-                    hdrs_Nfoc[l*nxim+j].gy      = ysyn[l]*(1e3);
-                    hdrs_Nfoc[l*nxim+j].sdepth  = zsyn[l]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].sx      = xsyn[l*nxim+j]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].sy      = ysyn[l*nxim+j]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].gx      = xsyn[l*nxim+j]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].gy      = ysyn[l*nxim+j]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].sdepth  = zsyn[l*nxim+j]*(1e3);
                     hdrs_Nfoc[l*nxim+j].f1      = zsyn[0];
                     hdrs_Nfoc[l*nxim+j].f2      = xsyn[0];
-                    hdrs_Nfoc[l*nxim+j].d1      = zsyn[1]-zsyn[0];
-                    hdrs_Nfoc[l*nxim+j].d2      = xsyn[1]-xsyn[0];
+                    hdrs_Nfoc[l*nxim+j].d1      = dzim;
+                    hdrs_Nfoc[l*nxim+j].d2      = dxs;
                     hdrs_Nfoc[l*nxim+j].dt      = (int)(hdrs_Nfoc[l*nxim+j].d1*(1E6));
                     hdrs_Nfoc[l*nxim+j].trwf    = nxim*nyim;
                     hdrs_Nfoc[l*nxim+j].ntr     = nxim*nyim;
@@ -799,10 +817,12 @@ int main (int argc, char **argv)
 
     /* Apply imaging*/
     if (file_imag!=NULL) {
+        
         // Determine Image
         Image = (float *)calloc(Nfoc,sizeof(float));
         imaging3D(Image, Gmin, f1plus, nxs, nys, ntfft, dxs, dys, dt, Nfoc, verbose);
         if (file_gmin==NULL) free(Gmin);
+
         // Set headers
         hdrs_Nfoc = (segy *)calloc(nxim*nyim,sizeof(segy));
         for (l=0; l<nyim; l++){
@@ -814,20 +834,21 @@ int main (int argc, char **argv)
                 hdrs_Nfoc[l*nxim+j].trid    = 1;
                 hdrs_Nfoc[l*nxim+j].scalco  = -1000;
                 hdrs_Nfoc[l*nxim+j].scalel  = -1000;
-                hdrs_Nfoc[l*nxim+j].sx      = xsyn[j]*(1e3);
-                hdrs_Nfoc[l*nxim+j].sy      = ysyn[l]*(1e3);
-                hdrs_Nfoc[l*nxim+j].gx      = xsyn[j]*(1e3);
-                hdrs_Nfoc[l*nxim+j].gy      = ysyn[l]*(1e3);
-                hdrs_Nfoc[l*nxim+j].sdepth  = zsyn[l]*(1e3);
+                hdrs_Nfoc[l*nxim+j].sx      = xsyn[l*nxim+j]*(1e3);
+                hdrs_Nfoc[l*nxim+j].sy      = ysyn[l*nxim+j]*(1e3);
+                hdrs_Nfoc[l*nxim+j].gx      = xsyn[l*nxim+j]*(1e3);
+                hdrs_Nfoc[l*nxim+j].gy      = ysyn[l*nxim+j]*(1e3);
+                hdrs_Nfoc[l*nxim+j].sdepth  = zsyn[l*nxim+j]*(1e3);
                 hdrs_Nfoc[l*nxim+j].f1      = zsyn[0];
                 hdrs_Nfoc[l*nxim+j].f2      = xsyn[0];
-                hdrs_Nfoc[l*nxim+j].d1      = zsyn[1]-zsyn[0];
-                hdrs_Nfoc[l*nxim+j].d2      = xsyn[1]-xsyn[0];
+                hdrs_Nfoc[l*nxim+j].d1      = dzim;
+                hdrs_Nfoc[l*nxim+j].d2      = dxs;
                 hdrs_Nfoc[l*nxim+j].dt      = (int)(hdrs_Nfoc[l*nxim+j].d1*(1E6));
                 hdrs_Nfoc[l*nxim+j].trwf    = nxim*nyim;
                 hdrs_Nfoc[l*nxim+j].ntr     = nxim*nyim;
             }
         }
+
         // Write out image
         fp_imag = fopen(file_imag, "w+");
         if (fp_imag==NULL) verr("error on creating output file %s", file_imag);
@@ -836,6 +857,53 @@ int main (int argc, char **argv)
         fclose(fp_imag);
         free(hdrs_Nfoc);
         free(Image);
+    }
+
+    /* Determine homogeneous Green's function*/
+    if (file_homg!=NULL) {
+
+        // Determine Image
+        HomG = (float *)calloc(Nfoc*ntfft,sizeof(float));
+        homogeneousg3D(HomG, green, f2p, zsyn, nxs, nys, ntfft, dxs, dys, dt, Nfoc, verbose);
+
+        fp_homg = fopen(file_homg, "w+");
+        if (fp_homg==NULL) verr("error on creating output file %s", file_homg);
+        hdrs_Nfoc = (segy *)calloc(nxim*nyim,sizeof(segy));
+
+        for (i=0; i<ntfft; i++) {
+            // Set headers
+            for (l=0; l<nyim; l++){
+                for (j=0; j<nxim; j++){
+                    hdrs_Nfoc[l*nxim+j].ns      = nzim;
+                    hdrs_Nfoc[l*nxim+j].fldr    = i+1;
+                    hdrs_Nfoc[l*nxim+j].tracl   = 1;
+                    hdrs_Nfoc[l*nxim+j].tracf   = l*nxim+j+1;
+                    hdrs_Nfoc[l*nxim+j].trid    = 1;
+                    hdrs_Nfoc[l*nxim+j].scalco  = -1000;
+                    hdrs_Nfoc[l*nxim+j].scalel  = -1000;
+                    hdrs_Nfoc[l*nxim+j].sx      = xsyn[l*nxim+j]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].sy      = ysyn[l*nxim+j]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].gx      = xsyn[l*nxim+j]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].gy      = ysyn[l*nxim+j]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].sdepth  = zsyn[l*nxim+j]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].f1      = zsyn[0];
+                    hdrs_Nfoc[l*nxim+j].f2      = xsyn[0];
+                    hdrs_Nfoc[l*nxim+j].d1      = dzim;
+                    hdrs_Nfoc[l*nxim+j].d2      = dxs;
+                    hdrs_Nfoc[l*nxim+j].dt      = (int)(hdrs_Nfoc[l*nxim+j].d1*(1E6));
+                    hdrs_Nfoc[l*nxim+j].trwf    = nxim*nyim;
+                    hdrs_Nfoc[l*nxim+j].ntr     = nxim*nyim;
+                }
+            }
+
+            // Write out homogeneous Green's function
+            ret = writeData3D(fp_homg, (float *)&HomG[i*Nfoc], hdrs_Nfoc, nzim, nxim*nyim);
+            if (ret < 0 ) verr("error on writing output file.");
+        }
+
+        fclose(fp_homg);
+        free(hdrs_Nfoc);
+        free(HomG);
     }
 
     t2 = wallclock_time();
