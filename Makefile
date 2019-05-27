@@ -4,7 +4,7 @@ all: mkdirs
 	cd FFTlib		; $(MAKE)
 	cd fdelmodc		; $(MAKE) install
 	cd utils		; $(MAKE) install
-	cd marchenko	; $(MAKE) install
+	cd marchenko		; $(MAKE) install
 	cd corrvir		; $(MAKE) install
 	cd raytime		; $(MAKE) install
 	cd MDD			; $(MAKE) install
@@ -18,7 +18,7 @@ clean:
 	cd FFTlib 		; $(MAKE) $@
 	cd fdelmodc		; $(MAKE) $@
 	cd utils		; $(MAKE) $@
-	cd marchenko	; $(MAKE) $@
+	cd marchenko		; $(MAKE) $@
 	cd corrvir		; $(MAKE) $@
 	cd raytime		; $(MAKE) $@
 	cd MDD			; $(MAKE) $@
@@ -27,7 +27,7 @@ realclean:
 	cd FFTlib 		; $(MAKE) $@
 	cd fdelmodc		; $(MAKE) $@
 	cd utils		; $(MAKE) $@
-	cd marchenko	; $(MAKE) $@
+	cd marchenko		; $(MAKE) $@
 	cd corrvir		; $(MAKE) $@
 	cd raytime		; $(MAKE) $@
 	cd MDD			; $(MAKE) $@

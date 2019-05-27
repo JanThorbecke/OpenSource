@@ -15,14 +15,14 @@ export OMP_NUM_THREADS=40
 select=301
 
 makewave fp=20 dt=0.004 file_out=wave.su nt=1024 t0=0.0 scale=0 scfft=1
-suwind key=fldr min=$select max=$select < shots/refl_rp.su > shotsx0.su
-fconv file_in1=shotsx0.su file_in2=wave.su file_out=shotw.su
 
 marchenko_primaries file_shot=shots/refl_rp.su ishot=$select file_src=wave.su \
 	nshots=601 verbose=2 istart=40 iend=650 fmax=90 \
 	niter=22 niterskip=50 shift=20 file_rr=pred_rr.su T=0
 
 #alternative use shotw as input, must first be multiplied by -1 (see theory)
+#suwind key=fldr min=$select max=$select < shots/refl_rp.su > shotsx0.su
+#fconv file_in1=shotsx0.su file_in2=wave.su file_out=shotw.su
 #sugain scale=-1 < shotw.su > pplus.su
 #
 #marchenko_primaries file_shot=shots/refl_rp.su file_tinv=pplus.su \

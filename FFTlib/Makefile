@@ -44,7 +44,7 @@ $(LIB)  : $(ARCH)
 mkdirs:
 	-mkdir -p $(ROOT)/lib
 	-mkdir -p $(ROOT)/include
-	-cp -rp genfft.h ../include/genfft.h
+	-cp -rp genfft.h $(ROOT)/include/genfft.h
 
 bins: 
 	cd test ; $(MAKE)

@@ -87,7 +87,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
     memset(&iRN[0], 0, Nfoc*nxs*nts*sizeof(float));
     ctrace = (complex *)calloc(ntfft,sizeof(complex));
 
-	/* this first check is done to support an acquisition geometry that has more receiver than source
+/* this first check is done to support an acquisition geometry that has more receiver than source
  * postions. In the first iteration the int R(x_r,x_s) Fop(x_r) d x_r results in a grid on x_s. 
  * so for the next interations onlt x_s traces have to be computed on Fop */
     if (!first) {
@@ -131,14 +131,13 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
     t1 = wallclock_time();
     *tfft += t1 - t0;
 
-/* Loop over total number of shots */
     if (reci == 0 || reci == 1) {
 
 /*================ SYNTHESIS ================*/
 
 #pragma omp parallel default(none) \
  shared(iRN, dx, npe, nw, verbose, nshots, xnx) \
- shared(Refl, Nfoc, reci, xrcv, xsrc, xsyn, fxsb, fxse, nxs, dxs) \
+ shared(Refl, Nfoc, reci, xsrc, xsyn, fxsb, fxse, nxs, dxs) \
  shared(nx, dxsrc, nfreq, nw_low, nw_high) \
  shared(Fop, size, nts, ntfft, scl, ixrcv) \
  private(l, ix, j, m, i, sum, rtrace, k, ixsrc, inx)
@@ -146,6 +145,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
         sum   = (complex *)malloc(nfreq*sizeof(complex));
         rtrace = (float *)calloc(ntfft,sizeof(float));
 
+/* Loop over total number of shots */
 #pragma omp for schedule(guided,1)
         for (k=0; k<nshots; k++) {
             if ((xsrc[k] < 0.999*fxsb) || (xsrc[k] > 1.001*fxse)) continue;
@@ -191,7 +191,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
 
 #pragma omp parallel default(none) \
  shared(iRN, dx, nw, verbose) \
- shared(Refl, Nfoc, reci, xrcv, xsrc, xsyn, fxsb, fxse, nxs, dxs) \
+ shared(Refl, Nfoc, reci, xsrc, xsyn, fxsb, fxse, nxs, dxs) \
  shared(nx, dxsrc, nfreq, nw_low, nw_high) \
  shared(reci_xrcv, reci_xsrc, ixmask, isxcount) \
  shared(Fop, size, nts, ntfft, scl, ixrcv) \
