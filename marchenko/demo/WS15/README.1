@@ -16,6 +16,10 @@ export PATH=.:$CWPROOT/bin:/lus/scratch/$USER/OpenSource/bin:$PATH:
 
 -d- Get the Marchenko software (and other utilities modeling code))
 git clone https://github.com/JanThorbecke/OpenSource.git
+
+if the git clone takes too much time you can copy the source code:
+
+cp -rp /lus/snx11029/jan/OpenSource /lus/scratch/$USER/
  
 
 *2* after the set-up the code can be compiled 
@@ -33,21 +37,23 @@ After succesfull complication the code can be used for running the exercises and
 To run example jobs must be submitted to the Workload Manager PBSpro.
 An example script can be found on:
 
-/home/users/jan/WS15/job.pbs
+/lus/scratch/$USER/OpenSource/WS15/job.pbs
 
-in job.pbs leave the number of nodes set to 1, the code is not MPI parallel and cannot use more than 1 node. The number of OMP_NUM_THREADS can be changed and is currently set to 40.
+in job.pbs leave the number of nodes set to 1; the code is not MPI parallel and cannot use more than 1 node. The number of OMP_NUM_THREADS can be changed and is currently set to 40.
 Add the ...scr command (that can be found in the demo directories) as the last line in the aprun command line and submit the job to the queue with 'qsub job.pbs'
+you can check the status of your job in the queue with 'qstat'
+
 
 *4* Display of results:
 
 suximage < result.su perc=99 &
 
-if X11 display 1s too slow:
+if X11 display is too slow:
 
 supsimage < result.su perc=99 > results.eps
 convert results.eps ~/results.png
 
-copy png file to local machine
+copy png file to your laptop you are working on
 
 scp trxx@swan.cray.com:~/*png . 
 
