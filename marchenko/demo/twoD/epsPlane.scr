@@ -1,0 +1,34 @@
+#!/bin/bash
+
+#intial plane operator
+file=iniPlane_z1100_rp.su
+file_base=${file%.su}
+sumax < $file mode=abs outpar=nep
+clipref=`cat nep | awk '{print $1/2}'`
+
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < $file \
+    label1="time (s)" label2="lateral distance (m)" \
+    n1tic=2 x1beg=0 x1end=2.0 d1num=0.4 \
+    f2=-3000 f2num=-3000 d2num=1000 clip=$clipref > ${file_base}.eps
+convert -quality 90 -antialias ${file_base}.eps ${file_base}.jpg
+
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < p0plus.su \
+    label1="time (s)" label2="lateral distance (m)" \
+    n1tic=2 x1beg=0 x1end=2.0 d1num=0.4 \
+    f2=-3000 f2num=-3000 d2num=1000 clip=$clipref > ${file_base}_muted.eps
+convert ${file_base}_muted.eps ${file_base}_muted.png
+
+
+#Marchencko computed Greens function
+file=f2Plane.su
+file_base=${file%.su}
+sumax < $file mode=abs outpar=nep
+clipref=`cat nep | awk '{print $1/4}'`
+
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < $file \
+    label1="time (s)" label2="lateral distance (m)" \
+    n1tic=2 x1beg=0 x1end=2.0 d1num=0.4 \
+    f2=-3000 f2num=-3000 d2num=1000 clip=$clipref > ${file_base}.eps
+convert ${file_base}.eps ${file_base}.png
+
+
