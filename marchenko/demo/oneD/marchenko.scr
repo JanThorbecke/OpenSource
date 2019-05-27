@@ -2,10 +2,13 @@
 
 export PATH=$HOME/src/OpenSource/bin:$PATH:
 export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
 
 #mute all events below the first arrival to get the intial focusing field
 fmute file_shot=iniFocus_rp.su file_out=p0plus.su above=-1 shift=-8 verbose=1 check=0 hw=8
 
+which marchenko
+ldd marchenko
 #apply the Marchenko algorithm
 marchenko file_shot=shotsdx5_rp.su file_tinv=p0plus.su nshots=901 verbose=2 \
 	tap=0 niter=8 hw=8 shift=12 smooth=3 \

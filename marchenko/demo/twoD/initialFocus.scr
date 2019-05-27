@@ -19,7 +19,8 @@ dxshot=10
 ishot=300
 nshots=301
 
-export OMP_NUM_THREADS=1
+export KMP_AFFINITY=disabled
+export OMP_NUM_THREADS=16
 mkdir -p shots
 mkdir -p jobs
 
@@ -28,23 +29,7 @@ do
 
 	(( xsrc = -3000 + ${ishot}*${dxshot} ))
 	echo xsrc=$xsrc
-	file_rcv=shots/iniFocus_z1100_x${xsrc}.su
-
-cat << EOF > jobs/pbs_$ishot.job 
-#!/bin/bash
-#
-#PBS -q bw44-sm
-#PBS -N mod_${xsrc}
-#PBS -j eo 
-#PBS -l place=scatter,select=1
-#PBS -l walltime=00:10:00
-#PBS -V
-
-export PATH=\$HOME/src/OpenSource/bin:\$PATH:
-cd \$PBS_O_WORKDIR
-
-export KMP_AFFINITY=disabled
-export OMP_NUM_THREADS=16
+	file_rcv=iniFocus_z1100_x${xsrc}.su
 	
 fdelmodc \
 	file_cp=synclDown_cp.su ischeme=1 iorder=4 \
@@ -67,9 +52,6 @@ fdelmodc \
    	xsrc=$xsrc zsrc=1100 \
    	ntaper=200 \
    	left=2 right=2 top=2 bottom=2
-EOF
-
-    qsub jobs/pbs_$ishot.job 
 
 	(( ishot = $ishot + 1))
 done
