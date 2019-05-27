@@ -1,0 +1,53 @@
+#!/bin/bash
+
+#model
+supsimage hbox=4 wbox=6 labelsize=12 < syncl_cp.su \
+        x1beg=0 x1end=1800.0 d1num=200 lstyle=vertright legend=1 threecolor=1 \
+        label1="depth (m)" label2="lateral distance (m)" wrgb=1.0,.5,0 grgb=0,.7,1.0 brgb=0,1.0,0 \
+        n1tic=5 x2beg=-3000 f2num=-3000 d2num=1000 x2end=3000 > model_cp.eps
+
+#intial focus operator
+file=iniFocus_z1100_x0_rp.su
+file_base=${file%.su}
+sumax < $file mode=abs outpar=nep
+clipref=`cat nep | awk '{print $1/2}'`
+
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < $file \
+    label1="time (s)" label2="lateral distance (m)" \
+    n1tic=2 x1beg=0 x1end=2.0 d1num=0.4 \
+    f2=-3000 f2num=-3000 d2num=1000 clip=$clipref > ${file_base}.eps
+convert -quality 90 -antialias ${file_base}.eps ${file_base}.jpg
+
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < p0plus.su \
+    label1="time (s)" label2="lateral distance (m)" \
+    n1tic=2 x1beg=0 x1end=2.0 d1num=0.4 \
+    f2=-3000 f2num=-3000 d2num=1000 clip=$clipref > ${file_base}_muted.eps
+convert ${file_base}_muted.eps ${file_base}_muted.png
+
+
+#reference result
+file=referenceP_rp.su
+file_base=${file%.su}
+sumax < $file mode=abs outpar=nep
+clipref=`cat nep | awk '{print $1/4}'`
+
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < $file \
+    label1="time (s)" label2="lateral distance (m)" \
+    n1tic=2 x1beg=0 x1end=2.0 d1num=0.4 \
+    f2=-3000 f2num=-3000 d2num=1000 clip=$clipref > ${file_base}.eps
+convert ${file_base}.eps ${file_base}.png
+
+
+#Marchencko computed Greens function
+file=pgreen.su
+file_base=${file%.su}
+sumax < $file mode=abs outpar=nep
+clipref=`cat nep | awk '{print $1/4}'`
+
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < $file \
+    label1="time (s)" label2="lateral distance (m)" \
+    n1tic=2 x1beg=0 x1end=2.0 d1num=0.4 \
+    f2=-3000 f2num=-3000 d2num=1000 clip=$clipref > ${file_base}.eps
+convert ${file_base}.eps ${file_base}.png
+
+
