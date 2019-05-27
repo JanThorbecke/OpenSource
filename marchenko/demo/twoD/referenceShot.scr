@@ -19,8 +19,9 @@ fdelmodc \
     src_type=1 \
     src_orient=1 \
     src_injectionrate=1 \
-    rec_type_ud=1 \
+    rec_type_ud=0 \
     rec_type_p=1 \
+    rec_type_vz=0 \
     rec_int_vz=2 \
     dtrcv=0.004 \
     rec_delay=0.1 \
@@ -30,7 +31,7 @@ fdelmodc \
     xrcv1=-3000 xrcv2=3000 \
     zrcv1=0 zrcv2=0 \
     xsrc=0 zsrc=1100 \
-    file_snap=backpropref.su tsnap1=0.1 dtsnap=0.010 tsnap2=2.100 \
+    file_snap=backpropref.su tsnap1=0.1 dtsnap=0.010 tsnap2=0.000 \
     dxsnap=10 dzsnap=10 zsnap1=0 zsnap2=2000 xsnap1=-2250 xsnap2=2250 sna_type_vz=0 \
     ntaper=200 \
     left=2 right=2 top=2 bottom=2
