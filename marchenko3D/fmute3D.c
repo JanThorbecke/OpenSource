@@ -442,9 +442,9 @@ long main (int argc, char **argv)
             for (l=0; l<ny1; l++) {
                 for (i=0; i<nx1; i++) {
                     jmax = maxval[l*nx1+i]-shift;
-                    ret = fprintf(fp_psline1, "%.5f %.5f \n",jmax*dt,hdrs_in1[l*nx1+i].gx*sclshot,hdrs_in1[l*nx1+i].gy*sclshot);
+                    ret = fprintf(fp_psline1, "%.5f %.5f %.5f \n",jmax*dt,hdrs_in1[l*nx1+i].gx*sclshot,hdrs_in1[l*nx1+i].gy*sclshot);
                     jmax =-maxval[l*nx1+i]+shift;
-                    ret = fprintf(fp_psline2, "%.5f %.5f \n",jmax*dt,hdrs_in1[l*nx1+i].gx*sclshot,hdrs_in1[l*nx1+i].gy*sclshot);
+                    ret = fprintf(fp_psline2, "%.5f %.5f %.5f \n",jmax*dt,hdrs_in1[l*nx1+i].gx*sclshot,hdrs_in1[l*nx1+i].gy*sclshot);
                 }
             }
         }
