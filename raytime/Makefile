@@ -49,7 +49,7 @@ OBJC	= $(SRCC:%.c=%.o)
 $(PRG):	$(OBJC) raytime.h
 	$(CC) $(LDFLAGS) $(CFLAGS) $(OPTC) -o raytime $(OBJC) $(LIBS)
 
-install: raytime 
+install: Raytime 
 	cp raytime $B
 
 clean:

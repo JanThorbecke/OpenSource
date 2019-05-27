@@ -6,7 +6,7 @@ include ../Make_include
 #OPTC += -openmp 
 #OPTC += -g -O0
 
-ALL: makemod makewave extendModel fconv correigen green green3D basop syn2d mat2su ftr1d
+ALL: makemod makewave extendModel fconv correigen green green3D basop syn2d mat2su ftr1d MuteSnap combine combine_induced reshape_su HomG Snap2Shot
 
 SRCM	= \
 		makemod.c  \
@@ -133,6 +133,68 @@ SRCT	= ftr1d.c \
 		docpkge.c \
 		getpars.c
 
+SRCMS   = MuteSnap.c \
+        getFileInfo.c \
+        writeData.c \
+        verbosepkg.c  \
+        getpars.c \
+        wallclock_time.c \
+        atopkge.c \
+        docpkge.c \
+        readSnapData.c
+
+SRCCO	= combine.c \
+		getFileInfo.c \
+		writeData.c \
+		wallclock_time.c \
+		getpars.c \
+		verbosepkg.c \
+		atopkge.c \
+        docpkge.c \
+		readSnapData.c 
+
+
+SRCCI	= combine_induced.c \
+		getFileInfo.c \
+		writeData.c \
+		wallclock_time.c \
+		getpars.c \
+		verbosepkg.c \
+		atopkge.c \
+        docpkge.c \
+		readSnapData.c 
+
+SRCRS   = reshape_su.c \
+        getFileInfo.c \
+        writeData.c \
+        getpars.c \
+        verbosepkg.c \
+        atopkge.c \
+        docpkge.c \
+        readSnapData.c
+
+SRCHG   = HomG.c \
+        getFileInfo.c \
+        readData.c \
+        writeData.c \
+        verbosepkg.c  \
+        getpars.c \
+        wallclock_time.c \
+        atopkge.c \
+        docpkge.c \
+        readSnapData.c
+
+SRCSS   = snap2shot.c \
+        getFileInfo3D.c \
+        writeData3D.c \
+        verbosepkg.c  \
+        getpars.c \
+        wallclock_time.c \
+        atopkge.c \
+        docpkge.c \
+		name_ext.c \
+        readSnapData3D.c
+
 OBJM	= $(SRCM:%.c=%.o)
 
 makemod:	$(OBJM) 
@@ -188,7 +250,37 @@ OBJT	= $(SRCT:%.c=%.o)
 ftr1d:	$(OBJT) 
 	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o ftr1d $(OBJT) $(LIBS)
 
-install: makemod makewave extendModel fconv correigen green green3D basop syn2d mat2su ftr1d 
+OBJMS	= $(SRCMS:%.c=%.o)
+
+MuteSnap:    $(OBJMS)
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o MuteSnap $(OBJMS) $(LIBS)
+
+OBJCO	= $(SRCCO:%.c=%.o)
+
+combine:  $(OBJCO)
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o combine $(OBJCO) $(LIBS)
+
+OBJCI	= $(SRCCI:%.c=%.o)
+
+combine_induced:  $(OBJCI)
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o combine_induced $(OBJCI) $(LIBS)
+
+OBJRS    = $(SRCRS:%.c=%.o)
+
+reshape_su:  $(OBJRS)
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o reshape_su $(OBJRS) $(LIBS)
+
+OBJHG   = $(SRCHG:%.c=%.o)
+
+HomG:   $(OBJHG)
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o HomG $(OBJHG) $(LIBS)
+
+OBJSS   = $(SRCSS:%.c=%.o)
+
+Snap2Shot:   $(OBJSS)
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o Snap2Shot $(OBJSS) $(LIBS)
+
+install: makemod makewave extendModel fconv correigen green green3D basop syn2d mat2su ftr1d MuteSnap combine combine_induced reshape_su HomG Snap2Shot
 	cp makemod $B
 	cp makewave $B
 	cp extendModel $B
@@ -200,9 +292,15 @@ install: makemod makewave extendModel fconv correigen green green3D basop syn2d 
 	cp syn2d $B
 	cp mat2su $B
 	cp ftr1d $B
+	cp MuteSnap $B
+	cp combine $B
+	cp combine_induced $B
+	cp reshape_su $B
+	cp HomG $B
+	cp Snap2Shot $B
 
 clean:
-		rm -f core $(OBJM) makemod $(OBJW) makewave $(OBJE) extendModel $(OBJF) fconv $(OBJG) $(OBJC) correigen green $(OBJG3) green3D $(OBJB) basop $(OBJJ) syn2d $(OBJS) mat2su $(OBJA) ftr1d $(OBJT)
+		rm -f core $(OBJM) makemod $(OBJW) makewave $(OBJE) extendModel $(OBJF) fconv $(OBJG) $(OBJC) correigen green $(OBJG3) green3D $(OBJB) basop $(OBJJ) syn2d $(OBJS) mat2su $(OBJA) ftr1d $(OBJT) MuteSnap $(OBJMS) combine $(OBJCO) reshape_su $(OBJRS) combine_induced $(OBJCI) HomG $(OBJHG) Snap2Shot $(OBJSS)
 
 realclean: clean
-		rm -f $B/makemod $B/makewave $B/extendModel $B/fconv $B/correigen $B/green $B/green3D $B/basop $B/syn2d $B/mat2su $B/ftr1d
+		rm -f $B/makemod $B/makewave $B/extendModel $B/fconv $B/correigen $B/green $B/green3D $B/basop $B/syn2d $B/mat2su $B/ftr1d $B/MuteSnap $B/combine $B/combine_induced $B/reshape_su $B/HomG $B/Snap2Shot
