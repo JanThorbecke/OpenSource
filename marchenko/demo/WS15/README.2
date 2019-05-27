@@ -13,13 +13,21 @@ Compute the intial focusing operator placed at a depth of 1100 m by running
 
 initialFocus.scr
 
-and run the marchenko program
+To compare the Green's function computed by marchenko generate the reference output
+
+adapt job.pbs to run referenceShot.scr
+
+run the marchenko program interactively (no need to submit job to queue);
  
-marchenko.scr
+./marchenko.scr
 
 Compare the Green's function computed by marchenko with the reference (adapt job.pbs to run referenceShot.scr)
 
+The script eps.scr generate .eps files and .png files that can be copied back to your local laptop for display.
+
 You can experiment with 
+-amplitude of R: scale with a constant ampltiude 
+-investigate the wavelet that is used to model R
 -number of iterations, 
 -intial focusing position, 
 -investigate at intermediate results (see ../oneD/marchenkoIter.scr as an example).

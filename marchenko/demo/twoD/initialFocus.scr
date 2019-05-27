@@ -29,7 +29,7 @@ do
 
 	(( xsrc = -3000 + ${ishot}*${dxshot} ))
 	echo xsrc=$xsrc
-	file_rcv=shots/iniFocus_z1100_x${xsrc}.su
+	file_rcv=iniFocus_z1100_x${xsrc}.su
 	
 fdelmodc \
 	file_cp=synclDown_cp.su ischeme=1 iorder=4 \
