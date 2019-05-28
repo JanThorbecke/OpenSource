@@ -234,10 +234,11 @@ int main (int argc, char **argv)
         nxs  = n2; 
         nys  = n3;
         nts  = n1;
-        dxs  = d2*1e3;
+        dxs  = d2;
         dys  = d3; 
         fxsb = f2;
         fysb = f3;
+        vmess("nxs:%li dxs:%.3f",nxs,dxs);
     }
     else {
         ret = getFileInfo3D(file_tinv, &n1, &n2, &n3, &ngath, &d1, &d2, &d3, &f1, &f2, &f3, &scl, &ntraces);
