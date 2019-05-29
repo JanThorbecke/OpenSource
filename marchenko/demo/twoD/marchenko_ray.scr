@@ -1,0 +1,19 @@
+#!/bin/bash -x
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+
+makewave w=fw fmin=0 flef=5 frig=80 fmax=100 nt=1024 dt=0.004 t0=0.0 scale=0 scfft=1 file_out=wavesrc.su
+makewave w=g2 fp=25 nt=1024 dt=0.004 t0=0.0 scale=1 scfft=0 file_out=wavefp.su
+
+export OMP_NUM_THREADS=40
+
+#apply the Marchenko algorithm
+marchenko3D file_shot=shots/refl_rp.su verbose=1 \
+    tap=0 niter=6 hw=8 shift=7 smooth=3 geomspread=1 ampest=1 \
+    file_ray=raysrc_time.su file_amp=raysrc_amp.su file_wav=wavesrc.su \
+    file_green=greensrc.su
+
+marchenko3D file_shot=shots/refl_rp.su verbose=1 file_inp=greensrc.su \
+    tap=0 niter=6 hw=8 shift=7 smooth=3 geomspread=1 ampest=1 \
+    file_ray=rayz_time.su file_amp=rayz_amp.su file_wav=wavefp.su \
+    file_homg=homg_rayz.su file_green=green_rayz.su
