@@ -27,7 +27,7 @@ fdelmodc \
 	rec_delay=0.1 \
    	dtrcv=0.004 \
    	verbose=2 \
-   	tmod=2.100 \
+   	tmod=2.2 \
    	dxrcv=10.0 \
    	xrcv1=-3000 xrcv2=3000 \
    	zrcv1=0 zrcv2=0 \
@@ -35,7 +35,7 @@ fdelmodc \
 	file_snap=homg_ref.su \
 	xsnap1=0 xsnap2=0 dxsnap=10 \
 	zsnap1=100 zsnap2=1900 dzsnap=10 \
-	tsnap=0.1 tsnap2=2.044 dtsnap=0.004 \
+	tsnap=0.1 tsnap2=2.148 dtsnap=0.004 \
    	ntaper=200 npml=100 \
    	left=2 right=2 top=2 bottom=2
 
