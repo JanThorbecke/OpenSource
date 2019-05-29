@@ -1,0 +1,43 @@
+#!/bin/bash
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+
+dx=2.5
+dt=0.0005
+
+makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=1
+
+
+export KMP_AFFINITY=disabled
+export OMP_NUM_THREADS=16
+
+
+	
+fdelmodc \
+	file_cp=syncl_cp.su ischeme=1 iorder=4 \
+   	file_den=syncl_ro.su \
+   	file_src=wave.su \
+   	file_rcv=homg_ref.su \
+   	src_type=1 \
+	src_orient=1 \
+	src_injectionrate=1 \
+   	rec_type_vz=0 \
+   	rec_type_p=1 \
+   	rec_int_vz=2 \
+	rec_delay=0.1 \
+   	dtrcv=0.004 \
+   	verbose=2 \
+   	tmod=2.100 \
+   	dxrcv=10.0 \
+   	xrcv1=-3000 xrcv2=3000 \
+   	zrcv1=0 zrcv2=0 \
+   	xsrc=0 zsrc=1000 \
+	file_snap=homg_ref.su \
+	xsnap1=0 xsnap2=0 dxsnap=10 \
+	zsnap1=100 zsnap2=1900 dzsnap=10 \
+	tsnap=0.1 tsnap2=2.044 dtsnap=0.004 \
+   	ntaper=200 npml=100 \
+   	left=2 right=2 top=2 bottom=2
+
+sushw < homg_ref_sp.su key=ntr a=0 > tmp.su
+mv tmp.su homg_ref_sp.su

@@ -1,0 +1,4 @@
+#!/bin/bash -x
+
+suwind < homg_rayz.su key=fldr min=513 | suximage title='Retrieved' perc=99 &
+suximage < homg_ref_sp.su title='Reference' perc=99 &
