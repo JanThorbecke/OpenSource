@@ -1,0 +1,13 @@
+#!/bin/bash
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+
+Raytime \
+    verbose=1 useT2=1 geomspread=1 file_rcv=raysrc.su \
+    zsrc=1000 xrcv1=-3000 xrcv2=3000 dxrcv=10 file_cp=syncl_cp.su zrcv1=0 zrcv2=0 \
+    xsrc=0 nxshot=1 nzshot=1 dxshot=10 dzshot=10 nraystep=25 method=fd
+
+Raytime \
+    verbose=1 useT2=1 geomspread=1 file_rcv=rayz.su \
+    zsrc=100 xrcv1=-3000 xrcv2=3000 dxrcv=10 file_cp=syncl_cp.su zrcv1=0 zrcv2=0 \
+    xsrc=0 nxshot=1 nzshot=181 dxshot=10 dzshot=10 nraystep=25 method=fd
