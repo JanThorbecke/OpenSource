@@ -1,0 +1,6 @@
+#!/bin/bash -x
+
+suwind < homg_rayz.su key=fldr min=513 | supsimage title='Retrieved' perc=99 > homg_retrieved.eps
+/usr/bin/convert -quality 90 -antialias homg_retrieved.eps homg_retrieved.png
+supsimage < homg_ref_sp.su title='Reference' perc=99 > homg_reference.eps
+/usr/bin/convert -quality 90 -antialias homg_reference.eps homg_reference.png
