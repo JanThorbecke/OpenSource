@@ -105,6 +105,7 @@ char *sdoc[] = {
 "   file_pplus= .............. output file with p+ ",
 "   file_pmin= ............... output file with p- ",
 "   file_iter= ............... output file with -Ni(-t) for each iteration",
+"   rotate=1 ................. 1: t=0 at nt/2 (middle) 0: t=0 at sample 0 for f1+,-",
 "   verbose=0 ................ silent option; >0 displays info",
 " ",
 " ",
@@ -118,7 +119,7 @@ int main (int argc, char **argv)
     FILE    *fp_out, *fp_f1plus, *fp_f1min;
     FILE    *fp_gmin, *fp_gplus, *fp_f2, *fp_pmin;
     int     i, j, l, ret, nshots, Nfoc, nt, nx, nts, nxs, ngath;
-    int     size, n1, n2, ntap, tap, di, ntraces, pad;
+    int     size, n1, n2, ntap, tap, di, ntraces, pad, rotate;
     int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     int     reci, countmin, mode, n2out, verbose, ntfft;
     int     iter, niter, tracf, *muteW, *tsynW;
@@ -170,6 +171,7 @@ int main (int argc, char **argv)
     if (!getparint("tap", &tap)) tap = 0;
     if (!getparint("ntap", &ntap)) ntap = 0;
     if (!getparint("pad", &pad)) pad = 0;
+    if (!getparint("rotate", &rotate)) rotate = 1;
 
     if(!getparint("niter", &niter)) niter = 10;
     if(!getparint("hw", &hw)) hw = 15;
@@ -699,14 +701,16 @@ sqrt(energyNi/energyN0));
         }
         if (file_f1plus != NULL) {
             /* rotate to get t=0 in the middle */
-            for (i = 0; i < n2; i++) {
-                hdrs_out[i].f1     = -n1*0.5*dt;
-                memcpy(&trace[0],&f1plus[l*size+i*nts],nts*sizeof(float));
-                for (j = 0; j < n1/2; j++) {
-                    f1plus[l*size+i*nts+n1/2+j] = trace[j];
-                }
-                for (j = n1/2; j < n1; j++) {
-                    f1plus[l*size+i*nts+j-n1/2] = trace[j];
+            if (rotate==1) {
+                for (i = 0; i < n2; i++) {
+                    hdrs_out[i].f1     = -n1*0.5*dt;
+                    memcpy(&trace[0],&f1plus[l*size+i*nts],nts*sizeof(float));
+                    for (j = 0; j < n1/2; j++) {
+                        f1plus[l*size+i*nts+n1/2+j] = trace[j];
+                    }
+                    for (j = n1/2; j < n1; j++) {
+                        f1plus[l*size+i*nts+j-n1/2] = trace[j];
+                    }
                 }
             }
             ret = writeData(fp_f1plus, (float *)&f1plus[l*size], hdrs_out, n1, n2);
@@ -714,14 +718,16 @@ sqrt(energyNi/energyN0));
         }
         if (file_f1min != NULL) {
             /* rotate to get t=0 in the middle */
-            for (i = 0; i < n2; i++) {
-                hdrs_out[i].f1     = -n1*0.5*dt;
-                memcpy(&trace[0],&f1min[l*size+i*nts],nts*sizeof(float));
-                for (j = 0; j < n1/2; j++) {
-                    f1min[l*size+i*nts+n1/2+j] = trace[j];
-                }
-                for (j = n1/2; j < n1; j++) {
-                    f1min[l*size+i*nts+j-n1/2] = trace[j];
+            if (rotate==1) {
+                for (i = 0; i < n2; i++) {
+                    hdrs_out[i].f1     = -n1*0.5*dt;
+                    memcpy(&trace[0],&f1min[l*size+i*nts],nts*sizeof(float));
+                    for (j = 0; j < n1/2; j++) {
+                        f1min[l*size+i*nts+n1/2+j] = trace[j];
+                    }
+                    for (j = n1/2; j < n1; j++) {
+                        f1min[l*size+i*nts+j-n1/2] = trace[j];
+                    }
                 }
             }
             ret = writeData(fp_f1min, (float *)&f1min[l*size], hdrs_out, n1, n2);
