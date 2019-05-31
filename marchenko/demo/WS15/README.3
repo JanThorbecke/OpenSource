@@ -1,9 +1,13 @@
 Plane waves
 
-Marchenko emthod worls as well with plane-waves, in stead of modeling a foccus point response for the initial operaror and plane wave is modeled. 
+Marchenko method works as well with plane-waves, in stead of modeling a foccus point response for the initial operaror and plane wave is modeled. 
 
 Submit the initialPlane.scr to the queue to compute the intial operator. The marchenkoPlane.scr script computes the Macrehnko solution for the plane-wave response. 
 
-
-
 The script epsPlane.scr generates .eps and .png files that can be copied back to your local laptop for display.
+
+DISCUSSION:
+In epsPlane.scr there is a convolution between f1minPlane and p0lpus; 
+	- why is this 'needed'?
+	- does the result have the correct amplitude?
+	- would this also work with focal points?

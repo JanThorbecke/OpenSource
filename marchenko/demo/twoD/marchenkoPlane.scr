@@ -5,11 +5,10 @@ export PATH=$HOME/src/OpenSource/bin:$PATH:
 export OMP_NUM_THREADS=40
 
 #mute all events below the first arrival to get the intial focusing field
-fmute file_shot=iniPlane_z1100_rp.su file_out=p0plus.su above=-1 shift=-10 verbose=1 check=1 hw=4
+fmute file_shot=iniPlane_z1800_rp.su file_out=p0plus.su above=-1 shift=-10 verbose=1 check=1 hw=4
 
 #apply the Marchenko algorithm
 marchenko file_shot=shots/refl_rp.su file_tinv=p0plus.su nshots=601 verbose=1 \
-    tap=0 niter=15 hw=8 shift=7 smooth=3 \
-    file_green=pPlane.su \
-    file_f1plus=f1plusPlane.su file_f1min=f1minPlane.su file_f2=f2Plane.su
+    tap=0 niter=15 hw=8 shift=7 smooth=3 rotate=0 \
+    file_f1plus=f1plusPlane.su file_f1min=f1minPlane.su file_green=greenPlane.su
 

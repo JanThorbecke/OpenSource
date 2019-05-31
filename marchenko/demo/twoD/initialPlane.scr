@@ -13,7 +13,8 @@ makemod sizex=6000 sizez=2000 dx=$dx dz=$dx cp0=1900  ro0=1200 \
         intt=def x=-3000,3000 z=780,780 poly=0 cp=2230 ro=1700 \
         intt=def x=-3000,-2200,-1500,0,1300,2100,3000 z=520,580,680,840,680,600,500 poly=2 cp=2400 ro=2800 \
 
-makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=1
+#makewave fp=30 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=1
+makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3 scale=0
 
 dxshot=10
 ishot=300
@@ -22,12 +23,12 @@ nshots=301
 export KMP_AFFINITY=disabled
 export OMP_NUM_THREADS=16
 
-file_rcv=iniPlane_z1100.su
+file_rcv=iniPlane_z1800.su
 	
 fdelmodc \
 	file_cp=synclDown_cp.su ischeme=1 iorder=4 \
    	file_den=synclDown_ro.su \
-   	file_src=wave.su \
+   	file_src=wavefw.su \
    	file_rcv=$file_rcv \
    	src_type=1 \
 	src_orient=1 \
@@ -42,7 +43,7 @@ fdelmodc \
    	dxrcv=10.0 \
    	xrcv1=-3000 xrcv2=3000 \
    	zrcv1=0 zrcv2=0 \
-   	xsrc=0 zsrc=1100 plane_wave=1 nsrc=2401 \
+   	xsrc=0 zsrc=1800 plane_wave=1 nsrc=2401 \
    	ntaper=200 \
    	left=2 right=2 top=2 bottom=2
 
