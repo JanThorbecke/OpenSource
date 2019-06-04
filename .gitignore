@@ -23,6 +23,12 @@ utils/makewave
 utils/mat2su
 utils/syn2d
 utils/green3D
+utils/HomG
+utils/MuteSnap
+utils/Snap2Shot
+utils/combine
+utils/combine_induced
+utils/reshape_su
 fdelmodc/fdelmodc
 include/genfft.h
 Make_include
@@ -48,4 +54,5 @@ marchenko_applications/iba
 marchenko_applications/marchenko_app
 marchenko_applications/reshape_su
 raytime3d/raytime3d
+raytime/Raytime
 MDD/mdd

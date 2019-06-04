@@ -173,11 +173,11 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
                 for (j = 0; j < nts; j++) 
                     iRN[l*size+ixsrc*nts+j] += rtrace[j]*scl*dx;
             
-            } /* end of parallel Nfoc loop */
+            } /* end of Nfoc loop */
 
             if (verbose>4) vmess("*** Shot gather %d processed ***", k);
 
-        } /* end of nshots (k) loop */
+        } /* end of nparallel shots (k) loop */
         free(sum);
         free(rtrace);
 
