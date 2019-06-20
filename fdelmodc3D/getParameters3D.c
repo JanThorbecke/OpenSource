@@ -540,10 +540,11 @@ criteria we have imposed.*/
 	if (!getparfloat("dyshot",&dyshot)) dyshot=dy;
 	if (!getparfloat("dzshot",&dzshot)) dzshot=0.0;
 	if (!getparfloat("dip",&src->dip)) src->dip=0.0;
-	if (!getparfloat("strike",&src->strike)) src->strike=1.0;
-	if (src->strike>=0) src->strike=0.5*M_PI;
-	else src->strike = -0.5*M_PI;
+	if (!getparfloat("strike",&src->strike)) src->strike=0.0;
+	if (!getparfloat("rake",&src->rake)) src->rake=0.0;
 	src->dip = M_PI*(src->dip/180.0);
+	src->strike = M_PI*(src->strike/180.0);
+	src->rake = M_PI*(src->rake/180.0);
 
 	if (shot->n>1) {
 		idxshot=MAX(0,NINT(dxshot/dx));

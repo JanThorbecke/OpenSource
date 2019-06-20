@@ -6,7 +6,9 @@
 
 void vmess(char *fmt, ...);
 
-long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, float *rox, float *roy, float *roz, float *l2m, float *lam, float *mul, long itime, long verbose)
+long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz,
+	float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
+	float *rox, float *roy, float *roz, float *l2m, float *lam, float *mul, long itime, long verbose)
 {
 /*********************************************************************
 Joeri's original filling order
