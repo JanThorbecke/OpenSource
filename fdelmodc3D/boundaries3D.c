@@ -79,7 +79,7 @@ MID 	left 	mid 	mid
     dy  = mod.dy;
     dt  = mod.dt;
     fac = dt/dx;
-    if ( (bnd.top==2) || (bnd.bot==2) || (bnd.lef==2) || (bnd.rig==2) ) pml=1;
+    if ( (bnd.top==2) || (bnd.bot==2) || (bnd.lef==2) || (bnd.rig==2) || (bnd.fro==2) || (bnd.bac==2) ) pml=1;
 	else pml=0;
 
 	ibnd = mod.iorder/2-1;
@@ -104,7 +104,6 @@ MID 	left 	mid 	mid
 
 	if (bnd.top==3) { /* rigid surface at top */
 #pragma omp for private (ix, iy, iz) nowait
-//#pragma ivdep
         for (iy=1; iy<=ny; iy++) {
         	#pragma ivdep
             for (ix=1; ix<=nx; ix++) {
@@ -118,7 +117,6 @@ MID 	left 	mid 	mid
 	}
 	if (bnd.rig==3) { /* rigid surface at right */
 #pragma omp for private (ix, iy, iz) nowait
-//#pragma ivdep
         for (iy=1; iy<=ny; iy++) {
         	#pragma ivdep
             for (iz=1; iz<=nz; iz++) {
@@ -222,7 +220,6 @@ MID 	left 	mid 	mid
 			ibz = (bnd.ntap+izo-1);
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
 				for (iy=iyo; iy<iye; iy++) {
 					#pragma ivdep
 					for (iz=izo; iz<ize; iz++) {
@@ -244,7 +241,6 @@ MID 	left 	mid 	mid
 				ibx = (ixo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
 					for (iy=iyo; iy<iye; iy++) {
 						#pragma ivdep
 						for (iz=izo; iz<ize; iz++) {
@@ -265,7 +261,6 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
 						for (iy=iyo; iy<iye; iy++) {
 							#pragma ivdep
 							for (iz=izo; iz<ize; iz++) {
@@ -287,7 +282,6 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
 						for (iy=iyo; iy<iye; iy++) {
 							#pragma ivdep
 							for (iz=izo; iz<ize; iz++) {
@@ -317,7 +311,6 @@ MID 	left 	mid 	mid
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
 					for (iy=iyo; iy<iye; iy++) {
 						#pragma ivdep
 						for (iz=izo; iz<ize; iz++) {
@@ -337,7 +330,6 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
 						for (iy=iyo; iy<iye; iy++) {
 							#pragma ivdep
 							for (iz=izo; iz<ize; iz++) {
@@ -359,7 +351,6 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
 						for (iy=iyo; iy<iye; iy++) {
 							#pragma ivdep
 							for (iz=izo; iz<ize; iz++) {
@@ -385,7 +376,6 @@ MID 	left 	mid 	mid
 				iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
 					for (iy=iyo; iy<iye; iy++) {
 						#pragma ivdep
 						for (iz=izo; iz<ize; iz++) {
@@ -408,7 +398,6 @@ MID 	left 	mid 	mid
 				iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
 					for (iy=iyo; iy<iye; iy++) {
 						#pragma ivdep
 						for (iz=izo; iz<ize; iz++) {
@@ -435,7 +424,6 @@ MID 	left 	mid 	mid
 			ib = (bnd.ntap+izo-1);
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
 				for (iy=iyo; iy<iye; iy++) {
 					#pragma ivdep
 					for (iz=izo; iz<ize; iz++) {
@@ -457,7 +445,6 @@ MID 	left 	mid 	mid
 				ibx = (ixo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
 					for (iy=iyo; iy<iye; iy++) {
 						#pragma ivdep
 						for (iz=izo; iz<ize; iz++) {
@@ -476,7 +463,6 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
 						for (iy=iyo; iy<iye; iy++) {
 							#pragma ivdep
 							for (iz=izo; iz<ize; iz++) {
@@ -499,7 +485,6 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
 						for (iy=iyo; iy<iye; iy++) {
 							#pragma ivdep
 							for (iz=izo; iz<ize; iz++) {
@@ -808,6 +793,720 @@ MID 	left 	mid 	mid
 							vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
 										c1*(tzz[iy*n1*n2+ix*n1+iz]	 - tzz[iy*n1*n2+ix*n1+iz-1]) +
 										c2*(tzz[iy*n1*n2+ix*n1+iz+1] - tzz[iy*n1*n2+ix*n1+iz-2]));
+		
+							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iy-iby)*bnd.ntap+(ibz-iz)];
+						}
+					}
+				}
+			}
+		}
+
+		else { /* Elastic scheme */
+			
+			/* Vx field */
+			/* mid top mid vx */
+			ixo = mod.ioXx;
+			ixe = mod.ieXx;
+			iyo = mod.ioXy;
+			iye = mod.ieXy;
+			izo = mod.ioXz-bnd.ntap;
+			ize = mod.ioXz;
+	
+			ibz = (bnd.ntap+izo-1);
+#pragma omp for private(ix,iy,iz)
+			for (ix=ixo; ix<ixe; ix++) {
+				for (iy=iyo; iy<iye; iy++) {
+					#pragma ivdep
+					for (iz=izo; iz<ize; iz++) {
+						vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+
+						vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapx[ibz-iz];
+					}
+				}
+			}
+
+
+			/* right top mid corner vx */
+			if (bnd.rig==4) {
+				ixo = mod.ieXx;
+				ixe = mod.ieXx+bnd.ntap;
+				ibz = (bnd.ntap+izo-1);
+				ibx = (ixo);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+					for (iy=iyo; iy<iye; iy++) {
+						#pragma ivdep
+						for (iz=izo; iz<ize; iz++) {
+							vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+		
+							vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.ntap+(ibz-iz)];
+						}
+					}
+				}
+
+
+				/* right top front corner vx */
+				if (bnd.fro==4) {
+					iyo = mod.ioXy-bnd.ntap;
+					iye = mod.ioXy;
+					iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+//#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							#pragma ivdep
+							for (iz=izo; iz<ize; iz++) {
+								vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+			
+								vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iby-iy)*bnd.ntap*bnd.ntap+(ix-ibx)*bnd.ntap+(ibz-iz)];
+							}
+						}
+					}
+				}
+		
+		
+				/* right top back corner vx */
+				if (bnd.bac==4) {
+					iyo = mod.ieXy;
+					iye = mod.ieXy+bnd.ntap;
+					iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+//#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							#pragma ivdep
+							for (iz=izo; iz<ize; iz++) {
+								vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+			
+								vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ix-ibx)*bnd.ntap+(ibz-iz)];
+							}
+						}
+					}
+				}
+			}
+
+			ixo = mod.ioXx;
+			ixe = mod.ieXx;
+			iyo = mod.ioXy;
+			iye = mod.ieXy;
+			izo = mod.ioXz-bnd.ntap;
+			ize = mod.ioXz;
+
+			/* left top mid corner vx */
+			if (bnd.lef==4) {
+				ixo = mod.ioXx-bnd.ntap;
+				ixe = mod.ioXx;
+				ibz = (bnd.ntap+izo-1);
+				ibx = (bnd.ntap+ixo-1);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+//#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						#pragma ivdep
+						for (iz=izo; iz<ize; iz++) {
+							vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+							
+							vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.ntap+(ibz-iz)];
+						}
+					}
+				}
+
+				/* left top front corner vx */
+				if (bnd.fro==4) {
+					iyo = mod.ioXy-bnd.ntap;
+					iye = mod.ioXy;
+					iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+//#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							#pragma ivdep
+							for (iz=izo; iz<ize; iz++) {
+								vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+			
+								vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iby-iy)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(ibz-iz)];
+							}
+						}
+					}
+				}
+
+
+				/* left top back corner vx */
+				if (bnd.bac==4) {
+					iyo = mod.ieXy;
+					iye = mod.ieXy+bnd.ntap;
+					iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+//#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							#pragma ivdep
+							for (iz=izo; iz<ize; iz++) {
+								vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+			
+								vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(ibz-iz)];
+							}
+						}
+					}
+				}
+			}
+
+
+			/* mid top front corner vx */
+			if (bnd.fro==4) {
+				ixo = mod.ioXx;
+				ixe = mod.ieXx;
+				iyo = mod.ioXy-bnd.ntap;
+				iye = mod.ioXy;
+				ibz = (bnd.ntap+izo-1);
+				iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+//#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						#pragma ivdep
+						for (iz=izo; iz<ize; iz++) {
+							vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+		
+							vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(ibz-iz)];
+						}
+					}
+				}
+			}
+
+
+			/* mid top back corner vx */
+			if (bnd.bac==4) {
+				iyo = mod.ieXy;
+				iye = mod.ieXy+bnd.ntap;
+				ibz = (bnd.ntap+izo-1);
+				iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+//#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						#pragma ivdep
+						for (iz=izo; iz<ize; iz++) {
+							vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+		
+							vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iy-iby)*bnd.ntap+(ibz-iz)];
+						}
+					}
+				}
+			}		
+	
+
+			/* Vy field */
+			/* mid top mid vy */
+			ixo = mod.ioYx;
+			ixe = mod.ieYx;
+			iyo = mod.ioYy;
+			iye = mod.ieYy;
+			izo = mod.ioYz-bnd.ntap;
+			ize = mod.ioYz;
+	
+			ib = (bnd.ntap+izo-1);
+#pragma omp for private(ix,iy,iz)
+			for (ix=ixo; ix<ixe; ix++) {
+//#pragma ivdep
+				for (iy=iyo; iy<iye; iy++) {
+					#pragma ivdep
+					for (iz=izo; iz<ize; iz++) {
+						vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+
+						vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapy[ib-iz];
+					}
+				}
+			}
+	
+
+			/* right top mid corner vy */
+			if (bnd.rig==4) {
+				ixo = mod.ieYx;
+				ixe = mod.ieYx+bnd.ntap;
+				ibz = (bnd.ntap+izo-1);
+				ibx = (ixo);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+//#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						#pragma ivdep
+						for (iz=izo; iz<ize; iz++) {
+							vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+							vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.ntap+(ibz-iz)];
+						}
+					}
+				}
+				/* right top front corner vy */
+				if (bnd.fro==4) {
+					iyo = mod.ioYy-bnd.ntap;
+					iye = mod.ioYy;
+					iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+//#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							#pragma ivdep
+							for (iz=izo; iz<ize; iz++) {
+								vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+			
+								vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iby-iy)*bnd.ntap*bnd.ntap+(ix-ibx)*bnd.ntap+(ibz-iz)];
+							}
+						}
+					}
+				}
+
+	
+
+				/* right top back corner vy */
+				if (bnd.bac==4) {
+					iyo = mod.ieYy;
+					iye = mod.ieYy+bnd.ntap;
+					iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+//#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							#pragma ivdep
+							for (iz=izo; iz<ize; iz++) {
+								vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+			
+								vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ix-ibx)*bnd.ntap+(ibz-iz)];
+							}
+						}
+					}
+				}
+			}
+			ixo = mod.ioYx;
+			ixe = mod.ieYx;
+			iyo = mod.ioYy;
+			iye = mod.ieYy;
+			izo = mod.ioYz-bnd.ntap;
+			ize = mod.ioYz;
+
+
+			/* left top mid corner vy */
+			if (bnd.lef==4) {
+				ixo = mod.ioYx-bnd.ntap;
+				ixe = mod.ioYx;
+				ibz = (bnd.ntap+izo-1);
+				ibx = (bnd.ntap+ixo-1);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+							
+							vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.ntap+(ibz-iz)];
+						}
+					}
+				}
+
+				/* left top front corner vy */
+				if (bnd.fro==4) {
+					iyo = mod.ioYy-bnd.ntap;
+					iye = mod.ioYy;
+					iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							for (iz=izo; iz<ize; iz++) {
+								vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+			
+								vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iby-iy)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(ibz-iz)];
+							}
+						}
+					}
+				}
+
+				/* left top back corner vy */
+				if (bnd.bac==4) {
+					iyo = mod.ieYy;
+					iye = mod.ieYy+bnd.ntap;
+					iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							for (iz=izo; iz<ize; iz++) {
+								vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+			
+								vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(ibz-iz)];
+							}
+						}
+					}
+				}
+			}
+			/* front top mid corner vy */
+			if (bnd.fro==4) {
+				ixo = mod.ioYx;
+				ixe = mod.ieYx;
+				iyo = mod.ioYy-bnd.ntap;
+				iye = mod.ioYy;
+				ibz = (bnd.ntap+izo-1);
+				iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+							vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(ibz-iz)];
+						}
+					}
+				}
+			}
+			/* back top mid corner vy */
+			if (bnd.bac==4) {
+				iyo = mod.ieYy;
+				iye = mod.ieYy+bnd.ntap;
+				ibz = (bnd.ntap+izo-1);
+				iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+							vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iy-iby)*bnd.ntap+(ibz-iz)];
+						}
+					}
+				}
+			}
+
+
+			/* Vz field */
+			/* mid top mid vz*/
+			ixo = mod.ioZx;
+			ixe = mod.ieZx;
+			iyo = mod.ioZy;
+			iye = mod.ieZy;
+			izo = mod.ioZz-bnd.ntap;
+			ize = mod.ioZz;
+	
+			ib = (bnd.ntap+izo-1);
+#pragma omp for private (ix, iy, iz) 
+			for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+				for (iy=iyo; iy<iye; iy++) {
+					for (iz=izo; iz<ize; iz++) {
+						vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+
+						vz[iy*n1*n2+ix*n1+iz] *= bnd.tapz[ib-iz];
+					}
+				}
+			}
+			/* right top mid corner vz */
+			if (bnd.rig==4) {
+				ixo = mod.ieZx;
+				ixe = ixo+bnd.ntap;
+				ibz = (bnd.ntap+izo-1);
+				ibx = (ixo);
+#pragma omp for private(ix,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.ntap+(ibz-iz)];
+						}
+					}
+				}
+				/* right top front corner vz */
+				if (bnd.fro==4) {
+					iyo = mod.ioZy-bnd.ntap;
+					iye = mod.ioZy;
+					iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							for (iz=izo; iz<ize; iz++) {
+								vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+			
+								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iby-iy)*bnd.ntap*bnd.ntap+(ix-ibx)*bnd.ntap+(ibz-iz)];
+							}
+						}
+					}
+				}
+				/* right top back corner vz */
+				if (bnd.bac==4) {
+					iyo = mod.ieZy;
+					iye = mod.ieZy+bnd.ntap;
+					iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							for (iz=izo; iz<ize; iz++) {
+								vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+			
+								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ix-ibx)*bnd.ntap+(ibz-iz)];
+							}
+						}
+					}
+				}
+			}
+
+			ixo = mod.ioZx;
+			ixe = mod.ieZx;
+			iyo = mod.ioZy;
+			iye = mod.ieZy;
+			izo = mod.ioZz-bnd.ntap;
+			ize = mod.ioZz;
+
+			/* left top mid corner vz */
+			if (bnd.lef==4) {
+				ixo = mod.ioZx-bnd.ntap;
+				ixe = mod.ioZx;
+				ibz = (bnd.ntap+izo-1);
+				ibx = (bnd.ntap+ixo-1);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+							
+							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.ntap+(ibz-iz)];
+						}
+					}
+				}
+				/* left top front corner vz */
+				if (bnd.fro==4) {
+					iyo = mod.ioZy-bnd.ntap;
+					iye = mod.ioZy;
+					iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							for (iz=izo; iz<ize; iz++) {
+								vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+			
+								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iby-iy)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(ibz-iz)];
+							}
+						}
+					}
+				}
+				/* left top back corner vz */
+				if (bnd.bac==4) {
+					iyo = mod.ieZy;
+					iye = mod.ieZy+bnd.ntap;
+					iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							for (iz=izo; iz<ize; iz++) {
+								vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+			
+								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(ibz-iz)];
+							}
+						}
+					}
+				}
+			}
+			/* mid top front corner vz */
+			if (bnd.fro==4) {
+				ixo = mod.ioZx;
+				ixe = mod.ieZx;
+				iyo = mod.ioZy-bnd.ntap;
+				iye = mod.ioZy;
+				ibz = (bnd.ntap+izo-1);
+				iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(ibz-iz)];
+						}
+					}
+				}
+			}
+			/* mid top back corner vz */
+			if (bnd.bac==4) {
+				iyo = mod.ieZy;
+				iye = mod.ieZy+bnd.ntap;
+				ibz = (bnd.ntap+izo-1);
+				iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 		
 							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iy-iby)*bnd.ntap+(ibz-iz)];
 						}
@@ -1402,6 +2101,693 @@ MID 	left 	mid 	mid
 			}
 			
 		}
+		else { /* Elastic scheme */
+			
+			/* Vx field */
+			/* mid bottom mid vx*/
+			ixo = mod.ioXx;
+			ixe = mod.ieXx;
+			iyo = mod.ioXy;
+			iye = mod.ieXy;
+			izo = mod.ieXz;
+			ize = mod.ieXz+bnd.ntap;
+			
+			ib = (ize-bnd.ntap);
+#pragma omp for private(ix,iy,iz)
+			for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+				for (iy=iyo; iy<iye; iy++) {
+					for (iz=izo; iz<ize; iz++) {
+						vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+
+						vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapx[iz-ib];
+					}
+				}
+			}
+			/* right bottom mid corner vx */
+			if (bnd.rig==4) {
+				ixo = mod.ieXx;
+				ixe = mod.ieXx+bnd.ntap;
+				ibz = (izo);
+				ibx = (ixo);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+		
+							vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.ntap+(iz-ibz)];
+						}
+					}
+				}
+				/* right bottom front corner vx */
+				if (bnd.fro==4) {
+					iyo = mod.ioXy-bnd.ntap;
+					iye = mod.ioXy;
+					iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							for (iz=izo; iz<ize; iz++) {
+								vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+			
+								vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iby-iy)*bnd.ntap*bnd.ntap+(ix-ibx)*bnd.ntap+(iz-ibz)];
+							}
+						}
+					}
+				}
+				/* right bottom back corner vx */
+				if (bnd.bac==4) {
+					iyo = mod.ieXy;
+					iye = mod.ieXy+bnd.ntap;
+					iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							for (iz=izo; iz<ize; iz++) {
+								vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+			
+								vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ix-ibx)*bnd.ntap+(iz-ibz)];
+							}
+						}
+					}
+				}
+			}
+
+			ixo = mod.ioXx;
+			ixe = mod.ieXx;
+			iyo = mod.ioXy;
+			iye = mod.ieXy;
+			izo = mod.ieXz;
+			ize = mod.ieXz+bnd.ntap;
+
+			/* left bottom mid corner vx*/
+			if (bnd.lef==4) {
+				ixo = mod.ioXx-bnd.ntap;
+				ixe = mod.ioXx;
+				ibz = (izo);
+				ibx = (bnd.ntap+ixo-1);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+							
+							vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.ntap+(iz-ibz)];
+						}
+					}
+				}
+				/* left bottom front corner vx */
+				if (bnd.fro==4) {
+					iyo = mod.ioXy-bnd.ntap;
+					iye = mod.ioXy;
+					iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							for (iz=izo; iz<ize; iz++) {
+								vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+			
+								vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iby-iy)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(iz-ibz)];
+							}
+						}
+					}
+				}
+				/* left bottom back corner vx*/
+				if (bnd.bac==4) {
+					iyo = mod.ieXy;
+					iye = mod.ieXy+bnd.ntap;
+					iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							for (iz=izo; iz<ize; iz++) {
+								vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+			
+								vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(iz-ibz)];
+							}
+						}
+					}
+				}
+			}
+			/* mid bottom front corner vx */
+			if (bnd.fro==4) {
+				ixo = mod.ioXx;
+				ixe = mod.ieXx;
+				iyo = mod.ioXy-bnd.ntap;
+				iye = mod.ioXy;
+				ibz = (izo);
+				iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+		
+							vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(iz-ibz)];
+						}
+					}
+				}
+			}
+			/*  mid bottom back corner vx */
+			if (bnd.bac==4) {
+				iyo = mod.ieXy;
+				iye = mod.ieXy+bnd.ntap;
+				ibz = (izo);
+				iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+		
+							vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iy-iby)*bnd.ntap+(iz-ibz)];
+						}
+					}
+				}
+			}
+
+
+			/* Vy field */
+			/* mid bottom mid vy */
+			ixo = mod.ioYx;
+			ixe = mod.ieYx;
+			iyo = mod.ioYy;
+			iye = mod.ieYy;
+			izo = mod.ieYz;
+			ize = mod.ieYz+bnd.ntap;
+	
+			ib = (ize-bnd.ntap);
+#pragma omp for private(ix,iy,iz)
+			for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+				for (iy=iyo; iy<iye; iy++) {
+					for (iz=izo; iz<ize; iz++) {
+						vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+
+						vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapy[iz-ib];
+					}
+				}
+			}
+			/* right bottom mid corner vy */
+			if (bnd.rig==4) {
+				ixo = mod.ieYx;
+				ixe = ixo+bnd.ntap;
+				ibz = (izo);
+				ibx = (ixo);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+							vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.ntap+(iz-ibz)];
+						}
+					}
+				}
+				/* right bottom front corner vy */
+				if (bnd.fro==4) {
+					iyo = mod.ioYy-bnd.ntap;
+					iye = mod.ioYy;
+					iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							for (iz=izo; iz<ize; iz++) {
+								vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+			
+								vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iby-iy)*bnd.ntap*bnd.ntap+(ix-ibx)*bnd.ntap+(iz-ibz)];
+							}
+						}
+					}
+				}
+				/* right bottom back corner vy */
+				if (bnd.bac==4) {
+					iyo = mod.ieYy;
+					iye = mod.ieYy+bnd.ntap;
+					iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							for (iz=izo; iz<ize; iz++) {
+								vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+			
+								vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ix-ibx)*bnd.ntap+(iz-ibz)];
+							}
+						}
+					}
+				}
+			}
+			ixo = mod.ioYx;
+			ixe = mod.ieYx;
+			iyo = mod.ioYy;
+			iye = mod.ieYy;
+			izo = mod.ieYz;
+			ize = mod.ieYz+bnd.ntap;
+
+			/* left bottom mid corner vy */
+			if (bnd.lef==4) {
+				ixo = mod.ioYx-bnd.ntap;
+				ixe = mod.ioYx;
+				ibz = (izo);
+				ibx = (bnd.ntap+ixo-1);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+							
+							vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.ntap+(iz-ibz)];
+						}
+					}
+				}
+				/* left bottom front corner vy */
+				if (bnd.fro==4) {
+					iyo = mod.ioYy-bnd.ntap;
+					iye = mod.ioYy;
+					iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							for (iz=izo; iz<ize; iz++) {
+								vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+			
+								vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iby-iy)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(iz-ibz)];
+							}
+						}
+					}
+				}
+				/* left bottom back corner vy */
+				if (bnd.bac==4) {
+					iyo = mod.ieYy;
+					iye = mod.ieYy+bnd.ntap;
+					iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							for (iz=izo; iz<ize; iz++) {
+								vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+			
+								vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(iz-ibz)];
+							}
+						}
+					}
+				}
+			}
+			/* mid bottom front corner vy */
+			if (bnd.fro==4) {
+				ixo = mod.ioYx;
+				ixe = mod.ieYx;
+				iyo = mod.ioYy-bnd.ntap;
+				iye = mod.ioYy;
+				ibz = (izo);
+				iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+							vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(iz-ibz)];
+						}
+					}
+				}
+			}
+			/* mid bottom back corner vy */
+			if (bnd.bac==4) {
+				iyo = mod.ieYy;
+				iye = mod.ieYy+bnd.ntap;
+				ibz = (izo);
+				iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+							vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iy-iby)*bnd.ntap+(iz-ibz)];
+						}
+					}
+				}
+			}
+
+
+			/* Vz field */
+			ixo = mod.ioZx;
+			ixe = mod.ieZx;
+			iyo = mod.ioZy;
+			iye = mod.ieZy;
+			izo = mod.ieZz;
+			ize = mod.ieZz+bnd.ntap;
+			
+			ib = (ize-bnd.ntap);
+#pragma omp for private (ix, iy, iz) 
+			for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+				for (iy=iyo; iy<iye; iy++) {
+					for (iz=izo; iz<ize; iz++) {
+						vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+						vz[iy*n1*n2+ix*n1+iz] *= bnd.tapz[iz-ib];
+					}
+				}
+			}
+
+
+			/* right bottom corner */
+			if (bnd.rig==4) {
+				ixo = mod.ieZx;
+				ixe = ixo+bnd.ntap;
+				ibz = (izo);
+				ibx = (ixo);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+							
+							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.ntap+(iz-ibz)];
+						}
+					}
+				}
+
+				/* right bottom front corner */
+				if (bnd.fro==4) {
+					iyo = mod.ioZy-bnd.ntap;
+					iye = mod.ioZy;
+					iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							for (iz=izo; iz<ize; iz++) {
+								vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+			
+								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iby-iy)*bnd.ntap*bnd.ntap+(ix-ibx)*bnd.ntap+(iz-ibz)];
+							}
+						}
+					}
+				}
+
+
+
+				/* right bottom back corner */
+				if (bnd.bac==4) {
+					iyo = mod.ieZy;
+					iye = mod.ieZy+bnd.ntap;
+					iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							for (iz=izo; iz<ize; iz++) {
+								vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+			
+								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ix-ibx)*bnd.ntap+(iz-ibz)];
+							}
+						}
+					}
+				}
+			}
+			
+			ixo = mod.ioZx;
+			ixe = mod.ieZx;
+			iyo = mod.ioZy;
+			iye = mod.ieZy;
+			izo = mod.ieZz;
+			ize = mod.ieZz+bnd.ntap;
+
+			/* left bottom corner */
+			if (bnd.lef==4) {
+				ixo = mod.ioZx-bnd.ntap;
+				ixe = mod.ioZx;
+				ibz = (izo);
+				ibx = (bnd.ntap+ixo-1);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+//#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						#pragma ivdep
+						for (iz=izo; iz<ize; iz++) {
+							vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+							
+							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.ntap+(iz-ibz)];
+						}
+					}
+				}
+				/* left bottom front corner */
+				if (bnd.fro==4) {
+					iyo = mod.ioZy-bnd.ntap;
+					iye = mod.ioZy;
+					iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+						for (iy=iyo; iy<iye; iy++) {
+							#pragma ivdep
+							for (iz=izo; iz<ize; iz++) {
+								vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+			
+								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iby-iy)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(iz-ibz)];
+							}
+						}
+					}
+				}
+				/* left bottom back corner */
+				if (bnd.bac==4) {
+					iyo = mod.ieZy;
+					iye = mod.ieZy+bnd.ntap;
+					iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+					for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+						for (iy=iyo; iy<iye; iy++) {
+							for (iz=izo; iz<ize; iz++) {
+								vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+			
+								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(iz-ibz)];
+							}
+						}
+					}
+				}
+			}
+			/* front bottom corner */
+			if (bnd.fro==4) {
+				ixo = mod.ioZx;
+				ixe = mod.ieZx;
+				iyo = mod.ioZy-bnd.ntap;
+				iye = mod.ioZy;
+				ibz = (izo);
+				iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(iz-ibz)];
+						}
+					}
+				}
+			}
+			/* Back bottom corner */
+			if (bnd.bac==4) {
+				iyo = mod.ieZy;
+				iye = mod.ieZy+bnd.ntap;
+				ibz = (izo);
+				iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iy-iby)*bnd.ntap+(iz-ibz)];
+						}
+					}
+				}
+			}
+			
+		}
 	}
 
 
@@ -1608,6 +2994,240 @@ MID 	left 	mid 	mid
 			}
 
 		}
+
+		else { /* Elastic scheme */
+			
+			/* Vx field */
+			/* left mid mid vx */
+			ixo = mod.ioXx-bnd.ntap;
+			ixe = mod.ioXx;
+			iyo = mod.ioXy;
+			iye = mod.ieXy;
+			izo = mod.ioXz;
+			ize = mod.ieXz;
+			
+			ib = (bnd.ntap+ixo-1);
+
+#pragma omp for private(ix,iy,iz)
+			for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+				for (iy=iyo; iy<iye; iy++) {
+					for (iz=izo; iz<ize; iz++) {
+						vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+
+						vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapx[ib-ix]; 
+					}
+				}
+			}
+			/* left mid front corner vx */
+			if (bnd.fro==4) {
+				iyo = mod.ioXy-bnd.ntap;
+				iye = mod.ioXy;
+				ibx = (bnd.ntap+ixo-1);
+				iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+		
+							vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(ibx-ix)]; 
+						}
+					}
+				}
+			}
+			/* left mid back corner vx */
+			if (bnd.bac==4) {
+				iyo = mod.ieXy;
+				iye = mod.ieXy+bnd.ntap;
+				ibx = (bnd.ntap+ixo-1);
+				iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+		
+							vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iy-iby)*bnd.ntap+(ibx-ix)];
+						}
+					}
+				}
+			}
+
+			/* Vy field */
+			/* left mid mid vy */
+			ixo = mod.ioYx-bnd.ntap;
+			ixe = mod.ioYx;
+			iyo = mod.ioYy;
+			iye = mod.ieYy;
+			izo = mod.ioYz;
+			ize = mod.ieYz;
+			
+			ib = (bnd.ntap+ixo-1);
+#pragma omp for private(ix,iy,iz)
+			for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+				for (iy=iyo; iy<iye; iy++) {
+					for (iz=izo; iz<ize; iz++) {
+						vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+						
+						vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapx[ib-ix];
+					}
+				}
+			}
+			/* left mid front corner vy */
+			if (bnd.fro==4) {
+				iyo = mod.ioYy-bnd.ntap;
+				iye = mod.ioYy;
+				ibx = (bnd.ntap+ixo-1);
+				iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+							vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(ibx-ix)];
+						}
+					}
+				}
+			}
+			/* left mid back corner vy */
+			if (bnd.bac==4) {
+				iyo = mod.ieYy;
+				iye = mod.ieYy+bnd.ntap;
+				ibx = (bnd.ntap+ixo-1);
+				iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+							vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iy-iby)*bnd.ntap+(ibx-ix)];
+						}
+					}
+				}
+			}
+			
+			/* Vz field */
+			/* left mid mid vz */
+			ixo = mod.ioZx-bnd.ntap;
+			ixe = mod.ioZx;
+			iyo = mod.ioZy;
+			iye = mod.ieZy;
+			izo = mod.ioZz;
+			ize = mod.ieZz;
+
+			ib = (bnd.ntap+ixo-1);
+
+#pragma omp for private (ix,iy,iz)
+			for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+				for (iy=iyo; iy<iye; iy++) {
+					for (iz=izo; iz<ize; iz++) {
+						vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+						
+						vz[iy*n1*n2+ix*n1+iz] *= bnd.tapz[ib-ix];
+					}
+				}
+			}
+			/* left mid front corner vz*/
+			if (bnd.fro==4) {
+				iyo = mod.ioZy-bnd.ntap;
+				iye = mod.ioZy;
+				ibx = (bnd.ntap+ixo-1);
+				iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(ibx-ix)];
+						}
+					}
+				}
+			}
+			/* left mid back corner vz */
+			if (bnd.bac==4) {
+				iyo = mod.ieZy;
+				iye = mod.ieZy+bnd.ntap;
+				ibx = (bnd.ntap+ixo-1);
+				iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iy-iby)*bnd.ntap+(ibx-ix)];
+						}
+					}
+				}
+			}
+
+		}
 		
 	}
 
@@ -1706,7 +3326,6 @@ MID 	left 	mid 	mid
 									c2*(tzz[(iy+1)*n1*n2+ix*n1+iz] - tzz[(iy-2)*n1*n2+ix*n1+iz]));
 		
 						vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapx[ix-ib];
-						//vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapy[ix-ib]; 
 					}
 				}
 			}
@@ -1775,7 +3394,6 @@ MID 	left 	mid 	mid
 									c2*(tzz[iy*n1*n2+ix*n1+iz+1] - tzz[iy*n1*n2+ix*n1+iz-2]));
 		
 						vz[iy*n1*n2+ix*n1+iz] *= bnd.tapz[ix-ib]; 
-						//vz[iy*n1*n2+ix*n1+iz] *= bnd.tapx[ix-ib]; 
 					}
 				}
 			}
@@ -1815,6 +3433,248 @@ MID 	left 	mid 	mid
 							vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
 										c1*(tzz[iy*n1*n2+ix*n1+iz]	 - tzz[iy*n1*n2+ix*n1+iz-1]) +
 										c2*(tzz[iy*n1*n2+ix*n1+iz+1] - tzz[iy*n1*n2+ix*n1+iz-2]));
+		
+							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iy-iby)*bnd.ntap+(ix-ibx)];
+						}
+					}
+				}
+			}
+		
+		}
+
+		if (mod.ischeme <= 2) { /* Elastic scheme */
+			
+			/* Vx field */
+			/* right mid mid vx */
+			ixo = mod.ieXx;
+			ixe = mod.ieXx+bnd.ntap;
+			iyo = mod.ioXy;
+			iye = mod.ieXy;
+			izo = mod.ioXz;
+			ize = mod.ieXz;
+		
+			ib = (ixo);
+
+#pragma omp for private(ix,iy,iz)
+			for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+				for (iy=iyo; iy<iye; iy++) {
+					for (iz=izo; iz<ize; iz++) {
+						vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+
+						vx[iy*n1*n2+ix*n1+iz] *= bnd.tapx[ix-ib]; 
+					}
+				}
+			}
+			/* right mid front corner vx */
+			if (bnd.fro==4) {
+				iyo = mod.ioXy-bnd.ntap;
+				iye = mod.ioXy;
+				ibx = (ixo);
+				iby = (bnd.ntap+iyo-1);
+
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+		
+							vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(ix-ibx)]; 
+						}
+					}
+				}
+			}
+			/* right mid back corner vx*/
+			if (bnd.bac==4) {
+				iyo = mod.ieXy;
+				iye = mod.ieXy+bnd.ntap;
+				ibx = (ixo);
+				iby = (iyo);
+
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+											txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+										c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+											txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+		
+							vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iy-iby)*bnd.ntap+(ix-ibx)];
+						}
+					}
+				}
+			}
+
+			/* Vy field */
+			/* right mid mid vy */
+			ixo = mod.ieYx;
+			ixe = mod.ieYx+bnd.ntap;
+			iyo = mod.ioYy;
+			iye = mod.ieYy;
+			izo = mod.ioYz;
+			ize = mod.ieYz;
+		
+			ib = (ixo);
+
+#pragma omp for private(ix,iy,iz)
+			for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+				for (iy=iyo; iy<iye; iy++) {
+					for (iz=izo; iz<ize; iz++) {
+						vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+						vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapx[ix-ib];
+					}
+				}
+			}
+			/* right mid front corner vy */
+			if (bnd.fro==4) {
+				iyo = mod.ioYy-bnd.ntap;
+				iye = mod.ioYy;
+				ibx = (ixo);
+				iby = (bnd.ntap+iyo-1);
+
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+							vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(ix-ibx)]; 
+						}
+					}
+				}
+			}
+			/* right mid back corner vy */
+			if (bnd.bac==4) {
+				iyo = mod.ieYy;
+				iye = mod.ieYy+bnd.ntap;
+				ibx = (ixo);
+				iby = (iyo);
+
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+										c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+											tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+											txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+							vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iy-iby)*bnd.ntap+(ix-ibx)];
+						}
+					}
+				}
+			}
+
+			/* Vz field */
+			/* right mid mid vz */
+
+			ixo = mod.ieZx;
+			ixe = mod.ieZx+bnd.ntap;
+			iyo = mod.ioZy;
+			iye = mod.ieZy;
+			izo = mod.ioZz;
+			ize = mod.ieZz;
+			
+			ib = (ixo);
+
+#pragma omp for private (ix,iy,iz) 
+			for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+				for (iy=iyo; iy<iye; iy++) {
+					for (iz=izo; iz<ize; iz++) {
+						vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+						vz[iy*n1*n2+ix*n1+iz] *= bnd.tapz[ix-ib]; 
+					}
+				}
+			}
+			/* right mid front corner vz */
+			if (bnd.fro==4) {
+				iyo = mod.ioZy-bnd.ntap;
+				iye = mod.ioZy;
+				ibx = (ixo);
+				iby = (bnd.ntap+iyo-1);
+
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(ix-ibx)];
+						}
+					}
+				}
+			}
+			/* right mid back corner vz */
+			if (bnd.bac==4) {
+				iyo = mod.ieZy;
+				iye = mod.ieZy+bnd.ntap;
+				ibx = (ixo);
+				iby = (iyo);
+
+#pragma omp for private(ix,iy,iz)
+				for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+					for (iy=iyo; iy<iye; iy++) {
+						for (iz=izo; iz<ize; iz++) {
+							vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 		
 							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iy-iby)*bnd.ntap+(ix-ibx)];
 						}
@@ -1905,6 +3765,93 @@ MID 	left 	mid 	mid
 				}
 			}
 		}
+
+		else { /* Elastic scheme */
+			
+			/* Vx field */
+			/* mid mid front vx */
+			ixo = mod.ioXx;
+			ixe = mod.ieXx;
+			iyo = mod.ioXy-bnd.ntap;
+			iye = mod.ioXy;
+			izo = mod.ioXz;
+			ize = mod.ieXz;
+		
+			iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+			for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+				for (iy=iyo; iy<iye; iy++) {
+					for (iz=izo; iz<ize; iz++) {
+						vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+									c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+										txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+									c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+										txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+		
+						vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapy[iby-iy]; 
+					}
+				}
+			}
+
+			/* Vy field */
+			/* mid mid front vy */
+			ixo = mod.ioYx;
+			ixe = mod.ieYx;
+			iyo = mod.ioYy-bnd.ntap;
+			iye = mod.ioYy;
+			izo = mod.ioYz;
+			ize = mod.ieYz;
+		
+			iby = (bnd.ntap+iyo-1);
+#pragma omp for private(ix,iy,iz)
+			for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+				for (iy=iyo; iy<iye; iy++) {
+					for (iz=izo; iz<ize; iz++) {
+						vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+									c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+										tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+										txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+									c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+										tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+										txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+						vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapy[iby-iy]; 
+					}
+				}
+			}
+
+			/* Vz field */
+			/* mid mid front vz */
+			ixo = mod.ioZx;
+			ixe = mod.ieZx;
+			iyo = mod.ioZy-bnd.ntap;
+			iye = mod.ioZy;
+			izo = mod.ioZz;
+			ize = mod.ieZz;
+			
+			iby = (bnd.ntap+iyo-1);
+#pragma omp for private (ix,iy,iz) 
+			for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+				for (iy=iyo; iy<iye; iy++) {
+					for (iz=izo; iz<ize; iz++) {
+						vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+									c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+										tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+									c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+										tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+						vz[iy*n1*n2+ix*n1+iz] *= bnd.tapy[iby-iy]; 
+					}
+				}
+			}
+		}
 		
 	}
 
@@ -1987,6 +3934,93 @@ MID 	left 	mid 	mid
 				}
 			}
 		}
+
+		else { /* Elastic scheme */
+			
+			/* Vx field */
+			/* mid mid back vx */
+			ixo = mod.ioXx;
+			ixe = mod.ieXx;
+			iyo = mod.ieXy;
+			iye = mod.ieXy+bnd.ntap;
+			izo = mod.ioXz;
+			ize = mod.ieXz;
+		
+			iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+			for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+				for (iy=iyo; iy<iye; iy++) {
+					for (iz=izo; iz<ize; iz++) {
+						vx[iy*n1*n2+ix*n1+iz] -= rox[iy*n1*n2+ix*n1+iz]*(
+									c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+										txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+									c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+										txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+		
+						vx[iy*n1*n2+ix*n1+iz]   *= bnd.tapy[iy-iby];
+					}
+				}
+			}
+
+			/* Vy field */
+			/* mid mid back vy */
+			ixo = mod.ioYx;
+			ixe = mod.ieYx;
+			iyo = mod.ieYy;
+			iye = mod.ieYy+bnd.ntap;
+			izo = mod.ioYz;
+			ize = mod.ieYz;
+		
+			iby = (iyo);
+#pragma omp for private(ix,iy,iz)
+			for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+				for (iy=iyo; iy<iye; iy++) {
+					for (iz=izo; iz<ize; iz++) {
+						vy[iy*n1*n2+ix*n1+iz] -= roy[iy*n1*n2+ix*n1+iz]*(
+									c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+										tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+										txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+									c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+										tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+										txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+						vy[iy*n1*n2+ix*n1+iz]   *= bnd.tapy[iy-iby];
+					}
+				}
+			}
+
+			/* Vz field */
+			/* mid mid back vz */
+			ixo = mod.ioZx;
+			ixe = mod.ieZx;
+			iyo = mod.ieZy;
+			iye = mod.ieZy+bnd.ntap;
+			izo = mod.ioZz;
+			ize = mod.ieZz;
+			
+			iby = (iyo);
+#pragma omp for private (ix,iy,iz) 
+			for (ix=ixo; ix<ixe; ix++) {
+#pragma ivdep
+				for (iy=iyo; iy<iye; iy++) {
+					for (iz=izo; iz<ize; iz++) {
+						vz[iy*n1*n2+ix*n1+iz] -= roz[iy*n1*n2+ix*n1+iz]*(
+									c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+										tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+									c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+										tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+		
+						vz[iy*n1*n2+ix*n1+iz] *= bnd.tapy[iy-iby];
+					}
+				}
+			}
+		}
 		
 	}
 
@@ -1995,6 +4029,7 @@ MID 	left 	mid 	mid
 {
 		if (allocated) {
             free(Vxpml);
+			free(Vypml);
         	free(Vzpml);
         	free(sigmu);
         	free(RA);
@@ -2041,7 +4076,7 @@ long boundariesV3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
     dy  = mod.dy;
     dt  = mod.dt;
     fac = dt/dx;
-    if ( (bnd.top==2) || (bnd.bot==2) || (bnd.lef==2) || (bnd.rig==2) ) pml=1;
+    if ( (bnd.top==2) || (bnd.bot==2) || (bnd.lef==2) || (bnd.rig==2) || (bnd.fro==2) || (bnd.bac==2) ) pml=1;
 	else pml=0;
 
 /************************************************************/
