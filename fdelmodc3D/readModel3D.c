@@ -328,16 +328,19 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 		}
 
 		ix=nx-1;
+        iy=ny-1;
 		iz=nz-1;
-		cp2  = cp[ix*nz+iz]*cp[ix*nz+iz];
-		cs2  = cs[ix*nz+iz]*cs[ix*nz+iz];
-		mu   = cs2*ro[ix*nz+iz];
-		lamda2mu = cp2*ro[ix*nz+iz];
+		cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+		cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+		mu   = cs2*ro[iy*nx*nz+ix*nz+iz];
+		lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
 		lamda    = lamda2mu - 2*mu;
-		bx = ro[ix*nz+iz];
-		bz = ro[ix*nz+iz];
-		rox[(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-		roz[(ix+ioZx)*n1+iz+ioZz]=fac/bz;
+		bx = ro[iy*nx*nz+ix*nz+iz];
+		by = ro[iy*nx*nz+ix*nz+iz];
+		bz = ro[iy*nx*nz+ix*nz+iz];
+		rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
+		roz[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
+		roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
 		l2m[(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
 		lam[(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
 		muu[(ix+ioTx)*n1+iz+ioTz]=fac*mu;
@@ -1370,16 +1373,6 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         }
 
     }
-
-
-    FILE *fptest;
-    fptest = fopen("cp-test.bin","w");
-    fwrite(cp, nz*ny*nx, sizeof(float), fptest);
-    fclose(fptest);
-
-    fptest = fopen("ro-test.bin","w");
-    fwrite(ro, nz*ny*nx, sizeof(float), fptest);
-    fclose(fptest);
 
 	free(cp);
 	free(ro);
