@@ -959,6 +959,7 @@ criteria we have imposed.*/
 		vmess("*******************************************");
 		vmess("wav_nt   = %6li   wav_nx      = %li", wav->ns, wav->nx);
 		vmess("src_type = %6li   src_orient  = %li", src->type, src->orient);
+		vmess("number of sources              = %li", shot->n);
 		vmess("fmax     = %8.2f", fmax);
 		fprintf(stderr,"    %s: Source type         : ",xargv[0]);
 		switch ( src->type ) {

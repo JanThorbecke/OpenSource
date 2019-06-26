@@ -27,7 +27,7 @@
 
 
 long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
-    float *l2m, float *lam, float *muu, float *tss, float *tes, float *tep)
+    float *l2m, float *lam, float *muxz, float *tss, float *tes, float *tep)
 {
     FILE    *fpcp, *fpcs, *fpro;
 	FILE    *fpqp=NULL, *fpqs=NULL;
@@ -36,7 +36,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 	long n1, n2, n3, ix, iy, iz, nz, ny, nx;
     long ixo, iyo, izo, ixe, iye, ize;
 	long ioXx, ioXy, ioXz, ioYx, ioYy, ioYz, ioZz, ioZy, ioZx, ioPx, ioPy, ioPz, ioTx, ioTy, ioTz;
-	float cp2, cs2, cs11, cs12, cs21, cs22, mul, mu, lamda2mu, lamda;
+	float cp2, cs2, cs111, cs112, cs121, cs211, cs122, cs212, cs221, mul, mu, lamda2mu, lamda;
 	float cs2c, cs2b, cs2a, cpx, cpy, cpz, bx, by, bz, fac;
 	float *cp, *cs, *ro, *qp, *qs;
 	float a, b;
@@ -69,7 +69,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 	ioPx=mod.ioPx;
 	ioPy=mod.ioPy;
 	ioPz=mod.ioPz;
-	/* Txz, Txy, Tyz,: muu */
+	/* Txz, Txy, Tyz,: muxz */
 	ioTx=mod.ioTx;
 	ioTy=mod.ioTy;
 	ioTz=mod.ioTz;
@@ -231,23 +231,263 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 /* the edges of the model */
 
 	if (mod.ischeme>2) { /* Elastic Scheme */
+        iz = nz-1;
+        for (iy=0;iy<ny-1;iy++) {
+            for (ix=0;ix<nx-1;ix++) {
+                /* for muxz field */
+                /* csxyz */
+                cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+                cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+                cs2a = cs[iy*nx*nz+(ix+1)*nz+iz]*cs[iy*nx*nz+(ix+1)*nz+iz];
+                cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+                cs112 = cs2*ro[iy*nx*nz+ix*nz+iz];
+                cs211 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
+                cs212 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
+                if (cs111 > 0.0) {
+                    mul  = 4.0/(1.0/cs111+1.0/cs112+1.0/cs211+1.0/cs212);
+                }
+                else {
+                    mul = 0.0;
+                }
+
+                /* for muyz field IN PROGRESS!!!!!!!!!!!!!!!!! */
+                /* csxyz */
+                // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+                // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+                // cs2a = cs[(iy+1)*nx*nz+ix*nz+iz]*cs[(iy+1)*nx*nz+ix*nz+iz];
+                // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+                // cs121 = cs2*ro[iy*nx*nz+ix*nz+iz];
+                // cs112 = cs2a*ro[(iy+1)*nx*nz+ix*nz+iz];
+                // cs122 = cs2a*ro[(iy+1)*nx*nz+ix*nz+iz];
+                // if (cs111 > 0.0) {
+                //     mul  = 4.0/(1.0/cs111+1.0/cs121+1.0/cs112+1.0/cs122);
+                // }
+                // else {
+                //     mul = 0.0;
+                // }
+
+                /* for muxy field IN PROGRESS!!!!!!!!!!!!!!!!! */
+                /* csxyz */
+                // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+                // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+                // cs2a = cs[(iy+1)*nx*nz+ix*nz+iz]*cs[(iy+1)*nx*nz+ix*nz+iz];
+                // cs2b = cs[iy*nx*nz+(ix+1)*nz+iz]*cs[iy*nx*nz+(ix+1)*nz+iz];
+                // cs2c = cs[(iy+1)*nx*nz+(ix+1)*nz+iz]*cs[(iy+1)*nx*nz+(ix+1)*nz+iz];
+                // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+                // cs121 = cs2a*ro[(iy+1)*nx*nz+ix*nz+iz];
+                // cs211 = cs2b*ro[iy*nx*nz+(ix+1)*nz+iz];
+                // cs221 = cs2c*ro[(iy+1)*nx*nz+(ix+1)*nz+iz];
+                // if (cs111 > 0.0) {
+                //     mul  = 4.0/(1.0/cs111+1.0/cs211+1.0/cs121+1.0/cs221);
+                // }
+                // else {
+                //     mul = 0.0;
+                // }
+                
+                mu   = cs2*ro[iy*nx*nz+ix*nz+iz];
+                lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+                lamda    = lamda2mu - 2*mu;
+
+                bx = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+(ix+1)*nz+iz]);
+                by = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[(iy+1)*nx*nz+ix*nz+iz]);
+                bz = ro[iy*nx*nz+ix*nz+iz];
+                rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
+                roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
+                roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
+                l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
+                lam[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
+                muxz[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mul;
+            }
+        }
+
+        iy = ny-1;
+        for (ix=0;ix<nx-1;ix++) {
+            for (iz=0;iz<nz-1;iz++) {
+                /* for muxz field */
+                /* csxyz */
+                cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+                cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+                cs2a = cs[iy*nx*nz+(ix+1)*nz+iz]*cs[iy*nx*nz+(ix+1)*nz+iz];
+                cs2b = cs[iy*nx*nz+ix*nz+iz+1]*cs[iy*nx*nz+ix*nz+iz+1];
+                cs2c = cs[iy*nx*nz+(ix+1)*nz+iz+1]*cs[iy*nx*nz+(ix+1)*nz+iz+1];
+                cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+                cs112 = cs2b*ro[iy*nx*nz+ix*nz+iz+1];
+                cs211 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
+                cs212 = cs2c*ro[iy*nx*nz+(ix+1)*nz+iz+1];
+                if (cs111 > 0.0) {
+                    mul  = 4.0/(1.0/cs111+1.0/cs112+1.0/cs211+1.0/cs212);
+                }
+                else {
+                    mul = 0.0;
+                }
+
+                /* for muyz field IN PROGRESS!!!!!!!!!!!!!!!!! */
+                /* csxyz */
+                // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+                // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+                // cs2a = cs[iy*nx*nz+ix*nz+iz+1]*cs[iy*nx*nz+ix*nz+iz+1];
+                // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+                // cs121 = cs2*ro[iy*nx*nz+ix*nz+iz];
+                // cs112 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
+                // cs122 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
+                // if (cs111 > 0.0) {
+                //     mul  = 4.0/(1.0/cs111+1.0/cs121+1.0/cs112+1.0/cs122);
+                // }
+                // else {
+                //     mul = 0.0;
+                // }
+
+                /* for muxy field IN PROGRESS!!!!!!!!!!!!!!!!! */
+                /* csxyz */
+                // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+                // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+                // cs2a = cs[iy*nx*nz+(ix+1)*nz+iz]*cs[iy*nx*nz+(ix+1)*nz+iz];
+                // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+                // cs121 = cs2*ro[iy*nx*nz+ix*nz+iz];
+                // cs211 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
+                // cs221 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
+                // if (cs111 > 0.0) {
+                //     mul  = 4.0/(1.0/cs111+1.0/cs211+1.0/cs121+1.0/cs221);
+                // }
+                // else {
+                //     mul = 0.0;
+                // }
+                
+                mu   = cs2*ro[iy*nx*nz+ix*nz+iz];
+                lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+                lamda    = lamda2mu - 2*mu;
+
+                bx = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+(ix+1)*nz+iz]);
+                by = ro[iy*nx*nz+ix*nz+iz];
+                bz = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+ix*nz+iz+1]);
+                rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
+                roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
+                roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
+                l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
+                lam[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
+                muxz[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mul;
+            }
+        }
+
+        ix = nx-1;
+        for (iy=0;iy<ny-1;iy++) {
+            for (iz=0;iz<nz-1;iz++) {
+                /* for muxz field */
+                /* csxyz */
+                cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+                cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+                cs2a = cs[iy*nx*nz+ix*nz+iz+1]*cs[iy*nx*nz+ix*nz+iz+1];
+                cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+                cs112 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
+                cs211 = cs2*ro[iy*nx*nz+ix*nz+iz];
+                cs212 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
+                if (cs111 > 0.0) {
+                    mul  = 4.0/(1.0/cs111+1.0/cs112+1.0/cs211+1.0/cs212);
+                }
+                else {
+                    mul = 0.0;
+                }
+
+                /* for muyz field IN PROGRESS!!!!!!!!!!!!!!!!! */
+                /* csxyz */
+                // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+                // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+                // cs2a = cs[iy*nx*nz+ix*nz+iz+1]*cs[iy*nx*nz+ix*nz+iz+1];
+                // cs2b = cs[(iy+1)*nx*nz+ix*nz+iz]*cs[(iy+1)*nx*nz+ix*nz+iz];
+                // cs2c = cs[(iy+1)*nx*nz+ix*nz+iz+1]*cs[(iy+1)*nx*nz+ix*nz+iz+1];
+                // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+                // cs121 = cs2b*ro[(iy+1)*nx*nz+ix*nz+iz];
+                // cs112 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
+                // cs122 = cs2c*ro[(iy+1)*nx*nz+ix*nz+iz+1];
+                // if (cs111 > 0.0) {
+                //     mul  = 4.0/(1.0/cs111+1.0/cs121+1.0/cs112+1.0/cs122);
+                // }
+                // else {
+                //     mul = 0.0;
+                // }
+
+                /* for muxy field IN PROGRESS!!!!!!!!!!!!!!!!! */
+                /* csxyz */
+                // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+                // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+                // cs2a = cs[(iy+1)*nx*nz+ix*nz+iz]*cs[(iy+1)*nx*nz+ix*nz+iz];
+                // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+                // cs121 = cs2a*ro[(iy+1)*nx*nz+ix*nz+iz];
+                // cs211 = cs2*ro[iy*nx*nz+ix*nz+iz];
+                // cs221 = cs2a*ro[(iy+1)*nx*nz+ix*nz+iz];
+                // if (cs111 > 0.0) {
+                //     mul  = 4.0/(1.0/cs111+1.0/cs211+1.0/cs121+1.0/cs221);
+                // }
+                // else {
+                //     mul = 0.0;
+                // }
+                
+                mu   = cs2*ro[iy*nx*nz+ix*nz+iz];
+                lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+                lamda    = lamda2mu - 2*mu;
+
+                bx = ro[iy*nx*nz+ix*nz+iz];
+                by = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[(iy+1)*nx*nz+ix*nz+iz]);
+                bz = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+ix*nz+iz+1]);
+                rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
+                roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
+                roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
+                l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
+                lam[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
+                muxz[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mul;
+            }
+        }
+
 		iz = nz-1;
         iy = ny-1;
 		for (ix=0;ix<nx-1;ix++) {
+            /* for muxz field */
+            /* csxyz */
 			cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
 			cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
 			cs2a = cs[iy*nx*nz+(ix+1)*nz+iz]*cs[iy*nx*nz+(ix+1)*nz+iz];
-			cs11 = cs2*ro[iy*nx*nz+ix*nz+iz];
-			cs12 = cs2*ro[iy*nx*nz+ix*nz+iz];
-			cs21 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
-			cs22 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
-
-			if (cs11 > 0.0) {
-				mul  = 4.0/(1.0/cs11+1.0/cs12+1.0/cs21+1.0/cs22);
+			cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+			cs112 = cs2*ro[iy*nx*nz+ix*nz+iz];
+			cs211 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
+			cs212 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
+			if (cs111 > 0.0) {
+				mul  = 4.0/(1.0/cs111+1.0/cs112+1.0/cs211+1.0/cs212);
 			}
 			else {
 				mul = 0.0;
 			}
+
+            /* for muyz field IN PROGRESS!!!!!!!!!!!!!!!!! */
+            /* csxyz */
+            // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+            // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+            // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+            // cs121 = cs2*ro[iy*nx*nz+ix*nz+iz];
+            // cs112 = cs2*ro[iy*nx*nz+ix*nz+iz];
+            // cs122 = cs2*ro[iy*nx*nz+ix*nz+iz];
+            // if (cs111 > 0.0) {
+            //     mul  = 4.0/(1.0/cs111+1.0/cs121+1.0/cs112+1.0/cs122);
+            // }
+            // else {
+            //     mul = 0.0;
+            // }
+
+            /* for muxy field IN PROGRESS!!!!!!!!!!!!!!!!! */
+            /* csxyz */
+            // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+            // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+            // cs2a = cs[iy*nx*nz+(ix+1)*nz+iz]*cs[iy*nx*nz+(ix+1)*nz+iz];
+            // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+            // cs121 = cs2*ro[iy*nx*nz+ix*nz+iz];
+            // cs211 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
+            // cs221 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
+            // if (cs111 > 0.0) {
+            //     mul  = 4.0/(1.0/cs111+1.0/cs211+1.0/cs121+1.0/cs221);
+            // }
+            // else {
+            //     mul = 0.0;
+            // }
+
 			mu   = cs2*ro[iy*nx*nz+ix*nz+iz];
 			lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
 			lamda    = lamda2mu - 2*mu;
@@ -260,58 +500,124 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 			roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
 			l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
 			lam[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
-			muu[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mul;
+			muxz[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mul;
 		}
 
 		ix = nx-1;
         iz = nz-1;
 		for (iy=0;iy<ny-1;iy++) {
+            /* for muxz field */
+            /* csxyz */
 			cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
 			cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-			cs2b = cs[(iy+1)*nx*nz+ix*nz+iz]*cs[(iy+1)*nx*nz+ix*nz+iz];
-			cs11 = cs2*ro[iy*nx*nz+ix*nz+iz];
-			cs12 = cs2b*ro[iy*nx*nz+ix*nz+iz];
-			cs21 = cs2*ro[iy*nx*nz+ix*nz+iz];
-			cs22 = cs2b*ro[iy*nx*nz+ix*nz+iz];
-
-			if (cs11 > 0.0) {
-				mul  = 4.0/(1.0/cs11+1.0/cs12+1.0/cs21+1.0/cs22);
+			cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+			cs112 = cs2*ro[iy*nx*nz+ix*nz+iz];
+			cs211 = cs2*ro[iy*nx*nz+ix*nz+iz];
+			cs212 = cs2*ro[iy*nx*nz+ix*nz+iz];
+			if (cs111 > 0.0) {
+				mul  = 4.0/(1.0/cs111+1.0/cs112+1.0/cs211+1.0/cs212);
 			}
 			else {
 				mul = 0.0;
 			}
+
+            /* for muyz field IN PROGRESS!!!!!!!!!!!!!!!!! */
+            /* csxyz */
+            // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+            // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+			// cs2a = cs[(iy+1)*nx*nz+ix*nz+iz]*cs[(iy+1)*nx*nz+ix*nz+iz];
+            // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+            // cs121 = cs2a*ro[(iy+1)*nx*nz+ix*nz+iz];
+            // cs112 = cs2*ro[iy*nx*nz+ix*nz+iz];
+            // cs122 = cs2a*ro[(iy+1)*nx*nz+ix*nz+iz];
+            // if (cs111 > 0.0) {
+            //     mul  = 4.0/(1.0/cs111+1.0/cs121+1.0/cs112+1.0/cs122);
+            // }
+            // else {
+            //     mul = 0.0;
+            // }
+
+            /* for muxy field IN PROGRESS!!!!!!!!!!!!!!!!! */
+            /* csxyz */
+            // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+            // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+			// cs2a = cs[(iy+1)*nx*nz+ix*nz+iz]*cs[(iy+1)*nx*nz+ix*nz+iz];
+            // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+            // cs121 = cs2a*ro[(iy+1)*nx*nz+ix*nz+iz];
+            // cs211 = cs2*ro[iy*nx*nz+ix*nz+iz];
+            // cs221 = cs2a*ro[(iy+1)*nx*nz+ix*nz+iz];
+            // if (cs111 > 0.0) {
+            //     mul  = 4.0/(1.0/cs111+1.0/cs211+1.0/cs121+1.0/cs221);
+            // }
+            // else {
+            //     mul = 0.0;
+            // }
+
 			mu   = cs2*ro[iy*nx*nz+ix*nz+iz];
 			lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
 			lamda    = lamda2mu - 2*mu;
 
 			bx = ro[iy*nx*nz+ix*nz+iz];
-			by = ro[iy*nx*nz+ix*nz+iz];
-			bz = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+ix*nz+iz+1]);
+			by = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[(iy+1)*nx*nz+ix*nz+iz]);
+			bz = ro[iy*nx*nz+ix*nz+iz];
 			rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
 			roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/bx;
 			roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
 			l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
 			lam[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
-			muu[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mul;
+			muxz[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mul;
 		}
 
         ix = nx-1;
         iy = ny-1;
 		for (iz=0;iz<nz-1;iz++) {
+            /* for muxz field */
+            /* csxyz */
 			cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
 			cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-			cs2b = cs[iy*nx*nz+ix*nz+iz+1]*cs[iy*nx*nz+ix*nz+iz+1];
-			cs11 = cs2*ro[iy*nx*nz+ix*nz+iz];
-			cs12 = cs2b*ro[iy*nx*nz+ix*nz+iz+1];
-			cs21 = cs2*ro[iy*nx*nz+ix*nz+iz];
-			cs22 = cs2b*ro[iy*nx*nz+ix*nz+iz+1];
-
-			if (cs11 > 0.0) {
-				mul  = 4.0/(1.0/cs11+1.0/cs12+1.0/cs21+1.0/cs22);
+			cs2a = cs[iy*nx*nz+ix*nz+iz+1]*cs[iy*nx*nz+ix*nz+iz+1];
+			cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+			cs112 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
+			cs211 = cs2*ro[iy*nx*nz+ix*nz+iz];
+			cs212 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
+			if (cs111 > 0.0) {
+				mul  = 4.0/(1.0/cs111+1.0/cs112+1.0/cs211+1.0/cs212);
 			}
 			else {
 				mul = 0.0;
 			}
+            
+            /* for muyz field IN PROGRESS!!!!!!!!!!!!!!!!! */
+            /* csxyz */
+            // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+            // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+			// cs2a = cs[iy*nx*nz+ix*nz+iz+1]*cs[iy*nx*nz+ix*nz+iz+1];
+            // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+            // cs121 = cs2*ro[iy*nx*nz+ix*nz+iz];
+            // cs112 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
+            // cs122 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
+            // if (cs111 > 0.0) {
+            //     mul  = 4.0/(1.0/cs111+1.0/cs121+1.0/cs112+1.0/cs122);
+            // }
+            // else {
+            //     mul = 0.0;
+            // }
+
+            /* for muxy field IN PROGRESS!!!!!!!!!!!!!!!!! */
+            /* csxyz */
+            // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+            // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+            // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+            // cs121 = cs2*ro[iy*nx*nz+ix*nz+iz];
+            // cs211 = cs2*ro[iy*nx*nz+ix*nz+iz];
+            // cs221 = cs2*ro[iy*nx*nz+ix*nz+iz];
+            // if (cs111 > 0.0) {
+            //     mul  = 4.0/(1.0/cs111+1.0/cs211+1.0/cs121+1.0/cs221);
+            // }
+            // else {
+            //     mul = 0.0;
+            // }
+
 			mu   = cs2*ro[iy*nx*nz+ix*nz+iz];
 			lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
 			lamda    = lamda2mu - 2*mu;
@@ -324,7 +630,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 			roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
 			l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
 			lam[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
-			muu[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mul;
+			muxz[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mul;
 		}
 
 		ix=nx-1;
@@ -339,52 +645,85 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 		by = ro[iy*nx*nz+ix*nz+iz];
 		bz = ro[iy*nx*nz+ix*nz+iz];
 		rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-		roz[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
+		roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
 		roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
-		l2m[(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
-		lam[(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
-		muu[(ix+ioTx)*n1+iz+ioTz]=fac*mu;
+		l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
+		lam[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
+		muxz[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mu;
 
-		for (ix=0;ix<nx-1;ix++) {
-			for (iz=0;iz<nz-1;iz++) {
-				cp2  = cp[ix*nz+iz]*cp[ix*nz+iz];
-				cs2  = cs[ix*nz+iz]*cs[ix*nz+iz];
-				cs2a = cs[(ix+1)*nz+iz]*cs[(ix+1)*nz+iz];
-				cs2b = cs[ix*nz+iz+1]*cs[ix*nz+iz+1];
-				cs2c = cs[(ix+1)*nz+iz+1]*cs[(ix+1)*nz+iz+1];
+        for (iy=0;iy<ny-1;iy++) {
+            for (ix=0;ix<nx-1;ix++) {
+                for (iz=0;iz<nz-1;iz++) {
+                    /* for muxz field */
+                    /* csxyz */
+                    cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+                    cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+                    cs2a = cs[iy*nx*nz+(ix+1)*nz+iz]*cs[iy*nx*nz+(ix+1)*nz+iz];
+                    cs2b = cs[iy*nx*nz+ix*nz+iz+1]*cs[iy*nx*nz+ix*nz+iz+1];
+                    cs2c = cs[iy*nx*nz+(ix+1)*nz+iz+1]*cs[iy*nx*nz+(ix+1)*nz+iz+1];
+                    cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+                    cs112 = cs2b*ro[iy*nx*nz+ix*nz+iz+1];
+                    cs211 = cs2a*ro[iy*nx*nz+ix*nz+iz];
+                    cs212 = cs2c*ro[iy*nx*nz+ix*nz+iz+1];
+                    if (cs111 > 0.0) {
+                        mul  = 4.0/(1.0/cs111+1.0/cs112+1.0/cs211+1.0/cs212);
+                    }
+                    else {
+                        mul = 0.0;
+                    }
 
-/*
-Compute harmonic average of mul for accurate and stable fluid-solid interface
-see Finite-difference modeling of wave propagation in a fluid-solid configuration 
-Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
-*/
+                    /* for muyz field IN PROGRESS!!!!!!!!!!!!!!!!! */
+                    /* csxyz */
+                    // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+                    // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+                    // cs2a = cs[iy*nx*nz+ix*nz+iz+1]*cs[iy*nx*nz+ix*nz+iz+1];
+                    // cs2b = cs[(iy+1)*nx*nz+ix*nz+iz]*cs[(iy+1)*nx*nz+ix*nz+iz];
+                    // cs2c = cs[(iy+1)*nx*nz+ix*nz+iz+1]*cs[(iy+1)*nx*nz+ix*nz+iz+1];
+                    // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+                    // cs121 = cs2b*ro[(iy+1)*nx*nz+ix*nz+iz];
+                    // cs112 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
+                    // cs122 = cs2c*ro[(iy+1)*nx*nz+ix*nz+iz+1];
+                    // if (cs111 > 0.0) {
+                    //     mul  = 4.0/(1.0/cs111+1.0/cs121+1.0/cs112+1.0/cs122);
+                    // }
+                    // else {
+                    //     mul = 0.0;
+                    // }
 
-				cs11 = cs2*ro[ix*nz+iz];
-				cs12 = cs2b*ro[ix*nz+iz+1];
-				cs21 = cs2a*ro[ix*nz+iz];
-				cs22 = cs2c*ro[ix*nz+iz+1];
-//				cpx  = 0.5*(cp[ix*nz+iz]+cp[(ix+1)*nz+iz])
-//				cpz  = 0.5*(cp[ix*nz+iz]+cp[ix*nz+iz+1])
+                    /* for muxy field IN PROGRESS!!!!!!!!!!!!!!!!! */
+                    /* csxyz */
+                    // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
+                    // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
+                    // cs2a = cs[iy*nx*nz+(ix+1)*nz+iz]*cs[iy*nx*nz+(ix+1)*nz+iz];
+                    // cs2b = cs[(iy+1)*nx*nz+ix*nz+iz]*cs[(iy+1)*nx*nz+ix*nz+iz];
+                    // cs2c = cs[(iy+1)*nx*nz+(ix+1)*nz+iz]*cs[(iy+1)*nx*nz+(ix+1)*nz+iz];
+                    // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
+                    // cs121 = cs2b*ro[(iy+1)*nx*nz+ix*nz+iz];
+                    // cs211 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
+                    // cs221 = cs2c*ro[(iy+1)*nx*nz+(ix+1)*nz+iz];
+                    // if (cs111 > 0.0) {
+                    //     mul  = 4.0/(1.0/cs111+1.0/cs211+1.0/cs121+1.0/cs221);
+                    // }
+                    // else {
+                    //     mul = 0.0;
+                    // }
 
-				if (cs11 > 0.0) {
-					mul  = 4.0/(1.0/cs11+1.0/cs12+1.0/cs21+1.0/cs22);
-				}
-				else {
-					mul = 0.0;
-				}
-				mu   = cs2*ro[ix*nz+iz];
-				lamda2mu = cp2*ro[ix*nz+iz];
-				lamda    = lamda2mu - 2*mu; /* could also use mul to calculate lambda, but that might not be correct: question from Chaoshun Hu. Note use mu or mul as well on boundaries */
-	
-				bx = 0.5*(ro[ix*nz+iz]+ro[(ix+1)*nz+iz]);
-				bz = 0.5*(ro[ix*nz+iz]+ro[ix*nz+iz+1]);
-				rox[(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-				roz[(ix+ioZx)*n1+iz+ioZz]=fac/bz;
-				l2m[(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
-				lam[(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
-				muu[(ix+ioTx)*n1+iz+ioTz]=fac*mul;
-			}
-		}
+                    mu   = cs2*ro[iy*nx*nz+ix*nz+iz];
+                    lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+                    lamda    = lamda2mu - 2*mu;
+        
+                    bx = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+(ix+1)*nz+iz]);
+                    by = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[(iy+1)*nx*nz+ix*nz+iz]);
+                    bz = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+ix*nz+iz+1]);
+                    rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
+                    roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
+                    roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
+                    l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
+                    lam[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
+                    muxz[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mul;
+                }
+            }
+        }
 
 	}
 	else { /* Acoustic Scheme */
@@ -610,7 +949,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
                     }
             	}
         	}
-            /* muu field */
+            /* muxz field */
             ixo = mod.ioTx;
             ixe = mod.ioTx+bnd.ntap;
             iyo = mod.ioTy;
@@ -620,7 +959,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
             for (iy=iyo; iy<iye; iy++) {
                 for (ix=ixo; ix<ixe; ix++) {
                     for (iz=izo; iz<ize; iz++) {
-                        muu[iy*n2*n1+ix*n1+iz] = muu[iy*n2*n1+ixe*n1+iz];
+                        muxz[iy*n2*n1+ix*n1+iz] = muxz[iy*n2*n1+ixe*n1+iz];
                     }
                 }
             }
@@ -741,7 +1080,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
                 }
             }
 
-            /* muu field */
+            /* muxz field */
             ixo = mod.ieTx-bnd.ntap;
             ixe = mod.ieTx;
         	iyo = mod.ioTy;
@@ -751,7 +1090,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
             for (iy=iyo; iy<iye; iy++) {
                 for (ix=ixo; ix<ixe; ix++) {
                     for (iz=izo; iz<ize; iz++) {
-                        muu[iy*n2*n1+ix*n1+iz] = muu[iy*n2*n1+(ixo-1)*n1+iz];
+                        muxz[iy*n2*n1+ix*n1+iz] = muxz[iy*n2*n1+(ixo-1)*n1+iz];
                     }
                 }
             }
@@ -883,7 +1222,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
                     }
             	}
         	}
-            /* muu field */
+            /* muxz field */
             ixo = mod.ioTx;
             ixe = mod.ieTx;
 	        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.ntap;
@@ -895,7 +1234,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
             for (iy=iyo; iy<iye; iy++) {
                 for (ix=ixo; ix<ixe; ix++) {
                     for (iz=izo; iz<ize; iz++) {
-                        muu[iy*n2*n1+ix*n1+iz] = muu[iye*n2*n1+ix*n1+iz];
+                        muxz[iy*n2*n1+ix*n1+iz] = muxz[iye*n2*n1+ix*n1+iz];
                     }
                 }
             }
@@ -1032,7 +1371,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
                 }
             }
 
-            /* muu field */
+            /* muxz field */
             ixo = mod.ioTx;
             ixe = mod.ieTx;
 	        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.ntap;
@@ -1044,7 +1383,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
             for (iy=iyo; iy<iye; iy++) {
                 for (ix=ixo; ix<ixe; ix++) {
                     for (iz=izo; iz<ize; iz++) {
-                        muu[iy*n2*n1+ix*n1+iz] = muu[(iyo-1)*n2*n1+ix*n1+iz];
+                        muxz[iy*n2*n1+ix*n1+iz] = muxz[(iyo-1)*n2*n1+ix*n1+iz];
                     }
                 }
             }
@@ -1181,7 +1520,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
                 }
             }
 
-            /* muu field */
+            /* muxz field */
             ixo = mod.ioTx;
             ixe = mod.ieTx;
             iyo = mod.ioTy;
@@ -1191,7 +1530,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
             for (iy=iyo; iy<iye; iy++) {
                 for (ix=ixo; ix<ixe; ix++) {
                     for (iz=izo; iz<ize; iz++) {
-                        muu[iy*n2*n1+ix*n1+iz] = muu[iy*n2*n1+ix*n1+ize];
+                        muxz[iy*n2*n1+ix*n1+iz] = muxz[iy*n2*n1+ix*n1+ize];
                     }
                 }
             }
@@ -1323,7 +1662,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
                 }
             }
 
-            /* muu */
+            /* muxz */
             ixo = mod.ioTx;
             ixe = mod.ieTx;
             iyo = mod.ioTy;
@@ -1333,7 +1672,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
             for (iy=iyo; iy<iye; iy++) {
                 for (ix=ixo; ix<ixe; ix++) {
                     for (iz=izo; iz<ize; iz++) {
-                        muu[iy*n2*n1+ix*n1+iz] = muu[iy*n2*n1+ix*n1+izo-1];
+                        muxz[iy*n2*n1+ix*n1+iz] = muxz[iy*n2*n1+ix*n1+izo-1];
                     }
                 }
             }
