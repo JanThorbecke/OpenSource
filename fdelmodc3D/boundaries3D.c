@@ -3441,8 +3441,7 @@ MID 	left 	mid 	mid
 			}
 		
 		}
-
-		if (mod.ischeme <= 2) { /* Elastic scheme */
+		else { /* Elastic scheme */
 			
 			/* Vx field */
 			/* right mid mid vx */
