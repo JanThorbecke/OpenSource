@@ -98,7 +98,6 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 	getModelInfo3D(mod->file_cp, &nz, &nx, &ny, &dz, &dx, &dy, &sub_z0, &sub_x0, &sub_y0, &cp_min, &cp_max, &axis, 1, verbose);
 	getModelInfo3D(mod->file_ro, &n1, &n2, &n3, &d1, &d2, &d3, &zstart, &xstart, &ystart, &ro_min, &ro_max, &axis, 0, verbose);
 
-
 	mod->cp_max = cp_max;
 	mod->cp_min = cp_min;
 	mod->ro_max = ro_max;
@@ -140,14 +139,26 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 		mod->cs_min = cs_min;
 	}
 		
+	mod->nfz = nz;
+	mod->nfx = nx;
+	mod->nfy = ny;
+    /* check if 1D, 2D or full 3D gridded model is given as input model */
+	if (nx==1 && ny==1 ) { // 1D model 
+        if (!getparlong("nx",&nx)) nx=nz;
+        if (!getparlong("ny",&ny)) ny=nx;
+		dx=dz;
+		dy=dx;
+	}
+	else if (ny==1) { // 2D model
+        if (!getparlong("ny",&ny)) ny=nx;
+		dy=dx;
+	}
 	mod->dz = dz;
 	mod->dx = dx;
 	mod->dy = dy;
 	mod->nz = nz;
 	mod->nx = nx;
 	mod->ny = ny;
-
-
 
 // end of part1 ################################################################################################
 
