@@ -99,6 +99,9 @@ typedef struct _modelPar { /* Model Parameters */
 	long naz;
 	long nay;
 	long nax;
+	long nfz;
+	long nfy;
+	long nfx;
 	/* Vx: rox */
 	long ioXx;
 	long ioXy;
