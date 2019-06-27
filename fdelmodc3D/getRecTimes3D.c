@@ -402,6 +402,7 @@ long getRecTimes3D(modPar mod, recPar rec, bndPar bnd, long itime, long isam,
 				}
 			}
 			if (rec.type.txx) rec_txx[irec*rec.nt+isam] = txx[iy*n1*n2+ix*n1+iz];
+			if (rec.type.tyy) rec_tyy[irec*rec.nt+isam] = tyy[iy*n1*n2+ix*n1+iz];
 			if (rec.type.tzz) rec_tzz[irec*rec.nt+isam] = tzz[iy*n1*n2+ix*n1+iz];
 			if (rec.type.txz) { /* time interpolation to be done */
 				if (rec.int_vz == 2 || rec.int_vx == 2) {

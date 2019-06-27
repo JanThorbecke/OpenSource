@@ -48,6 +48,11 @@ long acousticSH4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 	long ixsrc, long iysrc, long izsrc, float **src_nwav, float *tx, float *ty, float *tz,
 	float *vz, float *rox, float *roy, float *roz, float *mul, long verbose);
 
+long elastic4dc_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, 
+	long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz,
+	float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
+    float *rox, float *roy, float *roz, float *l2m, float *lam, float *mul, long verbose);
+
 long getRecTimes3D(modPar mod, recPar rec, bndPar bnd, long itime, long isam,
 	float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx,
 	float *txz, float *txy, float *tyz, float *l2m, float *rox, float *roy, float *roz,
@@ -492,7 +497,6 @@ int main(int argc, char **argv)
 		shot.z[ishot]=iz+src.sinkdepth; 
 	}
 
-
 	/* scan for free surface boundary in case it has a topography */
 	for (iy=0; iy<mod.ny; iy++) {
 		for (ix=0; ix<mod.nx; ix++) {
@@ -642,7 +646,8 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
 						vmess("Visco-Elastic order 4 not yet available");
 					break;
 				case 5 : /* Elastic FD kernel with S-velocity set to zero*/
-						vmess("DC-Elastic order 4 not yet available");
+						elastic4dc_3D(mod, src, wav, bnd, it, ixsrc, iysrc, izsrc, src_nwav,
+							vx, vy, vz, tzz, tyy, txx, txz, txy, tyz, rox, roy, roz, l2m, lam, mul, verbose);
 					break;
 			}
 

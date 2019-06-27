@@ -20,14 +20,15 @@ void vmess(char *fmt, ...);
  *           The Netherlands 
  *
  **********************************************************************/
-//      applySource3D(mod, src,            wav,              bnd,        itime,      ixsrc,    iysrc,    izsrc,            vx,     vy,           vz,       p,        NULL,         NULL,         NULL,    NULL,       NULL,         rox,       roy,        roz,        l2m,          src_nwav,     verbose);
-long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, float *rox, float *roy, float *roz, float *l2m, float **src_nwav, long verbose)
+long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long iysrc, long izsrc,
+	float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
+	float *rox, float *roy, float *roz, float *l2m, float **src_nwav, long verbose)
 {
 	long is0, ibndz, ibndy, ibndx;
 	long isrc, ix, iy, iz, n1, n2;
 	long id1, id2, id3;
 	float src_ampl, time, scl, dt, sdx;
-	float Mxx, Myy, Mzz, Mxz, Myz, Mxy, rake;
+	float Mxx, Myy, Mzz, Mxz, Myz, Mxy;
 	static long first=1;
 
 	if (src.type==6) {
@@ -350,19 +351,22 @@ long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, l
                 }
 			}
             else if(src.type == 9) {
-				rake = 0.5*M_PI;
-				Mxx = -1.0*(sin(src.dip)*cos(rake)*sin(2.0*src.strike)+sin(src.dip*2.0)*sin(rake)*sin(src.strike)*sin(src.strike));
-				Mxz = -1.0*(cos(src.dip)*cos(rake)*cos(src.strike)+cos(src.dip*2.0)*sin(rake)*sin(src.strike));
-				Mzz = sin(src.dip*2.0)*sin(rake);
+				Mxx = -1.0*(sin(src.dip)*cos(src.rake)*sin(2.0*src.strike)+sin(src.dip*2.0)*sin(src.rake)*sin(src.strike)*sin(src.strike));
+				Myy = sin(src.dip)*cos(src.rake)*sin(2.0*src.strike)-sin(src.dip*2.0)*sin(src.rake)*cos(src.strike)*cos(src.strike);
+				Mzz = sin(src.dip*2.0)*sin(src.rake);
+				Mxz = -1.0*(cos(src.dip)*cos(src.rake)*cos(src.strike)+cos(src.dip*2.0)*sin(src.rake)*sin(src.strike));
+				Mxy = sin(src.dip)*cos(src.rake)*cos(src.strike*2.0)+0.5*(sin(src.dip*2.0)*sin(src.rake)*sin(src.strike*2.0));
+				Myz = -1.0*(cos(src.dip)*cos(src.rake)*sin(src.strike)-cos(src.dip*2.0)*sin(src.rake)*cos(src.strike));
 
 				txx[iy*n1*n2+ix*n1+iz] -= Mxx*src_ampl;
+				tyy[iy*n1*n2+ix*n1+iz] -= Myy*src_ampl;
 				tzz[iy*n1*n2+ix*n1+iz] -= Mzz*src_ampl;
 				txz[iy*n1*n2+ix*n1+iz] -= Mxz*src_ampl;
+				txy[iy*n1*n2+ix*n1+iz] -= Mxy*src_ampl;
+				tyz[iy*n1*n2+ix*n1+iz] -= Myz*src_ampl;
 			} /* src.type */
 		} /* ischeme */
 	} /* loop over isrc */
-
-
 
 	return 0;
 }
