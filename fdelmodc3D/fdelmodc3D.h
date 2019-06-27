@@ -179,6 +179,7 @@ typedef struct _sourcePar { /* Source Array Parameters */
 	float amplitude;
 	float dip;
 	float strike;
+	float rake;
 	long distribution;
 	long window;
     long injectionrate;
