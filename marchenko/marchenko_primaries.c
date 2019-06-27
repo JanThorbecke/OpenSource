@@ -485,7 +485,7 @@ int main (int argc, char **argv)
 /*================ initialization ================*/
 
         /* once every 'niterskip' time-steps start from fresh G_d and do niter (~20) iterations */
-		if ( (ii%niterskip==0) || (ii==istart) ) {
+		if ( ((ii-istart)%niterskip==0) || (ii==istart) ) {
 			niterrun=niter;
 			if (verbose) vmess("Doing %d iterations for time-sample %d\n",niterrun,ii);
             for (l = 0; l < Nfoc; l++) {
@@ -514,13 +514,21 @@ int main (int argc, char **argv)
                 for (i = 0; i < npos; i++) {
 					j=0;
                     ix = ixpos[i];
+                    G_d[l*nxs*nts+i*nts+j] = +f1min[l*nxs*nts+i*nts+j];
+                    for (j = 1; j < nts; j++) {
+                        G_d[l*nxs*nts+i*nts+j] = +f1min[l*nxs*nts+i*nts+nts+j];
+                    }
+/* org
                     G_d[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts] - f1min[l*nxs*nts+i*nts+j];
                     for (j = 1; j < nts; j++) {
                         G_d[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts+nts-j] - f1min[l*nxs*nts+i*nts+nts-j];
                     }
+*/
+/*
                     for (j = 0; j < nts-ii+T*shift; j++) {
                         G_d[l*nxs*nts+i*nts+j] = 0.0;
                     }
+*/
                 }
             }
         }
