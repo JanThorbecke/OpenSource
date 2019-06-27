@@ -286,6 +286,7 @@ int main(int argc, char **argv)
 	shotPar shot;
 	float **src_nwav;
 	float *rox, *roy, *roz, *l2m, *lam, *mul;
+	float ***rox3, ***roy3, ***roz3, ***l2m3, ***lam3, ***mul3;
 	float *tss, *tes, *tep, *p, *q, *r;
 	float *vx, *vy, *vz, *tzz, *tyy, *txz, *txy, *tyz, *txx;
 	float *rec_vx, *rec_vy, *rec_vz, *rec_p;
@@ -329,10 +330,20 @@ int main(int argc, char **argv)
 	n2 = mod.nax;
 	sizem=mod.nax*mod.naz*mod.nay;
 
+	rox3 = (float ***)alloc3float(mod);
+	roy3 = (float ***)alloc3float(mod);
+	roz3 = (float ***)alloc3float(mod);
+	l2m3 = (float ***)alloc3float(mod);
+	rox = (float *)rox3[0][0];
+	roy = (float *)roy3[0][0];
+	roz = (float *)roz3[0][0];
+	l2m = (float *)l2m3[0][0];
+/*
 	rox = (float *)calloc(sizem,sizeof(float));
 	roy = (float *)calloc(sizem,sizeof(float));
 	roz = (float *)calloc(sizem,sizeof(float));
 	l2m = (float *)calloc(sizem,sizeof(float));
+*/
 	if (mod.ischeme==2) {
 		tss = (float *)calloc(sizem,sizeof(float));
 		tep = (float *)calloc(sizem,sizeof(float));
