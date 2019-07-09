@@ -8,7 +8,7 @@
 
 long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long iysrc, long izsrc, 
     float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
-    float *rox, float *roy, float *roz, float *l2m, float **src_nwav, long verbose);
+    float ***rox, float ***roy, float ***roz, float ***l2m, float **src_nwav, long verbose);
 
 long storeSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd, long ixsrc, long iysrc, long izsrc,
     float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, long verbose);
@@ -17,15 +17,15 @@ long reStoreSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd, long ixsrc, lo
     float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, long verbose);
 
 long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz,
-    float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, float *rox, float *roy, float *roz,
-    float *l2m, float *lam, float *mul, long itime, long verbose);
+    float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, float ***rox, float ***roy, float ***roz,
+    float ***l2m, float ***lam, float ***mul, long itime, long verbose);
 
 long boundariesV3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz,
-    float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, float *rox, float *roy, float *roz,
-    float *l2m, float *lam, float *mul, long itime, long verbose);
+    float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, float ***rox, float ***roy, float ***roz,
+    float ***l2m, float ***lam, float ***mul, long itime, long verbose);
 
 long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long iysrc, long izsrc, float **src_nwav,
-    float *vx, float *vy, float *vz, float *p, float *rox, float *roy, float *roz, float *l2m, long verbose)
+    float *vx, float *vy, float *vz, float *p, float ***rox, float ***roy, float ***roz, float ***l2m, long verbose)
 {
 /*********************************************************************
        COMPUTATIONAL OVERVIEW OF THE 4th ORDER STAGGERED GRID: 
@@ -89,7 +89,7 @@ long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lo
         for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
        #pragma ivdep 
             for (iz=mod.ioXz; iz<mod.ieXz; iz++) {
-                vx[iy*n2*n1+ix*n1+iz] -= rox[iy*n2*n1+ix*n1+iz]*(
+                vx[iy*n2*n1+ix*n1+iz] -= rox[iy][ix][iz]*(
                     c1*(p[iy*n2*n1+ix*n1+iz]     - p[iy*n2*n1+(ix-1)*n1+iz]) +
                     c2*(p[iy*n2*n1+(ix+1)*n1+iz] - p[iy*n2*n1+(ix-2)*n1+iz]));
             }
@@ -102,7 +102,7 @@ long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lo
         for (ix=mod.ioYx; ix<mod.ieYx; ix++) {
             #pragma ivdep
             for (iz=mod.ioYz; iz<mod.ieYz; iz++) {
-                vy[iy*n2*n1+ix*n1+iz] -= roy[iy*n2*n1+ix*n1+iz]*(
+                vy[iy*n2*n1+ix*n1+iz] -= roy[iy][ix][iz]*(
                     c1*(p[iy*n2*n1+ix*n1+iz]     - p[(iy-1)*n2*n1+ix*n1+iz]) +
                     c2*(p[(iy+1)*n2*n1+ix*n1+iz] - p[(iy-2)*n2*n1+ix*n1+iz]));
             }
@@ -115,7 +115,7 @@ long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lo
         for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
             #pragma ivdep 
             for (iz=mod.ioZz; iz<mod.ieZz; iz++) {
-                vz[iy*n2*n1+ix*n1+iz] -= roz[iy*n2*n1+ix*n1+iz]*(
+                vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
                     c1*(p[iy*n2*n1+ix*n1+iz]   - p[iy*n2*n1+ix*n1+iz-1]) +
                     c2*(p[iy*n2*n1+ix*n1+iz+1] - p[iy*n2*n1+ix*n1+iz-2]));
             }
@@ -148,7 +148,7 @@ long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lo
 		for (iy=mod.ioPy; iy<mod.iePy; iy++) {
             #pragma ivdep
             for (iz=mod.ioPz; iz<mod.iePz; iz++) {
-                p[iy*n1*n2+ix*n1+iz] -= l2m[iy*n1*n2+ix*n1+iz]*(
+                p[iy*n1*n2+ix*n1+iz] -= l2m[iy][ix][iz]*(
                             c1*(vx[iy*n1*n2+(ix+1)*n1+iz] - vx[iy*n1*n2+ix*n1+iz]) +
                             c2*(vx[iy*n1*n2+(ix+2)*n1+iz] - vx[iy*n1*n2+(ix-1)*n1+iz]) +
                             c1*(vy[(iy+1)*n1*n2+ix*n1+iz] - vy[iy*n1*n2+ix*n1+iz]) +

@@ -104,7 +104,7 @@ int main (int argc, char **argv)
     int     size, n1, n2, ntap, tap, di, ntraces;
     int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     int     reci, countmin, mode, ixa, ixb, n2out, verbose, ntfft;
-    int     iter, niter, niterec, niterskip, niterrun, tracf, *muteW;
+    int     iter, niter, niterec, recur, niterskip, niterrun, tracf, *muteW;
     int     hw, ii, ishot, istart, iend;
     int     smooth, *ixpos, npos, ix, m, pad, T;
     int     nshots_r, *isxcount, *reci_xsrc, *reci_xrcv, shift;
@@ -487,6 +487,7 @@ int main (int argc, char **argv)
         /* once every 'niterskip' time-steps start from fresh G_d and do niter (~20) iterations */
 		if ( ((ii-istart)%niterskip==0) || (ii==istart) ) {
 			niterrun=niter;
+			recur=0;
 			if (verbose) vmess("Doing %d iterations for time-sample %d\n",niterrun,ii);
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < nxs; i++) {
@@ -507,24 +508,23 @@ int main (int argc, char **argv)
 			    }
 			}
 		}
-		else { /* use f1min as stating point and do only 2 iterations */
+		else { /* use f1min from previous iteration as starting point and do niterec iterations */
 			niterrun=niterec;
+			recur=1;
 			if (verbose>1) vmess("Doing %d iterations for time-sample %d",niterrun,ii);
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < npos; i++) {
 					j=0;
                     ix = ixpos[i];
-                    G_d[l*nxs*nts+i*nts+j] = +f1min[l*nxs*nts+i*nts+j];
+                    G_d[l*nxs*nts+i*nts+j] = -f1min[l*nxs*nts+i*nts+j];
                     for (j = 1; j < nts; j++) {
-                        G_d[l*nxs*nts+i*nts+j] = +f1min[l*nxs*nts+i*nts+nts+j];
+                        G_d[l*nxs*nts+i*nts+j] = -f1min[l*nxs*nts+i*nts+nts-j];
                     }
 /* org
                     G_d[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts] - f1min[l*nxs*nts+i*nts+j];
                     for (j = 1; j < nts; j++) {
                         G_d[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts+nts-j] - f1min[l*nxs*nts+i*nts+nts-j];
                     }
-*/
-/*
                     for (j = 0; j < nts-ii+T*shift; j++) {
                         G_d[l*nxs*nts+i*nts+j] = 0.0;
                     }
@@ -578,7 +578,7 @@ int main (int argc, char **argv)
                 for (l = 0; l < Nfoc; l++) {
                     for (i = 0; i < npos; i++) {
                     	ix = ixpos[i];
-						if (niterrun==niterec) {
+						if (recur==1) { /* use f1min from previous iteration */
                             for (j = 0; j < nts; j++) {
                                 Ni[l*nxs*nts+i*nts+j] += DD[l*nxs*nts+ix*nts+j];
 						    }
@@ -595,6 +595,7 @@ int main (int argc, char **argv)
                                 f1min[l*nxs*nts+i*nts+j] -= Ni[l*nxs*nts+i*nts+nts-j];
                             }
 						}
+						/* apply mute window */
                        	for (j = nts-shift; j < nts; j++) {
                            	Ni[l*nxs*nts+i*nts+j] = 0.0;
                        	}

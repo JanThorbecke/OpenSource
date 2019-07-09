@@ -1,8 +1,10 @@
 #!/bin/bash
 #SBATCH -J OpenMP-test
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=40
+#SBATCH --ntasks-per-node=8
 #SBATCH --time=0:15:00
+
+cd /vardim/home/thorbcke/src/OpenSource/fdelmodc3D/demo
 
 cp=2000
 rho=1000
@@ -17,6 +19,7 @@ makemod sizex=1000 sizez=500 dx=$dx dz=$dx cp0=$cp cs0=$cs ro0=$rho \
 
 #extend to 3D
 ny=201
+nx=401
 dy=2500
 rm ro3d.su
 rm cp3d.su
@@ -32,17 +35,29 @@ for (( i=0; i<$ny; i++ ));do
     sushw < syncl_ro.su key=gy,scalel a=$yloc,-1000 >> ro3d.su
 
 done
+
+suwind key=gx min=0 max=0 < syncl_cp.su > cp1d.su
+suwind key=gx min=0 max=0 < syncl_ro.su > ro1d.su
 	
 makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
 
 #
-export KMP_AFFINITY=verbose,granularity=fine,compact,1,0
+export KMP_AFFINITY=granularity=fine,scatter,0,0
 
 export OMP_NUM_THREADS=8
 
+#    file_cp=cp3d.su ischeme=1 \
+#    file_den=ro3d.su \
+
+#    file_cp=syncl_cp.su ischeme=1 \
+#    file_den=syncl_ro.su \
+#    ny=$ny \
+
 time ../fdelmodc3D \
-    file_cp=cp3d.su ischeme=1 \
-    file_den=ro3d.su \
+    file_cp=cp1d.su ischeme=1 \
+    file_den=ro1d.su \
+    ny=$ny \
+    nx=$nx \
     file_src=wave.su \
     file_rcv=shot3d_fd.su \
     src_type=7 \
@@ -60,5 +75,5 @@ time ../fdelmodc3D \
     zrcv1=0 zrcv2=0 \
     xsrc=0 zsrc=0 ysrc=0 \
     ntaper=101 \
-    left=2 right=2 bottom=2 top=1 
+    left=4 right=4 bottom=4 top=1 
 
