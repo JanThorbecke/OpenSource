@@ -19,7 +19,7 @@
 *           The Netherlands 
 **/
 
-int writesufile(char *filename, float *data, int n1, int n2, float f1, float f2, float d1, float d2);
+int writesufile(char *filename, float *data, size_t n1, size_t n2, float f1, float f2, float d1, float d2);
 
 int writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot)
 {
