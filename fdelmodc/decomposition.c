@@ -38,7 +38,7 @@ complex cwp_csqrt(complex z);
 void decudP(float om, float rho, float cp, float dx, int nkx, float kangle, float alpha, float eps, complex *pu);
 void decudVz(float om, float rho, float cp, float dx, int nkx, float kangle, float alpha, float eps, complex *pu);
 
-int writesufile(char *filename, float *data, int n1, int n2, float f1, float f2, float d1, float d2);
+int writesufile(char *filename, float *data, size_t n1, size_t n2, float f1, float f2, float d1, float d2);
 
 void kxwfilter(complex *data, float k, float dx, int nkx, 
 			   float alfa1, float alfa2, float perc);
