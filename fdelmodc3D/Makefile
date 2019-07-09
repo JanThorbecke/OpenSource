@@ -8,6 +8,7 @@ ALLINC  = -I.
 LIBS    += -L$L -lgenfft -lm $(LIBSM)
 #LIBS    += -L$L -lgenfft -lm -lc
 #OPTC = -g -Wall -fsignaling-nans -O0 -fopenmp
+#OPTC += -g 
 #OPTC += -fopenmp -Waddress
 #OPTC := $(subst -O3 -ffast-math, -O1 -g ,$(OPTC))
 #PGI options for compiler feedback

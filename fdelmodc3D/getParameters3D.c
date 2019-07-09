@@ -148,10 +148,14 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
         if (!getparlong("ny",&ny)) ny=nx;
 		dx=dz;
 		dy=dx;
+    	sub_x0=-0.5*(nx-1)*(dx);
+    	sub_y0=-0.5*(ny-1)*(dy);
 	}
 	else if (ny==1) { // 2D model
         if (!getparlong("ny",&ny)) ny=nx;
 		dy=dx;
+    	sub_y0=-0.5*(ny-1)*(dy);
+		fprintf(stderr,"get param ny=%d dy=%f y0=%f\n", ny, dy, sub_y0);
 	}
 	mod->dz = dz;
 	mod->dx = dx;
@@ -271,6 +275,15 @@ criteria we have imposed.*/
 		vmess("*******************************************");
 		vmess("*************** model info ****************");
 		vmess("*******************************************");
+		if (mod.nfx == 1) {
+			vmess(" 1-dimensional model is read from file");
+		}
+		else if (mod.nfy == 1) {
+			vmess(" 2-dimensional model is read from file");
+		}
+		else {
+			vmess(" 3-dimensional model is read from file");
+		}
 		vmess("nz      = %li    ny      = %li nx      = %li", nz, ny, nx);
 		vmess("dz      = %8.4f  dy      = %8.4f dx      = %8.4f", dz, dy, dx);
 		vmess("zmin    = %8.4f  zmax    = %8.4f", sub_z0, zmax);
