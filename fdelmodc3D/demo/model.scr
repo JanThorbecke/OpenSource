@@ -49,15 +49,18 @@ export OMP_NUM_THREADS=8
 #    file_cp=cp3d.su ischeme=1 \
 #    file_den=ro3d.su \
 
+#    file_cp=cp1d.su ischeme=1 \
+#    file_den=ro1d.su \
+#    ny=$ny \
+#    nx=$nx \
+
 #    file_cp=syncl_cp.su ischeme=1 \
 #    file_den=syncl_ro.su \
 #    ny=$ny \
 
 time ../fdelmodc3D \
-    file_cp=cp1d.su ischeme=1 \
-    file_den=ro1d.su \
-    ny=$ny \
-    nx=$nx \
+    file_cp=cp3d.su ischeme=1 \
+    file_den=ro3d.su \
     file_src=wave.su \
     file_rcv=shot3d_fd.su \
     src_type=7 \

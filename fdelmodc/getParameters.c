@@ -33,7 +33,7 @@ int getWaveletHeaders(char *file_src, int n1, int n2, float *gx, float *sx, floa
 
 int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx, int nz);
 
-int writesufile(char *filename, float *data, int n1, int n2, float f1, float f2, float d1, float d2);
+int writesufile(char *filename, float *data, size_t n1, size_t n2, float f1, float f2, float d1, float d2);
 
 int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, shotPar *shot, bndPar *bnd, int verbose)
 {

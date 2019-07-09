@@ -15,8 +15,6 @@
 #define     MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
-int writesufile(char *filename, float *data, int n1, int n2, float f1, float f2, float d1, float d2);
-
 /**
 *  Reads gridded model files and compute from them medium parameters used in the FD kernels.
 *  The files read in contain the P (and S) wave velocity and density.
@@ -763,25 +761,6 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
 
     }
  
-/*
-    writesufile("rox.su", rox, mod.naz, mod.nax, 0.0, 0.0, 1, 1);
-    writesufile("roz.su", roz, mod.naz, mod.nax, 0.0, 0.0, 1, 1);
-    writesufile("l2m.su", l2m, mod.naz, mod.nax, 0.0, 0.0, 1, 1);
-    writesufile("lam.su", lam, mod.naz, mod.nax, 0.0, 0.0, 1, 1);
-    writesufile("muu.su", muu, mod.naz, mod.nax, 0.0, 0.0, 1, 1);
-*/
-/*
-    for (ix=0; ix<mod.nax; ix++) {
-        for (iz=0; iz<mod.naz; iz++) {
-            rox[ix*n1+iz] = rox[10*n1+10];
-            roz[ix*n1+iz] = roz[10*n1+10];
-            l2m[ix*n1+iz] = l2m[10*n1+10];
-            muu[ix*n1+iz] = muu[10*n1+10];
-            lam[ix*n1+iz] = lam[10*n1+10];
-        }
-    }
-*/
-
 	free(cp);
 	free(ro);
    	free(cs);
