@@ -7,7 +7,7 @@
 long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
     long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz,
     float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
-    float *rox, float *roy, float *roz, float *l2m, float **src_nwav, long verbose);
+    float ***rox, float ***roy, float ***roz, float ***l2m, float **src_nwav, long verbose);
 
 long storeSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd, long ixsrc, long iysrc, long izsrc,
     float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx,
@@ -19,17 +19,17 @@ long reStoreSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd, long ixsrc, lo
 
 long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz,
     float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
-    float *rox, float *roy, float *roz, float *l2m, float *lam, float *mul,
+    float ***rox, float ***roy, float ***roz, float ***l2m, float ***lam, float ***mul,
     long itime, long verbose);
 
 long boundariesV3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz,
     float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
-    float *rox, float *roy, float *roz, float *l2m, float *lam, float *mul,
+    float ***rox, float ***roy, float ***roz, float ***l2m, float ***lam, float ***mul,
     long itime, long verbose);
 
 long acousticSH4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 	long ixsrc, long iysrc, long izsrc, float **src_nwav, float *tx, float *ty, float *tz,
-	float *vz, float *rox, float *roy, float *roz, float *mul, long verbose)
+	float *vz, float ***rox, float ***roy, float ***roz, float ***mul, long verbose)
 {
 /*********************************************************************
        COMPUTATIONAL OVERVIEW OF THE 4th ORDER STAGGERED GRID: 
@@ -123,7 +123,7 @@ long acousticSH4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 		for (ix=ioXx; ix<ieXx; ix++) {
 #pragma ivdep
 			for (iz=ioXz; iz<ieXz; iz++) {
-				tx[iy*n2*n1+ix*n1+iz] -= mul[iy*n2*n1+ix*n1+iz]*(
+				tx[iy*n2*n1+ix*n1+iz] -= mul[iy][ix][iz]*(
 							c1*(vz[iy*n2*n1+ix*n1+iz]     - vz[iy*n2*n1+(ix-1)*n1+iz]) +
 							c2*(vz[iy*n2*n1+(ix+1)*n1+iz] - vz[iy*n2*n1+(ix-2)*n1+iz]));
 			}
@@ -136,7 +136,7 @@ long acousticSH4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 		for (ix=ioYx; ix<ieYx; ix++) {
 #pragma ivdep
 			for (iz=ioYz; iz<ieYz; iz++) {
-				ty[iy*n2*n1+ix*n1+iz] -= mul[iy*n2*n1+ix*n1+iz]*(
+				ty[iy*n2*n1+ix*n1+iz] -= mul[iy][ix][iz]*(
 							c1*(vz[iy*n2*n1+ix*n1+iz]     - vz[(iy-1)*n2*n1+ix*n1+iz]) +
 							c2*(vz[(iy+1)*n2*n1+ix*n1+iz] - vz[(iy-2)*n2*n1+ix*n1+iz]));
 			}
@@ -149,7 +149,7 @@ long acousticSH4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 		for (ix=ioZx; ix<ieZx; ix++) {
 #pragma ivdep
 			for (iz=ioZz; iz<ieZz; iz++) {
-				tz[iy*n2*n1+ix*n1+iz] -= mul[iy*n2*n1+ix*n1+iz]*(
+				tz[iy*n2*n1+ix*n1+iz] -= mul[iy][ix][iz]*(
 							c1*(vz[iy*n2*n1+ix*n1+iz]   - vz[iy*n2*n1+ix*n1+iz-1]) +
 							c2*(vz[iy*n2*n1+ix*n1+iz+1] - vz[iy*n2*n1+ix*n1+iz-2]));
 			}
@@ -171,7 +171,7 @@ long acousticSH4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 		for (ix=ioPx; ix<iePx; ix++) {
 #pragma ivdep
 			for (iz=ioPz; iz<iePz; iz++) {
-				vz[iy*n2*n1+ix*n1+iz] -= rox[iy*n2*n1+ix*n1+iz]*(
+				vz[iy*n2*n1+ix*n1+iz] -= rox[iy][ix][iz]*(
 							c1*(tx[iy*n2*n1+(ix+1)*n1+iz] - tx[iy*n2*n1+ix*n1+iz]) +
 							c2*(tx[iy*n2*n1+(ix+2)*n1+iz] - tx[iy*n2*n1+(ix-1)*n1+iz]) +
 							c1*(ty[iy*n2*n1+(ix+1)*n1+iz] - ty[iy*n2*n1+ix*n1+iz]) +
