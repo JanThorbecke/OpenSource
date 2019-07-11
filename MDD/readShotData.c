@@ -42,7 +42,7 @@ int readShotData(char *filename, float xmin, float dx, float *xrcv, float *xsrc,
 	fseek(fp, 0, SEEK_SET);
 	nread = fread( &hdr, 1, TRCBYTES, fp );
 	assert(nread == TRCBYTES);
-	if (hdr.scalco < 0) scl = 1.0/fabs(hdr.scalco);
+	if (hdr.scalco < 0) scl = 1.0/fabs((float)hdr.scalco);
 	else if (hdr.scalco == 0) scl = 1.0;
 	else scl = hdr.scalco;
 	fseek(fp, 0, SEEK_SET);

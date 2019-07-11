@@ -54,7 +54,7 @@ char *sdoc[] = {
 "   fray ..................... File containing the raytimes of the first arrivals",
 NULL};
 
-void main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	FILE *fp_snap, *fp_rcv;
 	char    *file_snap, *file_rcv, file_tmp[150], ins[100], fbegin[100], fend[100], fins[100], fin2[100], numb1[100], *ptr;
@@ -201,5 +201,5 @@ void main (int argc, char **argv)
 
 	free(rcvdata); free(hdr_rcv); free(hdr_snap);
 
-	return;
+	return 0;
 }
