@@ -61,7 +61,7 @@ char *sdoc[] = {
 NULL};
 /**************** end self doc ***********************************/
 
-long main (int argc, char **argv)
+int main (int argc, char **argv)
 {
     FILE    *fp_in1, *fp_in2, *fp_out, *fp_chk, *fp_psline1, *fp_psline2;
     long        verbose, shift, k, nx1, ny1, nt1, nx2, ny2, nt2, nxy;

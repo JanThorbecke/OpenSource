@@ -3,13 +3,15 @@
 all: mkdirs 
 	cd FFTlib		; $(MAKE)
 	cd fdelmodc		; $(MAKE) install
-	cd fdelmodc3D		; $(MAKE) install
+	cd fdelmodc3D	; $(MAKE) install
 	cd utils		; $(MAKE) install
-	cd marchenko		; $(MAKE) install
-	cd marchenko3D		; $(MAKE) install
+	cd marchenko	; $(MAKE) install
+	cd marchenko3D	; $(MAKE) install
 	cd corrvir		; $(MAKE) install
 	cd raytime		; $(MAKE) install
 	cd MDD			; $(MAKE) install
+
+#	cd fdelrtmc		; $(MAKE) install
 
 mkdirs:
 	-mkdir -p lib
@@ -19,10 +21,11 @@ mkdirs:
 clean:
 	cd FFTlib 		; $(MAKE) $@
 	cd fdelmodc		; $(MAKE) $@
-	cd fdelmodc3D		; $(MAKE) $@
+	cd fdelmodc3D	; $(MAKE) $@
+	cd fdelrtmc		; $(MAKE) $@
 	cd utils		; $(MAKE) $@
-	cd marchenko		; $(MAKE) $@
-	cd marchenko3D		; $(MAKE) $@
+	cd marchenko	; $(MAKE) $@
+	cd marchenko3D	; $(MAKE) $@
 	cd corrvir		; $(MAKE) $@
 	cd raytime		; $(MAKE) $@
 	cd MDD			; $(MAKE) $@
@@ -30,10 +33,11 @@ clean:
 realclean:
 	cd FFTlib 		; $(MAKE) $@
 	cd fdelmodc		; $(MAKE) $@
-	cd fdelmodc3D		; $(MAKE) $@
+	cd fdelmodc3D	; $(MAKE) $@
+	cd fdelrtmc		; $(MAKE) $@
 	cd utils		; $(MAKE) $@
-	cd marchenko		; $(MAKE) $@
-	cd marchenko3D		; $(MAKE) $@
+	cd marchenko	; $(MAKE) $@
+	cd marchenko3D	; $(MAKE) $@
 	cd corrvir		; $(MAKE) $@
 	cd raytime		; $(MAKE) $@
 	cd MDD			; $(MAKE) $@

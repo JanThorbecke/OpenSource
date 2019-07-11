@@ -13,7 +13,7 @@
 **/
 
 
-int readData3D(FILE *fp, float *data, segy *hdrs, long n1)
+long readData3D(FILE *fp, float *data, segy *hdrs, long n1)
 {
 	size_t nread;
 	long oneshot, itrace, sx, sy, fldr, gy, nx, ny;

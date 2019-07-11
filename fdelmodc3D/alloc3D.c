@@ -49,7 +49,7 @@ void ***alloc3float(modPar mod)
         }
 	}
 	else { // 3D model 
-		fprintf(stderr,"Allocating 3D model \n");
+		//fprintf(stderr,"Allocating 3D model \n");
         if ((p[0][0]=(void*)malloc(n3*n2*n1*size))==NULL) {
             free(p[0]);
             free(p);

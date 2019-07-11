@@ -26,6 +26,7 @@ void corr(float *data1, float *data2, float *cov, long nrec, long nsam, float dt
 void convol(float *data1, float *data2, float *con, long nrec, long nsam, float dt, long shift);
 
 long readSnapData3D(char *filename, float *data, segy *hdrs, long nsnaps, long nx, long ny, long nz, long sx, long ex, long sy, long ey, long sz, long ez);
+long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, float *d1, float *d2, float *d3, float *f1, float *f2, float *f3, float *sclsxgxsygy, long *nxm);
 
 //void kxwfilter(float *data, long nt, long nx, float dt, float dx, float fmin, float fmax, float angle, float cp, float perc);
 void timeDiff(float *data, long nsam, long nrec, float dt, float fmin, float fmax, long opt);
