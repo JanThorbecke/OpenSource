@@ -43,10 +43,10 @@ int nx, int nxs, float fxsb, float dxs, int ntfft, int mode, float scale, float 
     fseek(fp, 0, SEEK_SET);
     nread = fread( &hdr, 1, TRCBYTES, fp );
     assert(nread == TRCBYTES);
-    if (hdr.scalco < 0) scl = 1.0/fabs(hdr.scalco);
+    if (hdr.scalco < 0) scl = 1.0/fabs((float)hdr.scalco);
     else if (hdr.scalco == 0) scl = 1.0;
     else scl = hdr.scalco;
-    if (hdr.scalel < 0) scel = 1.0/fabs(hdr.scalel);
+    if (hdr.scalel < 0) scel = 1.0/fabs((float)hdr.scalel);
     else if (hdr.scalel == 0) scel = 1.0;
     else scel = hdr.scalel;
 

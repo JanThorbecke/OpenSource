@@ -65,7 +65,7 @@ long writeRec3D(recPar rec, modPar mod, bndPar bnd, wavPar wav, long ixsrc, long
     /* fileno has a non-zero value (from fdelmodc.c) if the number of samples exceeds rec_ntsam. */
     strcpy(filename, rec.file_rcv);
     if (fileno) {
-        sprintf(number,"_%03d",fileno);
+        sprintf(number,"_%03ld",fileno);
         name_ext(filename, number);
     }
 #ifdef MPI

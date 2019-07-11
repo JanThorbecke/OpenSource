@@ -64,7 +64,7 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, fl
     trace_sz = sizeof(float)*(*n1)+TRCBYTES;
     ntraces  = (long) (bytes/trace_sz);
 
-    if (hdr.scalco < 0) scl = 1.0/fabs(hdr.scalco);
+    if (hdr.scalco < 0) scl = 1.0/fabs((float)hdr.scalco);
     else if (hdr.scalco == 0) scl = 1.0;
     else scl = hdr.scalco;
 
@@ -159,11 +159,11 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, fl
             igy = 1;
             while (one_shot) {
                 fseeko( fp, data_sz, SEEK_CUR );
-                if (hdr.gx != gx_end) dxrcv = MIN(dxrcv,abs(hdr.gx-gx_end));
+                if (hdr.gx != gx_end) dxrcv = MIN(dxrcv,labs(hdr.gx-gx_end));
                 if (hdr.gy != gy_end) {
                     igy++;
                     gy_end = hdr.gy;
-                    dyrcv = MIN(dyrcv,abs(hdr.gy-gy_end));
+                    dyrcv = MIN(dyrcv,labs(hdr.gy-gy_end));
                 }
                 gx_end = hdr.gx;
                 nread = fread( &hdr, 1, TRCBYTES, fp );
