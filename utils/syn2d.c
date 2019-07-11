@@ -160,11 +160,11 @@ int main (int argc, char **argv)
     nts = n1;
 
                              
-    if (hdrs[0].scalco < 0) scl = 1.0/fabs(hdrs[0].scalco);
+    if (hdrs[0].scalco < 0) scl = 1.0/fabs((float)hdrs[0].scalco);
 	else if (hdrs[0].scalco == 0) scl = 1.0;
 	else scl = hdrs[0].scalco;
 
-	if (hdrs[0].scalel < 0) scel = 1.0/fabs(hdrs[0].scalel);
+	if (hdrs[0].scalel < 0) scel = 1.0/fabs((float)hdrs[0].scalel);
 	else if (hdrs[0].scalel == 0) scel = 1.0;
 	else scel = hdrs[0].scalel;
 
@@ -287,7 +287,7 @@ int main (int argc, char **argv)
 		for (j = nt; j < optn; j++) shotdata[i*optn+j] = 0.0;
 	}
 
-	if (hdrs_in[0].scalco < 0) scl = 1.0/fabs(hdrs_in[0].scalco);
+	if (hdrs_in[0].scalco < 0) scl = 1.0/fabs((float)hdrs_in[0].scalco);
 	else if (hdrs_in[0].scalco == 0) scl = 1.0;
 	else scl = hdrs_in[0].scalco;
 
@@ -638,7 +638,7 @@ void synthesis(float *shotdata, float *syndata, int nx, int nt, int nxs, int nts
 
 	ixsrc = NINT((xsrc - fxs)/dxs);
 
-	if (abs(xrcv[0]-xsrc) > 0.5*nx*dx) { iox = 0; inx = nx-off; }
+	if (fabsf(xrcv[0]-xsrc) > 0.5*nx*dx) { iox = 0; inx = nx-off; }
 	else { iox = off; inx = nx; }
 
 	t0 = wallclock_time();
