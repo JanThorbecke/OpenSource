@@ -10,8 +10,9 @@ all: mkdirs
 	cd corrvir		; $(MAKE) install
 	cd raytime		; $(MAKE) install
 	cd MDD			; $(MAKE) install
+	cd zfp			; $(MAKE) 
+	cd fdacrtmc		; $(MAKE) install
 
-#	cd fdelrtmc		; $(MAKE) install
 
 mkdirs:
 	-mkdir -p lib
@@ -22,13 +23,14 @@ clean:
 	cd FFTlib 		; $(MAKE) $@
 	cd fdelmodc		; $(MAKE) $@
 	cd fdelmodc3D	; $(MAKE) $@
-	cd fdelrtmc		; $(MAKE) $@
 	cd utils		; $(MAKE) $@
 	cd marchenko	; $(MAKE) $@
 	cd marchenko3D	; $(MAKE) $@
 	cd corrvir		; $(MAKE) $@
 	cd raytime		; $(MAKE) $@
 	cd MDD			; $(MAKE) $@
+	cd zfp			; $(MAKE) $@
+	cd fdacrtmc		; $(MAKE) $@
 
 realclean:
 	cd FFTlib 		; $(MAKE) $@
@@ -41,6 +43,8 @@ realclean:
 	cd corrvir		; $(MAKE) $@
 	cd raytime		; $(MAKE) $@
 	cd MDD			; $(MAKE) $@
+	cd zfp			; $(MAKE) $@
+	cd fdacrtmc		; $(MAKE) $@
 	rm -f lib/*
 	rm -f include/*
 	rm -f bin/*
