@@ -44,7 +44,7 @@ for i in {1..1601};do cat SrcWav_Ricker_40Hz_2s.su >> SrcArr.su; done
 sushw <SrcArr.su key=tracl,tracr,fldr,tracf,scalco,sx a=1,1,1,1,-10,-20000 b=1,1,0,1,0,25 >tmp.su; mv -f tmp.su SrcArr.su;
 
 # 1.3: Model Data
-../../fdacrtmc/fdacrtmc        '#The RTM engine'\
+../../fdacrtmc        '#The RTM engine'\
 	file_cp=Synform_cp.su  '#The input acoustic velocity model'\
 	file_src=SrcArr.su     '#The input source array'\
 	file_rcv=RcvArr.su     '#The output receiver data base filename'\
@@ -60,7 +60,7 @@ sushw <SrcArr.su key=tracl,tracr,fldr,tracf,scalco,sx a=1,1,1,1,-10,-20000 b=1,1
 suwind <Synform_cp.su itmax=50 | sugain dt=1 scale=0.0 | sugain dt=1 bias=1900 >Direct_cp.su;
 
 # 2.2: Model Direct-Wave Data
-../../fdacrtmc/fdacrtmc file_cp=Direct_cp.su file_src=SrcArr.su\
+../../fdacrtmc file_cp=Direct_cp.su file_src=SrcArr.su\
 	file_rcv=DirArr.su\
 	top=2 npml=50 rcv_top=1 rcv_p=1 rcv_write=1 mig_mode=0 verbose=2;
 
@@ -79,7 +79,7 @@ rm -f Direct_cp.su Direct_ro.su RcvArr_rp.su DirArr_rp.su;
 # With    compression this migration needs about 0.75 GiB of RAM at a tol.  of 1e-6
 #                                                0.47 GiB of RAM at a tol.  of 1e-3
 #                                                0.16 GiB of RAM at a prec. of 1e-3
-../../fdacrtmc/fdacrtmc file_cp=Synform_cp.su file_src=SrcArr.su\
+../../fdacrtmc file_cp=Synform_cp.su file_src=SrcArr.su\
 	file_rcv=RcvArr_ND.su    '#We now use the direct-wave free reflection data'\
 	file_mig=Conventional.su '#Base filename for migrated image'\
 	top=2 npml=50\
@@ -90,13 +90,13 @@ rm -f Direct_cp.su Direct_ro.su RcvArr_rp.su DirArr_rp.su;
 	verbose=2;
 
 # 3.2: Display Migrated Image
-suximage <Conventional_mig.su title=Migrated_Image perc=98 &
+suximage <Conventional_mig.su title=Migrated_Image clip=2e5 &
 
 # 3.3: Migrate Using The Hilbert Transform Imaging Condition
-../../fdacrtmc/fdacrtmc file_cp=Synform_cp.su file_src=SrcArr.su file_rcv=RcvArr_ND.su\
+../../fdacrtmc file_cp=Synform_cp.su file_src=SrcArr.su file_rcv=RcvArr_ND.su\
 	file_mig=Hilbert.su '#Base filename for migrated image'\
 	top=2 npml=50 mig_mode=5 migdt=0.0025 migdx=5 migdz=5 compress=1 verbose=2;
 
 # 3.4: Display Migrated Image
-suximage <Hilbert_mig.su title=Hilbert_Image &
+suximage <Hilbert_mig.su title=Hilbert_Image clip=2e5 &
 exit;

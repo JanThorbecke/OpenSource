@@ -1066,7 +1066,7 @@ int Create1DWavenumberTransformPlans(fftPlansPar *fftPlans,size_t nx,size_t nz){
 		if(PlanFFT_1d_c2c(in,nz,&(fftPlans->fft_1d_c2c_z),&(fftPlans->ifft_1d_c2c_Kz)))verr("Could not load generated FFTw wisdom!");
 	}
 
-	free(in);
+	fftw_free(in);
 	return(0);
 }
 

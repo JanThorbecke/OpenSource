@@ -4,13 +4,13 @@ include ../Make_include
 
 ########################################################################
 # define general include and system library
-CFLAGS  += -I/vardim/home/holicki/src/zfp-0.5.5/include
-#LIBS    += -L$L $(LIBSM) -lm -lfftw3 -lfftw3_omp -I/ribarsko/data/holicki/fftw3/fftw-3.3.6-pl1/api -L/ribarsko/data/holicki/fftw3/fftw-3.3.6-pl1/api -I/vardim/home/holicki/src/zfp-0.5.5/include -L/vardim/home/holicki/src/zfp-0.5.5/lib -lzfp
-LIBS    += -L$L $(LIBSM) -L/vardim/home/holicki/src/zfp-0.5.5/lib -lzfp
+CFLAGS  += -I$(ROOT)/zfp/include
+LIBS    += -L$L $(LIBSM) -L$(ROOT)/zfp/lib -lzfp
+
 #LIBS    += -L$L -lgenfft $(LIBSM) -lm 
 #LIBS    += -L$L -lgenfft -lm -lc
 #OPTC = -g -Wall -fsignaling-nans -O0
-#OPTC = -g -O0
+#OPTC += -g 
 #OPTC += -fopenmp -Waddress
 #OPTC := $(subst -O3 -ffast-math, -O1 -g ,$(OPTC))
 #PGI options for compiler feedback
