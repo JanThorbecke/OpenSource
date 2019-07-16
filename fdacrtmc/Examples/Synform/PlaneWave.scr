@@ -5,26 +5,27 @@ export OMP_NUM_THREADS=4
 # The commands used to generate the wavelet and model are:
 #
 # Model: (Warning: Overwrites tmp_cp.su & tmp_ro.su)
-# makemod sizex=6000 sizez=2000 dx=$dx dz=$dx cp0=1900  ro0=1200 \
-# 	orig=-3000,0 file_base=tmp.su verbose=2 \
-# 	intt=def x=-3000,500,3000 z=195,195,195 poly=1 cp=1950 ro=3700 \
-# 	intt=def x=-3000,3000 z=600,600 poly=0 cp=2050 ro=1750 \
-# 	intt=def x=-3000,3000 z=680,680 poly=0 cp=2150 ro=2220 \
-# 	intt=def x=-3000,3000 z=780,780 poly=0 cp=2230 ro=1700 \
-# 	intt=def x=-3000,-2200,-1500,0,1300,2100,3000 z=520,580,680,840,680,600,500 poly=2 cp=2400 ro=2800 \
-# 	intt=def x=-3000,0,3000 z=1110,1110,1110 poly=0 cp=2350 ro=1950 \
-# 	intt=def x=-3000,3000 z=1180,1180 poly=0 cp=2480 ro=1820 \
-# 	intt=def x=-3000,0,3000 z=1290,1290,1370 poly=0 cp=2490 ro=2000 \
-# 	intt=def x=-3000,3000 z=1380,1380 poly=0 cp=2520 ro=2050 \
-# 	intt=def x=-3000,3000 z=1480,1480 poly=0 cp=2550 ro=1850;
-# rm -f tmp_ro.su; #We don't need the density model.
-# sushw <tmp_cp.su key=tracl,tracf,trid,timbas,trwf a=1,1,0,0,0 b=1,1,0,0,0 >Synform_cp.su;
-# rm -f tmp_cp.su;
+dx=2.5
+makemod sizex=6000 sizez=1800 dx=$dx dz=$dx cp0=1900  ro0=1200 \
+ 	orig=-3000,0 file_base=tmp.su verbose=2 \
+ 	intt=def x=-3000,500,3000 z=195,195,195 poly=1 cp=1950 ro=3700 \
+ 	intt=def x=-3000,3000 z=600,600 poly=0 cp=2050 ro=1750 \
+ 	intt=def x=-3000,3000 z=680,680 poly=0 cp=2150 ro=2220 \
+ 	intt=def x=-3000,3000 z=780,780 poly=0 cp=2230 ro=1700 \
+ 	intt=def x=-3000,-2200,-1500,0,1300,2100,3000 z=520,580,680,840,680,600,500 poly=2 cp=2400 ro=2800 \
+ 	intt=def x=-3000,0,3000 z=1110,1110,1110 poly=0 cp=2350 ro=1950 \
+ 	intt=def x=-3000,3000 z=1180,1180 poly=0 cp=2480 ro=1820 \
+ 	intt=def x=-3000,0,3000 z=1290,1290,1370 poly=0 cp=2490 ro=2000 \
+ 	intt=def x=-3000,3000 z=1380,1380 poly=0 cp=2520 ro=2050 \
+ 	intt=def x=-3000,3000 z=1480,1480 poly=0 cp=2550 ro=1850;
+rm -f tmp_ro.su; #We don't need the density model.
+sushw <tmp_cp.su key=tracl,tracf,trid,timbas,trwf a=1,1,0,0,0 b=1,1,0,0,0 >Synform_cp.su;
+rm -f tmp_cp.su;
 #
 #
 # Source Wavelet: (Warning: Overwrites tmp.su)
-# makewave nt=4001 dt=0.0005 fp=40 shift=1 file_out=tmp.su;
-# sushw <tmp.su key=scalel,scalco,hcf,trwf,d2 a=1,1,0,0,0 >SrcWav_Ricker_40Hz_2s.su;
+makewave nt=4001 dt=0.0005 fp=40 shift=1 file_out=tmp.su;
+sushw <tmp.su key=scalel,scalco,hcf,trwf,d2 a=1,1,0,0,0 >SrcWav_Ricker_40Hz_2s.su;
 #
 # NOTE: This requires the fdelmodc package from Jan-Willem
 #       Thorbecke. You can find it at:
@@ -57,7 +58,7 @@ sushw <SrcArr.su key=tracl,tracr,fldr,tracf,scalco,sx a=1,1,1,1,-10,-20000 b=1,1
 	verbose=2;              #Verbosity level, >0 so that we see something
 
 # 2.1: Create Direct-Wave Models
-suwind <Synform_cp.su itmax=50 | sugain dt=1 scale=0.0 | sugain dt=1 bias=1900 >Direct_cp.su;
+suwind <Synform_cp.su dt=1 itmax=50 | sugain dt=1 scale=0.0 | sugain dt=1 bias=1900 >Direct_cp.su;
 
 # 2.2: Model Direct-Wave Data
 ../../fdacrtmc file_cp=Direct_cp.su file_src=SrcArr.su\
