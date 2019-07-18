@@ -17,7 +17,7 @@ select=301
 makewave fp=20 dt=0.004 file_out=wave.su nt=1024 t0=0.0 scale=0 scfft=1
 
 marchenko_primaries file_shot=shots/refl_rp.su ishot=$select file_src=wave.su \
-	nshots=601 verbose=2 istart=40 iend=650 fmax=90 \
+	nshots=601 verbose=1 istart=40 iend=650 fmax=90 \
 	niter=22 niterskip=50 shift=20 file_rr=pred_rr.su T=0
 
 #for reference original shot record from Reflection matrix
