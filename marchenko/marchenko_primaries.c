@@ -344,7 +344,7 @@ int main (int argc, char **argv)
 /*================ Defining focusing operator(s) from R ================*/
 /* G_d = -R(ishot,-t)*/
 
-    /* use ishot from Refl, complex-conjugate(time reverse) and convolve with wavelet (file_src present) */
+    /* use ishot from Refl, complex-conjugate(time reverse), scale with -1 and convolve with wavelet */
     if (file_tinv == NULL) {
         if (verbose) vmess("Selecting G_d from Refl of %s", file_shot);
         nts   = ntfft;
