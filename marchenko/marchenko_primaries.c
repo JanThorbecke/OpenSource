@@ -483,7 +483,7 @@ int main (int argc, char **argv)
         vmess("*******************************************");
         fprintf(stderr,"    %s: Progress: %3d%%",xargv[0],0);
 	}
-    perc=iend/10;if(!perc)perc=1;
+    perc=(iend-istart)/10;if(!perc)perc=1;
 
 /*================ start loop over number of time-samples ================*/
 
@@ -633,7 +633,7 @@ int main (int argc, char **argv)
             if((ii-istart)==10)t4=wallclock_time();
             if((ii-istart)==50){
                 t4=(wallclock_time()-t4)*((iend-istart)/40.0);
-                fprintf(stderr,"\r    %s: Estimated total compute time = %.2fs.\n    %s: Progress: %3d%%",xargv[0],t4,xargv[0],ii/((iend-istart)));
+                fprintf(stderr,"\r    %s: Estimated total compute time = %.2fs.\n    %s: Progress: %3d%%",xargv[0],t4,xargv[0],ii/((iend-istart)/10));
             }
             //t4=wallclock_time();
             tii=(t4-t1)*((float)(iend-istart)/(ii-istart+1.0))-(t4-t1);
