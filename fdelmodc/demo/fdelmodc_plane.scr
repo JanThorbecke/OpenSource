@@ -26,7 +26,7 @@ export OMP_NUM_THREADS=1
 time ../fdelmodc \
 	file_cp=$filecp file_cs=$filecs file_den=$filero \
 	ischeme=3 \
-	file_src=wavelet.su verbose=4 \
+	file_src=wavelet.su verbose=1 \
 	file_rcv=rec.su \
 	file_snap=snap.su \
 	xrcv1=0 xrcv2=2100 dxrcv=15 \
