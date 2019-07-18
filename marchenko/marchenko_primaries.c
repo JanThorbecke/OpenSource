@@ -109,7 +109,7 @@ int main (int argc, char **argv)
     int     smooth, *ixpos, npos, ix, m, pad, T, perc;
     int     nshots_r, *isxcount, *reci_xsrc, *reci_xrcv, shift;
     float   fmin, fmax, *tapersh, *tapersy, fxf, dxf, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
-    double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, tii;
+    double  t0, t1, t2, t3, t4, tsyn, tread, tfft, tcopy, tii;
     float   d1, d2, f1, f2, fxsb, fxse, ft, fx, *xsyn, dxsrc;
     float   *G_d, *DD, *RR, dt, dx, dxs, scl, mem;
     float   *rtrace, *tmpdata, *f1min, *iRN, *Ni, *trace;
@@ -630,13 +630,13 @@ int main (int argc, char **argv)
 
         if (verbose) {
             if(!((iend-ii-istart)%perc)) fprintf(stderr,"\b\b\b\b%3d%%",ii*10/(iend-istart));
-            if((ii-istart)==10)t3=wallclock_time();
+            if((ii-istart)==10)t4=wallclock_time();
             if((ii-istart)==50){
-                t3=(wallclock_time()-t3)*((iend-istart)/40.0);
-                fprintf(stderr,"\r    %s: Estimated total compute time = %.2fs.\n    %s: Progress: %3d%%",xargv[0],t3,xargv[0],ii/((iend-istart)/10));
+                t4=(wallclock_time()-t4)*((iend-istart)/40.0);
+                fprintf(stderr,"\r    %s: Estimated total compute time = %.2fs.\n    %s: Progress: %3d%%",xargv[0],t4,xargv[0],ii/((iend-istart)/10));
             }
-            //t3=wallclock_time();
-            //tii=(t3-t1)*((float)(iend-istart)/(ii-istart+1.0))-(t3-t1);
+            //t4=wallclock_time();
+            tii=(t4-t1)*((float)(iend-istart)/(ii-istart+1.0))-(t4-t1);
             //vmess("Remaining compute time at time-sample %d = %.2f s.",ii, tii);
         }
 
