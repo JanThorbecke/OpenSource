@@ -484,6 +484,7 @@ int main (int argc, char **argv)
         fprintf(stderr,"    %s: Progress: %3d%%",xargv[0],0);
 	}
     perc=(iend-istart)/10;if(!perc)perc=1;
+	fprintf(stderr,"perc=%d\n", perc);
 
 /*================ start loop over number of time-samples ================*/
 
@@ -629,7 +630,7 @@ int main (int argc, char **argv)
         /* To Do optional write intermediate RR results to file */
 
         if (verbose) {
-            if(!((iend-ii-istart)%perc)) fprintf(stderr,"\b\b\b\b%3d%%",(ii-istart)*10/(iend-istart));
+            if(!((iend-ii-istart)%perc)) fprintf(stderr,"\b\b\b\b%3d%% %d",(ii-istart)*10/(iend-istart), ii);
             if((ii-istart)==10)t4=wallclock_time();
             if((ii-istart)==50){
                 t4=(wallclock_time()-t4)*((iend-istart)/40.0);
