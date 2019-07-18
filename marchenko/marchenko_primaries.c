@@ -106,7 +106,7 @@ int main (int argc, char **argv)
     int     reci, countmin, mode, ixa, ixb, n2out, verbose, ntfft;
     int     iter, niter, niterec, recur, niterskip, niterrun, tracf, *muteW;
     int     hw, ii, ishot, istart, iend;
-    int     smooth, *ixpos, npos, ix, m, pad, T;
+    int     smooth, *ixpos, npos, ix, m, pad, T, perc;
     int     nshots_r, *isxcount, *reci_xsrc, *reci_xrcv, shift;
     float   fmin, fmax, *tapersh, *tapersy, fxf, dxf, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
     double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, tii;
@@ -477,6 +477,13 @@ int main (int argc, char **argv)
     }
     t1    = wallclock_time();
     tread = t1-t0;
+    if(verbose) {
+        vmess("*******************************************");
+        vmess("***** Computing Marchenko for all steps****");
+        vmess("*******************************************");
+        fprintf(stderr,"    %s: Progress: %3d%%",xargv[0],0);
+	}
+    perc=iend/10;if(!perc)perc=1;
 
 /*================ start loop over number of time-samples ================*/
 
@@ -622,9 +629,15 @@ int main (int argc, char **argv)
         /* To Do optional write intermediate RR results to file */
 
         if (verbose) {
-            t3=wallclock_time();
-            tii=(t3-t1)*((float)(iend-istart)/(ii-istart+1.0))-(t3-t1);
-            vmess("Remaining compute time at time-sample %d = %.2f s.",ii, tii);
+            if(!((iend-ii)%perc)) fprintf(stderr,"\b\b\b\b%3d%%",ii*10/(istart-iend));
+            if((ii-istart)==10)t3=wallclock_time();
+            if((ii-istart)==50){
+                t3=(wallclock_time()-t3)*((istart-iend)/40.0);
+                fprintf(stderr,"\r    %s: Estimated total compute time = %.2fs.\n    %s: Progress: %3d%%",xargv[0],t3,xargv[0],ii/((istart-iend)/10));
+            }
+            //t3=wallclock_time();
+            //tii=(t3-t1)*((float)(iend-istart)/(ii-istart+1.0))-(t3-t1);
+            //vmess("Remaining compute time at time-sample %d = %.2f s.",ii, tii);
         }
 
     } /* end of time iterations ii */
@@ -634,6 +647,7 @@ int main (int argc, char **argv)
 
     t2 = wallclock_time();
     if (verbose) {
+        fprintf(stderr,"\b\b\b\b%3d%%\n",100);
         vmess("Total CPU-time marchenko = %.3f", t2-t0);
         vmess("with CPU-time synthesis  = %.3f", tsyn);
         vmess("with CPU-time copy array = %.3f", tcopy);

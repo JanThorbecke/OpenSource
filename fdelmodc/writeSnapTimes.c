@@ -68,7 +68,7 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, wavPar wav, int ixsrc, in
 
         if (mod.grid_dir) stime = (-wav.nt+1+itime+1)*mod.dt;  /* reverse time modeling */
         else  stime = itime*mod.dt;
-		if (verbose) vmess("Writing snapshot(%d) at time=%.4f", isnap+1, stime);
+		if (verbose>1) vmess("Writing snapshot(%d) at time=%.4f", isnap+1, stime);
 	
 		if (first) {
 			append=0;
