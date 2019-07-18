@@ -518,7 +518,7 @@ int main (int argc, char **argv)
 		else { /* use f1min from previous iteration as starting point and do niterec iterations */
 			niterrun=niterec;
 			recur=1;
-			if (verbose>1) vmess("Doing %d iterations for time-sample %d",niterrun,ii);
+			if (verbose>2) vmess("Doing %d iterations for time-sample %d",niterrun,ii);
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < npos; i++) {
 					j=0;
@@ -629,11 +629,11 @@ int main (int argc, char **argv)
         /* To Do optional write intermediate RR results to file */
 
         if (verbose) {
-            if(!((iend-ii)%perc)) fprintf(stderr,"\b\b\b\b%3d%%",ii*10/(istart-iend));
+            if(!((iend-ii)%perc)) fprintf(stderr,"\b\b\b\b%3d%%",ii*10/(iend-istart));
             if((ii-istart)==10)t3=wallclock_time();
             if((ii-istart)==50){
-                t3=(wallclock_time()-t3)*((istart-iend)/40.0);
-                fprintf(stderr,"\r    %s: Estimated total compute time = %.2fs.\n    %s: Progress: %3d%%",xargv[0],t3,xargv[0],ii/((istart-iend)/10));
+                t3=(wallclock_time()-t3)*((iend-istart)/40.0);
+                fprintf(stderr,"\r    %s: Estimated total compute time = %.2fs.\n    %s: Progress: %3d%%",xargv[0],t3,xargv[0],ii/((iend-istart)/10));
             }
             //t3=wallclock_time();
             //tii=(t3-t1)*((float)(iend-istart)/(ii-istart+1.0))-(t3-t1);
