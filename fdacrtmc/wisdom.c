@@ -12,11 +12,13 @@ static char WisdomStem[1024]=WISDOMDIR;
 /* Initialize Multithreaded FFTW */
 int initFFTW(){
 	char *base;
-	int i;
+	int i=1;
 	int n,m=0;
 
 	/* Update Wisdom Stem */
+#ifdef _OPENMP
 	i=omp_get_max_threads();
+#endif
 	n=i;while(n!=0){n/=10;++m;}
 	n=strlen(WisdomStem);
 	if(2+n+m>1024)return(-1);
@@ -24,7 +26,7 @@ int initFFTW(){
 
 	/* Initialize Multithreaded FFTW */
 	if(!fftw_init_threads())i=1;else i=0;
-        fftw_plan_with_nthreads(omp_get_max_threads());
+        fftw_plan_with_nthreads(i);
 	return(i);
 }
 
