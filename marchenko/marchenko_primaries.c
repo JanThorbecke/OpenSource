@@ -495,7 +495,7 @@ int main (int argc, char **argv)
 		if ( ((ii-istart)%niterskip==0) || (ii==istart) ) {
 			niterrun=niter;
 			recur=0;
-			if (verbose) vmess("Doing %d iterations for time-sample %d\n",niterrun,ii);
+			if (verbose>2) vmess("Doing %d iterations for time-sample %d\n",niterrun,ii);
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < nxs; i++) {
                     for (j = 0; j < nts; j++) {
@@ -629,7 +629,7 @@ int main (int argc, char **argv)
         /* To Do optional write intermediate RR results to file */
 
         if (verbose) {
-            if(!((iend-ii)%perc)) fprintf(stderr,"\b\b\b\b%3d%%",ii*10/(iend-istart));
+            if(!((iend-ii-istart)%perc)) fprintf(stderr,"\b\b\b\b%3d%%",ii*10/(iend-istart));
             if((ii-istart)==10)t3=wallclock_time();
             if((ii-istart)==50){
                 t3=(wallclock_time()-t3)*((iend-istart)/40.0);
