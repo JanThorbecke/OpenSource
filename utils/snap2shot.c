@@ -63,7 +63,7 @@ int main (int argc, char **argv)
     long    nxs, nys, nzs, nts, ntrs, ret, file_det;
 	long	it, ix, iy, iz, ixr, nxr, dnumb, numb, pos, nxmax;
 	long 	nzstart, nzend, dnz;
-	int 	*sx, *sy;
+	int 	*sx, *sy, pf;
 	segy    *hdr_snap, *hdr_rcv;
 
 	initargs(argc, argv);
@@ -85,7 +85,8 @@ int main (int argc, char **argv)
 	ptr  = strstr(file_snap,numb1);
     pos = ptr - file_snap + 1;
 
-    sprintf(fbegin,"%*.*s", pos-1, pos-1, file_snap);
+	pf = pos-1;
+    sprintf(fbegin,"%*.*s", pf, pf, file_snap);
    	sprintf(fend,"%s", file_snap+pos);
 
 	file_det = 1;

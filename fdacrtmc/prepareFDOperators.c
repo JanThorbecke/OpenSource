@@ -11,6 +11,11 @@ int mvAvg2d9EmbdSgn(size_t n2, float* in, float* out, size_t s1, size_t s2, size
 int readModelData( modPar *mod,char *filename,float *data);
 int writeModelData(modPar *mod,char* filename,float *data);
 int writesufile(char *filename, float *data, size_t n1, size_t n2, float f1, float f2, float d1, float d2);
+void vwarn(char *fmt, ...);
+int mvAvg2d3(size_t n1, size_t n2, float* in, float* out);
+int mvAvg2d5(size_t n1, size_t n2, float* in, float* out);
+int mvAvg2d7(size_t n1, size_t n2, float* in, float* out);
+int mvAvg2d9(size_t n1, size_t n2, float* in, float* out);
 
 int prepareFDOperators(modPar *mod, bndPar *bnd, decompPar *decomp){
 	float cp2, cs2, cs11, cs12, cs21, cs22, mul, mu, lamda2mu, lamda;

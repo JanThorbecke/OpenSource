@@ -35,6 +35,7 @@ int PlaneWaveDecompositionUpDownRTMImagingCondition(migPar *mig, fftPlansPar *ff
 int initializeFFTwPlans(fftPlansPar* fftPlans);
 int CreateUDPlaneWaveImagingFFTPlans(fftPlansPar *fftPlans,size_t nt,size_t nz);
 int Create1DWavenumberTransformPlans(fftPlansPar *fftPlans,size_t nx,size_t nz);
+int Create2DWavenumberTransformPlan(fftPlansPar *fftPlans,size_t nz,size_t nx);
 int destroyFFTwPlans(fftPlansPar* fftPlans);
 int deallocateCompressionField();
 

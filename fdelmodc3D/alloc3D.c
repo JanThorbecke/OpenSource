@@ -37,7 +37,7 @@ void ***alloc3float(modPar mod)
         }
 	}
 	else if (mod.nfy==1) { // 2D model
-		fprintf(stderr,"Allocating 2D model ny=%d with nx=%d and nz=%d\n",n3,n2,n1);
+		fprintf(stderr,"Allocating 2D model ny=%ld with nx=%ld and nz=%ld\n",n3,n2,n1);
         if ((p[0][0]=(void*)malloc(n2*n1*size))==NULL) {
             free(p);
             return NULL;
