@@ -29,6 +29,7 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 
 int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nfoc, int nx, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose);
 
+int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, float d2, float f2, int n2out, int Nfoc, float *xsyn, float *zsyn, int *ixpos, int npos, int iter);
 int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *nxm);
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
 int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
@@ -87,6 +88,7 @@ char *sdoc[] = {
 "   countmin=0 ............... 0.3*nxrcv; minumum number of reciprocal traces for a contribution",
 " OUTPUT DEFINITION ",
 "   file_rr= ................. output file with primary only shot record",
+"   file_iter= ............... output file with -Ni(-t) for each iteration",
 "   T=0 ...................... :1 compute transmission-losses compensated primaries ",
 "   verbose=0 ................ silent option; >0 displays info",
 " ",
@@ -116,7 +118,7 @@ int main (int argc, char **argv)
     float   xmin, xmax, scale, tsq;
 	float   Q, f0, *ixmask;
     complex *Refl, *Fop, *ctrace, *cwave;
-    char    *file_tinv, *file_shot, *file_rr, *file_src;
+    char    *file_tinv, *file_shot, *file_rr, *file_src, *file_iter;
     segy    *hdrs_out, hdr;
 
     initargs(argc, argv);
@@ -125,13 +127,11 @@ int main (int argc, char **argv)
     tsyn = tread = tfft = tcopy = tii = 0.0;
     t0   = wallclock_time();
 
-
-
-
     if (!getparstring("file_shot", &file_shot)) file_shot = NULL;
     if (!getparstring("file_tinv", &file_tinv)) file_tinv = NULL;
     if(!getparstring("file_src", &file_src)) file_src = NULL;
     if (!getparstring("file_rr", &file_rr)) verr("parameter file_rr not found");
+    if (!getparstring("file_iter", &file_iter)) file_iter = NULL;
     
     if (!getparint("verbose", &verbose)) verbose = 0;
     if (!getparfloat("fmin", &fmin)) fmin = 0.0;
@@ -424,6 +424,7 @@ int main (int argc, char **argv)
         vmess("number of time samples (nt,nts) = %d (%d,%d)", ntfft, nt, nts);
         vmess("time sampling                  = %e ", dt);
         if (file_rr != NULL) vmess("RR output file                 = %s ", file_rr);
+        if (file_iter != NULL)  vmess("Iterations output file         = %s ", file_iter);
     }
 
 /*================ initializations ================*/
@@ -495,12 +496,13 @@ int main (int argc, char **argv)
 		if ( ((ii-istart)%niterskip==0) || (ii==istart) ) {
 			niterrun=niter;
 			recur=0;
-			if (verbose>2) vmess("Doing %d iterations for time-sample %d\n",niterrun,ii);
+			if (verbose>2) vmess("Doing %d iterations to reset recursion at time-sample %d\n",niterrun,ii);
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < nxs; i++) {
                     for (j = 0; j < nts; j++) {
                         G_d[l*nxs*nts+i*nts+j] = DD[l*nxs*nts+i*nts+j];
                     }
+					/* apply mute window for samples above nts-ii */
                     for (j = 0; j < nts-ii+T*shift; j++) {
                         G_d[l*nxs*nts+i*nts+j] = 0.0;
                     }
@@ -518,7 +520,7 @@ int main (int argc, char **argv)
 		else { /* use f1min from previous iteration as starting point and do niterec iterations */
 			niterrun=niterec;
 			recur=1;
-			if (verbose>2) vmess("Doing %d iterations for time-sample %d",niterrun,ii);
+			if (verbose>2) vmess("Doing %d iterations using previous result at time-sample %d",niterrun,ii);
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < npos; i++) {
 					j=0;
@@ -546,6 +548,10 @@ int main (int argc, char **argv)
             synthesis(Refl, Fop, Ni, iRN, nx, nt, nxs, nts, dt, xsyn, Nfoc,
                 xrcv, xsrc, xnx, fxse, fxsb, dxs, dxsrc, dx, ntfft, nw, nw_low, nw_high, mode,
                 reci, nshots, ixpos, npos, &tfft, isxcount, reci_xsrc, reci_xrcv, ixmask, verbose);
+
+        	if (file_iter != NULL) {
+            	writeDataIter(file_iter, iRN, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 1000*ii+iter);
+        	}
 
             t3 = wallclock_time();
             tsyn +=  t3 - t2;
@@ -600,6 +606,7 @@ int main (int argc, char **argv)
                        	for (j = nts-shift; j < nts; j++) {
                            	Ni[l*nxs*nts+i*nts+j] = 0.0;
                        	}
+						/* apply mute window for samples above nts-ii */
                        	for (j = 0; j < nts-ii+T*shift; j++) {
                            	Ni[l*nxs*nts+i*nts+j] = 0.0;
                        	}
