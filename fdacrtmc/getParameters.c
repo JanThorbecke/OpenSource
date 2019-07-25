@@ -3,6 +3,7 @@
 #include<stdbool.h>
 #include<math.h>
 #include<float.h>
+#include<time.h>
 #include"fdacrtmc.h"
 #include"par.h"
 
@@ -17,6 +18,8 @@ int prepareFDOperators(modPar *mod, bndPar *bnd, decompPar *decomp);
 int setWisdomPath(char *path);
 void printWisdomPath();
 int initFFTW(void);
+int initPML(modPar *mod, bndPar *bnd, int verbose);
+int readRcvCoordinates(modPar *mod, srcPar *rcv, recPar *rec, int verbose);
 
 
 int initializeCompressionField(migPar *mig);
@@ -307,7 +310,7 @@ int getParameters(modPar *mod, srcPar *src, srcPar *rcv, bndPar *bnd, snaPar *sn
 	if(rec->rec)createRcvCoordinates(mod,rcv,rec,*verbose);
 
 	// From File
-	if(rec->file_loc){readRcvCoordinates(mod,rcv,rec,verbose);rec->rec=1;}
+	if(rec->file_loc){readRcvCoordinates(mod,rcv,rec,*verbose);rec->rec=1;}
 
 	/*******************************/
 	/* Read Temporal Sampling Rate */
@@ -646,7 +649,7 @@ if(!getparint("mig_mm",&tmpint))tmpint=0;if(tmpint)mig->mm=true;else mig->mm=fal
 	/******************/
 	/* Initialize PML */
 	/******************/
-	if(bnd->pml) initPML(mod,bnd);
+	if(bnd->pml) initPML(mod,bnd,*verbose);
 
 	/**********************************/
 	/* Dispersion & Stability Factors */

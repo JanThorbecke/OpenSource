@@ -195,7 +195,7 @@ int readRcvCoordinates(modPar *mod, srcPar *rcv, recPar *rec, int verbose){
 				zTMP[i]     =rcv->z[j];
 				j++;
 			}else if(rcv->ind[j]>arr[k].loc){
-				if(arr[k].ind=(size_t)-1){k++;continue;} //Skip this value!
+				if(arr[k].ind==(size_t)-1){k++;continue;} //Skip this value!
 				locTMP[i]   =arr[k].loc;
 				xiTMP[i]    =xi[arr[k].ind];
 				ziTMP[i]    =zi[arr[k].ind];
@@ -215,7 +215,7 @@ int readRcvCoordinates(modPar *mod, srcPar *rcv, recPar *rec, int verbose){
 					zTMP[i]     =rcv->z[j];
 					j++;
 				}else if((rcv->typ[j]-1)*8+rcv->orient[j]<arr[k].typ){
-					if(arr[k].ind=(size_t)-1){k++;continue;} //Skip this value!
+					if(arr[k].ind==(size_t)-1){k++;continue;} //Skip this value!
 					locTMP[i]   =arr[k].loc;
 					xiTMP[i]    =xi[arr[k].ind];
 					ziTMP[i]    =zi[arr[k].ind];

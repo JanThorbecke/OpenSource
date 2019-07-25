@@ -431,7 +431,7 @@ int main (int argc, char **argv)
 			hdr[0].ntr = nstationA*nstationB;
 			if (!one_file) {
 				strcpy(filename, file_out);
-				sprintf(number,"Station%03ld\0",jstation+1);
+				sprintf(number,"Station%03ld",jstation+1);
 				name_ext(filename, number);
 				if (verbose>3) fprintf(stderr,"writing to file %s\n", filename);
 				fpout = fopen( filename, "w+" );

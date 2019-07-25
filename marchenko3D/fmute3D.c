@@ -114,8 +114,7 @@ int main (int argc, char **argv)
         tmpdata = (float *)malloc(size*sizeof(float));
         hdrs_in1 = (segy *)calloc(nxmax*nymax,sizeof(segy));
         
-        nx1,ny1 = readData3D(fp_in1, tmpdata, hdrs_in1, nt1);
-        nxy = nx1*ny1;
+        nxy = readData3D(fp_in1, tmpdata, hdrs_in1, nt1);
         if (nxy == 0) {
             fclose(fp_in1);
             if (verbose) vmess("end of file_mute data reached");
@@ -143,8 +142,7 @@ int main (int argc, char **argv)
     else fp_in2=stdin;
     if (fp_in2 == NULL) verr("error on opening input file_shot=%s", file_shot);
     
-    nx2,ny2 = readData3D(fp_in2, tmpdata2, hdrs_in2, nt2);
-    nxy = nx2*ny2;
+    nxy = readData3D(fp_in2, tmpdata2, hdrs_in2, nt2);
     if (nxy == 0) {
         fclose(fp_in2);
         if (verbose) vmess("end of file_shot data reached");
@@ -452,8 +450,7 @@ int main (int argc, char **argv)
 /*================ Read next record for muting ================*/
 
         if (file_mute != NULL) {    
-            nx1, ny1 = readData3D(fp_in1, tmpdata, hdrs_in1, nt1);
-            nxy = nx1*ny1;
+            nxy = readData3D(fp_in1, tmpdata, hdrs_in1, nt1);
             if (nxy == 0) {
                 fclose(fp_in1);
                 if (verbose) vmess("end of file_mute data reached");
@@ -477,8 +474,7 @@ int main (int argc, char **argv)
 
 /*================ Read next shot record(s) ================*/
 
-        nx2,ny2 = readData3D(fp_in2, tmpdata2, hdrs_in2, nt2);
-        nxy = nx2*ny2;
+        nxy = readData3D(fp_in2, tmpdata2, hdrs_in2, nt2);
         if (nxy == 0) {
             if (verbose) vmess("end of file_shot data reached");
             fclose(fp_in2);

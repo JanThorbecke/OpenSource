@@ -847,7 +847,7 @@ int mvAvg2d9Sgn(size_t n1, size_t n2, float* in, float* out){
  *      Delft University of Technology
  *      21.11.2017
  */
-	float sum[7];
+	float sum[9];
 	size_t i1,i2,j;
 
 	for(i2=0;i2<n2;i2++)out[     i2]=in[     i2]; //Copy Data
@@ -912,7 +912,7 @@ int mvAvg2d9Sgn(size_t n1, size_t n2, float* in, float* out){
 			out[i1*n2+i2]=copysignf(in[i1*n2+i2],sum[0]+sum[1]+sum[2]+sum[3]+sum[4]+sum[5]+sum[6]+sum[7]+sum[8]);i2++;
 		}else continue;
 		if(i2<n2-4){
-			sum[6]==in[(i1-4)*n2+i2+4]+in[(i1-3)*n2+i2+4]+in[(i1-2)*n2+i2+4]+in[(i1-1)*n2+i2+4]+in[i1*n2+i2+4]+in[(i1+1)*n2+i2+4]+in[(i1+2)*n2+i2+4]+in[(i1+3)*n2+i2+4]+in[(i1+4)*n2+i2+4];
+			sum[6]=in[(i1-4)*n2+i2+4]+in[(i1-3)*n2+i2+4]+in[(i1-2)*n2+i2+4]+in[(i1-1)*n2+i2+4]+in[i1*n2+i2+4]+in[(i1+1)*n2+i2+4]+in[(i1+2)*n2+i2+4]+in[(i1+3)*n2+i2+4]+in[(i1+4)*n2+i2+4];
 			out[i1*n2+i2]=copysignf(in[i1*n2+i2],sum[0]+sum[1]+sum[2]+sum[3]+sum[4]+sum[5]+sum[6]+sum[7]+sum[8]);i2++;
 		}
 		out[(i1+1)*n2-4]=in[(i1+1)*n2-4];out[(i1+1)*n2-3]=in[(i1+1)*n2-3];out[(i1+1)*n2-2]=in[(i1+1)*n2-2];out[(i1+1)*n2-1]=in[(i1+1)*n2-1];
