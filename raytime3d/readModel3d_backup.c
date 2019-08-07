@@ -43,7 +43,6 @@ long readModel3d(char *file_name, float *slowness, long nz, long nx, long ny, fl
    	assert( fpcp != NULL);
    	nread = fread(&hdr, 1, TRCBYTES, fpcp);
    	assert(nread == TRCBYTES);
-	vmess("nz=%li hdr.ns=%li",nz,hdr.ns);
 	assert(hdr.ns == nz);
 
 	if (nx==1) { /* 1D model */

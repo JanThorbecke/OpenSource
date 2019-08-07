@@ -8,10 +8,8 @@
 #define SQR2 1.414213562
 #define SQR3 1.732050808
 #define SQR6 2.449489743
-// #define t0(x,y,z)   time0[nxz*(y) + nz*(x) + (z)]
-// #define s0(x,y,z)   slow0[nxz*(y) + nz*(x) + (z)]
-#define t0(x,y,z)   time0[nxy*(z) + nx*(y) + (x)]
-#define s0(x,y,z)   slow0[nxy*(z) + nx*(y) + (x)]
+#define t0(x,y,z)   time0[nxz*(y) + nz*(x) + (z)]
+#define s0(x,y,z)   slow0[nxz*(y) + nz*(x) + (z)]
 
 /* definitions from verbose.c */
 extern void verr(char *fmt, ...);
@@ -150,6 +148,7 @@ void vidale3d(float *slow0, float *time0, long nz, long nx, long ny, float h, lo
 		else	{  z1= -1;	dz1=0;  }
 	}
 
+
 	if (headpref>0) {	/* HOLE - PREFERRED REVERSE DIRECTION */
 		head = nx*ny*nz;
 		if (nx>5 && x2<=head)   {headpref=2;  head=x2;}
@@ -171,6 +170,7 @@ void vidale3d(float *slow0, float *time0, long nz, long nx, long ny, float h, lo
 
 	/* BIG LOOP */
 	while(rad0 && (dx1 || dx2 || dy1 || dy2 || dz1 || dz2))  {
+
 		/* CALCULATE ON PRIMARY (time0) GRID */
 
 		/* TOP SIDE */
@@ -316,33 +316,33 @@ void vidale3d(float *slow0, float *time0, long nz, long nx, long ny, float h, lo
 			    if (try<guess)  {fhead=(guess-try)/slow0[index]; guess=try;}
 			  }
 			if(guess > 1.0e9){ 
-			  	if ( X1>x1+1 && X1<x2-1 && X2>y1+1 && X2<y2-1 ) {
-			    	try = fdhnf(t0(X1,X2,z1+1),
-						t0(X1+1,X2,z1+1),t0(X1,X2+1,z1+1),
-					  	t0(X1-1,X2,z1+1),t0(X1,X2-1,z1+1),
-					  	s0(X1,X2,z1),
-					  	s0(X1,X2,z1+1) );
-					if (try<guess)  guess = try;
-			  	}
-			}
-            try = t0(X1,X2,z1+1) + .5*(s0(X1,X2,z1)+s0(X1,X2,z1+1));
-			if (try<guess)  guess = try;
-            if ( time0[index+1]<1.e9 && X1<nx-1 )  {
-				try = t0(X1+1,X2,z1) + .5*(s0(X1,X2,z1)+s0(X1+1,X2,z1));
+			  if ( X1>x1+1 && X1<x2-1 && X2>y1+1 && X2<y2-1 ) {
+			    try = fdhnf(t0(X1,X2,z1+1),
+					  t0(X1+1,X2,z1+1),t0(X1,X2+1,z1+1),
+					  t0(X1-1,X2,z1+1),t0(X1,X2-1,z1+1),
+					  s0(X1,X2,z1),
+					  s0(X1,X2,z1+1) );
+			    if (try<guess)  guess = try;
+			  }
+			} 
+                          try = t0(X1,X2,z1+1) + .5*(s0(X1,X2,z1)+s0(X1,X2,z1+1));
+			  if (try<guess)  guess = try;
+                          if ( time0[index+1]<1.e9 && X1<nx-1 )  {
+			    try = t0(X1+1,X2,z1) + .5*(s0(X1,X2,z1)+s0(X1+1,X2,z1));
 			    if (try<guess)  {fhead=(guess-try)/slow0[index]; guess=try;}
-			}
-			if ( time0[index-1]<1.e9 && X1>0 )  {
+			  }
+			  if ( time0[index-1]<1.e9 && X1>0 )  {
 			    try = t0(X1-1,X2,z1) + .5*(s0(X1,X2,z1)+s0(X1-1,X2,z1));
 			    if (try<guess)  {fhead=(guess-try)/slow0[index]; guess=try;}
-			}
-			if ( time0[index+nx]<1.e9 && X2<ny-1 )  {
-				try = t0(X1,X2+1,z1) + .5*(s0(X1,X2,z1)+s0(X1,X2+1,z1));
+			  }
+			  if ( time0[index+nx]<1.e9 && X2<ny-1 )  {
+			    try = t0(X1,X2+1,z1) + .5*(s0(X1,X2,z1)+s0(X1,X2+1,z1));
 			    if (try<guess)  {fhead=(guess-try)/slow0[index]; guess=try;}
-			}
-			if ( time0[index-nx]<1.e9 && X2>0 )  {
+			  }
+			  if ( time0[index-nx]<1.e9 && X2>0 )  {
 			    try = t0(X1,X2-1,z1) + .5*(s0(X1,X2,z1)+s0(X1,X2-1,z1));
 			    if (try<guess)  {fhead=(guess-try)/slow0[index]; guess=try;}
-			}
+			  }
 			if (guess<time0[index])  {
 				time0[index] = guess;
 				if (fhead>headtest)  headw[5]++;
@@ -553,154 +553,154 @@ void vidale3d(float *slow0, float *time0, long nz, long nx, long ny, float h, lo
 			guess = time0[index];
 			if(time0[index+1] < 1.e9 && time0[index+nxy+1] < 1.e9
 			   && time0[index+nxy] < 1.e9 && X2<nz-1  && X1<nx-1 ) {
-			  	try = fdh3d(              t0(X1,y1+1,X2),
+			  try = fdh3d(              t0(X1,y1+1,X2),
 				      t0(X1+1,y1+1,X2),t0(X1+1,y1+1,X2+1),t0(X1,y1+1,X2+1),
 				      t0(X1+1,y1  ,X2),t0(X1+1,y1  ,X2+1),t0(X1,y1  ,X2+1),
 				      s0(X1,y1,X2), s0(X1,y1+1,X2),
 				      s0(X1+1,y1+1,X2),s0(X1+1,y1+1,X2+1),s0(X1,y1+1,X2+1),
 				      s0(X1+1,y1  ,X2),s0(X1+1,y1  ,X2+1),s0(X1,y1  ,X2+1));
-			  	if (try<guess) guess = try;
+			  if (try<guess) guess = try;
 			}
 			if(time0[index-1] < 1.e9 && time0[index+nxy-1] < 1.e9
 			   && time0[index+nxy] < 1.e9 && X2<nz-1  && X1>0 ) {
-			  	try = fdh3d(              t0(X1,y1+1,X2),
+			  try = fdh3d(              t0(X1,y1+1,X2),
 				      t0(X1-1,y1+1,X2),t0(X1-1,y1+1,X2+1),t0(X1,y1+1,X2+1),
 				      t0(X1-1,y1  ,X2),t0(X1-1,y1  ,X2+1),t0(X1,y1  ,X2+1),
 				      s0(X1,y1,X2), s0(X1,y1+1,X2),
 				      s0(X1-1,y1+1,X2),s0(X1-1,y1+1,X2+1),s0(X1,y1+1,X2+1),
 				      s0(X1-1,y1  ,X2),s0(X1-1,y1  ,X2+1),s0(X1,y1  ,X2+1));
-			  	if (try<guess) guess = try;
+			  if (try<guess) guess = try;
 			}
 			if(time0[index+1] < 1.e9 && time0[index-nxy+1] < 1.e9
 			   && time0[index-nxy] < 1.e9 && X2>0  && X1<nx-1 ) {
-			  	try = fdh3d(              t0(X1,y1+1,X2),
+			  try = fdh3d(              t0(X1,y1+1,X2),
 				      t0(X1+1,y1+1,X2),t0(X1+1,y1+1,X2-1),t0(X1,y1+1,X2-1),
 				      t0(X1+1,y1  ,X2),t0(X1+1,y1  ,X2-1),t0(X1,y1  ,X2-1),
 				      s0(X1,y1,X2), s0(X1,y1+1,X2),
 				      s0(X1+1,y1+1,X2),s0(X1+1,y1+1,X2-1),s0(X1,y1+1,X2-1),
 				      s0(X1+1,y1  ,X2),s0(X1+1,y1  ,X2-1),s0(X1,y1  ,X2-1));
-			  	if (try<guess) guess = try;
+			  if (try<guess) guess = try;
 			}
 			if(time0[index-1] < 1.e9 && time0[index-nxy-1] < 1.e9
 			   && time0[index-nxy] < 1.e9 && X2>0  && X1>0 ) {
-			  	try = fdh3d(              t0(X1,y1+1,X2),
+			  try = fdh3d(              t0(X1,y1+1,X2),
 				      t0(X1-1,y1+1,X2),t0(X1-1,y1+1,X2-1),t0(X1,y1+1,X2-1),
 				      t0(X1-1,y1  ,X2),t0(X1-1,y1  ,X2-1),t0(X1,y1  ,X2-1),
 				      s0(X1,y1,X2), s0(X1,y1+1,X2),
 				      s0(X1-1,y1+1,X2),s0(X1-1,y1+1,X2-1),s0(X1,y1+1,X2-1),
 				      s0(X1-1,y1  ,X2),s0(X1-1,y1  ,X2-1),s0(X1,y1  ,X2-1));
-			  	if (try<guess) guess = try;
+			  if (try<guess) guess = try;
 			}
 			if(guess > 1.0e9){ 
-			  	if(time0[index+1] < 1.e9 && X1<nx-1 && X2>z1+1 && X2<z2-1 )  {
-			      	try = fdhne(t0(X1,y1+1,X2),t0(X1+1,y1+1,X2),t0(X1+1,y1,X2),
+			  if(time0[index+1] < 1.e9 && X1<nx-1 && X2>z1+1 && X2<z2-1 )  {
+			      try = fdhne(t0(X1,y1+1,X2),t0(X1+1,y1+1,X2),t0(X1+1,y1,X2),
 					  t0(X1+1,y1+1,X2-1),t0(X1+1,y1+1,X2+1),
 					  s0(X1,y1,X2),
 					  s0(X1,y1+1,X2),s0(X1+1,y1+1,X2),s0(X1+1,y1,X2) );
-			    	if (try<guess)  guess = try;
-				}
-				if(time0[index-1] < 1.e9 && X1>0 && X2>z1+1 && X2<z2-1 )  {
-			    	try = fdhne(t0(X1,y1+1,X2),t0(X1-1,y1+1,X2),t0(X1-1,y1,X2),
+			    if (try<guess)  guess = try;
+			  }
+			  if(time0[index-1] < 1.e9 && X1>0 && X2>z1+1 && X2<z2-1 )  {
+			      try = fdhne(t0(X1,y1+1,X2),t0(X1-1,y1+1,X2),t0(X1-1,y1,X2),
 					  t0(X1-1,y1+1,X2-1),t0(X1-1,y1+1,X2+1),
 					  s0(X1,y1,X2),
 					  s0(X1,y1+1,X2),s0(X1-1,y1+1,X2),s0(X1-1,y1,X2) );
-			    	if (try<guess)  guess = try;
-				}
-				if(time0[index+nxy] < 1.e9 && X2<nz-1 && X1>x1+1 && X1<x2-1 )  {
-			    	try = fdhne(t0(X1,y1+1,X2),t0(X1,y1+1,X2+1),t0(X1,y1,X2+1),
+			    if (try<guess)  guess = try;
+			  }
+			  if(time0[index+nxy] < 1.e9 && X2<nz-1 && X1>x1+1 && X1<x2-1 )  {
+			      try = fdhne(t0(X1,y1+1,X2),t0(X1,y1+1,X2+1),t0(X1,y1,X2+1),
 					  t0(X1-1,y1+1,X2+1),t0(X1+1,y1+1,X2+1),
 					  s0(X1,y1,X2),
 					  s0(X1,y1+1,X2),s0(X1,y1+1,X2+1),s0(X1,y1,X2+1) );
-			    	if (try<guess)  guess = try;
-				}
-				if(time0[index-nxy] < 1.e9 && X2>0 && X1>x1+1 && X1<x2-1 )  {
-			    	try = fdhne(t0(X1,y1+1,X2),t0(X1,y1+1,X2-1),t0(X1,y1,X2-1),
+			    if (try<guess)  guess = try;
+			  }
+			  if(time0[index-nxy] < 1.e9 && X2>0 && X1>x1+1 && X1<x2-1 )  {
+			      try = fdhne(t0(X1,y1+1,X2),t0(X1,y1+1,X2-1),t0(X1,y1,X2-1),
 					  t0(X1-1,y1+1,X2-1),t0(X1+1,y1+1,X2-1),
 					  s0(X1,y1,X2),
 					  s0(X1,y1+1,X2),s0(X1,y1+1,X2-1),s0(X1,y1,X2-1) );
-			    	if (try<guess)  guess = try;
-				}
-		    } 
-			if(time0[index+1] < 1.e9 && X1<nx-1 )  {
+			    if (try<guess)  guess = try;
+			  }
+		        } 
+			  if(time0[index+1] < 1.e9 && X1<nx-1 )  {
 			    try = fdh2d(t0(X1,y1+1,X2),t0(X1+1,y1+1,X2),t0(X1+1,y1,X2),
 					  s0(X1,y1,X2),
 					  s0(X1,y1+1,X2),s0(X1+1,y1+1,X2),s0(X1+1,y1,X2) );
 			    if (try<guess)  guess = try;
-			}
-			if(time0[index-1] < 1.e9 && X1>0 )  {
+			  }
+			  if(time0[index-1] < 1.e9 && X1>0 )  {
 			    try = fdh2d(t0(X1,y1+1,X2),t0(X1-1,y1+1,X2),t0(X1-1,y1,X2),
 					  s0(X1,y1,X2),
 					  s0(X1,y1+1,X2),s0(X1-1,y1+1,X2),s0(X1-1,y1,X2) );
 			    if (try<guess)  guess = try;
-			}
-			if(time0[index+nxy] < 1.e9 && X2<nz-1 )  {
+			  }
+			  if(time0[index+nxy] < 1.e9 && X2<nz-1 )  {
 			    try = fdh2d(t0(X1,y1+1,X2),t0(X1,y1+1,X2+1),t0(X1,y1,X2+1),
 					  s0(X1,y1,X2),
 					  s0(X1,y1+1,X2),s0(X1,y1+1,X2+1),s0(X1,y1,X2+1) );
 			    if (try<guess)  guess = try;
-			}
-			if(time0[index-nxy] < 1.e9 && X2>0 )  {
+			  }
+			  if(time0[index-nxy] < 1.e9 && X2>0 )  {
 			    try = fdh2d(t0(X1,y1+1,X2),t0(X1,y1+1,X2-1),t0(X1,y1,X2-1),
 					  s0(X1,y1,X2),
 					  s0(X1,y1+1,X2),s0(X1,y1+1,X2-1),s0(X1,y1,X2-1) );
 			    if (try<guess)  guess = try;
-			}
-			if(time0[index+1] < 1.e9 && time0[index+nxy+1] < 1.e9
+			  }
+			  if(time0[index+1] < 1.e9 && time0[index+nxy+1] < 1.e9
 			     && time0[index+nxy] < 1.e9 && X2<nz-1  && X1<nx-1 ) {
 			    try = fdh2d(t0(X1+1,y1,X2),t0(X1+1,y1,X2+1),t0(X1,y1,X2+1),
 					s0(X1,y1,X2),
 					s0(X1+1,y1,X2),s0(X1+1,y1,X2+1),s0(X1,y1,X2+1) );
 			    if (try<guess)  {fhead=(guess-try)/slow0[index]; guess=try;}
-			}
-			if(time0[index+1] < 1.e9 && time0[index-nxy+1] < 1.e9
+			  }
+			  if(time0[index+1] < 1.e9 && time0[index-nxy+1] < 1.e9
 			     && time0[index-nxy] < 1.e9 && X2>0  && X1<nx-1 ) {
 			    try = fdh2d(t0(X1+1,y1,X2),t0(X1+1,y1,X2-1),t0(X1,y1,X2-1),
 					s0(X1,y1,X2),
 					s0(X1+1,y1,X2),s0(X1+1,y1,X2-1),s0(X1,y1,X2-1) );
 			    if (try<guess)  {fhead=(guess-try)/slow0[index]; guess=try;}
-			}
-			if(time0[index-1] < 1.e9 && time0[index+nxy-1] < 1.e9
+			  }
+			  if(time0[index-1] < 1.e9 && time0[index+nxy-1] < 1.e9
 			     && time0[index+nxy] < 1.e9 && X2<nz-1  && X1>0 ) {
 			    try = fdh2d(t0(X1-1,y1,X2),t0(X1-1,y1,X2+1),t0(X1,y1,X2+1),
 					s0(X1,y1,X2),
 					s0(X1-1,y1,X2),s0(X1-1,y1,X2+1),s0(X1,y1,X2+1) );
 			    if (try<guess)  {fhead=(guess-try)/slow0[index]; guess=try;}
-			}
-			if(time0[index-1] < 1.e9 && time0[index-nxy-1] < 1.e9
+			  }
+			  if(time0[index-1] < 1.e9 && time0[index-nxy-1] < 1.e9
 			     && time0[index-nxy] < 1.e9 && X2>0  && X1>0 ) {
 			    try = fdh2d(t0(X1-1,y1,X2),t0(X1-1,y1,X2-1),t0(X1,y1,X2-1),
 					s0(X1,y1,X2),
 					s0(X1-1,y1,X2),s0(X1-1,y1,X2-1),s0(X1,y1,X2-1) );
 			    if (try<guess)  {fhead=(guess-try)/slow0[index]; guess=try;}
-			}
+			  }
 			if(guess > 1.0e9){ 
-			  	if ( X1>x1+1 && X1<x2-1 && X2>z1+1 && X2<z2-1 ) {
-			    	try = fdhnf(t0(X1,y1+1,X2),
+			  if ( X1>x1+1 && X1<x2-1 && X2>z1+1 && X2<z2-1 ) {
+			    try = fdhnf(t0(X1,y1+1,X2),
 					  t0(X1+1,y1+1,X2),t0(X1,y1+1,X2+1),
 					  t0(X1-1,y1+1,X2),t0(X1,y1+1,X2-1),
 					  s0(X1,y1,X2),
 					  s0(X1,y1+1,X2) );
-			    	if (try<guess)  guess = try;
-			  	}
+			    if (try<guess)  guess = try;
+			  }
 			} 
-			try = t0(X1,y1+1,X2) + .5*(s0(X1,y1,X2)+s0(X1,y1+1,X2));
-			if (try<guess)  guess = try;
-            if ( time0[index+1]<1.e9 && X1<nx-1 )  {
+			  try = t0(X1,y1+1,X2) + .5*(s0(X1,y1,X2)+s0(X1,y1+1,X2));
+			  if (try<guess)  guess = try;
+                          if ( time0[index+1]<1.e9 && X1<nx-1 )  {
 			    try = t0(X1+1,y1,X2) + .5*(s0(X1,y1,X2)+s0(X1+1,y1,X2));
 			    if (try<guess)  {fhead=(guess-try)/slow0[index]; guess=try;}
-			}
-			if ( time0[index-1]<1.e9 && X1>0 )  {
+			  }
+			  if ( time0[index-1]<1.e9 && X1>0 )  {
 			    try = t0(X1-1,y1,X2) + .5*(s0(X1,y1,X2)+s0(X1-1,y1,X2));
 			    if (try<guess)  {fhead=(guess-try)/slow0[index]; guess=try;}
-			}
-			if ( time0[index+nxy]<1.e9 && X2<nz-1 )  {
+			  }
+			  if ( time0[index+nxy]<1.e9 && X2<nz-1 )  {
 			    try = t0(X1,y1,X2+1) + .5*(s0(X1,y1,X2)+s0(X1,y1,X2+1));
 			    if (try<guess)  {fhead=(guess-try)/slow0[index]; guess=try;}
-			}
-			if ( time0[index-nxy]<1.e9 && X2>0 )  {
+			  }
+			  if ( time0[index-nxy]<1.e9 && X2>0 )  {
 			    try = t0(X1,y1,X2-1) + .5*(s0(X1,y1,X2)+s0(X1,y1,X2-1));
 			    if (try<guess)  {fhead=(guess-try)/slow0[index]; guess=try;}
-			}
+			  }
 			if (guess<time0[index]) {
 				time0[index] = guess;
 				if (fhead>headtest)  headw[3]++;
@@ -1361,8 +1361,8 @@ int compar(const void * a, const void * b)
 /* 3D TRANSMISSION STENCIL
    STENCIL FROM VIDALE; CONDITIONS AND OTHER OPTIONS FROM HOLE
    JAH 11/91 */
-float fdh3d(float  t1, float t2, float t3, float t4, float t5, float t6, float t7, float ss0, float s1, float s2, float s3, float s4, float s5, float s6, float s7)
-     //float  t1,t2,t3,t4,t5,t6,t7,ss0,s1,s2,s3,s4,s5,s6,s7;
+float fdh3d(t1,t2,t3,t4,t5,t6,t7,ss0,s1,s2,s3,s4,s5,s6,s7)
+     float  t1,t2,t3,t4,t5,t6,t7,ss0,s1,s2,s3,s4,s5,s6,s7;
      /* ss0 at newpoint; s1,t1 adjacent on oldface;
 	s2,t2 and s4,t4 on oldface adjacent to s1;
 	s3,t3 on oldface diametrically opposite newpoint;
@@ -1388,8 +1388,8 @@ float fdh3d(float  t1, float t2, float t3, float t4, float t5, float t6, float t
 /* 3D STENCIL FOR NEW EDGE
    STENCIL FROM VIDALE; CONDITIONS AND OTHER OPTIONS FROM HOLE
    JAH 11/91 */
-float fdhne(float  t1, float t2, float t3, float t4, float t5, float ss0, float s1, float s2, float s3)
-     //float  t1,t2,t3,t4,t5,ss0,s1,s2,s3;
+float fdhne(t1,t2,t3,t4,t5,ss0,s1,s2,s3)
+     float  t1,t2,t3,t4,t5,ss0,s1,s2,s3;
      /* ss0 at newpoint; s1,t1 adjacent on oldface;
 	s2,t2 diagonal on oldface; s3,t3 adjacent on newface;
 	t4,t5 beside t2 on old face opposite each other */
@@ -1410,8 +1410,8 @@ float fdhne(float  t1, float t2, float t3, float t4, float t5, float ss0, float 
 /* 2D TRANSMISSION STENCIL (FOR HEAD WAVES ON FACES OF GRID CELLS)
    STENCIL FROM VIDALE (1988 2D PAPER); CONDITIONS AND OTHER OPTIONS FROM HOLE
    JAH 11/91 */
-float fdh2d(float t1, float t2, float t3, float ss0, float s1, float s2, float s3)
-     //float  t1,t2,t3,ss0,s1,s2,s3;
+float fdh2d(t1,t2,t3,ss0,s1,s2,s3)
+     float  t1,t2,t3,ss0,s1,s2,s3;
      /* ss0 at newpoint; s1,t1 & s3,t3 adjacent; s2,t2 diagonal
       */
 {
@@ -1430,8 +1430,8 @@ float fdh2d(float t1, float t2, float t3, float ss0, float s1, float s2, float s
 /* 3D STENCIL FOR NEW FACE
    STENCIL FROM VIDALE; CONDITIONS AND OTHER OPTIONS FROM HOLE
    JAH 11/91 */
-float fdhnf(float t1, float t2, float t3, float t4, float t5, float ss0, float s1)
-     //float  t1,t2,t3,t4,t5,ss0,s1;
+float fdhnf(t1,t2,t3,t4,t5,ss0,s1)
+     float  t1,t2,t3,t4,t5,ss0,s1;
      /* ss0 at newpoint; s1,t1 adjacent on old face;
 	t2,t4 beside t1 on old face and opposite each other;
 	t3,t5 beside t1 on old face and opposite each other

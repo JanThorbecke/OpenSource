@@ -7,7 +7,7 @@
 
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
-#define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
+#define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 
 /**
 *
@@ -20,63 +20,66 @@
 *           The Netherlands
 **/
 
-int getModelInfo3d(char *file_name, int *n1, int *n2, int *n3, float *d1, float *d2, float *d3, float *f1, float *f2, float *f3, int *axis, int verbose);
+long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3, float *d1, float *d2, float *d3, float *f1, float *f2, float *f3, long *axis, long verbose);
 
-int recvPar3d(recPar *rec, float sub_x0, float sub_z0, float sub_y0, float dx, float dz, float dy, int nx, int nz, int ny);
+long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0, float dx, float dy, float dz, long nx, long ny, long nz);
 
-int getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar *ray, int verbose)
+long getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar *ray, long verbose)
 {
-	int nx, nz, ny, nsrc, ix, iy, axis, is0;
-	int 	n1, n2, n3; 
-	int idzshot, idxshot, idyshot;
-	int src_ix0, src_iz0, src_iy0, src_ix1, src_iz1, src_iy1;
-	float cp_min, cp_max;
-	float sub_x0,sub_z0,sub_y0;
-	float srcendx, srcendz, srcendy, dy, dx, dz;
-	float xsrc, zsrc, ysrc, dxshot, dzshot, dyshot;
-	float dxrcv,dzrcv,dyrcv,dxspread,dzspread,dyspread;
-	float xmax, zmax, ymax;
-	float xsrc1, xsrc2, zsrc1, zsrc2, ysrc1, ysrc2;
-	float *xsrca, *zsrca, *ysrca;
-	float rsrc, oxsrc, ozsrc, oysrc, dphisrc, ncsrc;
-	size_t nsamp;
-	int nxsrc, nzsrc, nysrc;
-	int is;
-	char *src_positions, *file_cp=NULL;
+	long 	nx, nz, ny, nsrc, ix, iy, axis, is0;
+	long 	n1, n2, n3; 
+	long	idzshot, idxshot, idyshot;
+	long	src_ix0, src_iz0, src_iy0, src_ix1, src_iz1, src_iy1;
+	float	cp_min, cp_max;
+	float	sub_x0,sub_z0,sub_y0;
+	float	srcendx, srcendz, srcendy, dy, dx, dz;
+	float	xsrc, zsrc, ysrc, dxshot, dzshot, dyshot;
+	float	dxrcv,dzrcv,dyrcv,dxspread,dzspread,dyspread;
+	float	xmax, zmax, ymax;
+	float	xsrc1, xsrc2, zsrc1, zsrc2, ysrc1, ysrc2;
+	float	*xsrca, *zsrca, *ysrca;
+	float	rsrc, oxsrc, ozsrc, oysrc, dphisrc, ncsrc;
+	size_t	nsamp;
+	long	nxsrc, nzsrc, nysrc;
+	long	is;
+	char	*src_positions, *file_cp=NULL;
 
-	if (!getparint("verbose",&verbose)) verbose=0;
+	if (!getparlong("verbose",&verbose)) verbose=0;
 
-	if (!getparstring("file_cp", &file_cp)) {
+	if (!getparstring("file_cp", &mod->file_cp)) {
 		vwarn("file_cp not defined, assuming homogeneous model");
 	}
 
 	if (!getparstring("file_rcv",&rec->file_rcv)) rec->file_rcv="recv.su";
-	if (!getparint("src_at_rcv",&src->src_at_rcv)) src->src_at_rcv=1;
+	if (!getparlong("src_at_rcv",&src->src_at_rcv)) src->src_at_rcv=1;
 	
 	/* read model parameters, which are used to set up source and receivers and check stability */
 	
-	getModelInfo3d(mod->file_cp, &n1, &n2, &n3, &dz, &dx, &dy, &sub_z0, &sub_x0, &sub_y0, &axis, verbose);
-	mod->dz = dz;
-	mod->dx = dx;
+	getModelInfo3D(mod->file_cp, &n1, &n2, &n3, &dz, &dx, &dy, &sub_z0, &sub_x0, &sub_y0, &axis, verbose);
+	nz = n1;
+	nx = n2;
+	ny = n3;
+	mod->dz = dx;
+	mod->dx = dy;
 	mod->dy = dx;
-	mod->nz = nz;
-	mod->nx = nx;
-	mod->ny = nx;
+	mod->nz = n1;
+	mod->nx = n2;
+	mod->ny = n3;
 	
     /* origin of model in real (non-grid) coordinates */
 	mod->x0 = sub_x0;
 	mod->z0 = sub_z0;
 	mod->y0 = sub_y0;
-	xmax = sub_x0+(nx-1)*dx;
-	zmax = sub_z0+(nz-1)*dz;
-	ymax = sub_y0+(ny-1)*dy;
+	xmax = sub_x0+(mod->nx-1)*mod->dx;
+	zmax = sub_z0+(mod->nz-1)*mod->dz;
+	ymax = sub_y0+(mod->ny-1)*mod->dy;
 
 	if (verbose) {
 		vmess("*******************************************");
 		vmess("*************** model info ****************");
 		vmess("*******************************************");
-		vmess("nz      = %8d   nx      = %8d ny      = %8d", nz, nx, ny);
-		vmess("dz      = %8.4f   dx      = %8.4f dy      = %8.4f", dz, dx, dy);
+		vmess("nz      = %8li   nx      = %8li ny      = %8li", mod->nz, mod->nx, mod->ny);
+		vmess("dz      = %8.4f   dx      = %8.4f dy      = %8.4f", mod->dz, mod->dx, mod->dy);
 		vmess("zmin    = %8.4f   zmax    = %8.4f", sub_z0, zmax);
 		vmess("xmin    = %8.4f   xmax    = %8.4f", sub_x0, xmax);
 		vmess("ymin    = %8.4f   ymax    = %8.4f", sub_y0, ymax);
@@ -88,9 +91,9 @@ int getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar
 	if (!getparfloat("ysrc",&ysrc)) ysrc=sub_y0+((ny-1)*dy)/2.0;
 	if (!getparfloat("xsrc",&xsrc)) xsrc=sub_x0+((nx-1)*dx)/2.0;
 	if (!getparfloat("zsrc",&zsrc)) zsrc=sub_z0;
-	if (!getparint("nyshot",&shot->ny)) shot->ny=1;
-	if (!getparint("nxshot",&shot->nx)) shot->nx=1;
-	if (!getparint("nzshot",&shot->nz)) shot->nz=1;
+	if (!getparlong("nyshot",&shot->ny)) shot->ny=1;
+	if (!getparlong("nxshot",&shot->nx)) shot->nx=1;
+	if (!getparlong("nzshot",&shot->nz)) shot->nz=1;
 	if (!getparfloat("dyshot",&dyshot)) dyshot=dy;
 	if (!getparfloat("dxshot",&dxshot)) dxshot=dx;
 	if (!getparfloat("dzshot",&dzshot)) dzshot=dz;
@@ -134,9 +137,9 @@ int getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar
 	src_iz1=MAX(0,NINT((srcendz-sub_z0)/dz));
 	src_iz1=MIN(src_iz1,nz);
 
-	shot->y = (int *)calloc(shot->ny,sizeof(int));
-	shot->x = (int *)calloc(shot->nx,sizeof(int));
-	shot->z = (int *)calloc(shot->nz,sizeof(int));
+	shot->y = (long *)calloc(shot->ny,sizeof(long));
+	shot->x = (long *)calloc(shot->nx,sizeof(long));
+	shot->z = (long *)calloc(shot->nz,sizeof(long));
 	for (is=0; is<shot->ny; is++) {
 		shot->y[is] = src_iy0+is*idyshot;
 		if (shot->y[is] > ny-1) shot->ny = is-1;
@@ -156,7 +159,7 @@ int getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar
 	nxsrc = countparval("xsrca");
 	nzsrc = countparval("zsrca");
 	if (nxsrc != nzsrc || nxsrc != nysrc) {
-		verr("Number of sources in array xsrca (%d), zsrca(%d) are not equal",nxsrc, nzsrc);
+		verr("Number of sources in array xsrca (%li), zsrca(%li) are not equal",nxsrc, nzsrc);
 	}
 
 	/* check if sources on a circle are defined */
@@ -169,15 +172,15 @@ int getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar
 		ncsrc = NINT(360.0/dphisrc);
         src->n = nsrc;
 		
-		src->y = (int *)malloc(ncsrc*sizeof(int));
-		src->x = (int *)malloc(ncsrc*sizeof(int));
-		src->z = (int *)malloc(ncsrc*sizeof(int));
+		src->y = (long *)malloc(ncsrc*sizeof(long));
+		src->x = (long *)malloc(ncsrc*sizeof(long));
+		src->z = (long *)malloc(ncsrc*sizeof(long));
 
 		for (ix=0; ix<ncsrc; ix++) {
 			src->y[ix] = NINT((oysrc-sub_y0+rsrc*cos(((iy*dphisrc)/360.0)*(2.0*M_PI)))/dy);
 			src->x[ix] = NINT((oxsrc-sub_x0+rsrc*cos(((ix*dphisrc)/360.0)*(2.0*M_PI)))/dx);
 			src->z[ix] = NINT((ozsrc-sub_z0+rsrc*sin(((ix*dphisrc)/360.0)*(2.0*M_PI)))/dz);
-			if (verbose>4) fprintf(stderr,"Source on Circle: ysrc[%d]=%d xsrc[%d]=%d zsrc=%d\n", iy, src->y[iy], ix, src->x[ix], src->z[ix]);
+			if (verbose>4) fprintf(stderr,"Source on Circle: ysrc[%li]=%li xsrc[%li]=%li zsrc=%li\n", iy, src->y[iy], ix, src->x[ix], src->z[ix]);
 		}
 		
 	}
@@ -196,8 +199,8 @@ int getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar
 	else src->single=1;
     
 	/* to maintain functionality of older parameters usage */
-	if (!getparint("src_random",&src->random)) src->random=0;
-	if (!getparint("plane_wave",&src->plane)) src->plane=0;
+	if (!getparlong("src_random",&src->random)) src->random=0;
+	if (!getparlong("plane_wave",&src->plane)) src->plane=0;
 	
 	if (src->random) {
 		src->plane=0;
@@ -213,11 +216,11 @@ int getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar
 		
 	/* number of sources per shot modeling */
 
-	if (!getparint("src_window",&src->window)) src->window=0;
-	if (!getparint("distribution",&src->distribution)) src->distribution=0;
+	if (!getparlong("src_window",&src->window)) src->window=0;
+	if (!getparlong("distribution",&src->distribution)) src->distribution=0;
 	if (!getparfloat("amplitude", &src->amplitude)) src->amplitude=0.0;
 	if (src->random && nxsrc==0) {
-		if (!getparint("nsrc",&nsrc)) nsrc=1;
+		if (!getparlong("nsrc",&nsrc)) nsrc=1;
 		if (!getparfloat("ysrc1", &ysrc1)) ysrc1=sub_y0;
 		if (!getparfloat("ysrc2", &ysrc2)) ysrc2=ymax;
 		if (!getparfloat("xsrc1", &xsrc1)) xsrc1=sub_x0;
@@ -227,18 +230,18 @@ int getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar
 		dyshot = ysrc2-ysrc1;
 		dxshot = xsrc2-xsrc1;
 		dzshot = zsrc2-zsrc1;
-		src->y = (int *)malloc(nsrc*sizeof(int));
-		src->x = (int *)malloc(nsrc*sizeof(int));
-		src->z = (int *)malloc(nsrc*sizeof(int));
+		src->y = (long *)malloc(nsrc*sizeof(long));
+		src->x = (long *)malloc(nsrc*sizeof(long));
+		src->z = (long *)malloc(nsrc*sizeof(long));
 		nsamp = 0;
 
 	}
 	else if (nxsrc != 0) {
 		/* source array is defined */
 		nsrc=nxsrc;
-		src->y = (int *)malloc(nsrc*sizeof(int));
-		src->x = (int *)malloc(nsrc*sizeof(int));
-		src->z = (int *)malloc(nsrc*sizeof(int));
+		src->y = (long *)malloc(nsrc*sizeof(long));
+		src->x = (long *)malloc(nsrc*sizeof(long));
+		src->z = (long *)malloc(nsrc*sizeof(long));
 		ysrca = (float *)malloc(nsrc*sizeof(float));
 		xsrca = (float *)malloc(nsrc*sizeof(float));
 		zsrca = (float *)malloc(nsrc*sizeof(float));
@@ -249,7 +252,7 @@ int getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar
 			src->y[is] = NINT((ysrca[is]-sub_y0)/dy);
 			src->x[is] = NINT((xsrca[is]-sub_x0)/dx);
 			src->z[is] = NINT((zsrca[is]-sub_z0)/dz);
-			if (verbose>3) fprintf(stderr,"Source Array: ysrc[%d]=%f xsrc=%f zsrc=%f\n", is, ysrca[is], xsrca[is], zsrca[is]);
+			if (verbose>3) fprintf(stderr,"Source Array: ysrc[%li]=%f xsrc=%f zsrc=%f\n", is, ysrca[is], xsrca[is], zsrca[is]);
 		}
 		src->random = 1;
 		free(ysrca);
@@ -257,7 +260,7 @@ int getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar
 		free(zsrca);
 	}
 	else {
-		if (src->plane) { if (!getparint("nsrc",&nsrc)) nsrc=1;}
+		if (src->plane) { if (!getparlong("nsrc",&nsrc)) nsrc=1;}
 		else nsrc=1;
 
 		if (nsrc > nx) {
@@ -268,9 +271,9 @@ int getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar
 
 	/* for a source defined on mutliple gridpoint calculate p delay factor */
 
-		src->y = (int *)malloc(nsrc*sizeof(int));
-		src->x = (int *)malloc(nsrc*sizeof(int));
-		src->z = (int *)malloc(nsrc*sizeof(int));
+		src->y = (long *)malloc(nsrc*sizeof(long));
+		src->x = (long *)malloc(nsrc*sizeof(long));
+		src->z = (long *)malloc(nsrc*sizeof(long));
 		is0 = -1*floor((nsrc-1)/2);
 		for (is=0; is<nsrc; is++) {
 			src->y[is] = is0 + is;
@@ -287,7 +290,7 @@ int getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar
 			vmess("*******************************************");
 			vmess("*********** source array info *************");
 			vmess("*******************************************");
-			vmess("Areal source array is defined with %d sources.",nsrc);
+			vmess("Areal source array is defined with %li sources.",nsrc);
 			vmess("Memory requirement for sources = %.2f MB.",sizeof(float)*(nsamp/(1024.0*1024.0)));
 		}
 		if (src->random) {
@@ -298,37 +301,37 @@ int getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar
 
 	/* define receivers */
 
-	if (!getparint("sinkdepth",&rec->sinkdepth)) rec->sinkdepth=0;
-	if (!getparint("sinkdepth_src",&src->sinkdepth)) src->sinkdepth=0;
-	if (!getparint("sinkvel",&rec->sinkvel)) rec->sinkvel=0;
-	if (!getparint("max_nrec",&rec->max_nrec)) rec->max_nrec=15000;
+	if (!getparlong("sinkdepth",&rec->sinkdepth)) rec->sinkdepth=0;
+	if (!getparlong("sinkdepth_src",&src->sinkdepth)) src->sinkdepth=0;
+	if (!getparlong("sinkvel",&rec->sinkvel)) rec->sinkvel=0;
+	if (!getparlong("max_nrec",&rec->max_nrec)) rec->max_nrec=15000;
 	if (!getparfloat("dyspread",&dyspread)) dyspread=0;
 	if (!getparfloat("dxspread",&dxspread)) dxspread=0;
 	if (!getparfloat("dzspread",&dzspread)) dzspread=0;
-    if (!getparint("nt",&rec->nt)) rec->nt=1024;
+    if (!getparlong("nt",&rec->nt)) rec->nt=1024;
 
 	/* calculates the receiver coordinates */
 	
-	recvPar3d(rec, sub_x0, sub_z0, sub_y0, dx, dz, dy, nx, nz, ny);
+	recvPar3D(rec, sub_x0, sub_y0, sub_z0, dx, dy, dz, nx, ny, nz);
 
 	if (verbose) {
 		if (rec->n) {
-			dyrcv = rec->yr[MIN(1,rec->n-1)]-rec->yr[0];
+			dyrcv = rec->yr[rec->nx]-rec->yr[0];
 			dxrcv = rec->xr[MIN(1,rec->n-1)]-rec->xr[0];
 			dzrcv = rec->zr[MIN(1,rec->n-1)]-rec->zr[0];
 			vmess("*******************************************");
 			vmess("************* receiver info ***************");
 			vmess("*******************************************");
-			vmess("ntrcv   = %d nrcv    = %d ", rec->nt, rec->n);
+			vmess("ntrcv   = %li nrcv    = %li ", rec->nt, rec->n);
 			vmess("dzrcv   = %f dxrcv   = %f dyrcv   = %f ", dzrcv, dxrcv, dyrcv);
 			vmess("Receiver array at coordinates: ");
 			vmess("zmin    = %f zmax    = %f ", rec->zr[0]+sub_z0, rec->zr[rec->n-1]+sub_z0);
 			vmess("xmin    = %f xmax    = %f ", rec->xr[0]+sub_x0, rec->xr[rec->n-1]+sub_x0);
 			vmess("ymin    = %f ymax    = %f ", rec->yr[0]+sub_y0, rec->yr[rec->n-1]+sub_y0);
 			vmess("which are gridpoints: ");
-			vmess("izmin   = %d izmax   = %d ", rec->z[0], rec->z[rec->n-1]);
-			vmess("ixmin   = %d ixmax   = %d ", rec->x[0], rec->x[rec->n-1]);
-			vmess("iymin   = %d iymax   = %d ", rec->y[0], rec->y[rec->n-1]);
+			vmess("izmin   = %li izmax   = %li ", rec->z[0], rec->z[rec->n-1]);
+			vmess("ixmin   = %li ixmax   = %li ", rec->x[0], rec->x[rec->n-1]);
+			vmess("iymin   = %li iymax   = %li ", rec->y[0], rec->y[rec->n-1]);
 			fprintf(stderr,"\n");
 		}
 		else {
@@ -337,10 +340,10 @@ int getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar
 	}
 
     /* Ray tracing parameters */
-    if (!getparint("smoothwindow",&ray->smoothwindow)) ray->smoothwindow=0;
-    if (!getparint("useT2",&ray->useT2)) ray->useT2=0;
-    if (!getparint("geomspread",&ray->geomspread)) ray->geomspread=1;
-    if (!getparint("nraystep",&ray->nray)) ray->nray=5;
+    if (!getparlong("smoothwindow",&ray->smoothwindow)) ray->smoothwindow=0;
+    if (!getparlong("useT2",&ray->useT2)) ray->useT2=0;
+    if (!getparlong("geomspread",&ray->geomspread)) ray->geomspread=1;
+    if (!getparlong("nraystep",&ray->nray)) ray->nray=5;
 
 	return 0;
 }
