@@ -17,11 +17,14 @@ double wallclock_time(void);
 
 void threadAffinity(void);
 
+float ***alloc3float(modPar mod);
+void free3float(float ***p);
+
 long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src,
 	shotPar *shot, bndPar *bnd, long verbose);
 
-long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
-	float *l2m, float *lam, float *muu, float *tss, float *tes, float *tep);
+long readModel3D(modPar mod, bndPar bnd, float ***rox, float ***roy, float ***roz,
+	float ***l2m, float ***lam, float ***muu, float *tss, float *tes, float *tep);
 
 long defineSource3D(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwav,
 	long reverse, long verbose);
@@ -30,32 +33,32 @@ long writeSrcRecPos3D(modPar *mod, recPar *rec, srcPar *src, shotPar *shot);
 
 long acoustic6_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
     long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz, 
-	float *p, float *rox, float *roy, float *roz, float *l2m, long verbose);
+	float *p, float ***rox, float ***roy, float ***roz, float ***l2m, long verbose);
 
 long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 	long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz,
-	float *p, float *rox, float *roy, float *roz, float *l2m, long verbose);
+	float *p, float ***rox, float ***roy, float ***roz, float ***l2m, long verbose);
 
 long acoustic2_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
     long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz,
-    float *p, float *rox, float *roy, float *roz, float *l2m, long verbose);
+    float *p, float ***rox, float ***roy, float ***roz, float ***l2m, long verbose);
 
 long acoustic4_qr_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, 
     long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz,
-    float *p, float *rox, float *roy, float *roz, float *l2m, long verbose);
+    float *p, float ***rox, float ***roy, float ***roz, float ***l2m, long verbose);
 
 long acousticSH4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 	long ixsrc, long iysrc, long izsrc, float **src_nwav, float *tx, float *ty, float *tz,
-	float *vz, float *rox, float *roy, float *roz, float *mul, long verbose);
+	float *vz, float ***rox, float ***roy, float ***roz, float ***mul, long verbose);
 
 long elastic4dc_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, 
 	long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz,
 	float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
-    float *rox, float *roy, float *roz, float *l2m, float *lam, float *mul, long verbose);
+    float ***rox, float ***roy, float ***roz, float ***l2m, float ***lam, float ***mul, long verbose);
 
 long getRecTimes3D(modPar mod, recPar rec, bndPar bnd, long itime, long isam,
 	float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx,
-	float *txz, float *txy, float *tyz, float *l2m, float *rox, float *roy, float *roz,
+	float *txz, float *txy, float *tyz, float ***l2m, float ***rox, float ***roy, float ***roz,
 	float *rec_vx, float *rec_vy, float *rec_vz, float *rec_txx, float *rec_tyy, float *rec_tzz,
 	float *rec_txz, float *rec_txy, float *rec_tyz, float *rec_p, float *rec_pp, float *rec_ss,
 	float *rec_udp, float *rec_udvz, long verbose);
@@ -285,7 +288,7 @@ int main(int argc, char **argv)
 	bndPar bnd;
 	shotPar shot;
 	float **src_nwav;
-	float *rox, *roy, *roz, *l2m, *lam, *mul;
+	float ***rox, ***roy, ***roz, ***l2m, ***lam, ***mul;
 	float *tss, *tes, *tep, *p, *q, *r;
 	float *vx, *vy, *vz, *tzz, *tyy, *txz, *txy, *tyz, *txx;
 	float *rec_vx, *rec_vy, *rec_vz, *rec_p;
@@ -329,18 +332,18 @@ int main(int argc, char **argv)
 	n2 = mod.nax;
 	sizem=mod.nax*mod.naz*mod.nay;
 
-	rox = (float *)calloc(sizem,sizeof(float));
-	roy = (float *)calloc(sizem,sizeof(float));
-	roz = (float *)calloc(sizem,sizeof(float));
-	l2m = (float *)calloc(sizem,sizeof(float));
+	rox = (float ***)alloc3float(mod);
+	roy = (float ***)alloc3float(mod);
+	roz = (float ***)alloc3float(mod);
+	l2m = (float ***)alloc3float(mod);
 	if (mod.ischeme==2) {
 		tss = (float *)calloc(sizem,sizeof(float));
 		tep = (float *)calloc(sizem,sizeof(float));
 		q = (float *)calloc(sizem,sizeof(float));
 	}
 	if (mod.ischeme>2) {
-		lam = (float *)calloc(sizem,sizeof(float));
-		mul = (float *)calloc(sizem,sizeof(float));
+		lam = (float ***)alloc3float(mod);
+		mul = (float ***)alloc3float(mod);
 	}
 	if (mod.ischeme==4) {
 		tss = (float *)calloc(sizem,sizeof(float));
@@ -384,7 +387,6 @@ int main(int argc, char **argv)
 
 	defineSource3D(wav, src, mod, rec, src_nwav, mod.grid_dir, verbose);
 
-
 	/* allocate arrays for wavefield and receiver arrays */
 
 	vx  = (float *)calloc(sizem,sizeof(float));
@@ -417,9 +419,9 @@ int main(int argc, char **argv)
 		rec_udp   = (float *)calloc(mod.nax*rec.nt,sizeof(float));
 	}
 	/* get velocity and density at first receiver location */
-	ir = mod.ioZz + rec.z[0]+(rec.x[0]+mod.ioZx)*n1+(rec.y[0]+mod.ioZy)*n1*n2;
-	rec.rho = mod.dt/(mod.dx*roz[ir]);
-	rec.cp  = sqrt(l2m[ir]*(roz[ir]))*mod.dx/mod.dt;
+	//ir = mod.ioZz + rec.z[0]+(rec.x[0]+mod.ioZx)*n1+(rec.y[0]+mod.ioZy)*n1*n2;
+	rec.rho = mod.dt/(mod.dx*roz[rec.y[0]+mod.ioZy][rec.x[0]+mod.ioZx][mod.ioZz+rec.z[0]]);
+	rec.cp  = sqrt(l2m[rec.y[0]+mod.ioZy][rec.x[0]+mod.ioZx][mod.ioZz+rec.z[0]]*(roz[rec.y[0]+mod.ioZy][rec.x[0]+mod.ioZx][mod.ioZz+rec.z[0]]))*mod.dx/mod.dt;
 
 	
 	if(sna.beam) {
@@ -462,7 +464,7 @@ int main(int argc, char **argv)
     if (bnd.lef==4 || bnd.lef==2) ioPx += bnd.ntap;
     if (bnd.fro==4 || bnd.fro==2) ioPy += bnd.ntap;
     if (bnd.top==4 || bnd.top==2) ioPz += bnd.ntap;
-	if (rec.sinkvel) sinkvel=l2m[(rec.y[0]+ioPy)*n1*n2+(rec.x[0]+ioPx)*n1+rec.z[0]+ioPz];
+	if (rec.sinkvel) sinkvel=l2m[rec.y[0]+ioPy][rec.x[0]+ioPx][rec.z[0]+ioPz];
 	else sinkvel = 0.0;
 
 /* sink receivers to value different than sinkvel */
@@ -470,7 +472,7 @@ int main(int argc, char **argv)
 		iz = rec.z[ir];
 		iy = rec.y[ir];
 		ix = rec.x[ir];
-		while(l2m[(iy+ioPy)*n1*n2+(ix+ioPx)*n1+iz+ioPz] == sinkvel) iz++;
+		while(l2m[iy+ioPy][ix+ioPx][iz+ioPz] == sinkvel) iz++;
 		rec.z[ir]=iz+rec.sinkdepth;
 		rec.zr[ir]=rec.zr[ir]+(rec.z[ir]-iz)*mod.dz;
 		if (verbose>3) vmess("receiver position %li at grid[ix=%li, iy=%li iz=%li] = (x=%f y=%f z=%f)", ir, ix+ioPx, iy+ioPy, rec.z[ir]+ioPz, rec.xr[ir]+mod.x0, rec.yr[ir]+mod.y0, rec.zr[ir]+mod.z0);
@@ -482,7 +484,7 @@ int main(int argc, char **argv)
 		iz = shot.z[ishot];
 		iy = shot.y[ishot];
 		ix = shot.x[ishot];
-		while(l2m[(iy+ioPy)*n1*n2+(ix+ioPx)*n1+iz+ioPz] == 0.0) iz++;
+		while(l2m[iy+ioPy][ix+ioPx][iz+ioPz] == 0.0) iz++;
 		shot.z[ishot]=iz+src.sinkdepth; 
 	}
 
@@ -490,7 +492,7 @@ int main(int argc, char **argv)
 	for (iy=0; iy<mod.ny; iy++) {
 		for (ix=0; ix<mod.nx; ix++) {
 			iz = ioPz;
-			while(l2m[(iy+ioPy)*n1*n2+(ix+ioPx)*n1+iz] == 0.0) iz++;
+			while(l2m[iy+ioPy][ix+ioPx][iz] == 0.0) iz++;
 			bnd.surface[(iy+ioPy)*n2+ix+ioPx] = iz;
 			if ((verbose>3) && (iz != ioPz)) vmess("Topography surface x=%.2f y=%.2f z=%.2f", mod.x0+mod.dx*ix, mod.y0+mod.dy*iy, mod.z0+mod.dz*(iz-ioPz));
 		}
@@ -583,6 +585,8 @@ int main(int argc, char **argv)
 		/* Main loop over the number of time steps */
 		for (it=it0; it<it1; it++) {
 
+					vmess("running time step time = %d.",it);
+
 #pragma omp parallel default (shared) \
 shared (rox, roy, roz, l2m, lam, mul, txx, tyy, tzz, txz, tyz, txy, vx, vy, vz) \
 shared (tss, tep, tes, r, q, p) \
@@ -673,7 +677,6 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
 			if (sna.nsnap) {
 				writeSnapTimes3D(mod, sna, bnd, wav, ixsrc, iysrc, izsrc, it,
 								vx, vy, vz, tzz, tyy, txx, txz, tyz, txy, verbose);
-
 			}
 
 			/* calculate beams */
@@ -740,10 +743,10 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
 	/* free arrays */
 
 	initargs(argc,argv); /* this will free the arg arrays declared */
-	free(rox);
-	free(roy);
-	free(roz);
-	free(l2m);
+	free3float(rox);
+	free3float(roy);
+	free3float(roz);
+	free3float(l2m);
 	free(src_nwav[0]);
 	free(src_nwav);
 	free(vx);
@@ -788,8 +791,8 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
 		free(q);
 	}
 	if (mod.ischeme>2) {
-		free(lam);
-		free(mul);
+		free3float(lam);
+		free3float(mul);
 		free(txz);
 		free(tyz);
 		free(txy);

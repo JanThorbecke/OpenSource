@@ -29,6 +29,7 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 
 int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nfoc, int nx, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose);
 
+int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, float d2, float f2, int n2out, int Nfoc, float *xsyn, float *zsyn, int *ixpos, int npos, int iter);
 int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *nxm);
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
 int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
@@ -87,6 +88,7 @@ char *sdoc[] = {
 "   countmin=0 ............... 0.3*nxrcv; minumum number of reciprocal traces for a contribution",
 " OUTPUT DEFINITION ",
 "   file_rr= ................. output file with primary only shot record",
+"   file_iter= ............... output file with -Ni(-t) for each iteration",
 "   T=0 ...................... :1 compute transmission-losses compensated primaries ",
 "   verbose=0 ................ silent option; >0 displays info",
 " ",
@@ -104,19 +106,19 @@ int main (int argc, char **argv)
     int     size, n1, n2, ntap, tap, di, ntraces;
     int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     int     reci, countmin, mode, ixa, ixb, n2out, verbose, ntfft;
-    int     iter, niter, niterec, niterskip, niterrun, tracf, *muteW;
+    int     iter, niter, niterec, recur, niterskip, niterrun, tracf, *muteW;
     int     hw, ii, ishot, istart, iend;
-    int     smooth, *ixpos, npos, ix, m, pad, T;
+    int     smooth, *ixpos, npos, ix, m, pad, T, perc;
     int     nshots_r, *isxcount, *reci_xsrc, *reci_xrcv, shift;
     float   fmin, fmax, *tapersh, *tapersy, fxf, dxf, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
-    double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, tii;
+    double  t0, t1, t2, t3, t4, tsyn, tread, tfft, tcopy, tii;
     float   d1, d2, f1, f2, fxsb, fxse, ft, fx, *xsyn, dxsrc;
     float   *G_d, *DD, *RR, dt, dx, dxs, scl, mem;
     float   *rtrace, *tmpdata, *f1min, *iRN, *Ni, *trace;
     float   xmin, xmax, scale, tsq;
 	float   Q, f0, *ixmask;
     complex *Refl, *Fop, *ctrace, *cwave;
-    char    *file_tinv, *file_shot, *file_rr, *file_src;
+    char    *file_tinv, *file_shot, *file_rr, *file_src, *file_iter;
     segy    *hdrs_out, hdr;
 
     initargs(argc, argv);
@@ -125,13 +127,11 @@ int main (int argc, char **argv)
     tsyn = tread = tfft = tcopy = tii = 0.0;
     t0   = wallclock_time();
 
-
-
-
     if (!getparstring("file_shot", &file_shot)) file_shot = NULL;
     if (!getparstring("file_tinv", &file_tinv)) file_tinv = NULL;
     if(!getparstring("file_src", &file_src)) file_src = NULL;
     if (!getparstring("file_rr", &file_rr)) verr("parameter file_rr not found");
+    if (!getparstring("file_iter", &file_iter)) file_iter = NULL;
     
     if (!getparint("verbose", &verbose)) verbose = 0;
     if (!getparfloat("fmin", &fmin)) fmin = 0.0;
@@ -344,7 +344,7 @@ int main (int argc, char **argv)
 /*================ Defining focusing operator(s) from R ================*/
 /* G_d = -R(ishot,-t)*/
 
-    /* use ishot from Refl, complex-conjugate(time reverse) and convolve with wavelet (file_src present) */
+    /* use ishot from Refl, complex-conjugate(time reverse), scale with -1 and convolve with wavelet */
     if (file_tinv == NULL) {
         if (verbose) vmess("Selecting G_d from Refl of %s", file_shot);
         nts   = ntfft;
@@ -424,6 +424,7 @@ int main (int argc, char **argv)
         vmess("number of time samples (nt,nts) = %d (%d,%d)", ntfft, nt, nts);
         vmess("time sampling                  = %e ", dt);
         if (file_rr != NULL) vmess("RR output file                 = %s ", file_rr);
+        if (file_iter != NULL)  vmess("Iterations output file         = %s ", file_iter);
     }
 
 /*================ initializations ================*/
@@ -477,6 +478,13 @@ int main (int argc, char **argv)
     }
     t1    = wallclock_time();
     tread = t1-t0;
+    if(verbose) {
+        vmess("*******************************************");
+        vmess("***** Computing Marchenko for all steps****");
+        vmess("*******************************************");
+        fprintf(stderr,"    %s: Progress: %3d%%",xargv[0],0);
+	}
+    perc=(iend-istart)/10;if(!perc)perc=1;
 
 /*================ start loop over number of time-samples ================*/
 
@@ -485,14 +493,16 @@ int main (int argc, char **argv)
 /*================ initialization ================*/
 
         /* once every 'niterskip' time-steps start from fresh G_d and do niter (~20) iterations */
-		if ( (ii%niterskip==0) || (ii==istart) ) {
+		if ( ((ii-istart)%niterskip==0) || (ii==istart) ) {
 			niterrun=niter;
-			if (verbose) vmess("Doing %d iterations for time-sample %d\n",niterrun,ii);
+			recur=0;
+			if (verbose>2) vmess("Doing %d iterations to reset recursion at time-sample %d\n",niterrun,ii);
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < nxs; i++) {
                     for (j = 0; j < nts; j++) {
                         G_d[l*nxs*nts+i*nts+j] = DD[l*nxs*nts+i*nts+j];
                     }
+					/* apply mute window for samples above nts-ii */
                     for (j = 0; j < nts-ii+T*shift; j++) {
                         G_d[l*nxs*nts+i*nts+j] = 0.0;
                     }
@@ -507,9 +517,10 @@ int main (int argc, char **argv)
 			    }
 			}
 		}
-		else { /* use f1min as stating point and do only 2 iterations */
+		else { /* use f1min from previous iteration as starting point and do niterec iterations */
 			niterrun=niterec;
-			if (verbose>1) vmess("Doing %d iterations for time-sample %d",niterrun,ii);
+			recur=1;
+			if (verbose>2) vmess("Doing %d iterations using previous result at time-sample %d",niterrun,ii);
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < npos; i++) {
 					j=0;
@@ -537,6 +548,10 @@ int main (int argc, char **argv)
             synthesis(Refl, Fop, Ni, iRN, nx, nt, nxs, nts, dt, xsyn, Nfoc,
                 xrcv, xsrc, xnx, fxse, fxsb, dxs, dxsrc, dx, ntfft, nw, nw_low, nw_high, mode,
                 reci, nshots, ixpos, npos, &tfft, isxcount, reci_xsrc, reci_xrcv, ixmask, verbose);
+
+        	if (file_iter != NULL) {
+            	writeDataIter(file_iter, iRN, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 1000*ii+iter);
+        	}
 
             t3 = wallclock_time();
             tsyn +=  t3 - t2;
@@ -570,7 +585,7 @@ int main (int argc, char **argv)
                 for (l = 0; l < Nfoc; l++) {
                     for (i = 0; i < npos; i++) {
                     	ix = ixpos[i];
-						if (niterrun==niterec) {
+						if (recur==1) { /* use f1min from previous iteration */
                             for (j = 0; j < nts; j++) {
                                 Ni[l*nxs*nts+i*nts+j] += DD[l*nxs*nts+ix*nts+j];
 						    }
@@ -587,9 +602,11 @@ int main (int argc, char **argv)
                                 f1min[l*nxs*nts+i*nts+j] -= Ni[l*nxs*nts+i*nts+nts-j];
                             }
 						}
+						/* apply mute window */
                        	for (j = nts-shift; j < nts; j++) {
                            	Ni[l*nxs*nts+i*nts+j] = 0.0;
                        	}
+						/* apply mute window for samples above nts-ii */
                        	for (j = 0; j < nts-ii+T*shift; j++) {
                            	Ni[l*nxs*nts+i*nts+j] = 0.0;
                        	}
@@ -613,9 +630,15 @@ int main (int argc, char **argv)
         /* To Do optional write intermediate RR results to file */
 
         if (verbose) {
-            t3=wallclock_time();
-            tii=(t3-t1)*((float)(iend-istart)/(ii-istart+1.0))-(t3-t1);
-            vmess("Remaining compute time at time-sample %d = %.2f s.",ii, tii);
+            if(!((iend-ii-istart)%perc)) fprintf(stderr,"\b\b\b\b%3d%%",(ii-istart)*100/(iend-istart));
+            if((ii-istart)==10)t4=wallclock_time();
+            if((ii-istart)==50){
+                t4=(wallclock_time()-t4)*((iend-istart)/40.0);
+                fprintf(stderr,"\r    %s: Estimated total compute time = %.2fs.\n    %s: Progress: %3d%%",xargv[0],t4,xargv[0],(ii-istart)/((iend-istart)/100));
+            }
+            //t4=wallclock_time();
+            tii=(t4-t1)*((float)(iend-istart)/(ii-istart+1.0))-(t4-t1);
+            //vmess("Remaining compute time at time-sample %d = %.2f s.",ii, tii);
         }
 
     } /* end of time iterations ii */
@@ -625,6 +648,7 @@ int main (int argc, char **argv)
 
     t2 = wallclock_time();
     if (verbose) {
+        fprintf(stderr,"\b\b\b\b%3d%%\n",100);
         vmess("Total CPU-time marchenko = %.3f", t2-t0);
         vmess("with CPU-time synthesis  = %.3f", tsyn);
         vmess("with CPU-time copy array = %.3f", tcopy);

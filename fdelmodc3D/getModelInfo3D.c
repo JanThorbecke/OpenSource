@@ -53,9 +53,6 @@ long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3,
     ny = 1;
     gy = hdr.gy;
 
-    if ( NINT(100.0*((*d1)/(*d2)))!=100 ) {
-        verr("dx and dz are different in the model !");
-    }
     if ( NINT(1000.0*(*d1))==0 ) {
         if(!getparfloat("dx",d1)) {
             verr("dx is equal to zero use parameter dx= to set value");
@@ -65,6 +62,12 @@ long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3,
     trace_sz = sizeof(float)*(*n1)+TRCBYTES;
     ntraces  = (long) (bytes/trace_sz);
     *n2 = ntraces;
+
+	if (*n2==1) *d2 = *d1;
+
+   	if ( NINT(100.0*((*d1)/(*d2)))!=100 ) {
+       	verr("dx and dz are different in the model !");
+   	}
 
     /* check to find out min and max values gather */
 
@@ -112,8 +115,12 @@ long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3,
 
     *n3 = ny;
     *n2 = ntraces/ny;
-    //*d3 = ((float)(gy-gy0))/((float)ny); //correcting
-    *d3 = ((float)(gy-gy0))/(((float)(ny-1))*1000); //del
+    if (ny==1) {
+		*d3 = *d2;
+	}
+	else {
+    	*d3 = ((float)(gy-gy0))/(((float)(ny-1))*1000); //del
+	}
 
     if ( NINT(100.0*((*d1)/(*d3)))!=100 ) {
         verr("dx and dy are different in the model !"); 

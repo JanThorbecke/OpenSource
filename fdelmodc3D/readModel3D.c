@@ -15,6 +15,9 @@
 #define     MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 
+float ***alloc3float(modPar mod);
+void free3float(float ***p);
+
 /**
 *  Reads gridded model files and compute from them medium parameters used in the FD kernels.
 *  The files read in contain the P (and S) wave velocity and density.
@@ -26,32 +29,34 @@
 **/
 
 
-long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
-    float *l2m, float *lam, float *muxz, float *tss, float *tes, float *tep)
+long readModel3D(modPar mod, bndPar bnd, float ***rox, float ***roy, float ***roz,
+    float ***l2m, float ***lam, float ***muxz, float *tss, float *tes, float *tep)
 {
     FILE    *fpcp, *fpcs, *fpro;
 	FILE    *fpqp=NULL, *fpqs=NULL;
     size_t  nread;
     long i, j, l, itmp, tracesToDo;
-	long n1, n2, n3, ix, iy, iz, nz, ny, nx;
+	long n1, n2, n3, ix, iy, iz, nz, ny, nx, nfz, nfx, nfy;
     long ixo, iyo, izo, ixe, iye, ize;
 	long ioXx, ioXy, ioXz, ioYx, ioYy, ioYz, ioZz, ioZy, ioZx, ioPx, ioPy, ioPz, ioTx, ioTy, ioTz;
 	float cp2, cs2, cs111, cs112, cs121, cs211, cs122, cs212, cs221, mul, mu, lamda2mu, lamda;
 	float cs2c, cs2b, cs2a, cpx, cpy, cpz, bx, by, bz, fac;
-	float *cp, *cs, *ro, *qp, *qs;
+	float ***cp, ***cs, ***ro, *qp, *qs;
 	float a, b;
     segy hdr;
     
 
 	/* grid size and start positions for the components */
 	nz = mod.nz;
-	ny = mod.ny;
 	nx = mod.nx;
+	ny = mod.ny;
 	n1 = mod.naz;
 	n2 = mod.nax;
 	n3 = mod.nay;
+	nfz = mod.nfz;
+	nfx = mod.nfx;
+	nfy = mod.nfy;
 	fac = mod.dt/mod.dx;
-
 
 	/* Vx: rox */
 	ioXx=mod.ioXx;
@@ -88,26 +93,28 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 
 /* open files and read first header */
 
-	cp = (float *)malloc(nz*ny*nx*sizeof(float));
+	//cp = (float *)malloc(nz*ny*nx*sizeof(float));
+	cp = (float ***)alloc3float(mod);
    	fpcp = fopen( mod.file_cp, "r" );
    	assert( fpcp != NULL);
    	nread = fread(&hdr, 1, TRCBYTES, fpcp);
    	assert(nread == TRCBYTES);
 
-	ro = (float *)malloc(nz*ny*nx*sizeof(float));
+	//ro = (float *)malloc(nz*ny*nx*sizeof(float));
+	ro = (float ***)alloc3float(mod);
    	fpro = fopen( mod.file_ro, "r" );
    	assert( fpro != NULL);
    	nread = fread(&hdr, 1, TRCBYTES, fpro);
    	assert(nread == TRCBYTES);
 
-	cs = (float *)calloc(nz*ny*nx,sizeof(float));
+	//cs = (float *)calloc(nz*ny*nx,sizeof(float));
 	if (mod.ischeme>2 && mod.ischeme!=5) {
+		cs = (float ***)alloc3float(mod);
 		fpcs = fopen( mod.file_cs, "r" );
    		assert( fpcs != NULL);
    		nread = fread(&hdr, 1, TRCBYTES, fpcs);
    		assert(nread == TRCBYTES);
 	}
-
 
 /* for visco acoustic/elastic media open Q file(s) if given as parameter */
 
@@ -130,15 +137,16 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 /* read all traces */
 
 	tracesToDo = mod.nx*mod.ny;
-	for (iy=0; iy<ny; iy++) {
-        for (ix=0; ix<nx; ix++ ) {
-            i = iy*nx+ix;
-            nread = fread(&cp[i*nz], sizeof(float), hdr.ns, fpcp);
+	for (iy=0; iy<nfy; iy++) {
+        for (ix=0; ix<nfx; ix++ ) {
+            //i = iy*nx+ix;
+//            fprintf(stderr,"iy=%d ix=%d\n", iy, ix);
+            nread = fread(&cp[iy][ix][0], sizeof(float), hdr.ns, fpcp);
             assert (nread == hdr.ns);
-            nread = fread(&ro[i*nz], sizeof(float), hdr.ns, fpro);
+            nread = fread(&ro[iy][ix][0], sizeof(float), hdr.ns, fpro);
             assert (nread == hdr.ns);
             if (mod.ischeme>2 && mod.ischeme!=5) {
-                nread = fread(&cs[i*nz], sizeof(float), hdr.ns, fpcs);
+                nread = fread(&cs[iy][ix][0], sizeof(float), hdr.ns, fpcs);
                 assert (nread == hdr.ns);
             }
 
@@ -218,10 +226,14 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 
 /* check for zero densities */
 
-	for (i=0;i<nz*nx*ny;i++) {
-		if (ro[i]==0.0) {
-			vwarn("Zero density for trace=%li sample=%li", i/nz, i%nz);
-			verr("ERROR zero density is not a valid value, program exit");
+    for (iy=0;iy<ny;iy++) {
+        for (ix=0;ix<nx;ix++) {
+            for (iz=0;iz<nz;iz++) {
+		        if (ro[iy][ix][iz]==0.0) {
+			    	vwarn("Zero density for trace=[%li][%li][%li]", iy, ix, iz);
+			    	verr("ERROR zero density is not a valid value, program exit");
+				}
+			}
 		}
 	}
 
@@ -236,13 +248,13 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             for (ix=0;ix<nx-1;ix++) {
                 /* for muxz field */
                 /* csxyz */
-                cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-                cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-                cs2a = cs[iy*nx*nz+(ix+1)*nz+iz]*cs[iy*nx*nz+(ix+1)*nz+iz];
-                cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-                cs112 = cs2*ro[iy*nx*nz+ix*nz+iz];
-                cs211 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
-                cs212 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
+                cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+                cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+                cs2a = cs[iy][ix+1][iz]*cs[iy][ix+1][iz];
+                cs111 = cs2*ro[iy][ix][iz];
+                cs112 = cs2*ro[iy][ix][iz];
+                cs211 = cs2a*ro[iy][ix+1][iz];
+                cs212 = cs2a*ro[iy][ix+1][iz];
                 if (cs111 > 0.0) {
                     mul  = 4.0/(1.0/cs111+1.0/cs112+1.0/cs211+1.0/cs212);
                 }
@@ -252,13 +264,13 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 
                 /* for muyz field IN PROGRESS!!!!!!!!!!!!!!!!! */
                 /* csxyz */
-                // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-                // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-                // cs2a = cs[(iy+1)*nx*nz+ix*nz+iz]*cs[(iy+1)*nx*nz+ix*nz+iz];
-                // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-                // cs121 = cs2*ro[iy*nx*nz+ix*nz+iz];
-                // cs112 = cs2a*ro[(iy+1)*nx*nz+ix*nz+iz];
-                // cs122 = cs2a*ro[(iy+1)*nx*nz+ix*nz+iz];
+                // cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+                // cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+                // cs2a = cs[iy+1][ix][iz]*cs[iy+1][ix][iz];
+                // cs111 = cs2*ro[iy][ix][iz];
+                // cs121 = cs2*ro[iy][ix][iz];
+                // cs112 = cs2a*ro[iy+1][ix][iz];
+                // cs122 = cs2a*ro[iy+1][ix][iz];
                 // if (cs111 > 0.0) {
                 //     mul  = 4.0/(1.0/cs111+1.0/cs121+1.0/cs112+1.0/cs122);
                 // }
@@ -268,15 +280,15 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 
                 /* for muxy field IN PROGRESS!!!!!!!!!!!!!!!!! */
                 /* csxyz */
-                // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-                // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-                // cs2a = cs[(iy+1)*nx*nz+ix*nz+iz]*cs[(iy+1)*nx*nz+ix*nz+iz];
-                // cs2b = cs[iy*nx*nz+(ix+1)*nz+iz]*cs[iy*nx*nz+(ix+1)*nz+iz];
-                // cs2c = cs[(iy+1)*nx*nz+(ix+1)*nz+iz]*cs[(iy+1)*nx*nz+(ix+1)*nz+iz];
-                // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-                // cs121 = cs2a*ro[(iy+1)*nx*nz+ix*nz+iz];
-                // cs211 = cs2b*ro[iy*nx*nz+(ix+1)*nz+iz];
-                // cs221 = cs2c*ro[(iy+1)*nx*nz+(ix+1)*nz+iz];
+                // cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+                // cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+                // cs2a = cs[iy+1][ix][iz]*cs[iy+1][ix][iz];
+                // cs2b = cs[iy][ix+1][iz]*cs[iy][ix+1][iz];
+                // cs2c = cs[iy+1][ix+1][iz]*cs[iy+1][ix+1][iz];
+                // cs111 = cs2*ro[iy][ix][iz];
+                // cs121 = cs2a*ro[iy+1][ix][iz];
+                // cs211 = cs2b*ro[iy][ix+1][iz];
+                // cs221 = cs2c*ro[iy+1][ix+1][iz];
                 // if (cs111 > 0.0) {
                 //     mul  = 4.0/(1.0/cs111+1.0/cs211+1.0/cs121+1.0/cs221);
                 // }
@@ -284,19 +296,19 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
                 //     mul = 0.0;
                 // }
                 
-                mu   = cs2*ro[iy*nx*nz+ix*nz+iz];
-                lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+                mu   = cs2*ro[iy][ix][iz];
+                lamda2mu = cp2*ro[iy][ix][iz];
                 lamda    = lamda2mu - 2*mu;
 
-                bx = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+(ix+1)*nz+iz]);
-                by = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[(iy+1)*nx*nz+ix*nz+iz]);
-                bz = ro[iy*nx*nz+ix*nz+iz];
-                rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-                roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
-                roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
-                l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
-                lam[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
-                muxz[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mul;
+                bx = 0.5*(ro[iy][ix][iz]+ro[iy][ix+1][iz]);
+                by = 0.5*(ro[iy][ix][iz]+ro[iy+1][ix][iz]);
+                bz = ro[iy][ix][iz];
+                rox[iy+ioXy][ix+ioXx][iz+ioXz]=fac/bx;
+                roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/by;
+                roz[iy+ioZy][ix+ioZx][iz+ioZz]=fac/bz;
+                l2m[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda2mu;
+                lam[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda;
+                muxz[iy+ioTy][ix+ioTx][iz+ioTz]=fac*mul;
             }
         }
 
@@ -305,15 +317,15 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             for (iz=0;iz<nz-1;iz++) {
                 /* for muxz field */
                 /* csxyz */
-                cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-                cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-                cs2a = cs[iy*nx*nz+(ix+1)*nz+iz]*cs[iy*nx*nz+(ix+1)*nz+iz];
-                cs2b = cs[iy*nx*nz+ix*nz+iz+1]*cs[iy*nx*nz+ix*nz+iz+1];
-                cs2c = cs[iy*nx*nz+(ix+1)*nz+iz+1]*cs[iy*nx*nz+(ix+1)*nz+iz+1];
-                cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-                cs112 = cs2b*ro[iy*nx*nz+ix*nz+iz+1];
-                cs211 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
-                cs212 = cs2c*ro[iy*nx*nz+(ix+1)*nz+iz+1];
+                cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+                cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+                cs2a = cs[iy][ix+1][iz]*cs[iy][ix+1][iz];
+                cs2b = cs[iy][ix][iz+1]*cs[iy][ix][iz+1];
+                cs2c = cs[iy][ix+1][iz+1]*cs[iy][ix+1][iz+1];
+                cs111 = cs2*ro[iy][ix][iz];
+                cs112 = cs2b*ro[iy][ix][iz+1];
+                cs211 = cs2a*ro[iy][ix+1][iz];
+                cs212 = cs2c*ro[iy][ix+1][iz+1];
                 if (cs111 > 0.0) {
                     mul  = 4.0/(1.0/cs111+1.0/cs112+1.0/cs211+1.0/cs212);
                 }
@@ -323,13 +335,13 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 
                 /* for muyz field IN PROGRESS!!!!!!!!!!!!!!!!! */
                 /* csxyz */
-                // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-                // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-                // cs2a = cs[iy*nx*nz+ix*nz+iz+1]*cs[iy*nx*nz+ix*nz+iz+1];
-                // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-                // cs121 = cs2*ro[iy*nx*nz+ix*nz+iz];
-                // cs112 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
-                // cs122 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
+                // cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+                // cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+                // cs2a = cs[iy][ix][iz+1]*cs[iy][ix][iz+1];
+                // cs111 = cs2*ro[iy][ix][iz];
+                // cs121 = cs2*ro[iy][ix][iz];
+                // cs112 = cs2a*ro[iy][ix][iz+1];
+                // cs122 = cs2a*ro[iy][ix][iz+1];
                 // if (cs111 > 0.0) {
                 //     mul  = 4.0/(1.0/cs111+1.0/cs121+1.0/cs112+1.0/cs122);
                 // }
@@ -339,13 +351,13 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 
                 /* for muxy field IN PROGRESS!!!!!!!!!!!!!!!!! */
                 /* csxyz */
-                // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-                // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-                // cs2a = cs[iy*nx*nz+(ix+1)*nz+iz]*cs[iy*nx*nz+(ix+1)*nz+iz];
-                // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-                // cs121 = cs2*ro[iy*nx*nz+ix*nz+iz];
-                // cs211 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
-                // cs221 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
+                // cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+                // cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+                // cs2a = cs[iy][ix+1][iz]*cs[iy][ix+1][iz];
+                // cs111 = cs2*ro[iy][ix][iz];
+                // cs121 = cs2*ro[iy][ix][iz];
+                // cs211 = cs2a*ro[iy][ix+1][iz];
+                // cs221 = cs2a*ro[iy][ix+1][iz];
                 // if (cs111 > 0.0) {
                 //     mul  = 4.0/(1.0/cs111+1.0/cs211+1.0/cs121+1.0/cs221);
                 // }
@@ -353,19 +365,19 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
                 //     mul = 0.0;
                 // }
                 
-                mu   = cs2*ro[iy*nx*nz+ix*nz+iz];
-                lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+                mu   = cs2*ro[iy][ix][iz];
+                lamda2mu = cp2*ro[iy][ix][iz];
                 lamda    = lamda2mu - 2*mu;
 
-                bx = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+(ix+1)*nz+iz]);
-                by = ro[iy*nx*nz+ix*nz+iz];
-                bz = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+ix*nz+iz+1]);
-                rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-                roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
-                roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
-                l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
-                lam[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
-                muxz[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mul;
+                bx = 0.5*(ro[iy][ix][iz]+ro[iy][ix+1][iz]);
+                by = ro[iy][ix][iz];
+                bz = 0.5*(ro[iy][ix][iz]+ro[iy][ix][iz+1]);
+                rox[iy+ioXy][ix+ioXx][iz+ioXz]=fac/bx;
+                roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/by;
+                roz[iy+ioZy][ix+ioZx][iz+ioZz]=fac/bz;
+                l2m[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda2mu;
+                lam[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda;
+                muxz[iy+ioTy][ix+ioTx][iz+ioTz]=fac*mul;
             }
         }
 
@@ -374,13 +386,13 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             for (iz=0;iz<nz-1;iz++) {
                 /* for muxz field */
                 /* csxyz */
-                cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-                cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-                cs2a = cs[iy*nx*nz+ix*nz+iz+1]*cs[iy*nx*nz+ix*nz+iz+1];
-                cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-                cs112 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
-                cs211 = cs2*ro[iy*nx*nz+ix*nz+iz];
-                cs212 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
+                cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+                cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+                cs2a = cs[iy][ix][iz+1]*cs[iy][ix][iz+1];
+                cs111 = cs2*ro[iy][ix][iz];
+                cs112 = cs2a*ro[iy][ix][iz+1];
+                cs211 = cs2*ro[iy][ix][iz];
+                cs212 = cs2a*ro[iy][ix][iz+1];
                 if (cs111 > 0.0) {
                     mul  = 4.0/(1.0/cs111+1.0/cs112+1.0/cs211+1.0/cs212);
                 }
@@ -390,15 +402,15 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 
                 /* for muyz field IN PROGRESS!!!!!!!!!!!!!!!!! */
                 /* csxyz */
-                // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-                // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-                // cs2a = cs[iy*nx*nz+ix*nz+iz+1]*cs[iy*nx*nz+ix*nz+iz+1];
-                // cs2b = cs[(iy+1)*nx*nz+ix*nz+iz]*cs[(iy+1)*nx*nz+ix*nz+iz];
-                // cs2c = cs[(iy+1)*nx*nz+ix*nz+iz+1]*cs[(iy+1)*nx*nz+ix*nz+iz+1];
-                // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-                // cs121 = cs2b*ro[(iy+1)*nx*nz+ix*nz+iz];
-                // cs112 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
-                // cs122 = cs2c*ro[(iy+1)*nx*nz+ix*nz+iz+1];
+                // cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+                // cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+                // cs2a = cs[iy][ix][iz+1]*cs[iy][ix][iz+1];
+                // cs2b = cs[iy+1][ix][iz]*cs[iy+1][ix][iz];
+                // cs2c = cs[iy+1][ix][iz+1]*cs[iy+1][ix][iz+1];
+                // cs111 = cs2*ro[iy][ix][iz];
+                // cs121 = cs2b*ro[iy+1][ix][iz];
+                // cs112 = cs2a*ro[iy][ix][iz+1];
+                // cs122 = cs2c*ro[iy+1][ix][iz+1];
                 // if (cs111 > 0.0) {
                 //     mul  = 4.0/(1.0/cs111+1.0/cs121+1.0/cs112+1.0/cs122);
                 // }
@@ -408,13 +420,13 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 
                 /* for muxy field IN PROGRESS!!!!!!!!!!!!!!!!! */
                 /* csxyz */
-                // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-                // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-                // cs2a = cs[(iy+1)*nx*nz+ix*nz+iz]*cs[(iy+1)*nx*nz+ix*nz+iz];
-                // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-                // cs121 = cs2a*ro[(iy+1)*nx*nz+ix*nz+iz];
-                // cs211 = cs2*ro[iy*nx*nz+ix*nz+iz];
-                // cs221 = cs2a*ro[(iy+1)*nx*nz+ix*nz+iz];
+                // cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+                // cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+                // cs2a = cs[iy+1][ix][iz]*cs[iy+1][ix][iz];
+                // cs111 = cs2*ro[iy][ix][iz];
+                // cs121 = cs2a*ro[iy+1][ix][iz];
+                // cs211 = cs2*ro[iy][ix][iz];
+                // cs221 = cs2a*ro[iy+1][ix][iz];
                 // if (cs111 > 0.0) {
                 //     mul  = 4.0/(1.0/cs111+1.0/cs211+1.0/cs121+1.0/cs221);
                 // }
@@ -422,19 +434,19 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
                 //     mul = 0.0;
                 // }
                 
-                mu   = cs2*ro[iy*nx*nz+ix*nz+iz];
-                lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+                mu   = cs2*ro[iy][ix][iz];
+                lamda2mu = cp2*ro[iy][ix][iz];
                 lamda    = lamda2mu - 2*mu;
 
-                bx = ro[iy*nx*nz+ix*nz+iz];
-                by = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[(iy+1)*nx*nz+ix*nz+iz]);
-                bz = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+ix*nz+iz+1]);
-                rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-                roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
-                roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
-                l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
-                lam[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
-                muxz[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mul;
+                bx = ro[iy][ix][iz];
+                by = 0.5*(ro[iy][ix][iz]+ro[iy+1][ix][iz]);
+                bz = 0.5*(ro[iy][ix][iz]+ro[iy][ix][iz+1]);
+                rox[iy+ioXy][ix+ioXx][iz+ioXz]=fac/bx;
+                roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/by;
+                roz[iy+ioZy][ix+ioZx][iz+ioZz]=fac/bz;
+                l2m[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda2mu;
+                lam[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda;
+                muxz[iy+ioTy][ix+ioTx][iz+ioTz]=fac*mul;
             }
         }
 
@@ -443,13 +455,13 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 		for (ix=0;ix<nx-1;ix++) {
             /* for muxz field */
             /* csxyz */
-			cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-			cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-			cs2a = cs[iy*nx*nz+(ix+1)*nz+iz]*cs[iy*nx*nz+(ix+1)*nz+iz];
-			cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-			cs112 = cs2*ro[iy*nx*nz+ix*nz+iz];
-			cs211 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
-			cs212 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
+			cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+			cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+			cs2a = cs[iy][ix+1][iz]*cs[iy][ix+1][iz];
+			cs111 = cs2*ro[iy][ix][iz];
+			cs112 = cs2*ro[iy][ix][iz];
+			cs211 = cs2a*ro[iy][ix+1][iz];
+			cs212 = cs2a*ro[iy][ix+1][iz];
 			if (cs111 > 0.0) {
 				mul  = 4.0/(1.0/cs111+1.0/cs112+1.0/cs211+1.0/cs212);
 			}
@@ -459,12 +471,12 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 
             /* for muyz field IN PROGRESS!!!!!!!!!!!!!!!!! */
             /* csxyz */
-            // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-            // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-            // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-            // cs121 = cs2*ro[iy*nx*nz+ix*nz+iz];
-            // cs112 = cs2*ro[iy*nx*nz+ix*nz+iz];
-            // cs122 = cs2*ro[iy*nx*nz+ix*nz+iz];
+            // cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+            // cs2  = cs[iy][ix][iiy][ix][iz*nz+iz];
+            // cs111 = cs2*ro[iy][ix][iz];
+            // cs121 = cs2*ro[iy][ix][iz];
+            // cs112 = cs2*ro[iy][ix][iz];
+            // cs122 = cs2*ro[iy][ix][iz];
             // if (cs111 > 0.0) {
             //     mul  = 4.0/(1.0/cs111+1.0/cs121+1.0/cs112+1.0/cs122);
             // }
@@ -474,13 +486,13 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 
             /* for muxy field IN PROGRESS!!!!!!!!!!!!!!!!! */
             /* csxyz */
-            // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-            // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-            // cs2a = cs[iy*nx*nz+(ix+1)*nz+iz]*cs[iy*nx*nz+(ix+1)*nz+iz];
-            // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-            // cs121 = cs2*ro[iy*nx*nz+ix*nz+iz];
-            // cs211 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
-            // cs221 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
+            // cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+            // cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+            // cs2a = cs[iy][ix+1][iz]*cs[iy][ix+1][iz];
+            // cs111 = cs2*ro[iy][ix][iz];
+            // cs121 = cs2*ro[iy][ix][iz];
+            // cs211 = cs2a*ro[iy][ix+1][iz];
+            // cs221 = cs2a*ro[iy][ix+1][iz];
             // if (cs111 > 0.0) {
             //     mul  = 4.0/(1.0/cs111+1.0/cs211+1.0/cs121+1.0/cs221);
             // }
@@ -488,19 +500,19 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             //     mul = 0.0;
             // }
 
-			mu   = cs2*ro[iy*nx*nz+ix*nz+iz];
-			lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+			mu   = cs2*ro[iy][ix][iz];
+			lamda2mu = cp2*ro[iy][ix][iz];
 			lamda    = lamda2mu - 2*mu;
 
-			bx = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+(ix+1)*nz+iz]);
-			by = ro[iy*nx*nz+ix*nz+iz];
-			bz = ro[iy*nx*nz+ix*nz+iz];
-			rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-			roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
-			roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
-			l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
-			lam[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
-			muxz[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mul;
+			bx = 0.5*(ro[iy][ix][iz]+ro[iy][ix+1][iz]);
+			by = ro[iy][ix][iz];
+			bz = ro[iy][ix][iz];
+			rox[iy+ioXy][ix+ioXx][iz+ioXz]=fac/bx;
+			roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/by;
+			roz[iy+ioZy][ix+ioZx][iz+ioZz]=fac/bz;
+			l2m[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda2mu;
+			lam[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda;
+			muxz[iy+ioTy][ix+ioTx][iz+ioTz]=fac*mul;
 		}
 
 		ix = nx-1;
@@ -508,12 +520,12 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 		for (iy=0;iy<ny-1;iy++) {
             /* for muxz field */
             /* csxyz */
-			cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-			cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-			cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-			cs112 = cs2*ro[iy*nx*nz+ix*nz+iz];
-			cs211 = cs2*ro[iy*nx*nz+ix*nz+iz];
-			cs212 = cs2*ro[iy*nx*nz+ix*nz+iz];
+			cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+			cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+			cs111 = cs2*ro[iy][ix][iz];
+			cs112 = cs2*ro[iy][ix][iz];
+			cs211 = cs2*ro[iy][ix][iz];
+			cs212 = cs2*ro[iy][ix][iz];
 			if (cs111 > 0.0) {
 				mul  = 4.0/(1.0/cs111+1.0/cs112+1.0/cs211+1.0/cs212);
 			}
@@ -523,13 +535,13 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 
             /* for muyz field IN PROGRESS!!!!!!!!!!!!!!!!! */
             /* csxyz */
-            // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-            // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-			// cs2a = cs[(iy+1)*nx*nz+ix*nz+iz]*cs[(iy+1)*nx*nz+ix*nz+iz];
-            // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-            // cs121 = cs2a*ro[(iy+1)*nx*nz+ix*nz+iz];
-            // cs112 = cs2*ro[iy*nx*nz+ix*nz+iz];
-            // cs122 = cs2a*ro[(iy+1)*nx*nz+ix*nz+iz];
+            // cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+            // cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+			// cs2a = cs[iy+1][ix][iz]*cs[iy+1][ix][iz];
+            // cs111 = cs2*ro[iy][ix][iz];
+            // cs121 = cs2a*ro[iy+1][ix][iz];
+            // cs112 = cs2*ro[iy][ix][iz];
+            // cs122 = cs2a*ro[iy+1][ix][iz];
             // if (cs111 > 0.0) {
             //     mul  = 4.0/(1.0/cs111+1.0/cs121+1.0/cs112+1.0/cs122);
             // }
@@ -539,13 +551,13 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 
             /* for muxy field IN PROGRESS!!!!!!!!!!!!!!!!! */
             /* csxyz */
-            // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-            // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-			// cs2a = cs[(iy+1)*nx*nz+ix*nz+iz]*cs[(iy+1)*nx*nz+ix*nz+iz];
-            // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-            // cs121 = cs2a*ro[(iy+1)*nx*nz+ix*nz+iz];
-            // cs211 = cs2*ro[iy*nx*nz+ix*nz+iz];
-            // cs221 = cs2a*ro[(iy+1)*nx*nz+ix*nz+iz];
+            // cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+            // cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+			// cs2a = cs[iy+1][ix][iz]*cs[iy+1][ix][iz];
+            // cs111 = cs2*ro[iy][ix][iz];
+            // cs121 = cs2a*ro[iy+1][ix][iz];
+            // cs211 = cs2*ro[iy][ix][iz];
+            // cs221 = cs2a*ro[iy+1][ix][iz];
             // if (cs111 > 0.0) {
             //     mul  = 4.0/(1.0/cs111+1.0/cs211+1.0/cs121+1.0/cs221);
             // }
@@ -553,19 +565,19 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             //     mul = 0.0;
             // }
 
-			mu   = cs2*ro[iy*nx*nz+ix*nz+iz];
-			lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+			mu   = cs2*ro[iy][ix][iz];
+			lamda2mu = cp2*ro[iy][ix][iz];
 			lamda    = lamda2mu - 2*mu;
 
-			bx = ro[iy*nx*nz+ix*nz+iz];
-			by = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[(iy+1)*nx*nz+ix*nz+iz]);
-			bz = ro[iy*nx*nz+ix*nz+iz];
-			rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-			roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/bx;
-			roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
-			l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
-			lam[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
-			muxz[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mul;
+			bx = ro[iy][ix][iz];
+			by = 0.5*(ro[iy][ix][iz]+ro[iy+1][ix][iz]);
+			bz = ro[iy][ix][iz];
+			rox[iy+ioXy][ix+ioXx][iz+ioXz]=fac/bx;
+			roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/bx;
+			roz[iy+ioZy][ix+ioZx][iz+ioZz]=fac/bz;
+			l2m[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda2mu;
+			lam[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda;
+			muxz[iy+ioTy][ix+ioTx][iz+ioTz]=fac*mul;
 		}
 
         ix = nx-1;
@@ -573,13 +585,13 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 		for (iz=0;iz<nz-1;iz++) {
             /* for muxz field */
             /* csxyz */
-			cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-			cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-			cs2a = cs[iy*nx*nz+ix*nz+iz+1]*cs[iy*nx*nz+ix*nz+iz+1];
-			cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-			cs112 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
-			cs211 = cs2*ro[iy*nx*nz+ix*nz+iz];
-			cs212 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
+			cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+			cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+			cs2a = cs[iy][ix][iz+1]*cs[iy][ix][iz+1];
+			cs111 = cs2*ro[iy][ix][iz];
+			cs112 = cs2a*ro[iy][ix][iz+1];
+			cs211 = cs2*ro[iy][ix][iz];
+			cs212 = cs2a*ro[iy][ix][iz+1];
 			if (cs111 > 0.0) {
 				mul  = 4.0/(1.0/cs111+1.0/cs112+1.0/cs211+1.0/cs212);
 			}
@@ -589,13 +601,13 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             
             /* for muyz field IN PROGRESS!!!!!!!!!!!!!!!!! */
             /* csxyz */
-            // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-            // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-			// cs2a = cs[iy*nx*nz+ix*nz+iz+1]*cs[iy*nx*nz+ix*nz+iz+1];
-            // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-            // cs121 = cs2*ro[iy*nx*nz+ix*nz+iz];
-            // cs112 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
-            // cs122 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
+            // cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+            // cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+			// cs2a = cs[iy][ix][iz+1]*cs[iy][ix][iz+1];
+            // cs111 = cs2*ro[iy][ix][iz];
+            // cs121 = cs2*ro[iy][ix][iz];
+            // cs112 = cs2a*ro[iy][ix][iz+1];
+            // cs122 = cs2a*ro[iy][ix][iz+1];
             // if (cs111 > 0.0) {
             //     mul  = 4.0/(1.0/cs111+1.0/cs121+1.0/cs112+1.0/cs122);
             // }
@@ -605,12 +617,12 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 
             /* for muxy field IN PROGRESS!!!!!!!!!!!!!!!!! */
             /* csxyz */
-            // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-            // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-            // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-            // cs121 = cs2*ro[iy*nx*nz+ix*nz+iz];
-            // cs211 = cs2*ro[iy*nx*nz+ix*nz+iz];
-            // cs221 = cs2*ro[iy*nx*nz+ix*nz+iz];
+            // cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+            // cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+            // cs111 = cs2*ro[iy][ix][iz];
+            // cs121 = cs2*ro[iy][ix][iz];
+            // cs211 = cs2*ro[iy][ix][iz];
+            // cs221 = cs2*ro[iy][ix][iz];
             // if (cs111 > 0.0) {
             //     mul  = 4.0/(1.0/cs111+1.0/cs211+1.0/cs121+1.0/cs221);
             // }
@@ -618,53 +630,53 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             //     mul = 0.0;
             // }
 
-			mu   = cs2*ro[iy*nx*nz+ix*nz+iz];
-			lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+			mu   = cs2*ro[iy][ix][iz];
+			lamda2mu = cp2*ro[iy][ix][iz];
 			lamda    = lamda2mu - 2*mu;
 
-			bx = ro[iy*nx*nz+ix*nz+iz];
-			by = ro[iy*nx*nz+ix*nz+iz];
-			bz = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+ix*nz+iz+1]);
-			rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-			roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/bx;
-			roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
-			l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
-			lam[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
-			muxz[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mul;
+			bx = ro[iy][ix][iz];
+			by = ro[iy][ix][iz];
+			bz = 0.5*(ro[iy][ix][iz]+ro[iy][ix][iz+1]);
+			rox[iy+ioXy][ix+ioXx][iz+ioXz]=fac/bx;
+			roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/bx;
+			roz[iy+ioZy][ix+ioZx][iz+ioZz]=fac/bz;
+			l2m[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda2mu;
+			lam[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda;
+			muxz[iy+ioTy][ix+ioTx][iz+ioTz]=fac*mul;
 		}
 
 		ix=nx-1;
         iy=ny-1;
 		iz=nz-1;
-		cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-		cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-		mu   = cs2*ro[iy*nx*nz+ix*nz+iz];
-		lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+		cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+		cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+		mu   = cs2*ro[iy][ix][iz];
+		lamda2mu = cp2*ro[iy][ix][iz];
 		lamda    = lamda2mu - 2*mu;
-		bx = ro[iy*nx*nz+ix*nz+iz];
-		by = ro[iy*nx*nz+ix*nz+iz];
-		bz = ro[iy*nx*nz+ix*nz+iz];
-		rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-		roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
-		roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
-		l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
-		lam[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
-		muxz[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mu;
+		bx = ro[iy][ix][iz];
+		by = ro[iy][ix][iz];
+		bz = ro[iy][ix][iz];
+		rox[iy+ioXy][ix+ioXx][iz+ioXz]=fac/bx;
+		roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/by;
+		roz[iy+ioZy][ix+ioZx][iz+ioZz]=fac/bz;
+		l2m[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda2mu;
+		lam[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda;
+		muxz[iy+ioTy][ix+ioTx][iz+ioTz]=fac*mu;
 
         for (iy=0;iy<ny-1;iy++) {
             for (ix=0;ix<nx-1;ix++) {
                 for (iz=0;iz<nz-1;iz++) {
                     /* for muxz field */
                     /* csxyz */
-                    cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-                    cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-                    cs2a = cs[iy*nx*nz+(ix+1)*nz+iz]*cs[iy*nx*nz+(ix+1)*nz+iz];
-                    cs2b = cs[iy*nx*nz+ix*nz+iz+1]*cs[iy*nx*nz+ix*nz+iz+1];
-                    cs2c = cs[iy*nx*nz+(ix+1)*nz+iz+1]*cs[iy*nx*nz+(ix+1)*nz+iz+1];
-                    cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-                    cs112 = cs2b*ro[iy*nx*nz+ix*nz+iz+1];
-                    cs211 = cs2a*ro[iy*nx*nz+ix*nz+iz];
-                    cs212 = cs2c*ro[iy*nx*nz+ix*nz+iz+1];
+                    cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+                    cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+                    cs2a = cs[iy][ix+1][iz]*cs[iy][ix+1][iz];
+                    cs2b = cs[iy][ix][iz+1]*cs[iy][ix][iz+1];
+                    cs2c = cs[iy][ix+1][iz+1]*cs[iy][ix+1][iz+1];
+                    cs111 = cs2*ro[iy][ix][iz];
+                    cs112 = cs2b*ro[iy][ix][iz+1];
+                    cs211 = cs2a*ro[iy][ix][iz];
+                    cs212 = cs2c*ro[iy][ix][iz+1];
                     if (cs111 > 0.0) {
                         mul  = 4.0/(1.0/cs111+1.0/cs112+1.0/cs211+1.0/cs212);
                     }
@@ -674,15 +686,15 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 
                     /* for muyz field IN PROGRESS!!!!!!!!!!!!!!!!! */
                     /* csxyz */
-                    // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-                    // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-                    // cs2a = cs[iy*nx*nz+ix*nz+iz+1]*cs[iy*nx*nz+ix*nz+iz+1];
-                    // cs2b = cs[(iy+1)*nx*nz+ix*nz+iz]*cs[(iy+1)*nx*nz+ix*nz+iz];
-                    // cs2c = cs[(iy+1)*nx*nz+ix*nz+iz+1]*cs[(iy+1)*nx*nz+ix*nz+iz+1];
-                    // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-                    // cs121 = cs2b*ro[(iy+1)*nx*nz+ix*nz+iz];
-                    // cs112 = cs2a*ro[iy*nx*nz+ix*nz+iz+1];
-                    // cs122 = cs2c*ro[(iy+1)*nx*nz+ix*nz+iz+1];
+                    // cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+                    // cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+                    // cs2a = cs[iy][ix][iz+1]*cs[iy][ix][iz+1];
+                    // cs2b = cs[iy+1][ix][iz]*cs[iy+1][ix][iz];
+                    // cs2c = cs[iy+1][ix][iz+1]*cs[iy+1][ix][iz+1];
+                    // cs111 = cs2*ro[iy][ix][iz];
+                    // cs121 = cs2b*ro[iy+1][ix][iz];
+                    // cs112 = cs2a*ro[iy][ix][iz+1];
+                    // cs122 = cs2c*ro[iy+1][ix][iz+1];
                     // if (cs111 > 0.0) {
                     //     mul  = 4.0/(1.0/cs111+1.0/cs121+1.0/cs112+1.0/cs122);
                     // }
@@ -692,15 +704,15 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 
                     /* for muxy field IN PROGRESS!!!!!!!!!!!!!!!!! */
                     /* csxyz */
-                    // cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-                    // cs2  = cs[iy*nx*nz+ix*nz+iz]*cs[iy*nx*nz+ix*nz+iz];
-                    // cs2a = cs[iy*nx*nz+(ix+1)*nz+iz]*cs[iy*nx*nz+(ix+1)*nz+iz];
-                    // cs2b = cs[(iy+1)*nx*nz+ix*nz+iz]*cs[(iy+1)*nx*nz+ix*nz+iz];
-                    // cs2c = cs[(iy+1)*nx*nz+(ix+1)*nz+iz]*cs[(iy+1)*nx*nz+(ix+1)*nz+iz];
-                    // cs111 = cs2*ro[iy*nx*nz+ix*nz+iz];
-                    // cs121 = cs2b*ro[(iy+1)*nx*nz+ix*nz+iz];
-                    // cs211 = cs2a*ro[iy*nx*nz+(ix+1)*nz+iz];
-                    // cs221 = cs2c*ro[(iy+1)*nx*nz+(ix+1)*nz+iz];
+                    // cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+                    // cs2  = cs[iy][ix][iz]*cs[iy][ix][iz];
+                    // cs2a = cs[iy][ix+1][iz]*cs[iy][ix+1][iz];
+                    // cs2b = cs[iy+1][ix][iz]*cs[iy+1][ix][iz];
+                    // cs2c = cs[iy+1][ix+1][iz]*cs[iy+1][ix+1][iz];
+                    // cs111 = cs2*ro[iy][ix][iz];
+                    // cs121 = cs2b*ro[iy+1][ix][iz];
+                    // cs211 = cs2a*ro[iy][ix+1][iz];
+                    // cs221 = cs2c*ro[iy+1][ix+1][iz];
                     // if (cs111 > 0.0) {
                     //     mul  = 4.0/(1.0/cs111+1.0/cs211+1.0/cs121+1.0/cs221);
                     // }
@@ -708,19 +720,19 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
                     //     mul = 0.0;
                     // }
 
-                    mu   = cs2*ro[iy*nx*nz+ix*nz+iz];
-                    lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+                    mu   = cs2*ro[iy][ix][iz];
+                    lamda2mu = cp2*ro[iy][ix][iz];
                     lamda    = lamda2mu - 2*mu;
         
-                    bx = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+(ix+1)*nz+iz]);
-                    by = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[(iy+1)*nx*nz+ix*nz+iz]);
-                    bz = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+ix*nz+iz+1]);
-                    rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-                    roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
-                    roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
-                    l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
-                    lam[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda;
-                    muxz[(iy+ioTy)*n2*n1+(ix+ioTx)*n1+iz+ioTz]=fac*mul;
+                    bx = 0.5*(ro[iy][ix][iz]+ro[iy][ix+1][iz]);
+                    by = 0.5*(ro[iy][ix][iz]+ro[iy+1][ix][iz]);
+                    bz = 0.5*(ro[iy][ix][iz]+ro[iy][ix][iz+1]);
+                    rox[iy+ioXy][ix+ioXx][iz+ioXz]=fac/bx;
+                    roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/by;
+                    roz[iy+ioZy][ix+ioZx][iz+ioZz]=fac/bz;
+                    l2m[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda2mu;
+                    lam[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda;
+                    muxz[iy+ioTy][ix+ioTx][iz+ioTz]=fac*mul;
                 }
             }
         }
@@ -730,123 +742,123 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 		iz = nz-1;
 		for (iy=0;iy<ny-1;iy++) {
 			for (ix=0;ix<nx-1;ix++) {
-				cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-				lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+				cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+				lamda2mu = cp2*ro[iy][ix][iz];
 
-				bx = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+(ix+1)*nz+iz]);
-				by = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[(iy+1)*nx*nz+ix*nz+iz]);
-				bz = ro[iy*nx*nz+ix*nz+iz];
-				rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-				roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
-				roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
-				l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
+				bx = 0.5*(ro[iy][ix][iz]+ro[iy][ix+1][iz]);
+				by = 0.5*(ro[iy][ix][iz]+ro[iy+1][ix][iz]);
+				bz = ro[iy][ix][iz];
+				rox[iy+ioXy][ix+ioXx][iz+ioXz]=fac/bx;
+				roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/by;
+				roz[iy+ioZy][ix+ioZx][iz+ioZz]=fac/bz;
+				l2m[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda2mu;
 			}
 		}
 
 		iy = ny-1;
 		for (iz=0;iz<nz-1;iz++) {
 			for (ix=0;ix<nx-1;ix++) {
-				cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-				lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+				cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+				lamda2mu = cp2*ro[iy][ix][iz];
 
-				bx = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+(ix+1)*nz+iz]);
-				by = ro[iy*nx*nz+ix*nz+iz];
-				bz = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+ix*nz+iz+1]);
-				rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-				roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
-				roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
-				l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
+				bx = 0.5*(ro[iy][ix][iz]+ro[iy][ix+1][iz]);
+				by = ro[iy][ix][iz];
+				bz = 0.5*(ro[iy][ix][iz]+ro[iy][ix][iz+1]);
+				rox[iy+ioXy][ix+ioXx][iz+ioXz]=fac/bx;
+				roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/by;
+				roz[iy+ioZy][ix+ioZx][iz+ioZz]=fac/bz;
+				l2m[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda2mu;
 			}
 		}
 
 		ix = nx-1;
 		for (iz=0;iz<nz-1;iz++) {
 			for (iy=0;iy<ny-1;iy++) {
-				cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-				lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+				cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+				lamda2mu = cp2*ro[iy][ix][iz];
 
-				bx = ro[iy*nx*nz+ix*nz+iz];
-				by = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[(iy+1)*nx*nz+ix*nz+iz]);
-				bz = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+ix*nz+iz+1]);
-				rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-				roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
-				roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
-				l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
+				bx = ro[iy][ix][iz];
+				by = 0.5*(ro[iy][ix][iz]+ro[iy+1][ix][iz]);
+				bz = 0.5*(ro[iy][ix][iz]+ro[iy][ix][iz+1]);
+				rox[iy+ioXy][ix+ioXx][iz+ioXz]=fac/bx;
+				roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/by;
+				roz[iy+ioZy][ix+ioZx][iz+ioZz]=fac/bz;
+				l2m[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda2mu;
 			}
 		}
 
 		iz = nz-1;
         iy = ny-1;
 		for (ix=0;ix<nx-1;ix++) {
-			cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-			lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+			cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+			lamda2mu = cp2*ro[iy][ix][iz];
 
-			bx = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+(ix+1)*nz+iz]);
-			by = ro[iy*nx*nz+ix*nz+iz];
-			bz = ro[iy*nx*nz+ix*nz+iz];
-			rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-			roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
-			roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
-			l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
+			bx = 0.5*(ro[iy][ix][iz]+ro[iy][ix+1][iz]);
+			by = ro[iy][ix][iz];
+			bz = ro[iy][ix][iz];
+			rox[iy+ioXy][ix+ioXx][iz+ioXz]=fac/bx;
+			roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/by;
+			roz[iy+ioZy][ix+ioZx][iz+ioZz]=fac/bz;
+			l2m[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda2mu;
 		}
 
 		iz = nz-1;
         ix = nx-1;
 		for (iy=0;iy<ny-1;iy++) {
-			cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-			lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+			cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+			lamda2mu = cp2*ro[iy][ix][iz];
 
-			bx = ro[iy*nx*nz+ix*nz+iz];
-			by = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[(iy+1)*nx*nz+ix*nz+iz]);
-			bz = ro[iy*nx*nz+ix*nz+iz];
-			rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-			roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
-			roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
-			l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
+			bx = ro[iy][ix][iz];
+			by = 0.5*(ro[iy][ix][iz]+ro[iy+1][ix][iz]);
+			bz = ro[iy][ix][iz];
+			rox[iy+ioXy][ix+ioXx][iz+ioXz]=fac/bx;
+			roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/by;
+			roz[iy+ioZy][ix+ioZx][iz+ioZz]=fac/bz;
+			l2m[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda2mu;
 		}
 
 		ix = nx-1;
         iy = ny-1;
 		for (iz=0;iz<nz-1;iz++) {
-			cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-			lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+			cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+			lamda2mu = cp2*ro[iy][ix][iz];
 
-			bx = ro[iy*nx*nz+ix*nz+iz];
-			by = ro[iy*nx*nz+ix*nz+iz];
-			bz = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+ix*nz+iz+1]);
-			rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-			roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
-			roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
-			l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
+			bx = ro[iy][ix][iz];
+			by = ro[iy][ix][iz];
+			bz = 0.5*(ro[iy][ix][iz]+ro[iy][ix][iz+1]);
+			rox[iy+ioXy][ix+ioXx][iz+ioXz]=fac/bx;
+			roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/by;
+			roz[iy+ioZy][ix+ioZx][iz+ioZz]=fac/bz;
+			l2m[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda2mu;
 		}
 
 		ix=nx-1;
         iy=ny-1;
 		iz=nz-1;
-		cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-		lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
-		bx = ro[iy*nx*nz+ix*nz+iz];
-		by = ro[iy*nx*nz+ix*nz+iz];
-		bz = ro[iy*nx*nz+ix*nz+iz];
-		rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-		roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
-		roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
-		l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
+		cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+		lamda2mu = cp2*ro[iy][ix][iz];
+		bx = ro[iy][ix][iz];
+		by = ro[iy][ix][iz];
+		bz = ro[iy][ix][iz];
+		rox[iy+ioXy][ix+ioXx][iz+ioXz]=fac/bx;
+		roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/by;
+		roz[iy+ioZy][ix+ioZx][iz+ioZz]=fac/bz;
+		l2m[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda2mu;
 
 
         for (iy=0; iy<ny-1; iy++) {
             for (ix=0; ix<nx-1; ix++) {
                 for (iz=0; iz<nz-1; iz++) {
-                    cp2  = cp[iy*nx*nz+ix*nz+iz]*cp[iy*nx*nz+ix*nz+iz];
-                    lamda2mu = cp2*ro[iy*nx*nz+ix*nz+iz];
+                    cp2  = cp[iy][ix][iz]*cp[iy][ix][iz];
+                    lamda2mu = cp2*ro[iy][ix][iz];
         
-                    bx = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+(ix+1)*nz+iz]);
-                    by = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[(iy+1)*nx*nz+ix*nz+iz]);
-                    bz = 0.5*(ro[iy*nx*nz+ix*nz+iz]+ro[iy*nx*nz+ix*nz+iz+1]);
-                    rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=fac/bx;
-                    roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=fac/by;
-                    roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=fac/bz;
-                    l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]=fac*lamda2mu;
+                    bx = 0.5*(ro[iy][ix][iz]+ro[iy][ix+1][iz]);
+                    by = 0.5*(ro[iy][ix][iz]+ro[iy+1][ix][iz]);
+                    bz = 0.5*(ro[iy][ix][iz]+ro[iy][ix][iz+1]);
+                    rox[iy+ioXy][ix+ioXx][iz+ioXz]=fac/bx;
+                    roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/by;
+                    roz[iy+ioZy][ix+ioZx][iz+ioZz]=fac/bz;
+                    l2m[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda2mu;
                 }
             }
         }
@@ -857,10 +869,10 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
     for (iy=0; iy<ny; iy++) {
         for (ix=0; ix<nx; ix++) {
             for (iz=0; iz<nz; iz++) {
-                if (l2m[(iy+ioPy)*n2*n1+(ix+ioPx)*n1+iz+ioPz]==0.0) {
-                    rox[(iy+ioXy)*n2*n1+(ix+ioXx)*n1+iz+ioXz]=0.0;
-                    roy[(iy+ioYy)*n2*n1+(ix+ioYx)*n1+iz+ioYz]=0.0;
-                    roz[(iy+ioZy)*n2*n1+(ix+ioZx)*n1+iz+ioZz]=0.0;
+                if (l2m[iy+ioPy][ix+ioPx][iz+ioPz]==0.0) {
+                    rox[iy+ioXy][ix+ioXx][iz+ioXz]=0.0;
+                    roy[iy+ioYy][ix+ioYx][iz+ioYz]=0.0;
+                    roz[iy+ioZy][ix+ioZx][iz+ioZz]=0.0;
                 }
             }
         }
@@ -884,7 +896,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    rox[iy*n2*n1+ix*n1+iz] = rox[iy*n2*n1+ixe*n1+iz];
+                    rox[iy][ix][iz] = rox[iy][ixe][iz];
                 }
             }
         }
@@ -899,7 +911,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    roy[iy*n2*n1+ix*n1+iz] = roy[iy*n2*n1+ixe*n1+iz];
+                    roy[iy][ix][iz] = roy[iy][ixe][iz];
                 }
             }
         }
@@ -914,7 +926,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    roz[iy*n2*n1+ix*n1+iz] = roz[iy*n2*n1+ixe*n1+iz];
+                    roz[iy][ix][iz] = roz[iy][ixe][iz];
                 }
             }
         }
@@ -929,7 +941,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    l2m[iy*n2*n1+ix*n1+iz] = l2m[iy*n2*n1+ixe*n1+iz];
+                    l2m[iy][ix][iz] = l2m[iy][ixe][iz];
                 }
             }
         }
@@ -945,7 +957,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             for (iy=iyo; iy<iye; iy++) {
         	    for (ix=ixo; ix<ixe; ix++) {
             	    for (iz=izo; iz<ize; iz++) {
-                	    lam[iy*n2*n1+ix*n1+iz] = lam[iy*n2*n1+ixe*n1+iz];
+                	    lam[iy][ix][iz] = lam[iy][ixe][iz];
                     }
             	}
         	}
@@ -959,7 +971,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             for (iy=iyo; iy<iye; iy++) {
                 for (ix=ixo; ix<ixe; ix++) {
                     for (iz=izo; iz<ize; iz++) {
-                        muxz[iy*n2*n1+ix*n1+iz] = muxz[iy*n2*n1+ixe*n1+iz];
+                        muxz[iy][ix][iz] = muxz[iy][ixe][iz];
                     }
                 }
             }
@@ -1014,7 +1026,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    rox[iy*n2*n1+ix*n1+iz] = rox[iy*n2*n1+(ixo-1)*n1+iz];
+                    rox[iy][ix][iz] = rox[iy][ixo-1][iz];
                 }
             }
         }
@@ -1029,7 +1041,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    roy[iy*n2*n1+ix*n1+iz] = roy[iy*n2*n1+(ixo-1)*n1+iz];
+                    roy[iy][ix][iz] = roy[iy][ixo-1][iz];
                 }
             }
         }
@@ -1044,7 +1056,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    roz[iy*n2*n1+ix*n1+iz] = roz[iy*n2*n1+(ixo-1)*n1+iz];
+                    roz[iy][ix][iz] = roz[iy][ixo-1][iz];
                 }
             }
         }
@@ -1059,7 +1071,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    l2m[iy*n2*n1+ix*n1+iz] = l2m[iy*n2*n1+(ixo-1)*n1+iz];
+                    l2m[iy][ix][iz] = l2m[iy][ixo-1][iz];
                 }
             }
         }
@@ -1075,7 +1087,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             for (iy=iyo; iy<iye; iy++) {
                 for (ix=ixo; ix<ixe; ix++) {
                     for (iz=izo; iz<ize; iz++) {
-                        lam[iy*n2*n1+ix*n1+iz] = lam[iy*n2*n1+(ixo-1)*n1+iz];
+                        lam[iy][ix][iz] = lam[iy][ixo-1][iz];
                     }
                 }
             }
@@ -1090,7 +1102,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             for (iy=iyo; iy<iye; iy++) {
                 for (ix=ixo; ix<ixe; ix++) {
                     for (iz=izo; iz<ize; iz++) {
-                        muxz[iy*n2*n1+ix*n1+iz] = muxz[iy*n2*n1+(ixo-1)*n1+iz];
+                        muxz[iy][ix][iz] = muxz[iy][ixo-1][iz];
                     }
                 }
             }
@@ -1147,7 +1159,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    rox[iy*n2*n1+ix*n1+iz] = rox[iye*n2*n1+ix*n1+iz];
+                    rox[iy][ix][iz] = rox[iye][ix][iz];
                 }
             }
         }
@@ -1164,7 +1176,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    roy[iy*n2*n1+ix*n1+iz] = roy[iye*n2*n1+ix*n1+iz];
+                    roy[iy][ix][iz] = roy[iye][ix][iz];
                 }
             }
         }
@@ -1181,7 +1193,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    roz[iy*n2*n1+ix*n1+iz] = roz[iye*n2*n1+ix*n1+iz];
+                    roz[iy][ix][iz] = roz[iye][ix][iz];
                 }
             }
         }
@@ -1200,7 +1212,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    l2m[iy*n2*n1+ix*n1+iz] = l2m[iye*n2*n1+ix*n1+iz];
+                    l2m[iy][ix][iz] = l2m[iye][ix][iz];
                 }
             }
         }
@@ -1218,7 +1230,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             for (iy=iyo; iy<iye; iy++) {
         	    for (ix=ixo; ix<ixe; ix++) {
             	    for (iz=izo; iz<ize; iz++) {
-                	    lam[iy*n2*n1+ix*n1+iz] = lam[iye*n2*n1+ix*n1+iz];
+                	    lam[iy][ix][iz] = lam[iye][ix][iz];
                     }
             	}
         	}
@@ -1234,7 +1246,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             for (iy=iyo; iy<iye; iy++) {
                 for (ix=ixo; ix<ixe; ix++) {
                     for (iz=izo; iz<ize; iz++) {
-                        muxz[iy*n2*n1+ix*n1+iz] = muxz[iye*n2*n1+ix*n1+iz];
+                        muxz[iy][ix][iz] = muxz[iye][ix][iz];
                     }
                 }
             }
@@ -1295,7 +1307,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    rox[iy*n2*n1+ix*n1+iz] = rox[(iyo-1)*n2*n1+ix*n1+iz];
+                    rox[iy][ix][iz] = rox[iyo-1][ix][iz];
                 }
             }
         }
@@ -1312,7 +1324,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    roy[iy*n2*n1+ix*n1+iz] = roy[(iyo-1)*n2*n1+ix*n1+iz];
+                    roy[iy][ix][iz] = roy[iyo-1][ix][iz];
                 }
             }
         }
@@ -1329,7 +1341,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    roz[iy*n2*n1+ix*n1+iz] = roz[(iyo-1)*n2*n1+ix*n1+iz];
+                    roz[iy][ix][iz] = roz[iyo-1][ix][iz];
                 }
             }
         }
@@ -1348,7 +1360,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    l2m[iy*n2*n1+ix*n1+iz] = l2m[(iyo-1)*n2*n1+ix*n1+iz];
+                    l2m[iy][ix][iz] = l2m[iyo-1][ix][iz];
                 }
             }
         }
@@ -1366,7 +1378,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             for (iy=iyo; iy<iye; iy++) {
                 for (ix=ixo; ix<ixe; ix++) {
                     for (iz=izo; iz<ize; iz++) {
-                        lam[iy*n2*n1+ix*n1+iz] = lam[(iyo-1)*n2*n1+ix*n1+iz];
+                        lam[iy][ix][iz] = lam[iyo-1][ix][iz];
                     }
                 }
             }
@@ -1383,7 +1395,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             for (iy=iyo; iy<iye; iy++) {
                 for (ix=ixo; ix<ixe; ix++) {
                     for (iz=izo; iz<ize; iz++) {
-                        muxz[iy*n2*n1+ix*n1+iz] = muxz[(iyo-1)*n2*n1+ix*n1+iz];
+                        muxz[iy][ix][iz] = muxz[iyo-1][ix][iz];
                     }
                 }
             }
@@ -1446,7 +1458,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    rox[iy*n2*n1+ix*n1+iz] = rox[iy*n2*n1+ix*n1+ize];
+                    rox[iy][ix][iz] = rox[iy][ix][ize];
                 }
             }
         }
@@ -1465,7 +1477,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    roy[iy*n2*n1+ix*n1+iz] = roy[iy*n2*n1+ix*n1+ize];
+                    roy[iy][ix][iz] = roy[iy][ix][ize];
                 }
             }
         }
@@ -1484,7 +1496,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    roz[iy*n2*n1+ix*n1+iz] = roz[iy*n2*n1+ix*n1+ize];
+                    roz[iy][ix][iz] = roz[iy][ix][ize];
                 }
             }
         }
@@ -1499,7 +1511,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    l2m[iy*n2*n1+ix*n1+iz] = l2m[iy*n2*n1+ix*n1+ize];
+                    l2m[iy][ix][iz] = l2m[iy][ix][ize];
                 }
             }
         }
@@ -1515,7 +1527,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             for (iy=iyo; iy<iye; iy++) {
                 for (ix=ixo; ix<ixe; ix++) {
                     for (iz=izo; iz<ize; iz++) {
-                        lam[iy*n2*n1+ix*n1+iz] = lam[iy*n2*n1+ix*n1+ize];
+                        lam[iy][ix][iz] = lam[iy][ix][ize];
                     }
                 }
             }
@@ -1530,7 +1542,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             for (iy=iyo; iy<iye; iy++) {
                 for (ix=ixo; ix<ixe; ix++) {
                     for (iz=izo; iz<ize; iz++) {
-                        muxz[iy*n2*n1+ix*n1+iz] = muxz[iy*n2*n1+ix*n1+ize];
+                        muxz[iy][ix][iz] = muxz[iy][ix][ize];
                     }
                 }
             }
@@ -1589,7 +1601,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    rox[iy*n2*n1+ix*n1+iz] = rox[iy*n2*n1+ix*n1+izo-1];
+                    rox[iy][ix][iz] = rox[iy][ix][izo-1];
                 }
             }
         }
@@ -1608,7 +1620,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    roy[iy*n2*n1+ix*n1+iz] = roy[iy*n2*n1+ix*n1+izo-1];
+                    roy[iy][ix][iz] = roy[iy][ix][izo-1];
                 }
             }
         }
@@ -1627,7 +1639,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    roz[iy*n2*n1+ix*n1+iz] = roz[iy*n2*n1+ix*n1+izo-1];
+                    roz[iy][ix][iz] = roz[iy][ix][izo-1];
                 }
             }
         }
@@ -1641,7 +1653,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
         for (iy=iyo; iy<iye; iy++) {
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
-                    l2m[iy*n2*n1+ix*n1+iz] = l2m[iy*n2*n1+ix*n1+izo-1];
+                    l2m[iy][ix][iz] = l2m[iy][ix][izo-1];
                 }
             }
         }
@@ -1657,7 +1669,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             for (iy=iyo; iy<iye; iy++) {
                 for (ix=ixo; ix<ixe; ix++) {
                     for (iz=izo; iz<ize; iz++) {
-                        lam[iy*n2*n1+ix*n1+iz] = lam[iy*n2*n1+ix*n1+izo-1];
+                        lam[iy][ix][iz] = lam[iy][ix][izo-1];
                     }
                 }
             }
@@ -1672,7 +1684,7 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
             for (iy=iyo; iy<iye; iy++) {
                 for (ix=ixo; ix<ixe; ix++) {
                     for (iz=izo; iz<ize; iz++) {
-                        muxz[iy*n2*n1+ix*n1+iz] = muxz[iy*n2*n1+ix*n1+izo-1];
+                        muxz[iy][ix][iz] = muxz[iy][ix][izo-1];
                     }
                 }
             }
@@ -1713,9 +1725,11 @@ long readModel3D(modPar mod, bndPar bnd, float *rox, float *roy, float *roz,
 
     }
 
-	free(cp);
-	free(ro);
-   	free(cs);
+	free3float(cp);
+	free3float(ro);
+	if (mod.ischeme>2 && mod.ischeme!=5) {
+   	    free3float(cs);
+	}
 
     return 0;
 }

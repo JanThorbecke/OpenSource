@@ -335,7 +335,7 @@ void computeMatrixInverse(complex *matrix, int nxm, int rthm, float eps_a, float
 		S0 = S[0];
 		neig = 0;
 		for (i=0; i<N; i++) {
-			if (verbose=4) fprintf(stderr,"S[%d] = %e ",i,S[i]);
+			if (verbose==4) fprintf(stderr,"S[%d] = %e ",i,S[i]);
 			Si = S[i];
 			if ((Si/S0) > numacc) { S[i]=1.0/S[i]; neig++; }
 			else S[i] = 0.0;

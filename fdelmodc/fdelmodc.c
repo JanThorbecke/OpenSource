@@ -280,7 +280,7 @@ int main(int argc, char **argv)
 	float *beam_pp, *beam_ss;	
 	float sinkvel, npeshot;
 	double t0, t1, t2, t3, tt, tinit;
-	size_t size, sizem, nsamp;
+	size_t size, sizem, nsamp, perc;
 	int n1, ix, iz, ir, ishot, i;
 	int ioPx, ioPz;
 	int it0, it1, its, it, fileno, isam;
@@ -504,6 +504,10 @@ int main(int argc, char **argv)
 			vmess(" which are actual positions x=%.2f - %.2f", mod.x0+rec.xr[0], mod.x0+rec.xr[rec.n-1]);
 			vmess("Receivers at gridpoint z-range iz=%d - %d", rec.z[0], rec.z[rec.n-1]);
 			vmess(" which are actual positions z=%.2f - %.2f", mod.z0+rec.zr[0], mod.z0+rec.zr[rec.n-1]);
+            vmess("*******************************************");
+            vmess("***** FD Propagating Source Wavefield *****");
+            vmess("*******************************************");
+            fprintf(stderr,"    %s: Progress: %3d%%",xargv[0],0);
 		}
 
 		if (mod.grid_dir) { /* reverse time modeling */
@@ -520,6 +524,7 @@ int main(int argc, char **argv)
 			it1=mod.nt;
 			its=1;
 		}
+        perc=it1/100;if(!perc)perc=1;
 
 		/* Main loop over the number of time steps */
 		for (it=it0; it<it1; it++) {
@@ -533,7 +538,7 @@ shared(rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, rec_p, rec_pp, rec_ss) \
 shared (tt, t2, t3) \
 shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 {
-			if (it==it0) {
+			if (it==it0 && verbose>2) {
 				threadAffinity();
 			}
 			switch ( mod.ischeme ) {
@@ -632,6 +637,14 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 #pragma omp master
 {
 			if (verbose) {
+                if(!((it1-it)%perc)) fprintf(stderr,"\b\b\b\b%3d%%",it*100/mod.nt);
+                if(it==100)t3=wallclock_time();
+                if(it==500){
+                    t3=(wallclock_time()-t3)*(mod.nt/400.0);
+                    fprintf(stderr,"\r    %s: Estimated total compute time for this shot = %.2fs.\n    %s: Progress: %3d%%",xargv[0],t3,xargv[0],it/(mod.nt/100));
+                }
+
+/*
 				if (it==(it0+100*its)) t2=wallclock_time();
 				if (it==(it0+500*its)) {
 					t3=wallclock_time();
@@ -639,6 +652,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 					vmess("Estimated compute time = %.2f s. per shot.",tt);
 					vmess("Estimated total compute time = %.2f s.",tinit+shot.n*tt);
 				}
+*/
 			}
 }
 } /* end of OpenMP parallel section */
@@ -677,6 +691,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 
 	t1= wallclock_time();
 	if (verbose) {
+        fprintf(stderr,"\b\b\b\b%3d%%\n",100);
 		vmess("Total compute time FD modelling = %.2f s.", t1-t0);
 	}
 

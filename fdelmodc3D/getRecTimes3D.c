@@ -19,7 +19,7 @@
 
 long getRecTimes3D(modPar mod, recPar rec, bndPar bnd, long itime, long isam,
 	float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx,
-	float *txz, float *txy, float *tyz, float *l2m, float *rox, float *roy, float *roz,
+	float *txz, float *txy, float *tyz, float ***l2m, float ***rox, float ***roy, float ***roz,
 	float *rec_vx, float *rec_vy, float *rec_vz, float *rec_txx, float *rec_tyy, float *rec_tzz,
 	float *rec_txz, float *rec_txy, float *rec_tyz, float *rec_p, float *rec_pp, float *rec_ss,
 	float *rec_udp, float *rec_udvz, long verbose)
@@ -361,14 +361,14 @@ long getRecTimes3D(modPar mod, recPar rec, bndPar bnd, long itime, long isam,
                               c2*(vy[(iy+2)*n1*n2+ix*n1+iz] - vy[(iy-1)*n1*n2+ix*n1+iz]);
                         dvz = c1*(vz[iy*n1*n2+ix*n1+iz+1]   - vz[iy*n1*n2+ix*n1+iz]) +
                               c2*(vz[iy*n1*n2+ix*n1+iz+2]   - vz[iy*n1*n2+ix*n1+iz-1]);
-                        field = tzz[iy*n1*n2+ix*n1+iz] + (1.0/2.0)*l2m[iy*n1*n2+ix*n1+iz]*(dvx+dvy+dvz);
+                        field = tzz[iy*n1*n2+ix*n1+iz] + (1.0/2.0)*l2m[iy][ix][iz]*(dvx+dvy+dvz);
                         dvx = c1*(vx[iy*n1*n2+(ix+1)*n1+iz1] - vx[iy*n1*n2+ix*n1+iz1]) +
                               c2*(vx[iy*n1*n2+(ix+2)*n1+iz1] - vx[iy*n1*n2+(ix-1)*n1+iz1]);
                         dvy = c1*(vy[(iy+1)*n1*n2+ix*n1+iz1] - vy[iy*n1*n2+ix*n1+iz1]) +
                               c2*(vy[(iy+2)*n1*n2+ix*n1+iz1] - vy[(iy-1)*n1*n2+ix*n1+iz1]);
                         dvz = c1*(vz[iy*n1*n2+ix*n1+iz1+1]   - vz[iy*n1*n2+ix*n1+iz1]) +
                               c2*(vz[iy*n1*n2+ix*n1+iz1+2]   - vz[iy*n1*n2+ix*n1+iz1-1]);
-                        field += tzz[iy*n1*n2+ix*n1+iz1] + (1.0/2.0)*l2m[iy*n1*n2+ix*n1+iz1]*(dvx+dvy+dvz);
+                        field += tzz[iy*n1*n2+ix*n1+iz1] + (1.0/2.0)*l2m[iy][ix][iz1]*(dvx+dvy+dvz);
 						rec_p[irec*rec.nt+isam] = 0.5*field;
 					}
 					else {
@@ -383,14 +383,14 @@ long getRecTimes3D(modPar mod, recPar rec, bndPar bnd, long itime, long isam,
                               c2*(vy[(iy+2)*n1*n2+ix*n1+iz] - vy[(iy-1)*n1*n2+ix*n1+iz]);
                         dvz = c1*(vz[iy*n1*n2+ix*n1+iz+1]   - vz[iy*n1*n2+ix*n1+iz]) +
                               c2*(vz[iy*n1*n2+ix*n1+iz+2]   - vz[iy*n1*n2+ix*n1+iz-1]);
-                        field = tzz[iy*n1*n2+ix*n1+iz] + (1.0/2.0)*l2m[iy*n1*n2+ix*n1+iz]*(dvx+dvy+dvz);
+                        field = tzz[iy*n1*n2+ix*n1+iz] + (1.0/2.0)*l2m[iy][ix][iz]*(dvx+dvy+dvz);
                         dvx = c1*(vx[iy*n1*n2+(ix1+1)*n1+iz] - vx[iy*n1*n2+ix1*n1+iz]) +
                               c2*(vx[iy*n1*n2+(ix1+2)*n1+iz] - vx[iy*n1*n2+(ix1-1)*n1+iz]);
                         dvy = c1*(vy[(iy+1)*n1*n2+ix1*n1+iz] - vy[iy*n1*n2+ix1*n1+iz]) +
                               c2*(vy[(iy+2)*n1*n2+ix1*n1+iz] - vy[(iy-1)*n1*n2+ix1*n1+iz]);
                         dvz = c1*(vz[iy*n1*n2+ix1*n1+iz+1]   - vz[iy*n1*n2+ix1*n1+iz]) +
                               c2*(vz[iy*n1*n2+ix1*n1+iz+2]   - vz[iy*n1*n2+ix1*n1+iz-1]);
-                        field += tzz[iy*n1*n2+ix1*n1+iz] + (1.0/2.0)*l2m[iy*n1*n2+ix1*n1+iz]*(dvx+dvy+dvz);
+                        field += tzz[iy*n1*n2+ix1*n1+iz] + (1.0/2.0)*l2m[iy][ix][iz]*(dvx+dvy+dvz);
 						rec_p[irec*rec.nt+isam] = 0.5*field;
 					}
 					else {
@@ -438,10 +438,10 @@ long getRecTimes3D(modPar mod, recPar rec, bndPar bnd, long itime, long isam,
 /* interpolate vz to Txx/Tzz position by taking the mean of 2 values */
 				else if (rec.int_vz == 2) {
 					if (mod.ischeme == 1) { /* interpolate Vz times +1/2 Dt forward to P times */
-                        field = vz[iy*n1*n2+ix*n1+iz] - 0.5*roz[iy*n1*n2+ix*n1+iz]*(
+                        field = vz[iy*n1*n2+ix*n1+iz] - 0.5*roz[iy][ix][iz]*(
                         	c1*(tzz[iy*n1*n2+ix*n1+iz]   - tzz[iy*n1*n2+ix*n1+iz-1]) +
                         	c2*(tzz[iy*n1*n2+ix*n1+iz+1] - tzz[iy*n1*n2+ix*n1+iz-2]));
-                        field += vz[iy*n1*n2+ix*n1+iz2] - 0.5*roz[iy*n1*n2+ix*n1+iz2]*(
+                        field += vz[iy*n1*n2+ix*n1+iz2] - 0.5*roz[iy][ix][iz2]*(
                         	c1*(tzz[iy*n1*n2+ix*n1+iz2]   - tzz[iy*n1*n2+ix*n1+iz2-1]) +
                         	c2*(tzz[iy*n1*n2+ix*n1+iz2+1] - tzz[iy*n1*n2+ix*n1+iz2-2]));
 						rec_vz[irec*rec.nt+isam] = 0.5*field;
@@ -468,10 +468,10 @@ long getRecTimes3D(modPar mod, recPar rec, bndPar bnd, long itime, long isam,
 /* interpolate vx to Txx/Tzz position by taking the mean of 2 values */
 				else if (rec.int_vx == 2) {
 					if (mod.ischeme == 1) { /* interpolate Vx times +1/2 Dt forward to P times */
-            			field = vx[iy*n1*n2+ix*n1+iz] - 0.5*rox[iy*n1*n2+ix*n1+iz]*(
+            			field = vx[iy*n1*n2+ix*n1+iz] - 0.5*rox[iy][ix][iz]*(
                 			c1*(tzz[iy*n1*n2+ix*n1+iz]     - tzz[iy*n1*n2+(ix-1)*n1+iz]) +
                 			c2*(tzz[iy*n1*n2+(ix+1)*n1+iz] - tzz[iy*n1*n2+(ix-2)*n1+iz]));
-            			field += vx[ix2*n1+iz] - 0.5*rox[ix2*n1+iz]*(
+            			field += vx[ix2*n1+iz] - 0.5*rox[iy][ix2][iz]*(
                 			c1*(tzz[iy*n1*n2+ix2*n1+iz]     - tzz[iy*n1*n2+(ix2-1)*n1+iz]) +
                 			c2*(tzz[iy*n1*n2+(ix2+1)*n1+iz] - tzz[iy*n1*n2+(ix2-2)*n1+iz]));
 						rec_vx[irec*rec.nt+isam] = 0.5*field;

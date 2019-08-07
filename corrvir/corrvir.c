@@ -203,7 +203,7 @@ int main (int argc, char **argv)
 	if (nbm==0) { /* read only headers */
 		nbufmax = 0;
 		for (i=0; i<ntrace; i++) {
-			if(i % 100000 == 0) fprintf(stderr,"i=%d out of %d\n", i, ntrace);
+			if(i % 100000 == 0) fprintf(stderr,"i=%d out of %ld\n", i, ntrace);
 			offset = i*trace_sz;
 			ret = fseeko(fpin , offset, SEEK_SET);
 			if (ret<0) perror("fseeko");
@@ -222,7 +222,7 @@ int main (int argc, char **argv)
 		r = (float *)calloc(ntfft,sizeof(float));
 		c = (complex *)calloc((nf),sizeof(complex));
 		for (i=0; i<ntrace; i++) {
-			if(i % 100000 == 0) fprintf(stderr,"i=%d out of %d\n", i, ntrace);
+			if(i % 100000 == 0) fprintf(stderr,"i=%d out of %ld\n", i, ntrace);
 			offset = i*trace_sz;
 			ret = fseeko(fpin , offset, SEEK_SET);
 			if (ret<0) perror("fseeko");
