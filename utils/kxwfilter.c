@@ -80,7 +80,7 @@ void kxwfilt(complex *data, float k, float dx, int nkx, float a1, float perc)
 	filter = (float *)malloc(nkx*sizeof(float));
 
 	band  = fabs(2*kpos);
-	ntap  = (int)fabs((int)(perc*band/dkx));
+	ntap  = (int)abs((int)(perc*band/dkx));
 	kfilt = fabs(dkx*ntap);
 
 	if (perc > 0) {

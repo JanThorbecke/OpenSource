@@ -54,7 +54,7 @@ char *sdoc[] = {
 "   fray ..................... File containing the raytimes of the first arrivals",
 NULL};
 
-void main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	FILE *fp_snap, *fp_rcv;
 	char    *file_snap, *file_rcv, file_tmp[150], ins[100], fbegin[100], fend[100], fins[100], fin2[100], numb1[100], *ptr;
@@ -63,7 +63,7 @@ void main (int argc, char **argv)
     long    nxs, nys, nzs, nts, ntrs, ret, file_det;
 	long	it, ix, iy, iz, ixr, nxr, dnumb, numb, pos, nxmax;
 	long 	nzstart, nzend, dnz;
-	int 	*sx, *sy;
+	int 	*sx, *sy, pf;
 	segy    *hdr_snap, *hdr_rcv;
 
 	initargs(argc, argv);
@@ -85,7 +85,8 @@ void main (int argc, char **argv)
 	ptr  = strstr(file_snap,numb1);
     pos = ptr - file_snap + 1;
 
-    sprintf(fbegin,"%*.*s", pos-1, pos-1, file_snap);
+	pf = pos-1;
+    sprintf(fbegin,"%*.*s", pf, pf, file_snap);
    	sprintf(fend,"%s", file_snap+pos);
 
 	file_det = 1;
@@ -201,5 +202,5 @@ void main (int argc, char **argv)
 
 	free(rcvdata); free(hdr_rcv); free(hdr_snap);
 
-	return;
+	return 0;
 }

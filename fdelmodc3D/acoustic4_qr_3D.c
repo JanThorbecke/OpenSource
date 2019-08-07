@@ -9,7 +9,7 @@
 long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
     long ixsrc, long iysrc, long izsrc, float *vx, float *vy, float *vz,
     float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
-    float *rox, float *roy, float *roz, float *l2m, float **src_nwav, long verbose);
+    float ***rox, float ***roy, float ***roz, float ***l2m, float **src_nwav, long verbose);
 
 long storeSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd, long ixsrc, long iysrc, long izsrc,
     float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx,
@@ -21,17 +21,17 @@ long reStoreSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd, long ixsrc, lo
 
 long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz,
     float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
-    float *rox, float *roy, float *roz, float *l2m, float *lam, float *mul,
+    float ***rox, float ***roy, float ***roz, float ***l2m, float ***lam, float ***mul,
     long itime, long verbose);
 
 long boundariesV3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz,
     float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
-    float *rox, float *roy, float *roz, float *l2m, float *lam, float *mul,
+    float ***rox, float ***roy, float ***roz, float ***l2m, float ***lam, float ***mul,
     long itime, long verbose);
 
 long acoustic4_qr_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, 
     long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz,
-    float *p, float *rox, float *roy, float *roz, float *l2m, long verbose)
+    float *p, float ***rox, float ***roy, float ***roz, float ***l2m, long verbose)
 {
 /*********************************************************************
        COMPUTATIONAL OVERVIEW OF THE 4th ORDER STAGGERED GRID: 
@@ -211,7 +211,7 @@ long acoustic4_qr_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
             }
 #pragma ivdep
             for (iz=ioXz; iz<ieXz; iz++) {
-                vx[iy*n2*n1+ix*n1+iz] -= rox[iy*n2*n1+ix*n1+iz]*(
+                vx[iy*n2*n1+ix*n1+iz] -= rox[iy][ix][iz]*(
                     c1*(p[iy*n2*n1+ix*n1+iz]     - p[iy*n2*n1+(ix-1)*n1+iz]) +
                     c2*(p[iy*n2*n1+(ix+1)*n1+iz] - p[iy*n2*n1+(ix-2)*n1+iz]));
             }
@@ -232,7 +232,7 @@ long acoustic4_qr_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
             }
 #pragma ivdep
             for (iz=ioYz; iz<ieYz; iz++) {
-                vy[iy*n2*n1+ix*n1+iz] -= roy[iy*n2*n1+ix*n1+iz]*(
+                vy[iy*n2*n1+ix*n1+iz] -= roy[iy][ix][iz]*(
                             c1*(p[iy*n2*n1+ix*n1+iz]     - p[(iy-1)*n2*n1+ix*n1+iz]) +
                             c2*(p[(iy+1)*n2*n1+ix*n1+iz] - p[(iy-2)*n2*n1+ix*n1+iz]));
             }
@@ -253,7 +253,7 @@ long acoustic4_qr_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
             }
 #pragma ivdep
             for (iz=ioZz; iz<ieZz; iz++) {
-                vz[iy*n2*n1+ix*n1+iz] -= roz[iy*n2*n1+ix*n1+iz]*(
+                vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
                             c1*(p[iy*n2*n1+ix*n1+iz]   - p[iy*n2*n1+ix*n1+iz-1]) +
                             c2*(p[iy*n2*n1+ix*n1+iz+1] - p[iy*n2*n1+ix*n1+iz-2]));
             }
@@ -283,7 +283,7 @@ long acoustic4_qr_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
             }
 #pragma ivdep
             for (iz=ioPz; iz<iePz; iz++) {
-                p[iy*n2*n1+ix*n1+iz] -= l2m[iy*n2*n1+ix*n1+iz]*(
+                p[iy*n2*n1+ix*n1+iz] -= l2m[iy][ix][iz]*(
                             c1*(vx[iy*n2*n1+(ix+1)*n1+iz] - vx[iy*n2*n1+ix*n1+iz]) +
                             c2*(vx[iy*n2*n1+(ix+2)*n1+iz] - vx[iy*n2*n1+(ix-1)*n1+iz]) +
                             c1*(vy[(iy+1)*n2*n1+ix*n1+iz] - vy[iy*n2*n1+ix*n1+iz]) +

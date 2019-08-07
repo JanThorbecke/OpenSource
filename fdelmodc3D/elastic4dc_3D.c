@@ -8,7 +8,7 @@
 
 long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long iysrc, long izsrc, 
     float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
-    float *rox, float *roy, float *roz, float *l2m, float **src_nwav, long verbose);
+    float ***rox, float ***roy, float ***roz, float ***l2m, float **src_nwav, long verbose);
 
 long storeSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd, long ixsrc, long iysrc, long izsrc,
     float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, long verbose);
@@ -17,16 +17,16 @@ long reStoreSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd, long ixsrc, lo
     float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, long verbose);
 
 long boundariesP3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz,
-    float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, float *rox, float *roy, float *roz,
-    float *l2m, float *lam, float *mul, long itime, long verbose);
+    float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, float ***rox, float ***roy, float ***roz,
+    float ***l2m, float ***lam, float ***mul, long itime, long verbose);
 
 long boundariesV3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz,
-    float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, float *rox, float *roy, float *roz,
-    float *l2m, float *lam, float *mul, long itime, long verbose);
+    float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz, float ***rox, float ***roy, float ***roz,
+    float ***l2m, float ***lam, float ***mul, long itime, long verbose);
 
 long elastic4dc_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long iysrc, long izsrc, float **src_nwav,
     float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
-    float *rox, float *roy, float *roz, float *l2m, float *lam, float *mul, long verbose)
+    float ***rox, float ***roy, float ***roz, float ***l2m, float ***lam, float ***mul, long verbose)
 {
 /*********************************************************************
        COMPUTATIONAL OVERVIEW OF THE 4th ORDER STAGGERED GRID: 
@@ -90,7 +90,7 @@ long elastic4dc_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, l
 	    for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
 #pragma ivdep
             for (iz=mod.ioXz; iz<mod.ieXz; iz++) {
-                vx[iy*n2*n1+ix*n1+iz] -= rox[iy*n2*n1+ix*n1+iz]*(
+                vx[iy*n2*n1+ix*n1+iz] -= rox[iy][ix][iz]*(
                             c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
                                 txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
                                 txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
@@ -107,7 +107,7 @@ long elastic4dc_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, l
 	    for (ix=mod.ioYx; ix<mod.ieYx; ix++) {
 #pragma ivdep
             for (iz=mod.ioYz; iz<mod.ieYz; iz++) {
-                vy[iy*n2*n1+ix*n1+iz] -= roy[iy*n2*n1+ix*n1+iz]*(
+                vy[iy*n2*n1+ix*n1+iz] -= roy[iy][ix][iz]*(
                             c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
                                 tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
                                 txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
@@ -124,7 +124,7 @@ long elastic4dc_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, l
 	    for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
 #pragma ivdep
             for (iz=mod.ioZz; iz<mod.ieZz; iz++) {
-                vz[iy*n2*n1+ix*n1+iz] -= roz[iy*n2*n1+ix*n1+iz]*(
+                vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
                             c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
                                 tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
                                 txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
@@ -155,9 +155,9 @@ long elastic4dc_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, l
                         c2*(vy[(iy+2)*n2*n1+ix*n1+iz] - vy[(iy-1)*n2*n1+ix*n1+iz]);
                 dvz =   c1*(vz[iy*n2*n1+ix*n1+iz+1]   - vz[iy*n2*n1+ix*n1+iz]) +
                         c2*(vz[iy*n2*n1+ix*n1+iz+2]   - vz[iy*n2*n1+ix*n1+iz-1]);
-                txx[iy*n2*n1+ix*n1+iz] -= l2m[iy*n2*n1+ix*n1+iz]*dvx + lam[iy*n2*n1+ix*n1+iz]*(dvy + dvz);
-                tyy[iy*n2*n1+ix*n1+iz] -= l2m[iy*n2*n1+ix*n1+iz]*dvy + lam[iy*n2*n1+ix*n1+iz]*(dvz + dvx);
-                tzz[iy*n2*n1+ix*n1+iz] -= l2m[iy*n2*n1+ix*n1+iz]*dvz + lam[iy*n2*n1+ix*n1+iz]*(dvx + dvy);
+                txx[iy*n2*n1+ix*n1+iz] -= l2m[iy][ix][iz]*dvx + lam[iy][ix][iz]*(dvy + dvz);
+                tyy[iy*n2*n1+ix*n1+iz] -= l2m[iy][ix][iz]*dvy + lam[iy][ix][iz]*(dvz + dvx);
+                tzz[iy*n2*n1+ix*n1+iz] -= l2m[iy][ix][iz]*dvz + lam[iy][ix][iz]*(dvx + dvy);
             }
         }
 	}

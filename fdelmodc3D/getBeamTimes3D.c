@@ -152,7 +152,7 @@ long writeBeams3D(modPar mod, snaPar sna, long ixsrc, long iysrc, long izsrc,
 	
 	strcpy(filename, sna.file_beam);
 	if (fileno) {
-		sprintf(number,"_%03d",fileno);
+		sprintf(number,"_%03ld",fileno);
 		name_ext(filename, number);
 	}
 	if (verbose>2) vmess("Writing beam data to file %s", filename);

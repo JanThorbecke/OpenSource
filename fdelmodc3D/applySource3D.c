@@ -22,7 +22,7 @@ void vmess(char *fmt, ...);
  **********************************************************************/
 long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, long ixsrc, long iysrc, long izsrc,
 	float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
-	float *rox, float *roy, float *roz, float *l2m, float **src_nwav, long verbose)
+	float ***rox, float ***roy, float ***roz, float ***l2m, float **src_nwav, long verbose)
 {
 	long is0, ibndz, ibndy, ibndx;
 	long isrc, ix, iy, iz, n1, n2;
@@ -147,7 +147,7 @@ long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, l
 
 /* in older version added factor 2.0 to be compliant with defined Green's functions in Marchenko algorithm */
 /* this is now set to 1.0 */
-		src_ampl *= (1.0/(mod.dx*mod.dx))*l2m[iy*n1*n2+ix*n1+iz];
+		src_ampl *= (1.0/(mod.dx*mod.dx))*l2m[iy][ix][iz];
 
 		if (verbose>5) {
 			vmess("Source %li at grid [ix=%li,iy=%li,iz=%li] at itime %li has value %e",isrc, ix, iy, iz, itime, src_ampl);
@@ -156,12 +156,12 @@ long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, l
 		/* Force source */
 
 		if (src.type == 6) {
-			vx[iy*n1*n2+ix*n1+iz] += src_ampl*rox[iy*n1*n2+ix*n1+iz]/(l2m[iy*n1*n2+ix*n1+iz]);
+			vx[iy*n1*n2+ix*n1+iz] += src_ampl*rox[iy][ix][iz]/(l2m[iy][ix][iz]);
 			/* stable implementation from "Numerical Techniques for Conservation Laws with Source Terms" by Justin Hudson */
 			//vx[ix*n1+iz] = 0.5*(vx[(ix+1)*n1+iz]+vx[(ix-1)*n1+iz])+src_ampl*rox[ix*n1+iz]/(l2m[ix*n1+iz]);
 		}
 		else if (src.type == 7) {
-			vz[iy*n1*n2+ix*n1+iz] += src_ampl*roz[iy*n1*n2+ix*n1+iz]/(l2m[iy*n1*n2+ix*n1+iz]);
+			vz[iy*n1*n2+ix*n1+iz] += src_ampl*roz[iy][ix][iz]/(l2m[iy][ix][iz]);
 			/* stable implementation from "Numerical Techniques for Conservation Laws with Source Terms" by Justin Hudson */
 			/* stable implementation changes amplitude and more work is needed */
 			//vz[ix*n1+iz] = 0.5*(vz[ix*n1+iz-1]+vz[ix*n1+iz+1])+src_ampl*roz[ix*n1+iz]/(l2m[ix*n1+iz]);
@@ -274,7 +274,7 @@ long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, l
 * Curl S-pot = CURL(F) = dF_x/dz - dF_z/dx
 ***********************************************************************/
 			else if(src.type == 5) {
-				src_ampl = src_ampl*rox[iy*n1*n2+ix*n1+iz]/(l2m[iy*n1*n2+ix*n1+iz]);
+				src_ampl = src_ampl*rox[iy][ix][iz]/(l2m[iy][ix][iz]);
 				if (src.orient == 3) src_ampl = -src_ampl;
                 /* first order derivatives */
 				vx[iy*n1*n2+ix*n1+iz]         += src_ampl*sdx;
@@ -322,7 +322,7 @@ long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, l
 * Divergence P-pot = DIV(F) = dF_x/dx + dF_z/dz
 ***********************************************************************/
             else if(src.type == 8) {
-			    src_ampl = src_ampl*rox[iy*n1*n2+ix*n1+iz]/(l2m[iy*n1*n2+ix*n1+iz]);
+			    src_ampl = src_ampl*rox[iy][ix][iz]/(l2m[iy][ix][iz]);
                 if (src.orient == 3) src_ampl = -src_ampl;
                 vx[iy*n1*n2+(ix+1)*n1+iz] += src_ampl*sdx;
                 vx[iy*n1*n2+ix*n1+iz]     -= src_ampl*sdx;

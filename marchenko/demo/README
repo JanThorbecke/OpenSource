@@ -2,3 +2,6 @@ The scripts to reproduce the Figures in the manuscript can be found in the direc
 
 A more complicated model can be found in the directory twoD and will takes several hours to model the reflection data. 
 
+The directory invisible demonstrates the use of the program marchenko_primaries.
+
+The directory WS15 contains the files and README's used for the EAGE workshop in London 2019: "Reproducing Research with the Marchenko Method and Inversion with the SEISCOPE Toolbox"
