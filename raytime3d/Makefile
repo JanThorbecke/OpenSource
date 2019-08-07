@@ -33,9 +33,9 @@ SRCC	= $(PRG).c \
 		readModel3d.c  \
 		getWaveletHeaders.c  \
 		verbosepkg.c  \
-        getModelInfo3d.c  \
+        getModelInfo3D.c  \
 		wallclock_time.c  \
-        recvPar3d.c  \
+        recvPar3D.c  \
         writesufile.c  \
         name_ext.c  \
 		atopkge.c \

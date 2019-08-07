@@ -15,9 +15,9 @@ typedef struct _dcomplexStruct { /* complex number */
 
 
 typedef struct _icoord { /* 3D coordinate integer */
-    int z;
-    int x;
-    int y;
+    long z;
+    long x;
+    long y;
 } icoord;
 
 typedef struct _fcoord { /* 3D coordinate float */
@@ -27,29 +27,31 @@ typedef struct _fcoord { /* 3D coordinate float */
 } fcoord;
 
 struct s_ecount {
-  int       corner,corner_min,side;
+  long       corner,corner_min,side;
 };
 
 typedef struct _receiverPar { /* Receiver Parameters */
 	char *file_rcv;
-	int n;
-	int nt;
-	int max_nrec;
-	int *z;
-	int *x;
-	int *y;
+	long n;
+	long nx;
+	long ny;
+	long nt;
+	long max_nrec;
+	long *z;
+	long *x;
+	long *y;
 	float *zr;
 	float *xr;
 	float *yr;
-	int scale;
-	int sinkdepth;
-	int sinkvel;
+	long scale;
+	long sinkdepth;
+	long sinkvel;
 	float cp;
 	float rho;
 } recPar;
 
 typedef struct _modelPar { /* Model Parameters */
-	int sh;
+	long sh;
 	char *file_cp;
 	float dz;
 	float dx;
@@ -61,65 +63,65 @@ typedef struct _modelPar { /* Model Parameters */
 	/* medium max/min values */
 	float cp_min;
 	float cp_max;
-	int nz;
-	int nx;
-	int ny;
+	long nz;
+	long nx;
+	long ny;
 } modPar;
 
 typedef struct _waveletPar { /* Wavelet Parameters */
 	char *file_src; /* general source */
-	int nsrcf;
-	int nt;
-	int ns;
-	int nx;
-	int ny;
+	long nsrcf;
+	long nt;
+	long ns;
+	long nx;
+	long ny;
 	float dt;
 	float ds;
 	float fmax;
-	int random;
-	int seed;
-	int nst;
+	long random;
+	long seed;
+	long nst;
 	size_t *nsamp;
 } wavPar;
 
 typedef struct _sourcePar { /* Source Array Parameters */
-	int n;
-	int type;
-	int orient;
-	int *z;
-	int *x;
-	int *y;
-	int single;	
-	int plane;
-	int circle;
-	int array;
-	int random;
-	int multiwav;
+	long n;
+	long type;
+	long orient;
+	long *z;
+	long *x;
+	long *y;
+	long single;	
+	long plane;
+	long circle;
+	long array;
+	long random;
+	long multiwav;
 	float angle;
 	float velo;
 	float amplitude;
-	int distribution;
-	int window;
-    int injectionrate;
-	int sinkdepth;
-	int src_at_rcv; /* Indicates that wavefield should be injected at receivers */
+	long distribution;
+	long window;
+    long injectionrate;
+	long sinkdepth;
+	long src_at_rcv; /* Indicates that wavefield should be injected at receivers */
 } srcPar;
 
 typedef struct _shotPar { /* Shot Parameters */
-	int n;
-	int ny;
-	int nx;
-	int nz;
-	int *z;
-	int *x;
-	int *y;
+	long n;
+	long ny;
+	long nx;
+	long nz;
+	long *z;
+	long *x;
+	long *y;
 } shotPar;
 
 typedef struct _raypar { /* ray-tracing parameters */
-    int smoothwindow;
-    int useT2;
-    int geomspread;
-    int nray;
+    long smoothwindow;
+    long useT2;
+    long geomspread;
+    long nray;
 } rayPar;
 
 #ifndef TRUE

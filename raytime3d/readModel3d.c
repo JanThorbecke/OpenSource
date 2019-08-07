@@ -13,7 +13,7 @@
 
 #define     MAX(x,y) ((x) > (y) ? (x) : (y))
 #define     MIN(x,y) ((x) < (y) ? (x) : (y))
-#define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
+#define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 
 /**
 *  Reads gridded model files and compute from them medium parameters used in the FD kernels.
@@ -25,17 +25,17 @@
 *           The Netherlands 
 **/
 
-int readModel3d(char *file_name, float *slowness, int n1, int n2, int n3, int nz, int nx, int ny, float h, int verbose)
+long readModel3d(char *file_name, float *slowness, long nz, long nx, long ny, float h, long verbose)
 {
     FILE    *fpcp;
     size_t  nread;
-    int i, j, k, tracesToDo;
-	int nxy, nxz;
+    long i, j, k, tracesToDo;
+	long nxy, nxz;
 	float *tmp;
     segy hdr;
 
 	nxy = nx * ny;
-	tmp = (float *)malloc(n1*sizeof(float));
+	tmp = (float *)malloc(nz*sizeof(float));
 
 /* open files and read first header */
 
@@ -43,9 +43,10 @@ int readModel3d(char *file_name, float *slowness, int n1, int n2, int n3, int nz
    	assert( fpcp != NULL);
    	nread = fread(&hdr, 1, TRCBYTES, fpcp);
    	assert(nread == TRCBYTES);
-	assert(hdr.ns == n1);
+	vmess("nz=%li hdr.ns=%li",nz,hdr.ns);
+	assert(hdr.ns == nz);
 
-	if (n2==1) { /* 1D model */
+	if (nx==1) { /* 1D model */
        	nread = fread(&tmp[0], sizeof(float), hdr.ns, fpcp);
 		for (j = 0; j < nz; j++) {
 			for (k = 0; k < ny; k++) {
@@ -55,7 +56,7 @@ int readModel3d(char *file_name, float *slowness, int n1, int n2, int n3, int nz
 			}
 		}
 	}
-	else if (n3==1) { /* 2D model */
+	else if (ny==1) { /* 2D model */
 		for (i = 0; i < nx; i++) {
        		nread = fread(&tmp[0], sizeof(float), hdr.ns, fpcp);
 			for (j = 0; j < nz; j++) {

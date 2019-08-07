@@ -12,7 +12,7 @@
 
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
-#define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
+#define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 
 /**
 *  reads gridded model file to compute minimum and maximum values and sampling intervals
@@ -22,16 +22,18 @@
 *           The Netherlands 
 **/
 
-int getModelInfo3d(char *file_name, int *n1, int *n2, int *n3, float *d1, float *d2, float *d3, float *f1, float *f2, float *f3, int *axis, int verbose)
+long getModelInfo3d(char *file_name, long *n1, long *n2, long *n3, 
+    float *d1, float *d2, float *d3, float *f1, float *f2, float *f3, 
+    long *axis, long verbose)
 {
     FILE    *fp;
     size_t  nread, trace_sz;
     off_t   bytes, pos;
-    int     ret, i, one_shot, ntraces, model, i2, i3;
+    long     ret, i, one_shot, ntraces, model, i2, i3;
     float   *trace, scl;
     segy    hdr, lasthdr;
     
-    if (file_name == NULL) return;
+    if (file_name == NULL) return(0);
 
     fp = fopen( file_name, "r" );
     assert( fp != NULL);
@@ -71,7 +73,7 @@ int getModelInfo3d(char *file_name, int *n1, int *n2, int *n3, float *d1, float 
         *d2 = *d1;
     }
     trace_sz = sizeof(float)*(*n1)+TRCBYTES;
-    ntraces  = (int) (bytes/trace_sz);
+    ntraces  = (long) (bytes/trace_sz);
 
 	if (ntraces == 1) { /* 1D medium */
   		model = 1;
@@ -101,7 +103,7 @@ int getModelInfo3d(char *file_name, int *n1, int *n2, int *n3, float *d1, float 
         			if (nread==0) break;
 					i2++;
 				}
-				fprintf(stderr,"3D model gy=%d %d traces in x = %d\n", lasthdr.gy, i3, i2-1);
+				fprintf(stderr,"3D model gy=%li %d traces in x = %li\n", lasthdr.gy, i3, i2-1);
         		if (nread==0) break;
 				i3++;
 			}
@@ -112,7 +114,7 @@ int getModelInfo3d(char *file_name, int *n1, int *n2, int *n3, float *d1, float 
 
     if (verbose>2) {
         vmess("For file %s", file_name);
-        vmess("nz=%d nx=%d ny=%d ", *n1, *n2, *n3);
+        vmess("nz=%li nx=%li ny=%li ", *n1, *n2, *n3);
         vmess("dz=%f dx=%f *dy=%f", *d1, *d2, *d3);
         vmess("zstart=%f xstart=%f ystart=%f", *f1, *f2, *f3);
         if (*axis) vmess("sample represent z-axis\n");

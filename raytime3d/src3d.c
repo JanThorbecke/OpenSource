@@ -5,6 +5,8 @@
 #include<string.h>
 #include <fcntl.h>
 
+// #define t0(x,y,z)   time0[nxz*(y) + nz*(x) + (z)]
+// #define s0(x,y,z)   slow0[nxz*(y) + nz*(x) + (z)]
 #define t0(x,y,z)   time0[nxy*(z) + nx*(y) + (x)]
 #define s0(x,y,z)   slow0[nxy*(z) + nx*(y) + (x)]
 #define	SQR(x)	((x) * (x))
@@ -15,9 +17,9 @@ extern void verr(char *fmt, ...);
 extern void vwarn(char *fmt, ...);
 extern void vmess(char *fmt, ...);
 
-void src3d(float *time0, float *slow0, int nz, int nx, int ny, float h, float ox, float oy, float oz, int *pxs, int *pys, int *pzs, int *cube)
+void src3d(float *time0, float *slow0, long nz, long nx, long ny, float h, float ox, float oy, float oz, long *pxs, long *pys, long *pzs, long *cube)
 {
-	int
+	long
 		srctype=1,	/* if 1, source is a point;
 						2, source is on the walls of the data volume;
 						3, source on wall, time field known; */
@@ -47,9 +49,9 @@ void src3d(float *time0, float *slow0, int nz, int nx, int ny, float h, float ox
 		*wallfile;   /* file containing input wall values of traveltimes */
 
 
-	if(!getparint("NCUBE",&NCUBE)) NCUBE=2;
+	if(!getparlong("NCUBE",&NCUBE)) NCUBE=2;
 
-	if(!getparint("srctype",&srctype)) srctype=1;
+	if(!getparlong("srctype",&srctype)) srctype=1;
 	if(srctype==1) {
 		if(!getparfloat("xsrc1",&xsrc1)) verr("xsrc1 not given");
 		if(!getparfloat("ysrc1",&ysrc1)) verr("ysrc1 not given");
@@ -57,9 +59,9 @@ void src3d(float *time0, float *slow0, int nz, int nx, int ny, float h, float ox
 		fxs = (xsrc1-ox)/h;
 		fys = (ysrc1-oy)/h;
 		fzs = (zsrc1-oz)/h;
-		xs = (int)(fxs + 0.5);
-		ys = (int)(fys + 0.5);
-		zs = (int)(fzs + 0.5);
+		xs = (long)(fxs + 0.5);
+		ys = (long)(fys + 0.5);
+		zs = (long)(fzs + 0.5);
 		if(xs<2 || ys<2 || zs<2 || xs>nx-3 || ys>ny-3 || zs>nz-3){
 			vwarn("Source near an edge, beware of traveltime errors");
 			vwarn("for raypaths that travel parallel to edge ");
@@ -68,7 +70,7 @@ void src3d(float *time0, float *slow0, int nz, int nx, int ny, float h, float ox
 		*pxs = xs; *pys = ys, *pzs = zs, *cube = NCUBE;
 	}
 	else if (srctype==2)  {
-		if (!getparint("srcwall",&srcwall)) verr("srcwall not given");
+		if (!getparlong("srcwall",&srcwall)) verr("srcwall not given");
 		if (!getparstring("wallfile",&wallfile)) verr("wallfile not given");
 		if((wfint=open(wallfile,O_RDONLY,0664))<=1) {
 			fprintf(stderr,"cannot open %s\n",wallfile);
@@ -76,7 +78,7 @@ void src3d(float *time0, float *slow0, int nz, int nx, int ny, float h, float ox
 		}
 	}
 	else if (srctype==3)  {
-		if (!getparint("srcwall",&srcwall)) verr("srcwall not given");
+		if (!getparlong("srcwall",&srcwall)) verr("srcwall not given");
 		if (!getparstring("oldtfile",&oldtfile)) verr("oldtfile not given");
 		if((ofint=open(oldtfile,O_RDONLY,0664))<=1) {
 			fprintf(stderr,"cannot open %s\n",oldtfile);

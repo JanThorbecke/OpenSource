@@ -27,11 +27,11 @@ void AmpEst3D(float *f1d, float *Gd, float *ampest, long Nfoc, long nxs, long ny
     char *file_wav, float dx, float dy, float dt)
 {
 	
-	long 	l, i, ix, iy, iw, nfreq;
+	long 	l, i, ix, iy, iw, nfreq, ntwav, nread;
 	float 	scl, sclt, *wavelet, *scaled, *conv, *f1dsamp;
-	float   dtm, dxm, cpm, rom, *trace;
+	float   dtm, dxm, cpm, rom, *trace, *wav_tmp;
 	FILE 	*fp_wav;
-	segy 	*hdrs_wav;
+	segy 	hdr;
 
 	scl = dx*dy;
     sclt = 1.0*dt/((float)ntfft);
@@ -41,20 +41,35 @@ void AmpEst3D(float *f1d, float *Gd, float *ampest, long Nfoc, long nxs, long ny
 	scaled	= (float *)calloc(ntfft,sizeof(float));
 	f1dsamp	= (float *)calloc(nys*nxs*ntfft,sizeof(float));
 
-	if (file_wav!=NULL) {
+	if (file_wav != NULL) {
+        //Determine the amount of sample
+        fp_wav = fopen( file_wav, "r" );
+        if ( fp_wav == NULL ) {
+            perror("Error opening file containing wavelet");
+        }
+        nread = fread( &hdr, 1, TRCBYTES, fp_wav );
+        ntwav = hdr.ns;
+        fclose(fp_wav);
+
+        //Read in the wavelet
+        fp_wav = fopen( file_wav, "r" );
+	    wav_tmp = (float *)calloc(ntwav,sizeof(float));
 		trace	= (float *)calloc(ntfft,sizeof(float));
-		hdrs_wav = (segy *)calloc(1, sizeof(segy));
-    	fp_wav = fopen(file_wav, "r");
-        if (fp_wav==NULL) verr("error on opening wavelet file %s", file_wav);
-    	readData3D(fp_wav, trace, hdrs_wav, 0);
-    	fclose(fp_wav);
+        readData3D(fp_wav, wav_tmp, &hdr, ntwav);
+
+        //Fit the wavelet into the same time-axis as the Marchenko scheme
+        for (i=0; i<(ntfft/2); i++) {
+            trace[i] = wav_tmp[i];
+            trace[ntfft-1-i] = wav_tmp[ntwav-1-i];
+        }
 		corr(trace, trace, wavelet,  1, ntfft, dt, 0);
-		free(hdrs_wav); free(trace);
+		free(trace); free(wav_tmp);
+
 		/* For a monopole source the scaling is (2.0*dt*cp*cp*rho)/(dx*dx) */
 		for (iw=0; iw<ntfft; iw++){
 			wavelet[iw] *= dt;
 		}
-	}
+    }
 
 	for (l=0; l<Nfoc; l++) {
 		for (i=0; i<npos; i++) {
