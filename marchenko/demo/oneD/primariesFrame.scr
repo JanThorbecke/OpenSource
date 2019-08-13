@@ -23,13 +23,13 @@ fconv file_in1=shotsx0.su file_in2=wave.su file_out=shotw.su
 basop file_in=shotw.su choice=5 | sugain scale=-1 > DD.su
 
 nts=1024
-itime=300 # select time sample to work on
+itime=300 # select time sample to work on 1.2 seconds
 shift=20
 #mute time nts-ii+shift to compute G_d
 (( itmax = nts-itime+shift ))
 suzero itmax=$itmax < DD.su > G_d.su
 #f1min = -DD(-t) = shotw.su
-cp shotw.su f1min.su
+cp shotw.su f1min0.su
 
 #first iteration
 cp G_d.su N0.su
@@ -38,6 +38,26 @@ cp G_d.su N0.su
 fconv file_in1=shotsdx5_rp.su file_in2=N0.su file_out=fconvN1.su verbose=1 fmax=90 
 
 suwind key=fldr min=451 max=451  < fconvN1.su | suximage 
+
+# Ni(t) = -1*RN0(-t)
+sustack < fconvN1.su key=fldr > RN0.su
+basop file_in=RN0.su choice=5 | sugain scale=-1 > N1.su
+
+#apply mute window for samples above nts-ii
+(( itmax = nts-itime+shift ))
+suzero itmax=$itmax < N1.su > N1m.su
+
+
+exit 
+#display
+file=fconvN1.su
+file_base=${file%.su}
+sumax < $file mode=abs outpar=nep
+clipref=`cat nep | awk '{print $1/2}'`
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < $file \
+    label1="time (s)" label2="distance (m)" \
+    n1tic=2 d2=5 x1beg=0 x1end=1.5 d1num=0.4 \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > ${file_base}_flip.eps
 
 
 
