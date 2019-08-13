@@ -33,7 +33,7 @@ long writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot);
 
 void vidale3d(float *slow0, float *time0, long nz, long nx, long ny, float h, long xs, long ys, long zs, long NCUBE);
 
-void src3d(float *time0, float *slow0, long nz, long nx, long ny, float h, float ox, float oy, float oz, long *pxs, long *pys, long *pzs, long *cube);
+void src3D(float *time0, float *slow0, long nz, long nx, long ny, float h, float ox, float oy, float oz, long xs, long ys, long zs, long *cube);
 
 
 /*********************** self documentation **********************/
@@ -119,16 +119,19 @@ void main(int argc, char *argv[])
 		ny,			/* y-dimension of mesh (FRONT-TO-BACK) */
 		nz,			/* z-dimension of mesh  (TOP-TO-BOTTOM) */
 		nxy, nxyz, xs, ys, zs, cube,
-		xx, yy, zz,	i, j, k;
+		nx2, ny2, nz2, nxy2, nxyz2,
+		nrx, nry, nrz, nr, ix, iy, iz,
+		xx, yy, zz,	i, j, k, is, writer;
 	float
 		h,		/* spatial mesh interval (units consistant with vel) */
-		*slow0, *time0;
+		cp_average,
+		*slow0, *time0, *time1, *ampl;
 
 /* to read the velocity file */
 	long    error, n1, n2, n3, ret, size, nkeys, verbose, nwrite;
 	float	d1, d2, d3, f1, f2, f3, *tmpdata, c, scl, ox, oz, oy;
-	char	*file_cp, *file_out;
-	FILE	*fpt;
+	char	*file_cp, *file_out, file_time[100], file_amp[100];
+	FILE	*fpt, *fpa;
 	segy	*hdrs;
 
 /*---------------------------------------------------------------------------*
@@ -182,7 +185,7 @@ void main(int argc, char *argv[])
 		}
 
 		h = mod.dx;
-		slow0 = (float *)malloc(nz*nx*ny*sizeof(float));
+		slow0 = (float *)malloc((nz+2)*(nx+2)*(ny+2)*sizeof(float));
 		if (slow0 == NULL) verr("Out of memory for slow0 array!");
 
 		readModel3d(mod.file_cp, slow0, nz, nx, ny, h, verbose);
@@ -211,141 +214,131 @@ void main(int argc, char *argv[])
 		}
 	}
 
-	nxy = nx * ny;
-	nxyz = nx * ny * nz;
+	nxy = (nx+2) * (ny+2);
+	nxyz = (nx+2) * (ny+2) * (nz+2);
 
-	/* ALLOCATE MAIN GRID FOR TIMES */
-	time0 = (float *) malloc(sizeof(float)*nxyz);
-	if(time0 == NULL) verr("error in allocation of array time0");
-
-/*---------------------------------------------------------------------------*
- *  Input the source locations.
- *          and
- *  Initialize the traveltime array.  Place t=0 at source position.
- *---------------------------------------------------------------------------*/
-
-	src3d(time0, slow0, nz, nx, ny, h, ox, oy, oz, &xs, &ys, &zs, &cube);
-	if (verbose) vmess("source positions xs = %li ys = %li zs = %li", xs,ys,zs);
-
-/*	for (zz = 0; zz < nz; zz++) {
-		for (yy = 0; yy < ny; yy++) {
-			for (xx = 0; xx < nx; xx++) 
-				if (time0[zz*nxy+yy*nx+xx] != 1e10) fprintf(stderr,"slow[%li,%li,%li] = %f\n", xx,yy,zz, time0[zz*nxy+yy*nx+xx]);
-		}
-	}
-*/
-
-/*---------------------------------------------------------------------------*
- *  Read in receiver positions
- *---------------------------------------------------------------------------*/
-
-/*---------------------------------------------------------------------------*
- *  Check and set parameters
- *---------------------------------------------------------------------------*/
-
-/*---------------------------------------------------------------------------*
- *  Compute traveltimes.
- *---------------------------------------------------------------------------*/
-
-	vidale3d(slow0, time0, nz, nx, ny, h, xs, ys, zs, cube);
-
-/*---------------------------------------------------------------------------*
- *  Write output
- *---------------------------------------------------------------------------*/
-
-
-	for (zz = 0; zz < nz; zz++) {
-		for (yy = 0; yy < ny; yy++) {
-			for (xx = 0; xx < nx; xx++) {
-				if (time0[zz*nxy+yy*nx+xx] == 1e10) time0[zz*nxy+yy*nx+xx]=0.0;
-			}
-		}
-	}
-
-//	ret = open_file(file_out, GUESS_TYPE, DELPHI_CREATE);
-//	if (ret < 0 ) verr("error in creating output file %s", file_out);
-	fpt = fopen(file_out, "w");
+	strcpy(file_time, file_out);
+    name_ext(file_time, "_time");
+	fpt = fopen(file_time, "w");
     assert(fpt != NULL);
 
-	hdrs = (segy *) malloc(1*sizeof(segy));
-	tmpdata = (float *)malloc(nz*sizeof(float));
-	// f1   = ox;
-	// f2   = oy;
-	// d1   = h;
-	// d2   = h;
+	if (ray.geomspread==1) {
+		strcpy(file_amp, file_out);
+		name_ext(file_amp, "_amp");
+		fpa = fopen(file_amp, "w");
+		assert(fpa != NULL);
+	}
 
-//	gen_hdrs(hdrs,nx,ny,f1,f2,d1,d2,TRID_ZX);
-	// for (i = 0; i < ny; i++) {
-	// 	hdrs[i].tracl	= i+1;
-	// 	hdrs[i].tracf	= i+1;
-	// 	hdrs[i].scalco	= -1000;
-	// 	hdrs[i].scalel	= -1000;
-	// 	hdrs[i].sx		= (long)(ox+xs*h)*1000;
-	// 	hdrs[i].sy		= (long)(oy+ys*h)*1000;
-	// 	hdrs[i].gy		= (long)(oy+i*d2)*1000;
-	// 	hdrs[i].sdepth	= (long)(oz+zs*h)*1000;
-	// 	hdrs[i].selev	= (long)(oz+zs*h)*-1000;
-	// 	hdrs[i].ns 		= nx;
-	// 	hdrs[i].ntr		= ny;
-	// 	hdrs[i].trwf	= ny;
-	// 	hdrs[i].f1		= mod.x0;
-	// 	hdrs[i].f2		= mod.y0;
-	// 	hdrs[i].dt 		= mod.dx*1e6;
-	// 	hdrs[i].d1 		= mod.dx;
-	// 	hdrs[i].d2 		= mod.dy;
-	// 	hdrs[i].fldr	= 1;
-	// 	hdrs[i].trwf	= ny;
-	// 	for (j = 0; j < nx; j++) {
-	// 		tmpdata[i*nx+j] = time0[i*nx+j];
-	// 	}
-	// 	nwrite = fwrite( &hdrs[i], 1, TRCBYTES, fpt);
-	// 	assert(nwrite == TRCBYTES);
-    //     nwrite = fwrite( &tmpdata[i*nx], sizeof(float), nx, fpt );
-	// 	assert(nwrite == nx);
-	// }
-	for (i = 0; i < ny; i++) {
-		for (j = 0; j < nx; j++) {
-			hdrs[0].tracl	= i*nx+j+1;
-			hdrs[0].tracf	= i*nx+j+1;
+	if (verbose>2 && ray.geomspread==1) vmess("Computing geometrical spreading factor");
+
+	writer = 0;
+
+#pragma omp parallel for schedule(static,1) default(shared) \
+private (is,time0,ampl,nrx,nry,nrz,nr,cp_average,i,j,k,ix,iy,iz,hdrs,tmpdata,nwrite) 
+	for (is = 0; is < shot.n; is++) {
+
+		/* ALLOCATE MAIN GRID FOR TIMES */
+		time0 = (float *) malloc(sizeof(float)*nxyz);
+		if(time0 == NULL) verr("error in allocation of array time0");
+
+		/*---------------------------------------------------------------------------*
+		*  Input the source locations.
+		*          and
+		*  Initialize the traveltime array.  Place t=0 at source position.
+		*---------------------------------------------------------------------------*/
+
+		src3D(time0, slow0, nz+2, nx+2, ny+2, h, shot.xs[is]-ox+d2, shot.ys[is]-oy+d3, shot.zs[is]-oz+d1, shot.x[is], shot.y[is], shot.z[is], &cube);
+
+		/*---------------------------------------------------------------------------*
+		*  Compute traveltimes.
+		*---------------------------------------------------------------------------*/
+
+		vidale3d(slow0, time0, nz+2, nx+2, ny+2, h, shot.x[is], shot.y[is], shot.z[is], cube);
+
+		/*---------------------------------------------------------------------------*
+		*  Compute geometrical spreading.
+		*---------------------------------------------------------------------------*/
+
+		if (ray.geomspread==1) {
+			ampl = (float *) malloc(sizeof(float)*rec.n);
+			for (i = 0; i < rec.n; i++) {
+				/* compute average velocity between source and receiver */
+				nrx = (rec.x[i]-(shot.x[is]-1));
+				nry = (rec.y[i]-(shot.y[is]-1));
+				nrz = (rec.z[i]-(shot.z[is]-1));
+				nr = abs(nrx) + abs(nry) + abs(nrz);
+				cp_average = 0.0;
+				for (j=0; j<nr; j++) {
+					ix = shot.x[is] + floor((j*nrx)/nr);
+					iy = shot.y[is] + floor((j*nry)/nr);
+					iz = shot.z[is] + floor((j*nrz)/nr);
+					cp_average += 1.0/slow0[iz*nxy+iy*(nx+2)+ix];
+				}
+				cp_average = cp_average/((float)(nr-1));
+				ampl[i] = (time0[iz*nxy+iy*(nx+2)+ix]*cp_average);
+			}
+		}
+
+		/*---------------------------------------------------------------------------*
+		*  Write output
+		*---------------------------------------------------------------------------*/
+
+		while (writer < is) {
+			#pragma omp flush(writer)
+		}
+
+		if (verbose>2) vmess("Writing src %li of %li sources",is+1,shot.n);
+		if (verbose) vmess("xsrc[%li]=%f ysrc[%li]=%f zsrc[%li]=%f",shot.x[is],shot.xs[is],shot.y[is],shot.ys[is],shot.z[is],shot.zs[is]);
+
+		hdrs = (segy *) calloc(1,sizeof(segy));
+		tmpdata = (float *)malloc((rec.nx)*sizeof(float));
+		
+		for (i = 0; i < rec.ny; i++) {
+			hdrs[0].fldr	= is+1;
+			hdrs[0].tracl	= i+1;
+			hdrs[0].tracf	= i+1;
 			hdrs[0].scalco	= -1000;
 			hdrs[0].scalel	= -1000;
-			hdrs[0].sx		= (long)(f2+j*d2)*1000;
-			hdrs[0].gx		= (long)(f2+j*d2)*1000;
-			hdrs[0].sy		= (long)(f3+i*d3)*1000;
-			hdrs[0].gy		= (long)(f3+i*d3)*1000;
-			hdrs[0].ns 		= nz;
-			hdrs[0].ntr		= ny*nx;
-			hdrs[0].trwf	= nx;
-			hdrs[0].f1		= f1;
-			hdrs[0].f2		= f2;
-			hdrs[0].dt 		= (int)(d1*1e6);
-			hdrs[0].d1 		= d1;
-			hdrs[0].d2 		= d2;
-			hdrs[0].fldr	= 1;
+			hdrs[0].sx		= (long)(f2+(shot.x[is]-1)*d2)*1000;
+			hdrs[0].sy		= (long)(f3+(shot.y[is]-1)*d3)*1000;
+			hdrs[0].sdepth	= (long)(f1+(shot.z[is]-1)*d1)*1000;
+			hdrs[0].selev	= -(long)(f1+(shot.z[is]-1)*d1)*1000;
+			hdrs[0].gy		= mod.y0+rec.yr[i*rec.nx];
+			hdrs[0].ns 		= rec.nx;
+			hdrs[0].ntr		= rec.ny*shot.n;
+			hdrs[0].trwf	= rec.ny*shot.n;
+			hdrs[0].f1		= mod.x0+rec.xr[0];
+			hdrs[0].f2		= mod.y0+rec.yr[0];
+			hdrs[0].dt 		= (long)(d2*1e6);
+			hdrs[0].d1 		= rec.xr[1]-rec.xr[0];
+			hdrs[0].d2 		= rec.yr[rec.nx]-rec.yr[0];
 
-			for (k = 0; k < nz; k++) {
-				tmpdata[k] = time0[k*nxy+i*nx+j];
+			for (k = 0; k < rec.nx; k++) {
+				tmpdata[k] = time0[(rec.z[i*rec.nx+k]+1)*nxy+(rec.y[i*rec.nx+k]+1)*(nx+2)+rec.x[i*rec.nx+k]+1];
 			}
 
 			nwrite = fwrite( &hdrs[0], 1, TRCBYTES, fpt);
 			assert(nwrite == TRCBYTES);
-			nwrite = fwrite( tmpdata, sizeof(float), nz, fpt );
-			assert(nwrite == nz);
+			nwrite = fwrite( tmpdata, sizeof(float), rec.nx, fpt );
+			assert(nwrite == rec.nx);
+
+			if (ray.geomspread==1) {
+				nwrite = fwrite( &hdrs[0], 1, TRCBYTES, fpa);
+				assert(nwrite == TRCBYTES);
+				nwrite = fwrite( &ampl[i*rec.nx], sizeof(float), rec.nx, fpa );
+				assert(nwrite == rec.nx);
+			}
 		}
+		writer++;
+		free(time0);
+		free(hdrs);
+		free(tmpdata);
+		if (ray.geomspread==1) free(ampl);
 	}
+
+	if (ray.geomspread==1) fclose(fpa);
 	fclose(fpt);
-
-/*
-	ret = write_data(file_out,tmpdata,nx,ny,f1,f2,d1,d2,type,hdrs);
-	if (ret < 0 ) verr("error on writing output file.");
-	ret = close_file(file_out);
-	if (ret < 0) verr("err %li on closing output file",ret);
-*/
-
-	free(time0);
 	free(slow0);
-	free(hdrs);
-	free(tmpdata);
 
 	exit(0);
 
