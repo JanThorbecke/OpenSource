@@ -26,7 +26,7 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0, float dx, 
 
 long getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPar *ray, long verbose)
 {
-	long 	nx, nz, ny, nsrc, ix, iy, axis, is0;
+	long 	nx, nz, ny, nsrc, ix, iy, iz, axis, is0;
 	long 	n1, n2, n3; 
 	long	idzshot, idxshot, idyshot;
 	long	src_ix0, src_iz0, src_iy0, src_ix1, src_iz1, src_iy1;
@@ -137,20 +137,28 @@ long getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPa
 	src_iz1=MAX(0,NINT((srcendz-sub_z0)/dz));
 	src_iz1=MIN(src_iz1,nz);
 
-	shot->y = (long *)calloc(shot->ny,sizeof(long));
-	shot->x = (long *)calloc(shot->nx,sizeof(long));
-	shot->z = (long *)calloc(shot->nz,sizeof(long));
-	for (is=0; is<shot->ny; is++) {
-		shot->y[is] = src_iy0+is*idyshot;
-		if (shot->y[is] > ny-1) shot->ny = is-1;
-	}
-	for (is=0; is<shot->nx; is++) {
-		shot->x[is] = src_ix0+is*idxshot;
-		if (shot->x[is] > nx-1) shot->nx = is-1;
-	}
-	for (is=0; is<shot->nz; is++) {
-        shot->z[is] = src_iz0+is*idzshot;
-        if (shot->z[is] > nz-1) shot->nz = is-1;
+	shot->y		= (long *)calloc(shot->nx*shot->ny*shot->nz,sizeof(long));
+	shot->x		= (long *)calloc(shot->nx*shot->ny*shot->nz,sizeof(long));
+	shot->z		= (long *)calloc(shot->nx*shot->ny*shot->nz,sizeof(long));
+	shot->ys	= (float *)calloc(shot->nx*shot->ny*shot->nz,sizeof(float));
+	shot->xs	= (float *)calloc(shot->nx*shot->ny*shot->nz,sizeof(float));
+	shot->zs	= (float *)calloc(shot->nx*shot->ny*shot->nz,sizeof(float));
+
+	for (iy=0; iy<shot->ny; iy++) {
+		for (ix=0; ix<shot->nx; ix++) {
+			for (iz=0; iz<shot->nz; iz++) {
+				shot->x[iz*shot->ny*shot->nx+iy*shot->nx+ix]	= src_ix0+ix*idxshot+1;
+				shot->y[iz*shot->ny*shot->nx+iy*shot->nx+ix]	= src_iy0+iy*idyshot+1;
+				shot->z[iz*shot->ny*shot->nx+iy*shot->nx+ix]	= src_iz0+iz*idzshot+1;
+				shot->xs[iz*shot->ny*shot->nx+iy*shot->nx+ix]	= xsrc+ix*dxshot;
+				shot->ys[iz*shot->ny*shot->nx+iy*shot->nx+ix]	= ysrc+iy*dyshot;
+				shot->zs[iz*shot->ny*shot->nx+iy*shot->nx+ix]	= zsrc+iz*dzshot;
+
+				if (shot->x[iz*shot->ny*shot->nx+iy*shot->nx+ix] > nx-1) shot->nx = ix-1;
+				if (shot->y[iz*shot->ny*shot->nx+iy*shot->nx+ix] > ny-1) shot->ny = iy-1;
+				if (shot->z[iz*shot->ny*shot->nx+iy*shot->nx+ix] > nz-1) shot->nz = iz-1;
+			}
+		}
     }
 
 	/* check if source array is defined */
@@ -323,6 +331,7 @@ long getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPa
 			vmess("************* receiver info ***************");
 			vmess("*******************************************");
 			vmess("ntrcv   = %li nrcv    = %li ", rec->nt, rec->n);
+			vmess("nxrcv   = %li nyrcv   = %li ", rec->nx, rec->ny);
 			vmess("dzrcv   = %f dxrcv   = %f dyrcv   = %f ", dzrcv, dxrcv, dyrcv);
 			vmess("Receiver array at coordinates: ");
 			vmess("zmin    = %f zmax    = %f ", rec->zr[0]+sub_z0, rec->zr[rec->n-1]+sub_z0);

@@ -334,7 +334,7 @@ private (coordgx,irec,Time,Jr)
 						//fprintf(stderr,"ir=%d ix=%d iz=%d velocity=%f\n", ir, ix, iz, velocity[ix*mod.nz+iz]);
 						cp_average += velocity[ix*mod.nz+iz];
 					}
-					cp_average = cp_average/((float)nr);
+					cp_average = cp_average/((float)(nr-1));
             		ampl[ipos] = sqrt(time[ipos]*cp_average);
             		if (verbose>4) vmess("FD: shot=%f,%f receiver at %f(%d),%f(%d) T=%e V=%f Ampl=%f",coordsx.x, coordsx.z, coordgx.x, rec.x[irec], coordgx.z, rec.z[irec], time[ipos], cp_average, ampl[ipos]); 
         		}

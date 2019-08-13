@@ -17,7 +17,7 @@ extern void verr(char *fmt, ...);
 extern void vwarn(char *fmt, ...);
 extern void vmess(char *fmt, ...);
 
-void src3d(float *time0, float *slow0, long nz, long nx, long ny, float h, float ox, float oy, float oz, long *pxs, long *pys, long *pzs, long *cube)
+void src3D(float *time0, float *slow0, long nz, long nx, long ny, float h, float fxs, float fys, float fzs, long xs, long ys, long zs, long *cube)
 {
 	long
 		srctype=1,	/* if 1, source is a point;
@@ -26,18 +26,18 @@ void src3d(float *time0, float *slow0, long nz, long nx, long ny, float h, float
 		srcwall,	/* if 1, source on x=0 wall, if 2, on x=nx-1 wall
 						if 3, source on y=0 wall, if 4, on y=ny-1 wall
 						if 5, source on z=0 wall, if 6, on z=nz-1 wall */
-		xs,			/* shot x position (in grid points) */
-		ys,			/* shot y position */
-		zs,			/* shot depth */
+		xs1,			/* shot x position (in grid points) */
+		ys1,			/* shot y position */
+		zs1,			/* shot depth */
 		xx, yy, zz,	/* Used to loop around xs, ys, zs coordinates	*/
 		ii, i, j, k, 
 		wfint, ofint,
 		nxy, nyz, nxz, nxyz, nwall,
 		NCUBE=2;
 	float
-		fxs,	/* shot position in X (in real units)*/
-		fys,	/* shot position in Y (in real units)*/
-		fzs,	/* shot position in Z (in real units)*/
+		fxs1,	/* shot position in X (in real units)*/
+		fys1,	/* shot position in Y (in real units)*/
+		fzs1,	/* shot position in Z (in real units)*/
 		*wall,
 		/* maximum offset (real units) to compute */
 		/* used in linear velocity gradient cube source */
@@ -50,50 +50,14 @@ void src3d(float *time0, float *slow0, long nz, long nx, long ny, float h, float
 
 
 	if(!getparlong("NCUBE",&NCUBE)) NCUBE=2;
+	*cube = NCUBE;
 
 	if(!getparlong("srctype",&srctype)) srctype=1;
-	if(srctype==1) {
-		if(!getparfloat("xsrc1",&xsrc1)) verr("xsrc1 not given");
-		if(!getparfloat("ysrc1",&ysrc1)) verr("ysrc1 not given");
-		if(!getparfloat("zsrc1",&zsrc1)) verr("zsrc1 not given");
-		fxs = (xsrc1-ox)/h;
-		fys = (ysrc1-oy)/h;
-		fzs = (zsrc1-oz)/h;
-		xs = (long)(fxs + 0.5);
-		ys = (long)(fys + 0.5);
-		zs = (long)(fzs + 0.5);
-		if(xs<2 || ys<2 || zs<2 || xs>nx-3 || ys>ny-3 || zs>nz-3){
-			vwarn("Source near an edge, beware of traveltime errors");
-			vwarn("for raypaths that travel parallel to edge ");
-			vwarn("while wavefronts are strongly curved, (JV, 8/17/88)\n");
-		}
-		*pxs = xs; *pys = ys, *pzs = zs, *cube = NCUBE;
-	}
-	else if (srctype==2)  {
-		if (!getparlong("srcwall",&srcwall)) verr("srcwall not given");
-		if (!getparstring("wallfile",&wallfile)) verr("wallfile not given");
-		if((wfint=open(wallfile,O_RDONLY,0664))<=1) {
-			fprintf(stderr,"cannot open %s\n",wallfile);
-			exit(-1);
-		}
-	}
-	else if (srctype==3)  {
-		if (!getparlong("srcwall",&srcwall)) verr("srcwall not given");
-		if (!getparstring("oldtfile",&oldtfile)) verr("oldtfile not given");
-		if((ofint=open(oldtfile,O_RDONLY,0664))<=1) {
-			fprintf(stderr,"cannot open %s\n",oldtfile);
-			exit(-1);
-		}
-	}
-	else  {
-		verr("ERROR: incorrect value of srctype");
-	}
 
 	nxy = nx * ny;
 	nyz = ny * nz;
 	nxz = nx * nz;
 	nxyz = nx * ny * nz;
-
 
 	/* SET TIMES TO DUMMY VALUE */
 	for(i=0;i<nxyz;i++) time0[i] = 1.0e10;
