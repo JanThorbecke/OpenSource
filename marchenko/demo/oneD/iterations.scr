@@ -1,0 +1,24 @@
+#!/bin/bash
+
+#second reflector at time:
+# 800/1800+600/2300
+# .70531400966183574878 => sample 176
+#thrids reflector at time:
+# 800/1800+600/2300+800/2000
+# 1.10531400966183574878 sample 276
+
+select=451
+
+#for istart in 176 200 276 400
+for istart in 176
+do
+(( iend = istart + 1 ))
+
+../../marchenko_primaries file_shot=shotsdx5_rp.su ishot=$select file_src=wave.su \
+	nshots=601 verbose=1 istart=$istart iend=$iend fmax=90 \
+	pad=1024 niter=45 smooth=10 niterskip=600 shift=20 file_rr=pred_rr_${istart}.su T=0 file_iter=iter.su 
+
+suximage < f1min_${istart}043.su  clip=1 title="${istart}" &
+
+done
+

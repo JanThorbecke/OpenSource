@@ -13,14 +13,14 @@ export OMP_NUM_THREADS=20
 #shot record to remove internal multiples
 select=451
 
-makewave fp=20 dt=0.004 file_out=wave.su nt=1024 t0=0.0 scale=0 scfft=1
+makewave fp=20 dt=0.004 file_out=wave.su nt=2048 t0=0.0 scale=0 scfft=1
 
 ../../marchenko_primaries file_shot=shotsdx5_rp.su ishot=$select file_src=wave.su \
-	nshots=601 verbose=1 istart=40 fmax=90 \
-	niter=15 niterskip=600 shift=20 file_rr=pred_rr.su T=0
+	nshots=601 verbose=2 istart=40 iend=500 fmax=90 pad=1024 \
+	niter=25 smooth=10 niterskip=600 shift=20 file_rr=pred_rr.su T=0
 
 #for reference original shot record from Reflection matrix
-suwind key=fldr min=$select max=$select < shotsdx5_rp.su > shotsx0.su
+suwind key=fldr min=$select max=$select < shotsdx5_rp.su itmax=2047 > shotsx0.su
 fconv file_in1=shotsx0.su file_in2=wave.su file_out=shotw.su
 
 # for displaying results
