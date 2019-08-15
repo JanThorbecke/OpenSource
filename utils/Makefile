@@ -6,7 +6,7 @@ include ../Make_include
 #OPTC += -openmp 
 #OPTC += -g -O0
 
-ALL: makemod makewave extendModel fconv correigen green green3D basop syn2d mat2su ftr1d MuteSnap combine combine_induced reshape_su HomG Snap2Shot
+ALL: makemod makewave extendModel fconv correigen green green3D basop syn2d mat2su ftr1d mutesnap combine combine_induced reshape_su HomG snap2shot
 
 SRCM	= \
 		makemod.c  \
@@ -133,56 +133,56 @@ SRCT	= ftr1d.c \
 		docpkge.c \
 		getpars.c
 
-SRCMS   = MuteSnap.c \
-        getFileInfo.c \
-        writeData.c \
+SRCMS   = mutesnap.c \
+        getFileInfo3D.c \
+        writeData3D.c \
         verbosepkg.c  \
         getpars.c \
         wallclock_time.c \
         atopkge.c \
         docpkge.c \
-        readSnapData.c
+        readSnapData3D.c
 
 SRCCO	= combine.c \
-		getFileInfo.c \
-		writeData.c \
+		getFileInfo3D.c \
+		writeData3D.c \
 		wallclock_time.c \
 		getpars.c \
 		verbosepkg.c \
 		atopkge.c \
         docpkge.c \
-		readSnapData.c 
+		readSnapData3D.c 
 
 
 SRCCI	= combine_induced.c \
-		getFileInfo.c \
-		writeData.c \
+		getFileInfo3D.c \
+		writeData3D.c \
 		wallclock_time.c \
 		getpars.c \
 		verbosepkg.c \
 		atopkge.c \
         docpkge.c \
-		readSnapData.c 
+		readSnapData3D.c 
 
 SRCRS   = reshape_su.c \
-        getFileInfo.c \
-        writeData.c \
+        getFileInfo3D.c \
+        writeData3D.c \
         getpars.c \
         verbosepkg.c \
         atopkge.c \
         docpkge.c \
-        readSnapData.c
+        readSnapData3D.c
 
 SRCHG   = HomG.c \
-        getFileInfo.c \
+        getFileInfo3D.c \
         readData.c \
-        writeData.c \
+        writeData3D.c \
         verbosepkg.c  \
         getpars.c \
         wallclock_time.c \
         atopkge.c \
         docpkge.c \
-        readSnapData.c
+        readSnapData3D.c
 
 SRCSS   = snap2shot.c \
         getFileInfo3D.c \
@@ -252,8 +252,8 @@ ftr1d:	$(OBJT)
 
 OBJMS	= $(SRCMS:%.c=%.o)
 
-MuteSnap:    $(OBJMS)
-	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o MuteSnap $(OBJMS) $(LIBS)
+mutesnap:    $(OBJMS)
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o mutesnap $(OBJMS) $(LIBS)
 
 OBJCO	= $(SRCCO:%.c=%.o)
 
@@ -277,10 +277,10 @@ HomG:   $(OBJHG)
 
 OBJSS   = $(SRCSS:%.c=%.o)
 
-Snap2Shot:   $(OBJSS)
-	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o Snap2Shot $(OBJSS) $(LIBS)
+snap2shot:   $(OBJSS)
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o snap2shot $(OBJSS) $(LIBS)
 
-install: makemod makewave extendModel fconv correigen green green3D basop syn2d mat2su ftr1d MuteSnap combine combine_induced reshape_su HomG Snap2Shot
+install: makemod makewave extendModel fconv correigen green green3D basop syn2d mat2su ftr1d mutesnap combine combine_induced reshape_su HomG snap2shot
 	cp makemod $B
 	cp makewave $B
 	cp extendModel $B
@@ -292,15 +292,15 @@ install: makemod makewave extendModel fconv correigen green green3D basop syn2d 
 	cp syn2d $B
 	cp mat2su $B
 	cp ftr1d $B
-	cp MuteSnap $B
+	cp mutesnap $B
 	cp combine $B
 	cp combine_induced $B
 	cp reshape_su $B
 	cp HomG $B
-	cp Snap2Shot $B
+	cp snap2shot $B
 
 clean:
-		rm -f core $(OBJM) makemod $(OBJW) makewave $(OBJE) extendModel $(OBJF) fconv $(OBJG) $(OBJC) correigen green $(OBJG3) green3D $(OBJB) basop $(OBJJ) syn2d $(OBJS) mat2su $(OBJA) ftr1d $(OBJT) MuteSnap $(OBJMS) combine $(OBJCO) reshape_su $(OBJRS) combine_induced $(OBJCI) HomG $(OBJHG) Snap2Shot $(OBJSS)
+		rm -f core $(OBJM) makemod $(OBJW) makewave $(OBJE) extendModel $(OBJF) fconv $(OBJG) $(OBJC) correigen green $(OBJG3) green3D $(OBJB) basop $(OBJJ) syn2d $(OBJS) mat2su $(OBJA) ftr1d $(OBJT) mutesnap $(OBJMS) combine $(OBJCO) reshape_su $(OBJRS) combine_induced $(OBJCI) HomG $(OBJHG) snap2shot $(OBJSS)
 
 realclean: clean
-		rm -f $B/makemod $B/makewave $B/extendModel $B/fconv $B/correigen $B/green $B/green3D $B/basop $B/syn2d $B/mat2su $B/ftr1d $B/MuteSnap $B/combine $B/combine_induced $B/reshape_su $B/HomG $B/Snap2Shot
+		rm -f $B/makemod $B/makewave $B/extendModel $B/fconv $B/correigen $B/green $B/green3D $B/basop $B/syn2d $B/mat2su $B/ftr1d $B/mutesnap $B/combine $B/combine_induced $B/reshape_su $B/HomG $B/snap2shot
