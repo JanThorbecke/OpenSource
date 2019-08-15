@@ -21,8 +21,8 @@ typedef struct _complexStruct { /* complex number */
 } complex;
 #endif/* complex */
 
-long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, float *d1, float *d2, float *d3, float *f1, float *f2, float *f3,
-    float *sclsxgxsygy, long *nxm);
+long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, float *d1, float *d2, float *d3,
+    float *f1, float *f2, float *f3, float *sclsxgxsygy, long *nxm);
 
 double wallclock_time(void);
 
@@ -30,7 +30,8 @@ long writeData3D(FILE *fp, float *data, segy *hdrs, long n1, long n2);
 
 void name_ext(char *filename, char *extension);
 
-long readSnapData3D(char *filename, float *data, segy *hdrs, long nsnaps, long nx, long ny, long nz, long sx, long ex, long sy, long ey, long sz, long ez);
+long readSnapData3D(char *filename, float *data, segy *hdrs, long nsnaps, long nx, long ny, long nz,
+    long sx, long ex, long sy, long ey, long sz, long ez);
 
 char *sdoc[] = {
 " ",
@@ -41,17 +42,17 @@ char *sdoc[] = {
 " ",
 " Required parameters: ",
 "",
-"   file_snap= ............... File containing the snapshot data that will be muted",
-"   file_rcv= ................ File containing the snapshot data that will determine the mute window",
+"   file_snap= ............... First filename that needs to be reshaped to receiver data",
 " ",
 " Optional parameters: ",
 " ",
-"   fout=out.su .............. Filename of the output",
-"   shift=5 .................. Shift from the maximum",
-"   smooth=5 ................. Length of smoothing taper",
-"   mode=0 ................... Determine first arrival by maximum (mode=0), first event above tol (mode=1) or by raytime (mode=2)",
-"   tol=1 .................... Tolerance for the determination of first arrival if mode=1",
-"   fray ..................... File containing the raytimes of the first arrivals",
+"   file_rcv= ................ File containing the snapshot data that will determine the mute window",
+"   numb=0 ................... Starting number in the first file",
+"   dnumb=1 .................. Increment per file name",
+"   nxmax=0 .................. Maximum number of files that are to be reshaped",
+"   numb=0 ................... Starting number in the first file",
+"   nzstart=0 ................ Starting depth number to be written out",
+"   nzend=end ................ Final depth number to be written out",
 NULL};
 
 int main (int argc, char **argv)
@@ -69,29 +70,34 @@ int main (int argc, char **argv)
 	initargs(argc, argv);
 	requestdoc(1);
 
+    /*----------------------------------------------------------------------------*
+    *   Get the parameters passed to the function 
+    *----------------------------------------------------------------------------*/
 	if (!getparstring("file_rcv", &file_rcv)) file_rcv = "rcv.su";
 	if (!getparstring("file_snap", &file_snap)) file_snap = NULL;
 	if (file_snap == NULL) verr("No input data for the snap file given");
 	if (!getparlong("numb", &numb)) numb=0;
-	if (!getparlong("dnumb", &dnumb)) dnumb=0;
+	if (!getparlong("dnumb", &dnumb)) dnumb=1;
 	if (!getparlong("nxmax", &nxmax)) nxmax=0;
 	if (!getparlong("nzstart", &nzstart)) nzstart=0;
 	if (!getparlong("nzend", &nzend)) nzend=0;
 
+    /*----------------------------------------------------------------------------*
+    *   Split the filename so the number can be changed
+    *----------------------------------------------------------------------------*/
 	if (dnumb < 1) dnumb = 1;
-
 	sprintf(numb1,"%li",numb);
-
 	ptr  = strstr(file_snap,numb1);
     pos = ptr - file_snap + 1;
-
 	pf = pos-1;
     sprintf(fbegin,"%*.*s", pf, pf, file_snap);
    	sprintf(fend,"%s", file_snap+pos);
 
+    /*----------------------------------------------------------------------------*
+    *   Determine the amount of files to be read
+    *----------------------------------------------------------------------------*/
 	file_det = 1;
 	nxr=0;
-
 	while (file_det) {
         sprintf(fins,"%li",nxr*dnumb+numb);
         sprintf(fin2,"%s%s%s",fbegin,fins,fend);
@@ -120,6 +126,9 @@ int main (int argc, char **argv)
 		}
     }
 
+    /*----------------------------------------------------------------------------*
+    *   Get the info from the files
+    *----------------------------------------------------------------------------*/
 	sprintf(fins,"%li",numb);
     sprintf(fin2,"%s%s%s",fbegin,fins,fend);
 
@@ -131,12 +140,18 @@ int main (int argc, char **argv)
 
 	dnz = nzend-nzstart;
 
+    /*----------------------------------------------------------------------------*
+    *   Allocate the data
+    *----------------------------------------------------------------------------*/
 	rcvdata		= (float *)malloc(nxr*dnz*nxs*nys*nts*sizeof(float));
 	snapdata    = (float *)malloc(dnz*nxs*nys*nts*sizeof(float));
 	hdr_snap    = (segy *)calloc(nxs*nys*nts,sizeof(segy));
 	sx 			= (int *)malloc(nxr*sizeof(int));
 	sy 			= (int *)malloc(nxr*sizeof(int));
 
+    /*----------------------------------------------------------------------------*
+    *   Reshape the data
+    *----------------------------------------------------------------------------*/
 	for (ixr=0; ixr<nxr; ixr++) {
 		vmess("Reshaping %li out of %li files",ixr+1,nxr);
 		sprintf(fins,"%li",ixr*dnumb+numb);
@@ -155,11 +170,12 @@ int main (int argc, char **argv)
 			}
 		}
 	}
-
 	free(snapdata);
 
+    /*----------------------------------------------------------------------------*
+    *   Write out the data to new files
+    *----------------------------------------------------------------------------*/
 	hdr_rcv = (segy *)calloc(nxs*nys*nxr,sizeof(segy));
-
 	for (iz=nzstart; iz<nzend; iz++) {
 		vmess("Writing depth %li out of %li",iz-nzstart+1,dnz);
 		strcpy(file_tmp, file_rcv);
@@ -193,7 +209,6 @@ int main (int argc, char **argv)
 				}
 			}
 		}
-
 		// Write out homogeneous Green's function
 		ret = writeData3D(fp_rcv, (float *)&rcvdata[(iz-nzstart)*nys*nxs*nts*nxr], hdr_rcv, nts, nxr*nxs*nys);
 		if (ret < 0 ) verr("error on writing output file.");
