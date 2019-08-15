@@ -849,7 +849,7 @@ int main (int argc, char **argv)
                     hdrs_Nfoc[l*nxim+j].fldr    = 1;
                     hdrs_Nfoc[l*nxim+j].tracl   = 1;
                     hdrs_Nfoc[l*nxim+j].tracf   = l*nxim+j+1;
-                    hdrs_Nfoc[l*nxim+j].trid    = 1;
+                    hdrs_Nfoc[l*nxim+j].trid    = 2;
                     hdrs_Nfoc[l*nxim+j].scalco  = -1000;
                     hdrs_Nfoc[l*nxim+j].scalel  = -1000;
                     hdrs_Nfoc[l*nxim+j].sx      = xsyn[l*nxim+j]*(1e3);
@@ -895,7 +895,7 @@ int main (int argc, char **argv)
                 hdrs_Nfoc[l*nxim+j].fldr    = 1;
                 hdrs_Nfoc[l*nxim+j].tracl   = 1;
                 hdrs_Nfoc[l*nxim+j].tracf   = l*nxim+j+1;
-                hdrs_Nfoc[l*nxim+j].trid    = 1;
+                hdrs_Nfoc[l*nxim+j].trid    = 2;
                 hdrs_Nfoc[l*nxim+j].scalco  = -1000;
                 hdrs_Nfoc[l*nxim+j].scalel  = -1000;
                 hdrs_Nfoc[l*nxim+j].sx      = xsyn[l*nxim+j]*(1e3);
@@ -942,7 +942,7 @@ int main (int argc, char **argv)
                     hdrs_Nfoc[l*nxim+j].fldr    = i+1;
                     hdrs_Nfoc[l*nxim+j].tracl   = 1;
                     hdrs_Nfoc[l*nxim+j].tracf   = l*nxim+j+1;
-                    hdrs_Nfoc[l*nxim+j].trid    = 1;
+                    hdrs_Nfoc[l*nxim+j].trid    = 2;
                     hdrs_Nfoc[l*nxim+j].scalco  = -1000;
                     hdrs_Nfoc[l*nxim+j].scalel  = -1000;
                     hdrs_Nfoc[l*nxim+j].sx      = xsyn[l*nxim+j]*(1e3);
