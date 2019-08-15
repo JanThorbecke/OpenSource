@@ -572,6 +572,7 @@ sqrt(energyNi/energyN0));
             }
         }
     }
+    applyMute(green, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
 
     /* compute upgoing Green's function G^+,- */
     if (file_gmin != NULL) {
@@ -595,7 +596,7 @@ sqrt(energyNi/energyN0));
             }
         }
         /* Apply mute with window for Gmin */
-        applyMute(Gmin, muteW, smooth, 1, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
+        applyMute(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
     } /* end if Gmin */
 
     /* compute downgoing Green's function G^+,+ */
@@ -619,6 +620,8 @@ sqrt(energyNi/energyN0));
                 }
             }
         }
+        /* Apply mute with window for Gplus */
+        applyMute(Gplus, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
     } /* end if Gplus */
 
     free(muteW);
