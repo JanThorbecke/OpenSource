@@ -13,7 +13,7 @@
 #ifndef MIN
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #endif
-#define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
+#define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 
 #ifndef COMPLEX
 typedef struct _complexStruct { /* complex number */
@@ -21,22 +21,21 @@ typedef struct _complexStruct { /* complex number */
 } complex;
 #endif/* complex */
 
-int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *nxm);
-int disp_fileinfo(char *file, int n1, int n2, float f1, float f2, float d1, float d2, segy *hdrs);
+long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, float *d1, float *d2, float *d3,
+    float *f1, float *f2, float *f3, float *sclsxgxsygy, long *nxm);
 double wallclock_time(void);
-int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
-int readSnapData(char *filename, float *data, segy *hdr, int ngath, int nx, int ntfft, int sx, int ex, int sz, int ez);
-int topdet(float *data, int nt);
-void conjugate(float *data, int nsam, int nrec, float dt);
+long writeData3D(FILE *fp, float *data, segy *hdrs, long n1, long n2);
+long readSnapData3D(char *filename, float *data, segy *hdrs, long nsnaps, long nx, long ny, long nz,
+    long sx, long ex, long sy, long ey, long sz, long ez);
+void conjugate(float *data, long nsam, long nrec, float dt);
 
-void scl_data(float *data, int nsam, int nrec, float scl, float *datout, int nsamout);
-void pad_data(float *data, int nsam, int nrec, int nsamout, float *datout);
-void convol(float *data1, float *data2, float *con, int nrec, int nsam, float dt, int shift);
-void corr(float *data1, float *data2, float *cov, int nrec, int nsam, float dt, int shift);
-void timeShift(float *data, int nsam, int nrec, float dt, float shift, float fmin, float fmax);
-void timeDiff(float *data, int nsam, int nrec, float dt, float fmin, float fmax, int opt);
-void depthDiff(float *data, int nsam, int nrec, float dt, float dx, float fmin, float fmax, float c, int opt);
-void pad2d_data(float *data, int nsam, int nrec, int nsamout, int nrecout, float *datout);
+void scl_data(float *data, long nsam, long nrec, float scl, float *datout, long nsamout);
+void pad_data(float *data, long nsam, long nrec, long nsamout, float *datout);
+void convol(float *data1, float *data2, float *con, long nrec, long nsam, float dt, long shift);
+void corr(float *data1, float *data2, float *cov, long nrec, long nsam, float dt, long shift);
+void timeDiff(float *data, long nsam, long nrec, float dt, float fmin, float fmax, long opt);
+void depthDiff(float *data, long nsam, long nrec, float dt, float dx, float fmin, float fmax, float c, long opt);
+void pad2d_data(float *data, long nsam, long nrec, long nsamout, long nrecout, float *datout);
 
 char *sdoc[] = {
 " ",
@@ -71,20 +70,23 @@ int main (int argc, char **argv)
 	FILE *fp_in, *fp_shot, *fp_out;
 	char *fin, *fshot, *fout, *ptr, fbegin[100], fend[100], fins[100], fin2[100];
 	float *indata, *Ghom, *shotdata, *shotdata_jkz, rho, fmin, fmax;
-	float dt, dx, t0, x0, xmin, xmax1, sclsxgx, f1, f2, dxrcv, dzrcv;
+	float dt, dy, dx, t0, y0, x0, xmin, xmax1, sclsxgx, f1, f2, f3, dxrcv, dyrcv, dzrcv;
 	float *conv, *conv2, *tmp1, *tmp2, cp, shift;
-	int nshots, nt, nx, ntraces, ret, ix, it, is, ir, ig, file_det, nxs, nzs, verbose;
-	int pos1, npos, zmax, inx, numb, dnumb, count, scheme, ntmax, ntshift, shift_num;
+	long nshots, nt, ny, nx, ntraces, ret, ix, iy, it, is, ir, ig, file_det, nxs, nys, nzs, verbose;
+	long pos1, npos, zmax, inx, numb, dnumb, count, scheme, ntmax, ntshift, shift_num;
 	segy *hdr_in, *hdr_out, *hdr_shot;
 
 	initargs(argc, argv);
 	requestdoc(1);
 
+    /*----------------------------------------------------------------------------*
+    *   Get the parameters passed to the function 
+    *----------------------------------------------------------------------------*/
 	if (!getparstring("fin", &fin)) fin = NULL;
 	if (!getparstring("fshot", &fshot)) fshot = NULL;
     if (!getparstring("fout", &fout)) fout = "out.su";
-	if (!getparint("zmax", &zmax)) zmax = 0;
-	if (!getparint("inx", &inx)) inx = 0;
+	if (!getparlong("zmax", &zmax)) zmax = 0;
+	if (!getparlong("inx", &inx)) inx = 0;
 	if (!getparfloat("zrcv", &f1)) f1 = 0;
     if (!getparfloat("xrcv", &f2)) f2 = 0;
 	if (!getparfloat("dzrcv", &dzrcv)) dzrcv = -1;
@@ -94,35 +96,36 @@ int main (int argc, char **argv)
 	if (!getparfloat("fmin", &fmin)) fmin=0.0;
 	if (!getparfloat("fmax", &fmax)) fmax=100.0;
 	if (!getparfloat("shift", &shift)) shift=0.0;
-	if (!getparint("numb", &numb)) numb=0;
-    if (!getparint("dnumb", &dnumb)) dnumb=1;
-	if (!getparint("scheme", &scheme)) scheme = 0;
-	if (!getparint("ntmax", &ntmax)) ntmax = 0;
-	if (!getparint("verbose", &verbose)) verbose = 0;
+	if (!getparlong("numb", &numb)) numb=0;
+    if (!getparlong("dnumb", &dnumb)) dnumb=1;
+	if (!getparlong("scheme", &scheme)) scheme = 0;
+	if (!getparlong("ntmax", &ntmax)) ntmax = 0;
+	if (!getparlong("verbose", &verbose)) verbose = 0;
 	if (fin == NULL) verr("Incorrect f2 input");
 	if (fshot == NULL) verr("Incorrect Green input");
 
+    /*----------------------------------------------------------------------------*
+    *   Split the filename so the number can be changed
+    *----------------------------------------------------------------------------*/
 	if (dnumb == 0) dnumb = 1;
-
-	sprintf(fins,"z%d",numb);
-
+	sprintf(fins,"z%li",numb);
 	fp_in = fopen(fin, "r");
 	if (fp_in == NULL) {
 		verr("error on opening basefile=%s", fin);
 	}
 	fclose(fp_in);
-
 	ptr  = strstr(fin,fins);
 	pos1 = ptr - fin + 1;
-
    	sprintf(fbegin,"%*.*s", pos1-1, pos1-1, fin);
    	sprintf(fend,"%s", fin+pos1+1);
 
+    /*----------------------------------------------------------------------------*
+    *   Determine the amount of files to be read
+    *----------------------------------------------------------------------------*/
 	file_det = 1;
 	nzs=0;
-
 	while (file_det) {
-        sprintf(fins,"z%d",nzs*dnumb+numb);
+        sprintf(fins,"z%li",nzs*dnumb+numb);
         sprintf(fin,"%s%s%s",fbegin,fins,fend);
         fp_in = fopen(fin, "r");
         if (fp_in == NULL) {
@@ -135,7 +138,7 @@ int main (int argc, char **argv)
          		break;
             }
             else {
-                vmess("%d files detected",nzs);
+                vmess("%li files detected",nzs);
                 file_det = 0;
                 break;
             }
@@ -155,10 +158,10 @@ int main (int argc, char **argv)
 	count=0;
 	npos = nxs*nzs;
 
-	if (verbose) vmess("nxs: %d, nzs: %d",nxs,nzs);
+	if (verbose) vmess("nxs: %li, nzs: %li",nxs,nzs);
 
 	nshots = 0;
-    getFileInfo(fshot, &nt, &nx, &nshots, &dt, &dx, &t0, &x0, &xmin, &xmax1, &sclsxgx, &ntraces);
+    getFileInfo3D(fshot, &nt, &nx, &ny, &nshots, &dt, &dx, &dy, &t0, &x0, &y0, &sclsxgx, &ntraces);
 
 	if (dxrcv < 0) dxrcv=dx;
 	if (dzrcv < 0) dzrcv=dx;
@@ -171,9 +174,9 @@ int main (int argc, char **argv)
 	if (fp_shot == NULL) {
 		verr("Could not open file");
 	}
-	vmess("nt: %d nx: %d nshots: %d",nt,nx,nshots);
+	vmess("nt: %li nx: %li nshots: %li",nt,nx,nshots);
 	fclose(fp_shot);
-	readSnapData(fshot, &shotdata[0], &hdr_shot[0], nshots, nx, nt, 0, nx, 0, nt);
+	readSnapData3D(fshot, &shotdata[0], &hdr_shot[0], nshots, nx, ny, nt, 0, nx, 0, ny, 0, nt);
 
 
 	hdr_out     = (segy *)calloc(nxs,sizeof(segy));	
@@ -215,14 +218,14 @@ int main (int argc, char **argv)
     }
 #pragma omp for 
 	for (ir = 0; ir < nzs; ir++) {
-        sprintf(fins,"z%d",ir*dnumb+numb);
+        sprintf(fins,"z%li",ir*dnumb+numb);
 		sprintf(fin2,"%s%s%s",fbegin,fins,fend);
         fp_in = fopen(fin2, "r");
 		if (fp_in == NULL) {
 			verr("Danger Will Robinson");
 		}
 		fclose(fp_in);
-		readSnapData(fin2, &indata[0], &hdr_in[0], nxs, nx, nt, 0, nx, 0, nt);
+		readSnapData3D(fin2, &indata[0], &hdr_in[0], nxs, nx, ny, nt, 0, nx, 0, ny, 0, nt);
 		for (is=0;is<nxs;is++) {
 			if (scheme==0) { //Marchenko representation
             	depthDiff(&indata[is*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
@@ -269,7 +272,7 @@ int main (int argc, char **argv)
 				for (ig=0; ig<nshots; ig++) {
                 	convol(&shotdata[ig*nx*nt], &indata[is*nx*nt], conv, nx, nt, dt, -2);
                 	timeDiff(conv, nt, nx, dt, fmin, fmax, -2);
-					shift_num = ig*((int)(shift/dt));
+					shift_num = ig*((long)(shift/dt));
 					for (ix = 0; ix < nx; ix++) {
 						for (it = nt/2+1; it < nt; it++) {
 							conv[ix*nt+it] = 0.0;
@@ -293,7 +296,7 @@ int main (int argc, char **argv)
         }
 
 		count+=1;
-		if (verbose) vmess("Creating Homogeneous Green's function at depth %d from %d depths",count,nzs);
+		if (verbose) vmess("Creating Homogeneous Green's function at depth %li from %li depths",count,nzs);
 	}
 	free(conv); free(indata); free(hdr_in); free(conv2);
 	if (scheme==2) {
@@ -302,14 +305,14 @@ int main (int argc, char **argv)
 }
 	free(shotdata);
 
-	if (verbose) vmess("nxs: %d nxz: %d f1: %.7f",nxs,nzs,f1);
+	if (verbose) vmess("nxs: %li nxz: %li f1: %.7f",nxs,nzs,f1);
 
 	ntshift=0;
 
 	if (ntmax > 0) {
 		if (ntmax < nt) {
 			ntshift = (nt-ntmax)/2;
-			if (verbose) vmess("Time shifted %d samples",ntshift);
+			if (verbose) vmess("Time shifted %li samples",ntshift);
 			nt=ntmax;
 		}
 		else {
@@ -340,7 +343,7 @@ int main (int argc, char **argv)
 				hdr_out[ix].gx      = (int)roundf(f2 + (ix*hdr_out[ix].d2)*1000.0);
             	hdr_out[ix].offset	= (hdr_out[ix].gx - hdr_out[ix].sx)/1000.0;
 		}
-		ret = writeData(fp_out, &Ghom[(ir+ntshift)*nxs*nzs], hdr_out, nzs, nxs);
+		ret = writeData3D(fp_out, &Ghom[(ir+ntshift)*nxs*nzs], hdr_out, nzs, nxs);
 		if (ret < 0 ) verr("error on writing output file.");
 	}
 	
@@ -348,9 +351,9 @@ int main (int argc, char **argv)
 	return 0;
 }
 
-void convol(float *data1, float *data2, float *con, int nrec, int nsam, float dt, int shift)
+void convol(float *data1, float *data2, float *con, long nrec, long nsam, float dt, long shift)
 {
-    int     i, j, n, optn, nfreq, sign;
+    long     i, j, n, optn, nfreq, sign;
     float   df, dw, om, tau, scl;
     float   *qr, *qi, *p1r, *p1i, *p2r, *p2i, *rdata1, *rdata2;
     complex *cdata1, *cdata2, *ccon, tmp;
@@ -436,9 +439,9 @@ void convol(float *data1, float *data2, float *con, int nrec, int nsam, float dt
     return;
 }
 
-void pad_data(float *data, int nsam, int nrec, int nsamout, float *datout)
+void pad_data(float *data, long nsam, long nrec, long nsamout, float *datout)
 {
-    int it,ix;
+    long it,ix;
     for (ix=0;ix<nrec;ix++) {
        for (it=0;it<nsam;it++)
         datout[ix*nsamout+it]=data[ix*nsam+it];
@@ -447,18 +450,18 @@ void pad_data(float *data, int nsam, int nrec, int nsamout, float *datout)
     }
 }
 
-void scl_data(float *data, int nsam, int nrec, float scl, float *datout, int nsamout)
+void scl_data(float *data, long nsam, long nrec, float scl, float *datout, long nsamout)
 {
-    int it,ix;
+    long it,ix;
     for (ix = 0; ix < nrec; ix++) {
         for (it = 0 ; it < nsamout ; it++)
             datout[ix*nsamout+it] = scl*data[ix*nsam+it];
     }
 }
 
-void corr(float *data1, float *data2, float *cov, int nrec, int nsam, float dt, int shift)
+void corr(float *data1, float *data2, float *cov, long nrec, long nsam, float dt, long shift)
 {
-    int     i, j, n, optn, nfreq, sign;
+    long     i, j, n, optn, nfreq, sign;
     float   df, dw, om, tau, scl;
     float   *qr, *qi, *p1r, *p1i, *p2r, *p2i, *rdata1, *rdata2;
     complex *cdata1, *cdata2, *ccov, tmp;
@@ -537,9 +540,9 @@ void corr(float *data1, float *data2, float *cov, int nrec, int nsam, float dt, 
     return;
 }
 
-void timeDiff(float *data, int nsam, int nrec, float dt, float fmin, float fmax, int opt)
+void timeDiff(float *data, long nsam, long nrec, float dt, float fmin, float fmax, long opt)
 {
-    int     optn, iom, iomin, iomax, nfreq, ix, sign;
+    long     optn, iom, iomin, iomax, nfreq, ix, sign;
     float   omin, omax, deltom, om, df, *rdata, scl;
     complex *cdata, *cdatascl;
 
@@ -563,9 +566,9 @@ void timeDiff(float *data, int nsam, int nrec, float dt, float fmin, float fmax,
     deltom = 2.*PI*df;
     omin   = 2.*PI*fmin;
     omax   = 2.*PI*fmax;
-    iomin  = (int)MIN((omin/deltom), (nfreq));
+    iomin  = (long)MIN((omin/deltom), (nfreq));
     iomin  = MAX(iomin, 1);
-    iomax  = MIN((int)(omax/deltom), (nfreq));
+    iomax  = MIN((long)(omax/deltom), (nfreq));
 
     cdatascl = (complex *)malloc(nfreq*nrec*sizeof(complex));
     if (cdatascl == NULL) verr("memory allocation error for cdatascl");
@@ -615,9 +618,9 @@ void timeDiff(float *data, int nsam, int nrec, float dt, float fmin, float fmax,
     return;
 }
 
-void depthDiff(float *data, int nsam, int nrec, float dt, float dx, float fmin, float fmax, float c, int opt)
+void depthDiff(float *data, long nsam, long nrec, float dt, float dx, float fmin, float fmax, float c, long opt)
 {
-    int     optn, iom, iomin, iomax, nfreq, ix, ikx, nkx, ikxmax;
+    long     optn, iom, iomin, iomax, nfreq, ix, ikx, nkx, ikxmax;
     float   omin, omax, deltom, df, dkx, *rdata, kx, scl;
     float   kx2, kz2, kp2, kp;
     complex *cdata, *cdatascl, kz, kzinv;
@@ -643,9 +646,9 @@ void depthDiff(float *data, int nsam, int nrec, float dt, float dx, float fmin, 
     omin   = 2.*PI*fmin;
     omax   = 2.*PI*fmax;
 
-    iomin  = (int)MIN((omin/deltom), nfreq);
+    iomin  = (long)MIN((omin/deltom), nfreq);
     iomin  = MAX(iomin, 0);
-    iomax  = MIN((int)(omax/deltom), nfreq);
+    iomax  = MIN((long)(omax/deltom), nfreq);
 
     cdatascl = (complex *)malloc(nfreq*nkx*sizeof(complex));
     if (cdatascl == NULL) verr("memory allocation error for cdatascl");
@@ -667,7 +670,7 @@ void depthDiff(float *data, int nsam, int nrec, float dt, float dx, float fmin, 
             kp = (iom*deltom)/c;
             kp2 = kp*kp;
 
-            ikxmax = MIN((int)(kp/dkx), nkx/2);
+            ikxmax = MIN((long)(kp/dkx), nkx/2);
 
             for (ikx = 0; ikx < ikxmax; ikx++) {
                 kx  = ikx*dkx;
@@ -698,7 +701,7 @@ void depthDiff(float *data, int nsam, int nrec, float dt, float dx, float fmin, 
         for (iom = iomin ; iom < iomax ; iom++) {
             kp = iom*deltom/c;
             kp2 = kp*kp;
-            ikxmax = MIN((int)(kp/dkx), nkx/2);
+            ikxmax = MIN((long)(kp/dkx), nkx/2);
             for (ikx = 0; ikx < ikxmax; ikx++) {
                 kx = ikx*dkx;
                 kx2  = kx*kx;
@@ -737,9 +740,9 @@ void depthDiff(float *data, int nsam, int nrec, float dt, float dx, float fmin, 
     return;
 }
 
-void pad2d_data(float *data, int nsam, int nrec, int nsamout, int nrecout, float *datout)
+void pad2d_data(float *data, long nsam, long nrec, long nsamout, long nrecout, float *datout)
 {
-    int it,ix;
+    long it,ix;
     for (ix=0;ix<nrec;ix++) {
         for (it=0;it<nsam;it++)
             datout[ix*nsam+it]=data[ix*nsam+it];
@@ -751,9 +754,9 @@ void pad2d_data(float *data, int nsam, int nrec, int nsamout, int nrecout, float
             datout[ix*nsam+it]=0.0;
     }
 }
-void conjugate(float *data, int nsam, int nrec, float dt)
+void conjugate(float *data, long nsam, long nrec, float dt)
 {
-    int     optn,  nfreq, j, ix, it, sign, ntdiff;
+    long     optn,  nfreq, j, ix, it, sign, ntdiff;
     float   *rdata, scl;
     complex *cdata;
 
@@ -790,68 +793,6 @@ void conjugate(float *data, int nsam, int nrec, float dt)
     //scl_data(rdata,optn,nrec,scl,data,nsam);
 
     free(cdata);
-    free(rdata);
-
-    return;
-}
-
-void timeShift(float *data, int nsam, int nrec, float dt, float shift, float fmin, float fmax)
-{
-    int     optn, iom, iomin, iomax, nfreq, ix, sign;
-    float   omin, omax, deltom, om, tom, df, *rdata, scl;
-    complex *cdata, *cdatascl;
-
-    optn = optncr(nsam);
-    nfreq = optn/2+1;
-    df    = 1.0/(optn*dt);
-
-    cdata = (complex *)malloc(nfreq*nrec*sizeof(complex));
-    if (cdata == NULL) verr("memory allocation error for cdata");
-
-    rdata = (float *)malloc(optn*nrec*sizeof(float));
-    if (rdata == NULL) verr("memory allocation error for rdata");
-
-    /* pad zeroes until Fourier length is reached */
-    pad_data(data,nsam,nrec,optn,rdata);
-
-    /* Forward time-frequency FFT */
-    sign = -1;
-    rcmfft(&rdata[0], &cdata[0], optn, nrec, optn, nfreq, sign);
-
-    deltom = 2.*PI*df;
-    omin   = 2.*PI*fmin;
-    omax   = 2.*PI*fmax;
-    iomin  = (int)MIN((omin/deltom), (nfreq));
-	iomax  = MIN((int)(omax/deltom), (nfreq));
-
-    cdatascl = (complex *)malloc(nfreq*nrec*sizeof(complex));
-    if (cdatascl == NULL) verr("memory allocation error for cdatascl");
-
-    for (ix = 0; ix < nrec; ix++) {
-        for (iom = 0; iom < iomin; iom++) {
-            cdatascl[ix*nfreq+iom].r = 0.0;
-            cdatascl[ix*nfreq+iom].i = 0.0;
-        }
-        for (iom = iomax; iom < nfreq; iom++) {
-            cdatascl[ix*nfreq+iom].r = 0.0;
-            cdatascl[ix*nfreq+iom].i = 0.0;
-        }
-        for (iom = iomin ; iom < iomax ; iom++) {
-            om = deltom*iom;
-            tom = om*shift;
-            cdatascl[ix*nfreq+iom].r = cdata[ix*nfreq+iom].r*cos(-tom) - cdata[ix*nfreq+iom].i*sin(-tom);
-            cdatascl[ix*nfreq+iom].i = cdata[ix*nfreq+iom].i*cos(-tom) + cdata[ix*nfreq+iom].r*sin(-tom);
-        }
-    }
-    free(cdata);
-
-    /* Inverse frequency-time FFT and scale result */
-    sign = 1;
-    scl = 1.0/(float)optn;
-    crmfft(&cdatascl[0], &rdata[0], optn, nrec, nfreq, optn, sign);
-    scl_data(rdata,optn,nrec,scl,data,nsam);
-
-    free(cdatascl);
     free(rdata);
 
     return;
