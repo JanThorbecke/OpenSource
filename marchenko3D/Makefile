@@ -51,6 +51,8 @@ OBJJ3	= $(SRCJ3:%.c=%.o)
 fmute3D:	$(OBJJ3) 
 	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o fmute3D $(OBJJ3) $(LIBS)
 
+OBJMS	= $(SRCMS:%.c=%.o)
+
 install: marchenko3D fmute3D
 	cp marchenko3D $B
 	cp fmute3D $B
