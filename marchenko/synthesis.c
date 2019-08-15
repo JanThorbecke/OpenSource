@@ -60,10 +60,16 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
     float   scl;
     int     i, j, l, m, iw, ix, k, ixsrc, il, ik;
     float   *rtrace, idxs;
+    float   fxb, fxe;
     complex *sum, *ctrace;
     int     npe;
     static int first=1, *ixrcv;
     static double t0, t1, t;
+
+    if (fxsb < 0) fxb = 1.001*fxsb;
+    else          fxb = 0.999*fxsb;
+    if (fxse > 0) fxe = 1.001*fxse;
+    else          fxe = 0.999*fxse;
 
     size  = nxs*nts;
     nfreq = ntfft/2+1;
@@ -138,7 +144,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
 #pragma omp parallel default(none) \
  shared(iRN, dx, npe, nw, verbose, nshots, xnx) \
  shared(Refl, Nfoc, reci, xsrc, xsyn, fxsb, fxse, nxs, dxs) \
- shared(nx, dxsrc, nfreq, nw_low, nw_high) \
+ shared(nx, dxsrc, nfreq, nw_low, nw_high, fxb, fxe) \
  shared(Fop, size, nts, ntfft, scl, ixrcv) \
  private(l, ix, j, m, i, sum, rtrace, k, ixsrc, inx)
 { /* start of parallel region */
@@ -148,7 +154,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
 /* Loop over total number of shots */
 #pragma omp for schedule(guided,1)
         for (k=0; k<nshots; k++) {
-            if ((xsrc[k] < 0.999*fxsb) || (xsrc[k] > 1.001*fxse)) continue;
+            if ((xsrc[k] < fxb) || (xsrc[k] > fxe)) continue;
             ixsrc = NINT((xsrc[k] - fxsb)/dxs);
             inx = xnx[k]; /* number of traces per shot */
 
@@ -192,7 +198,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
 #pragma omp parallel default(none) \
  shared(iRN, dx, nw, verbose) \
  shared(Refl, Nfoc, reci, xsrc, xsyn, fxsb, fxse, nxs, dxs) \
- shared(nx, dxsrc, nfreq, nw_low, nw_high) \
+ shared(nx, dxsrc, nfreq, nw_low, nw_high, fxb, fxe) \
  shared(reci_xrcv, reci_xsrc, ixmask, isxcount) \
  shared(Fop, size, nts, ntfft, scl, ixrcv) \
  private(l, ix, j, m, i, k, sum, rtrace, ik, il, ixsrc, inx)
@@ -252,6 +258,12 @@ float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos
 {
     int     i, j, l, ixsrc, ixrcv, dosrc, k, *count;
     float   x0, x1;
+    float   fxb, fxe;
+
+    if (fxsb < 0) fxb = 1.001*fxsb;
+    else          fxb = 0.999*fxsb;
+    if (fxse > 0) fxe = 1.001*fxse;
+    else          fxe = 0.999*fxse;
 
     count   = (int *)calloc(nxs,sizeof(int)); // number of traces that contribute to the integration over x
 
@@ -280,9 +292,7 @@ float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos
                 vmess("focal point positions:  %.2f <--> %.2f", fxsb, fxse);
             }
     
-			//fprintf(stderr,"k=%d xsrc[k]=%f 0.999*fxsb=%f, 1.001*fxse=%f %f %f\n",k, xsrc[k], 0.999*fxsb, 1.001*fxse, fxsb, fxse);
-            //if ( (xsrc[k] >= 0.999*fxsb) && (xsrc[k] <= 1.001*fxse) ) {
-            if ( (ixsrc < nxs) && (ixsrc >= 0) ) {
+            if ( (xsrc[k] >= fxb) && (xsrc[k] <= fxe) ) {
                 j = linearsearch(ixpos, *npos, ixsrc);
                 if (j < *npos) { /* the position (at j) is already included */
                     count[j] += xnx[k];
