@@ -26,7 +26,7 @@ PRG = raytime3d
 
 SRCC	= $(PRG).c \
 		vidale3d.c \
-		src3d.c \
+		src3D.c \
 		getParameters3d.c  \
 		getWaveletInfo.c  \
 		writeSrcRecPos.c  \

@@ -348,7 +348,7 @@ void vidale3d(float *slow0, float *time0, long nz, long nx, long ny, float h, lo
 				if (fhead>headtest)  headw[5]++;
 			}
 		}
-		if(z1 == 0) dz1 = 0;
+		if(z1 == 1) dz1 = 0;
 		z1--;
 	}
       }
@@ -527,7 +527,7 @@ void vidale3d(float *slow0, float *time0, long nz, long nx, long ny, float h, lo
 				if (fhead>headtest)  headw[6]++;
 			}
 		}
-		if(z2 == nz-1) dz2 = 0;
+		if(z2 == nz-2) dz2 = 0;
 		z2++;
 	}
       }
@@ -706,7 +706,7 @@ void vidale3d(float *slow0, float *time0, long nz, long nx, long ny, float h, lo
 				if (fhead>headtest)  headw[3]++;
 			}
 		}
-		if(y1 == 0) dy1 = 0;
+		if(y1 == 1) dy1 = 0;
 		y1--;
 	}
       }
@@ -885,7 +885,7 @@ void vidale3d(float *slow0, float *time0, long nz, long nx, long ny, float h, lo
 				if (fhead>headtest)  headw[4]++;
 			}
 		}
-		if(y2 == ny-1) dy2 = 0;
+		if(y2 == ny-2) dy2 = 0;
 		y2++;
 	}
       }
@@ -1064,7 +1064,7 @@ void vidale3d(float *slow0, float *time0, long nz, long nx, long ny, float h, lo
 				if (fhead>headtest)  headw[1]++;
 			}
 		}
-		if(x1 == 0) dx1 = 0;
+		if(x1 == 1) dx1 = 0;
 		x1--;
 	}
       }
@@ -1243,14 +1243,14 @@ void vidale3d(float *slow0, float *time0, long nz, long nx, long ny, float h, lo
 				if (fhead>headtest)  headw[2]++;
 			}
 		}
-		if(x2 == nx-1) dx2 = 0;
+		if(x2 == nx-2) dx2 = 0;
 		x2++;
 	}
       }
 
 		/* UPDATE RADIUS */
 		radius++;
-		if(radius%10 == 0 && verbose) vmess("Completed radius = %li",radius);
+		if(radius%10 == 0 && verbose>5) vmess("Completed radius = %li",radius);
         if(radius == maxrad) rad0 = 0;
 
 	}	/* END BIG LOOP */

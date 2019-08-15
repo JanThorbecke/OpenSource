@@ -34,7 +34,7 @@ long readModel3d(char *file_name, float *slowness, long nz, long nx, long ny, fl
 	float *tmp;
     segy hdr;
 
-	nxy = nx * ny;
+	nxy = (nx+2) * (ny+2);
 	tmp = (float *)malloc(nz*sizeof(float));
 
 /* open files and read first header */
@@ -43,7 +43,6 @@ long readModel3d(char *file_name, float *slowness, long nz, long nx, long ny, fl
    	assert( fpcp != NULL);
    	nread = fread(&hdr, 1, TRCBYTES, fpcp);
    	assert(nread == TRCBYTES);
-	vmess("nz=%li hdr.ns=%li",nz,hdr.ns);
 	assert(hdr.ns == nz);
 
 	if (nx==1) { /* 1D model */
@@ -51,7 +50,7 @@ long readModel3d(char *file_name, float *slowness, long nz, long nx, long ny, fl
 		for (j = 0; j < nz; j++) {
 			for (k = 0; k < ny; k++) {
 				for (i = 0; i < nx; i++) {
-					slowness[j*nxy+k*nx+i] = h/tmp[j];
+					slowness[(j+1)*nxy+(k+1)*(nx+2)+(i+1)] = h/tmp[j];
 				}
 			}
 		}
@@ -61,7 +60,7 @@ long readModel3d(char *file_name, float *slowness, long nz, long nx, long ny, fl
        		nread = fread(&tmp[0], sizeof(float), hdr.ns, fpcp);
 			for (j = 0; j < nz; j++) {
 				for (k = 0; k < ny; k++) {
-					slowness[j*nxy+k*nx+i] = h/tmp[j];
+					slowness[(j+1)*nxy+(k+1)*(nx+2)+(i+1)] = h/tmp[j];
 				}
 			}
        		nread = fread(&hdr, 1, TRCBYTES, fpcp);
@@ -73,12 +72,122 @@ long readModel3d(char *file_name, float *slowness, long nz, long nx, long ny, fl
 			for (i = 0; i < nx; i++) {
        			nread = fread(&tmp[0], sizeof(float), hdr.ns, fpcp);
 				for (j = 0; j < nz; j++) {
-					slowness[j*nxy+k*nx+i] = h/tmp[j];
+					slowness[(j+1)*nxy+(k+1)*(nx+2)+(i+1)] = h/tmp[j];
 				}
        			nread = fread(&hdr, 1, TRCBYTES, fpcp);
 			}
 		}
 	}
+
+	/* Fill in the sides */
+	k=0;
+	for (j = 0; j < nz; j++) {
+		for (i = 0; i < nx; i++) {
+			slowness[(j+1)*nxy+k*(nx+2)+(i+1)] = slowness[(j+1)*nxy+(k+1)*(nx+2)+(i+1)];
+		}
+	}
+	k=ny+1;
+	for (j = 0; j < nz; j++) {
+		for (i = 0; i < nx; i++) {
+			slowness[(j+1)*nxy+k*(nx+2)+(i+1)] = slowness[(j+1)*nxy+(k-1)*(nx+2)+(i+1)];
+		}
+	}
+
+	j=0;
+	for (k = 0; k < ny; k++) {
+		for (i = 0; i < nx; i++) {
+			slowness[j*nxy+(k+1)*(nx+2)+(i+1)] = slowness[(j+1)*nxy+(k+1)*(nx+2)+(i+1)];
+		}
+	}
+	j=nz+1;
+	for (k = 0; k < ny; k++) {
+		for (i = 0; i < nx; i++) {
+			slowness[j*nxy+(k+1)*(nx+2)+(i+1)] = slowness[(j-1)*nxy+(k+1)*(nx+2)+(i+1)];
+		}
+	}
+
+	i=0;
+	for (k = 0; k < ny; k++) {
+		for (j = 0; j < nz; j++) {
+			slowness[(j+1)*nxy+(k+1)*(nx+2)+i] = slowness[(j+1)*nxy+(k+1)*(nx+2)+(i+1)];
+		}
+	}
+	i=nx+1;
+	for (k = 0; k < ny; k++) {
+		for (j = 0; j < nz; j++) {
+			slowness[(j+1)*nxy+(k+1)*(nx+2)+i] = slowness[(j+1)*nxy+(k+1)*(nx+2)+(i-1)];
+		}
+	}
+
+	/* Fill in corners of sides */
+	k=0;	j=0;
+	for (i = 0; i < nx; i++) {
+		slowness[j*nxy+k*(nx+2)+(i+1)] = (1.0/2.0)*(slowness[(j+1)*nxy+k*(nx+2)+(i+1)]+slowness[j*nxy+(k+1)*(nx+2)+(i+1)]);
+	}
+	k=ny+1;	j=0;
+	for (i = 0; i < nx; i++) {
+		slowness[j*nxy+k*(nx+2)+(i+1)] = (1.0/2.0)*(slowness[(j+1)*nxy+k*(nx+2)+(i+1)]+slowness[j*nxy+(k-1)*(nx+2)+(i+1)]);
+	}
+	k=0;	j=nz+1;
+	for (i = 0; i < nx; i++) {
+		slowness[j*nxy+k*(nx+2)+(i+1)] = (1.0/2.0)*(slowness[(j-1)*nxy+k*(nx+2)+(i+1)]+slowness[j*nxy+(k+1)*(nx+2)+(i+1)]);
+	}
+	k=ny+1;	j=nz+1;
+	for (i = 0; i < nx; i++) {
+		slowness[j*nxy+k*(nx+2)+(i+1)] = (1.0/2.0)*(slowness[(j-1)*nxy+k*(nx+2)+(i+1)]+slowness[j*nxy+(k-1)*(nx+2)+(i+1)]);
+	}
+
+	k=0;	i=0;
+	for (j = 0; j < nz; j++) {
+		slowness[(j+1)*nxy+k*(nx+2)+i] = (1.0/2.0)*(slowness[(j+1)*nxy+k*(nx+2)+(i+1)]+slowness[(j+1)*nxy+(k+1)*(nx+2)+i]);
+	}
+	k=ny+1;	i=0;
+	for (j = 0; j < nz; j++) {
+		slowness[(j+1)*nxy+k*(nx+2)+i] = (1.0/2.0)*(slowness[(j+1)*nxy+k*(nx+2)+(i+1)]+slowness[(j+1)*nxy+(k-1)*(nx+2)+i]);
+	}
+	k=0;	i=nx+1;
+	for (j = 0; j < nz; j++) {
+		slowness[(j+1)*nxy+k*(nx+2)+i] = (1.0/2.0)*(slowness[(j+1)*nxy+k*(nx+2)+(i-1)]+slowness[(j+1)*nxy+(k+1)*(nx+2)+i]);
+	}
+	k=ny+1;	i=nx+1;
+	for (j = 0; j < nz; j++) {
+		slowness[(j+1)*nxy+k*(nx+2)+i] = (1.0/2.0)*(slowness[(j+1)*nxy+k*(nx+2)+(i-1)]+slowness[(j+1)*nxy+(k-1)*(nx+2)+i]);
+	}
+
+	j=0;	i=0;
+	for (k = 0; k < ny; k++) {
+		slowness[j*nxy+(k+1)*(nx+2)+i] = (1.0/2.0)*(slowness[j*nxy+(k+1)*(nx+2)+(i+1)]+slowness[(j+1)*nxy+(k+1)*(nx+2)+i]);
+	}
+	j=nz+1;	i=0;
+	for (k = 0; k < ny; k++) {
+		slowness[j*nxy+(k+1)*(nx+2)+i] = (1.0/2.0)*(slowness[j*nxy+(k+1)*(nx+2)+(i+1)]+slowness[(j-1)*nxy+(k+1)*(nx+2)+i]);
+	}
+	j=0;	i=nx+1;
+	for (k = 0; k < ny; k++) {
+		slowness[j*nxy+(k+1)*(nx+2)+i] = (1.0/2.0)*(slowness[j*nxy+(k+1)*(nx+2)+(i-1)]+slowness[(j+1)*nxy+(k+1)*(nx+2)+i]);
+	}
+	j=nz+1;	i=nx+1;
+	for (k = 0; k < ny; k++) {
+		slowness[j*nxy+(k+1)*(nx+2)+i] = (1.0/2.0)*(slowness[j*nxy+(k+1)*(nx+2)+(i-1)]+slowness[(j-1)*nxy+(k+1)*(nx+2)+i]);
+	}
+
+	/* Fill in corners of cubes */
+	i=0;	j=0;	k=0;
+	slowness[j*nxy+k*(nx+2)+i] = (1.0/3.0)*(slowness[(j+1)*nxy+(k+1)*(nx+2)+i]+slowness[j*nxy+(k+1)*(nx+2)+(i+1)]+slowness[(j+1)*nxy+k*(nx+2)+(i+1)]);
+	i=nx+1;	j=0;	k=0;
+	slowness[j*nxy+k*(nx+2)+i] = (1.0/3.0)*(slowness[(j+1)*nxy+(k+1)*(nx+2)+i]+slowness[j*nxy+(k+1)*(nx+2)+(i-1)]+slowness[(j+1)*nxy+k*(nx+2)+(i-1)]);
+	i=0;	j=nz+1;	k=0;
+	slowness[j*nxy+k*(nx+2)+i] = (1.0/3.0)*(slowness[(j-1)*nxy+(k+1)*(nx+2)+i]+slowness[j*nxy+(k+1)*(nx+2)+(i+1)]+slowness[(j-1)*nxy+k*(nx+2)+(i+1)]);
+	i=0;	j=0;	k=ny+1;
+	slowness[j*nxy+k*(nx+2)+i] = (1.0/3.0)*(slowness[(j+1)*nxy+(k-1)*(nx+2)+i]+slowness[j*nxy+(k-1)*(nx+2)+(i+1)]+slowness[(j+1)*nxy+k*(nx+2)+(i+1)]);
+	i=nx+1;	j=nz+1;	k=0;
+	slowness[j*nxy+k*(nx+2)+i] = (1.0/3.0)*(slowness[(j-1)*nxy+(k+1)*(nx+2)+i]+slowness[j*nxy+(k+1)*(nx+2)+(i-1)]+slowness[(j-1)*nxy+k*(nx+2)+(i-1)]);
+	i=nx+1;	j=0;	k=ny+1;
+	slowness[j*nxy+k*(nx+2)+i] = (1.0/3.0)*(slowness[(j+1)*nxy+(k-1)*(nx+2)+i]+slowness[j*nxy+(k-1)*(nx+2)+(i-1)]+slowness[(j+1)*nxy+k*(nx+2)+(i-1)]);
+	i=0;	j=nz+1;	k=ny+1;
+	slowness[j*nxy+k*(nx+2)+i] = (1.0/3.0)*(slowness[(j-1)*nxy+(k-1)*(nx+2)+i]+slowness[j*nxy+(k-1)*(nx+2)+(i+1)]+slowness[(j-1)*nxy+k*(nx+2)+(i+1)]);
+	i=nx+1;	j=nz+1;	k=ny+1;
+	slowness[j*nxy+k*(nx+2)+i] = (1.0/3.0)*(slowness[(j-1)*nxy+(k-1)*(nx+2)+i]+slowness[j*nxy+(k-1)*(nx+2)+(i-1)]+slowness[(j-1)*nxy+k*(nx+2)+(i-1)]);
 
    	fclose(fpcp);
 
