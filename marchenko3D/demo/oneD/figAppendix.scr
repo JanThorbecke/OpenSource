@@ -18,7 +18,7 @@ clipref=$clipiter
 
 for above in 0 1 -1 2 4
 do
-fmute file_mute=iniFocus_rp.su file_shot=${file_base}.su file_out=nep.su above=${above} shift=8 verbose=1 check=1 hw=4
+fmute3D file_mute=iniFocus_rp.su file_shot=${file_base}.su file_out=nep.su above=${above} shift=8 verbose=1 check=1 hw=4
 
 basop choice=shift shift=-$shift file_in=nep.su file_out=nep_t0.su
 supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < nep.su \
@@ -30,7 +30,7 @@ done
 
 for shift in 0 20 -20
 do
-fmute file_mute=iniFocus_rp.su file_shot=${file_base}.su file_out=nep.su above=${above} shift=$shift verbose=1 check=1 hw=4
+fmute3D file_mute=iniFocus_rp.su file_shot=${file_base}.su file_out=nep.su above=${above} shift=$shift verbose=1 check=1 hw=4
 mv pslinepos.asci pslinepos${shift}.asci
 done
 

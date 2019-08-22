@@ -1,0 +1,25 @@
+#!/bin/bash 
+#PBS -N Marchenko
+#PBS -j oe
+#PBS -l place=scatter,select=1
+#PBS -S /bin/bash
+#PBS -V
+#PBS -q bw44-sm
+# PBS -q sk40-sm
+#PBS -l walltime=00:10:00
+
+set -x
+cd $PBS_O_WORKDIR
+ulimit -s unlimited
+
+export KMP_AFFINITY=disabled
+export OMP_NUM_THREADS=40
+
+starttime=`date +%s%N`
+
+aprun -n1 -d $OMP_NUM_THREADS ./marchenko_ray.scr
+
+endtime=`date +%s%N`
+runtime=$(echo "scale=9; 1.0*10^(-9)*(${endtime}-${starttime})" | bc -l)
+echo "Runtime = $runtime seconds" 
+

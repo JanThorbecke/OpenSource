@@ -33,17 +33,18 @@ do
 cat << EOF > jobs/pbs_$ishot.job 
 #!/bin/bash
 #
-#PBS -q medium
+#PBS -q bw44-sm
 #PBS -N mod_${xsrc}
 #PBS -j eo 
-#PBS -m n 
-#PBS -l nodes=1
+#PBS -l place=scatter,select=1
+#PBS -l walltime=00:10:00
 #PBS -V
 
 export PATH=\$HOME/src/OpenSource/bin:\$PATH:
 cd \$PBS_O_WORKDIR
 
-export OMP_NUM_THREADS=4
+export KMP_AFFINITY=disabled
+export OMP_NUM_THREADS=16
 	
 fdelmodc \
 	file_cp=synclDown_cp.su ischeme=1 iorder=4 \
