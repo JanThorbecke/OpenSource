@@ -26,7 +26,7 @@ long writeDataIter3D(char *file_iter, float *data, segy *hdrs, long n1, long n2,
 
     trace  = (float *)malloc(n1*sizeof(float));
 	strcpy(filename, file_iter);
-	sprintf(number,"_%03d",(iter+1));
+	sprintf(number,"_%03d",(iter));
 	name_ext(filename, number);
 	fp_iter = fopen(filename, "w+");
 	if (fp_iter==NULL) verr("error on creating output file %s", filename);
