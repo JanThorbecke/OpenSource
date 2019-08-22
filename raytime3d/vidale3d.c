@@ -1264,42 +1264,42 @@ void vidale3d(float *slow0, float *time0, long nz, long nx, long ny, float h, lo
 	else {
 		head=0;
 		if (headw[1]>0) {
-			if(verbose) vmess("Head waves found on left: %li",headw[1]);
+			if(verbose>3) vmess("Head waves found on left: %li",headw[1]);
 			if (headw[1]>head)  {
 				head = headw[1];
 				srcwall = 1;
 			}
 		}
 		if (headw[2]>0) {
-			if(verbose) vmess("Head waves found on right: %li",headw[2]);
+			if(verbose>3) vmess("Head waves found on right: %li",headw[2]);
 			if (headw[2]>head)  {
 				head = headw[2];
 				srcwall = 2;
 			}
 		}
 		if (headw[3]>0) {
-			if(verbose) vmess("Head waves found on front: %li",headw[3]);
+			if(verbose>3) vmess("Head waves found on front: %li",headw[3]);
 			if (headw[3]>head)  {
 				head = headw[3];
 				srcwall = 3;
 			}
 		}
 		if (headw[4]>0) {
-			if(verbose) vmess("Head waves found on back: %li",headw[4]);
+			if(verbose>3) vmess("Head waves found on back: %li",headw[4]);
 			if (headw[4]>head)  {
 				head = headw[4];
 				srcwall = 4;
 			}
 		}
 		if (headw[5]>0) {
-			if(verbose) vmess("Head waves found on top: %li",headw[5]);
+			if(verbose>3) vmess("Head waves found on top: %li",headw[5]);
 			if (headw[5]>head)  {
 				head = headw[5];
 				srcwall = 5;
 			}
 		}
 		if (headw[6]>0) {
-			if(verbose) vmess("Head waves found on bottom: %li",headw[6]);
+			if(verbose>3) vmess("Head waves found on bottom: %li",headw[6]);
 			if (headw[6]>head)  {
 				head = headw[6];
 				srcwall = 6;
@@ -1332,7 +1332,7 @@ void vidale3d(float *slow0, float *time0, long nz, long nx, long ny, float h, lo
 			vmess("RESTART at bottom side of model");  }
 		else	{  z1= -1;	dz1=0;  }
 		if (reverse == 0)  
-			vwarn("RESTART CANCELLED by choice of input parameter `reverse`");
+			if (verbose>3) vwarn("RESTART CANCELLED by choice of input parameter `reverse`");
 	}
 	reverse--;
 

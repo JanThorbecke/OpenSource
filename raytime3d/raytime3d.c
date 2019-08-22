@@ -189,9 +189,6 @@ void main(int argc, char *argv[])
 		if (slow0 == NULL) verr("Out of memory for slow0 array!");
 
 		readModel3d(mod.file_cp, slow0, nz, nx, ny, h, verbose);
-
-		if (verbose) vmess("h = %.2f nx = %li nz = %li ny = %li", h, nx, nz, ny);
-
 	}
 	else {
         if(!getparfloat("c",&c)) verr("c not defined");
@@ -287,8 +284,8 @@ private (is,time0,ampl,nrx,nry,nrz,nr,cp_average,i,j,k,ix,iy,iz,hdrs,tmpdata,nwr
 			#pragma omp flush(writer)
 		}
 
-		if (verbose>2) vmess("Writing src %li of %li sources",is+1,shot.n);
-		if (verbose) vmess("xsrc[%li]=%f ysrc[%li]=%f zsrc[%li]=%f",shot.x[is],shot.xs[is],shot.y[is],shot.ys[is],shot.z[is],shot.zs[is]);
+		if (verbose) vmess("Writing src %li of %li sources",is+1,shot.n);
+		if (verbose>1) vmess("xsrc[%li]=%f ysrc[%li]=%f zsrc[%li]=%f",shot.x[is],shot.xs[is],shot.y[is],shot.ys[is],shot.z[is],shot.zs[is]);
 
 		hdrs = (segy *) calloc(1,sizeof(segy));
 		tmpdata = (float *)malloc((rec.nx)*sizeof(float));
@@ -303,7 +300,7 @@ private (is,time0,ampl,nrx,nry,nrz,nr,cp_average,i,j,k,ix,iy,iz,hdrs,tmpdata,nwr
 			hdrs[0].sy		= (long)(f3+(shot.y[is]-1)*d3)*1000;
 			hdrs[0].sdepth	= (long)(f1+(shot.z[is]-1)*d1)*1000;
 			hdrs[0].selev	= -(long)(f1+(shot.z[is]-1)*d1)*1000;
-			hdrs[0].gy		= mod.y0+rec.yr[i*rec.nx];
+			hdrs[0].gy		= (long)(mod.y0+rec.yr[i*rec.nx])*1000;
 			hdrs[0].ns 		= rec.nx;
 			hdrs[0].ntr		= rec.ny*shot.n;
 			hdrs[0].trwf	= rec.ny*shot.n;

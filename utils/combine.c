@@ -121,7 +121,12 @@ int main (int argc, char **argv)
 	sprintf(fins,"%li",numb);
     sprintf(fin2,"%s%s%s",fbegin,fins,fend);
 	nt = 1;
-    getFileInfo3D(fin2, &nz, &nx, &ny, &nt, &dz, &dx, &dy, &z0, &x0, &y0, &scl, &ntr);
+    if (transpose==0) {
+		getFileInfo3D(fin2, &nz, &nx, &ny, &nt, &dz, &dx, &dy, &z0, &x0, &y0, &scl, &ntr);
+	}
+	else {
+		getFileInfo3D(fin2, &nx, &nz, &ny, &nt, &dz, &dx, &dy, &z0, &x0, &y0, &scl, &ntr);
+	}
 
 	nxyz = nx*ny*nzs*nz;
 
@@ -145,20 +150,34 @@ int main (int argc, char **argv)
     *   Combine the separate files
     *----------------------------------------------------------------------------*/
 	for (is = 0; is < nzs; is++) {
-		if (verbose) vmess("Combining file %li out of %li",iz+1,nzs);
-		sprintf(fins,"%li",iz*dnumb+numb);
+		if (verbose) vmess("Combining file %li out of %li",is+1,nzs);
+		sprintf(fins,"%li",is*dnumb+numb);
        	sprintf(fin2,"%s%s%s",fbegin,fins,fend);
        	fp_in = fopen(fin2, "r");
 		if (fp_in == NULL) {
 			verr("Error opening file");
 		}
 		fclose(fp_in);
-		readSnapData3D(fin2, indata, hdr_in, nt, nx, ny, nz, 0, nx, 0, ny, 0, nz);
-		for (it = 0; it < nt; it++) {
-			for (iy = 0; iy < ny; iy++) {
-				for (ix = 0; ix < nx; ix++) {
-					for (iz = 0; iz < nz; iz++) {
-						outdata[it*ny*nx*nz*nzs+iy*nx*nz*nzs+ix*nz*nzs+iz+is] = indata[it*ny*nx*nz+iy*nx*nz+ix*nz+iz];
+		if (transpose==0) {
+			readSnapData3D(fin2, indata, hdr_in, nt, nx, ny, nz, 0, nx, 0, ny, 0, nz);
+			for (it = 0; it < nt; it++) {
+				for (iy = 0; iy < ny; iy++) {
+					for (ix = 0; ix < nx; ix++) {
+						for (iz = 0; iz < nz; iz++) {
+							outdata[it*ny*nx*nz*nzs+iy*nx*nz*nzs+ix*nz*nzs+iz+is] = indata[it*ny*nx*nz+iy*nx*nz+ix*nz+iz];
+						}
+					}
+				}
+			}
+		}
+		else {
+			readSnapData3D(fin2, indata, hdr_in, nt, nz, ny, nx, 0, nz, 0, ny, 0, nx);
+			for (it = 0; it < nt; it++) {
+				for (iy = 0; iy < ny; iy++) {
+					for (ix = 0; ix < nx; ix++) {
+						for (iz = 0; iz < nz; iz++) {
+							outdata[it*ny*nx*nz*nzs+iy*nx*nz*nzs+ix*nz*nzs+iz+is] = indata[it*ny*nz*nx+iy*nz*nx+iz*nx+ix];
+						}
 					}
 				}
 			}

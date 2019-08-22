@@ -118,6 +118,7 @@ typedef struct _shotPar { /* Shot Parameters */
 	float *zs;
 	float *xs;
 	float *ys;
+	long maxrad;
 } shotPar;
 
 typedef struct _raypar { /* ray-tracing parameters */

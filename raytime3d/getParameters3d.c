@@ -41,7 +41,7 @@ long getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPa
 	float	rsrc, oxsrc, ozsrc, oysrc, dphisrc, ncsrc;
 	size_t	nsamp;
 	long	nxsrc, nzsrc, nysrc;
-	long	is;
+	long	is, shotnxyz, rcvn;
 	char	*src_positions, *file_cp=NULL;
 
 	if (!getparlong("verbose",&verbose)) verbose=0;
@@ -322,6 +322,26 @@ long getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPa
 	
 	recvPar3D(rec, sub_x0, sub_y0, sub_z0, dx, dy, dz, nx, ny, nz);
 
+	/* Calculate the maximum radius */
+	shotnxyz 	= shot->nx*shot->ny*shot->nz-1;
+	rcvn 		= rec->n-1;
+	shot->maxrad = labs(rec->x[0]-shot->x[0]);
+	if (shot->maxrad < labs(rec->x[rcvn]-shot->x[0])) 			shot->maxrad = labs(rec->x[rcvn]-shot->x[0]);
+	if (shot->maxrad < labs(rec->x[0]-shot->x[shotnxyz])) 		shot->maxrad = labs(rec->x[0]-shot->x[shotnxyz]);
+	if (shot->maxrad < labs(rec->x[rcvn]-shot->x[shotnxyz])) 	shot->maxrad = labs(rec->x[rcvn]-shot->x[shotnxyz]);
+
+	if (shot->maxrad < labs(rec->y[0]-shot->y[0])) 				shot->maxrad = labs(rec->y[0]-shot->y[0]);
+	if (shot->maxrad < labs(rec->y[rcvn]-shot->y[0])) 			shot->maxrad = labs(rec->y[rcvn]-shot->y[0]);
+	if (shot->maxrad < labs(rec->y[0]-shot->y[shotnxyz])) 		shot->maxrad = labs(rec->y[0]-shot->y[shotnxyz]);
+	if (shot->maxrad < labs(rec->y[rcvn]-shot->y[shotnxyz])) 	shot->maxrad = labs(rec->y[rcvn]-shot->y[shotnxyz]);
+	
+	if (shot->maxrad < labs(rec->z[0]-shot->z[0])) 				shot->maxrad = labs(rec->z[0]-shot->z[0]);
+	if (shot->maxrad < labs(rec->z[rcvn]-shot->z[0])) 			shot->maxrad = labs(rec->z[rcvn]-shot->z[0]);
+	if (shot->maxrad < labs(rec->z[0]-shot->z[shotnxyz])) 		shot->maxrad = labs(rec->z[0]-shot->z[shotnxyz]);
+	if (shot->maxrad < labs(rec->z[rcvn]-shot->z[shotnxyz])) 	shot->maxrad = labs(rec->z[rcvn]-shot->z[shotnxyz]);
+
+	shot->maxrad++;
+
 	if (verbose) {
 		if (rec->n) {
 			dyrcv = rec->yr[rec->nx]-rec->yr[0];
@@ -341,6 +361,7 @@ long getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPa
 			vmess("izmin   = %li izmax   = %li ", rec->z[0], rec->z[rec->n-1]);
 			vmess("ixmin   = %li ixmax   = %li ", rec->x[0], rec->x[rec->n-1]);
 			vmess("iymin   = %li iymax   = %li ", rec->y[0], rec->y[rec->n-1]);
+			vmess("maxrad  = %li",shot->maxrad);
 			fprintf(stderr,"\n");
 		}
 		else {
