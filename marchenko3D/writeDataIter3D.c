@@ -16,7 +16,7 @@
 
 void name_ext(char *filename, char *extension);
 
-long writeDataIter3D(char *file_iter, float *data, segy *hdrs, long n1, long n2, long n3, long Nfoc, float *xsyn, float *ysyn, float *zsyn, long *ixpos, int *iypos, long npos, long t0shift, long iter)
+long writeDataIter3D(char *file_iter, float *data, segy *hdrs, long n1, long n2, long n3, long Nfoc, float *xsyn, float *ysyn, float *zsyn, long *ixpos, long *iypos, long npos, long t0shift, long iter)
 {
 	FILE *fp_iter;
 	size_t nwrite;
