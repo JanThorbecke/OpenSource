@@ -168,10 +168,10 @@ long *ixpos, long *iypos, long npos, double *tfft, long *isxcount, long *reci_xs
 
 #ifdef _OPENMP
     npe   = (long)omp_get_max_threads();
-    /* parallelisation is over number of virtual source positions (Nfoc) */
-    if (npe > Nfoc) {
-        vmess("Number of OpenMP threads set to %li (was %li)", Nfoc, npe);
-        omp_set_num_threads((int)Nfoc);
+    /* parallelisation is over number of shot positions (nshots) */
+    if (npe > nshots) {
+        vmess("Number of OpenMP threads set to %li (was %li)", nshots, npe);
+        omp_set_num_threads((int)nshots);
     }
 #endif
 
@@ -226,27 +226,28 @@ long *ixpos, long *iypos, long npos, double *tfft, long *isxcount, long *reci_xs
     t1 = wallclock_time();
     *tfft += t1 - t0;
 
-/* Loop over total number of shots */
     if (reci == 0 || reci == 1) {
+
+/*================ SYNTHESIS ================*/
+
+#pragma omp parallel default(none) \
+ shared(iRN, dx, dy, npe, nw, nshots, verbose) \
+ shared(Refl, Nfoc, reci, xrcv, xsrc, yrcv, ysrc, xsyn, ysyn) \
+ shared(fxsb, fxse, fysb, fyse, nxs, nys, nxys, dxs, dys) \
+ shared(nx, ny, nxy, dysrc, dxsrc, nfreq, nw_low, nw_high, xnx) \
+ shared(Fop, size, nts, ntfft, scl, iyrcv, ixrcv, fxb, fxe, fyb, fye) \
+ private(l, ix, iy, j, m, i, sum, rtrace, k, isrc, inx)
+{ /* start of parallel region */
+        sum   = (complex *)malloc(nfreq*sizeof(complex));
+        rtrace = (float *)calloc(ntfft,sizeof(float));
+
+/* Loop over total number of shots */
+#pragma omp for schedule(guided,1)
         for (k=0; k<nshots; k++) {
             if ((xsrc[k] < fxb) || (xsrc[k] > fxe) || (ysrc[k] < fyb) || (ysrc[k] > fye)) continue;
             isrc = NINT((ysrc[k] - fysb)/dys)*nxs+NINT((xsrc[k] - fxsb)/dxs);
             inx = xnx[k]; /* number of traces per shot */
 
-/*================ SYNTHESIS ================*/
-
-#pragma omp parallel default(none) \
- shared(iRN, dx, dy, npe, nw, verbose) \
- shared(Refl, Nfoc, reci, xrcv, xsrc, yrcv, ysrc, xsyn, ysyn) \
- shared(fxsb, fxse, fysb, fyse, nxs, nys, nxys, dxs, dys) \
- shared(nx, ny, nxy, dysrc, dxsrc, inx, k, nfreq, nw_low, nw_high) \
- shared(Fop, size, nts, ntfft, scl, iyrcv, ixrcv, isrc) \
- private(l, ix, iy, j, m, i, sum, rtrace)
-{ /* start of parallel region */
-            sum   = (complex *)malloc(nfreq*sizeof(complex));
-            rtrace = (float *)calloc(ntfft,sizeof(float));
-
-#pragma omp for schedule(guided,1)
             for (l = 0; l < Nfoc; l++) {
 		        /* compute integral over receiver positions */
                 /* multiply R with Fop and sum over nx */
@@ -269,19 +270,16 @@ long *ixpos, long *iypos, long npos, double *tfft, long *isxcount, long *reci_xs
                 for (j = 0; j < nts; j++) 
                     iRN[l*size+isrc*nts+j] += rtrace[j]*scl*dx*dy;
             
-            } /* end of parallel Nfoc loop */
-            free(sum);
-            free(rtrace);
+            } /* end of Nfoc loop */
 
-#ifdef _OPENMP
-#pragma omp single 
-            npe   = (long)omp_get_num_threads();
-#endif
+            if (verbose>4) vmess("*** Shot gather %li processed ***", k);
+
+        } /* end of parallel nshots (k) loop */
+        free(sum);
+        free(rtrace);
+
 } /* end of parallel region */
 
-        if (verbose>4) vmess("*** Shot gather %li processed ***", k);
-
-        } /* end of nshots (k) loop */
     }     /* end of if reci */
 
     t = wallclock_time() - t0;
