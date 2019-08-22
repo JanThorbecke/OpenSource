@@ -1,0 +1,40 @@
+
+Marchenko demo/twoD: reproduce the figures from the paper, but with a 2D model.
+
+cd /lus/scratch/$USER/OpenSource/marchenko/demo/twoD
+
+# Copy pre-computed shots
+cp -rp /lus/scratch/jan/OpenSource/marchenko/demo/twoD/shots .
+cp /lus/scratch/$USER/OpenSource/marchenko/demo/WS15/job.pbs .
+
+Interactively run a progam to create the numerical model used to compute the reference reults.
+
+./model.scr
+
+When that is completed continue by adapting job.pbs to 
+
+Compute the intial focusing operator placed at a depth of 1100 m by running 
+
+initialFocus.scr
+
+To compare the Green's function computed by marchenko generate the reference output
+
+adapt job.pbs to run referenceShot.scr
+
+run the marchenko program interactively (no need to submit job to queue);
+ 
+./marchenko.scr
+
+Compare the Green's function computed by marchenko with the reference (adapt job.pbs to run referenceShot.scr)
+
+The script eps.scr generates .eps and .png files that can be copied back to your local laptop for display.
+
+You can experiment with 
+-amplitude of R: scale with a constant ampltiude 
+-investigate the wavelet that is used to model R
+-number of iterations, 
+-intial focusing position, 
+-investigate at intermediate results (see ../oneD/marchenkoIter.scr as an example).
+
+
+

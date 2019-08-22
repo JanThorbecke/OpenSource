@@ -35,7 +35,7 @@ suwind key=gx min=-2250000 max=2250000 < $file | \
 #fconv file_in1=iniFocus_rp.su file_in2=shot0.su file_out=GdRconv.su
 
 #mute to get pslinepos.asci files used in plotting only
-fmute file_shot=iniFocus_rp.su file_out=nep.su above=0 shift=8 verbose=1 check=1 hw=4
+fmute3D file_shot=iniFocus_rp.su file_out=nep.su above=0 shift=8 verbose=1 check=1 hw=4
 
 #set same clip factor for iteration updates
 file=iter_001.su
