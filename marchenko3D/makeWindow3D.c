@@ -73,46 +73,49 @@ void makeWindow3D(char *file_ray, char *file_amp, char *file_wav, float dt, floa
 
     /* Defining mute window using raytimes */
     vmess("Using raytime for mutewindow");
-    hdrs_mute = (segy *) calloc(Nfoc,sizeof(segy));
+    hdrs_mute = (segy *) calloc(Nfoc*ny,sizeof(segy));
     fp = fopen( file_ray, "r" );
     if ( fp == NULL ) {
         perror("Error opening file containing ray");
     }
     fclose(fp);
-    readSnapData3D(file_ray, timeval, hdrs_mute, Nfoc, 1, 1, nx, 0, 1, 0, 1, 0, nx);
-    // for (is=0; is<Nfoc; is++) {
-    //     readData3D(fp, &timeval[is*nx*ny], &hdrs_mute[is], nx);
-    // }
+    readSnapData3D(file_ray, timeval, hdrs_mute, Nfoc, 1, ny, nx, 0, 1, 0, ny, 0, nx);
+    
+    /* Set the scaling for gy */
+    if (hdrs_mute[0].scalel < 0) {
+        scl = 1.0/((float)(labs(hdrs_mute[0].scalel)));
+    }
+    else if (hdrs_mute[0].scalel > 0) {
+        scl = ((float)hdrs_mute[0].scalel);
+    }
+    else {
+        scl = 1.0;
+    }
 
     /*Check whether the amplitude is also used*/
     if (file_amp != NULL) {
         vmess("Using ray-amplitudes");
-        hdrs_amp = (segy *) calloc(Nfoc,sizeof(segy));
+        hdrs_amp = (segy *) calloc(Nfoc*ny,sizeof(segy));
         fp = fopen( file_amp, "r" );
         if ( fp == NULL ) {
             perror("Error opening file containing ray-amplitude");
         }
         fclose(fp);
-        readSnapData3D(file_amp, amp, hdrs_amp, Nfoc, 1, 1, nx, 0, 1, 0, 1, 0, nx);
-        // for (is=0; is<Nfoc; is++) {
-        //     readData3D(fp, &amp[is*nx*ny], &hdrs_amp[is], nx);
-        // }
+        readSnapData3D(file_amp, amp, hdrs_amp, Nfoc, 1, ny, nx, 0, 1, 0, ny, 0, nx);
     }
 
     /*Define source and receiver locations from the raytime*/
     for (is=0; is<Nfoc; is++) {
         for (iy=0; iy<ny; iy++) {
             for (ix=0; ix<nx; ix++) {
-                xrcv[is*nx*ny+iy*nx+ix] = (hdrs_mute[is].f1 + hdrs_mute[is].d1*((float)ix));
-                yrcv[is*nx*ny+iy*nx+ix] = hdrs_mute[is].gy;
+                xrcv[is*nx*ny+iy*nx+ix] = (hdrs_mute[is*ny].f1 + hdrs_mute[is*ny].d1*((float)ix));
+                yrcv[is*nx*ny+iy*nx+ix] = ((float)hdrs_mute[is*ny].gy)*scl;
             }
         }
-        xnx[is]=hdrs_mute[is].ns;
-        if (hdrs_mute[is].scalco < 0) scl=-1.0/hdrs_mute[is].scalco;
-        else scl=hdrs_mute[is].scalco;
-        xsrc[is] = hdrs_mute[is].sx*scl;
-        ysrc[is] = hdrs_mute[is].sy*scl;
-        zsrc[is] = hdrs_mute[is].sdepth*scl;
+        xnx[is]=hdrs_mute[is*ny].ns;
+        xsrc[is] = ((float)hdrs_mute[is*ny].sx)*scl;
+        ysrc[is] = ((float)hdrs_mute[is*ny].sy)*scl;
+        zsrc[is] = ((float)hdrs_mute[is*ny].sdepth)*scl;
     }
 
 
@@ -125,8 +128,8 @@ void makeWindow3D(char *file_ray, char *file_amp, char *file_wav, float dt, floa
                 if (file_wav!=NULL) { /*Apply the wavelet to create a first arrival*/
                     if (file_amp != NULL) {
                         for (ig=0; ig<nfreq; ig++) {
-                            cmute[ig].r = (dt/sqrtf((float)ntfft))*(cwav[ig].r*cos(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0)-cwav[ig].i*sin(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0))/(amp[j*ny*nx+l*nx+i]*amp[j*ny*nx+l*nx+i]);
-                            cmute[ig].i = (dt/sqrtf((float)ntfft))*(cwav[ig].i*cos(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0)+cwav[ig].r*sin(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0))/(amp[j*ny*nx+l*nx+i]*amp[j*ny*nx+l*nx+i]);
+                            cmute[ig].r = (dt/sqrtf((float)ntfft))*(cwav[ig].r*cos(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0)-cwav[ig].i*sin(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0))/(amp[j*ny*nx+l*nx+i]);
+                            cmute[ig].i = (dt/sqrtf((float)ntfft))*(cwav[ig].i*cos(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0)+cwav[ig].r*sin(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0))/(amp[j*ny*nx+l*nx+i]);
                         }
                     }
                     else { /*Use the raytime only to determine the mutewindow*/
@@ -146,7 +149,8 @@ void makeWindow3D(char *file_ray, char *file_amp, char *file_wav, float dt, floa
             }
         }
     }
-
+    free(timeval); free(hdrs_mute);
+    if (file_amp!=NULL) free(amp); free(hdrs_amp);
 
 	return;
 }

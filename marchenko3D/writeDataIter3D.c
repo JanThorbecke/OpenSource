@@ -20,7 +20,7 @@ long writeDataIter3D(char *file_iter, float *data, segy *hdrs, long n1, long n2,
 {
 	FILE *fp_iter;
 	size_t nwrite;
-	int i, l, j, ret, tracf, size, ix;
+	int i, l, j, k, iy, ret, tracf, size, ix;
     char number[16], filename[1024];
 	float *trace;
 

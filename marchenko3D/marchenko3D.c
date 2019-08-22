@@ -73,7 +73,8 @@ long writeDataIter3D(char *file_iter, float *data, segy *hdrs, long n1, long n2,
 
 void imaging3D(float *Image, float *Gmin, float *f1plus, long nx, long ny, long nt, float dx, float dy, float dt, long Nfoc, long verbose);
 
-void homogeneousg3D(float *HomG, float *green, float *f2p, float *zsyn, long nx, long ny, long nt, float dx, float dy, float dt, long Nfoc, long verbose);
+void homogeneousg3D(float *HomG, float *green, float *f2p, float *zsyn, long nx, long ny, long nt, float dx, float dy,
+    float dt, long Nfoc, long *sx, long *sy, long *sz, long verbose);
 
 long linearsearch(long *array, size_t N, long value);
 
@@ -156,7 +157,7 @@ int main (int argc, char **argv)
     FILE    *fp_out, *fp_f1plus, *fp_f1min, *fp_imag, *fp_homg;
     FILE    *fp_gmin, *fp_gplus, *fp_f2, *fp_pmin, *fp_amp;
     long    i, j, l, k, ret, nshots, nxshot, nyshot, Nfoc, nt, nx, ny, nts, nxs, nys, ngath;
-    long    size, n1, n2, n3, ntap, tap, dxi, dyi, ntraces, pad;
+    long    size, n1, n2, n3, ntap, tap, dxi, dyi, ntraces, pad, *sx, *sy, *sz;
     long    nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     long    reci, countmin, mode, n2out, n3out, verbose, ntfft;
     long    iter, niter, tracf, *muteW, *tsynW, ampest, plane_wave;
@@ -250,7 +251,6 @@ int main (int argc, char **argv)
         dys  = d3; 
         fxsb = f2;
         fysb = f3;
-        vmess("nxs:%li dxs:%.3f",nxs,dxs);
     }
     else {
         ret = getFileInfo3D(file_tinv, &n1, &n2, &n3, &ngath, &d1, &d2, &d3, &f1, &f2, &f3, &scl, &ntraces);
@@ -535,6 +535,7 @@ int main (int argc, char **argv)
         if (file_iter != NULL)  vmess("Iterations output file         = %s ", file_iter);
     }
 
+
 /*================ initializations ================*/
 
     if (reci) { 
@@ -732,7 +733,6 @@ int main (int argc, char **argv)
 
     free(Ni);
     free(Nig);
-    if (ampest < 1) free(G_d);
 
     /* compute full Green's function G = int R * f2(t) + f2(-t) = Pplus + Pmin */
     for (l = 0; l < Nfoc; l++) {
@@ -926,9 +926,14 @@ int main (int argc, char **argv)
     /* Determine homogeneous Green's function*/
     if (file_homg!=NULL) {
 
+        // Allocate the headers for the source info
+        sx = (long *)calloc(nxs*nys,sizeof(long));
+        sy = (long *)calloc(nxs*nys,sizeof(long));
+        sz = (long *)calloc(nxs*nys,sizeof(long));
+
         // Determine Image
         HomG = (float *)calloc(Nfoc*ntfft,sizeof(float));
-        homogeneousg3D(HomG, green, f2p, zsyn, nxs, nys, ntfft, dxs, dys, dt, Nfoc, verbose);
+        homogeneousg3D(HomG, green, f2p, zsyn, nxs, nys, ntfft, dxs, dys, dt, Nfoc, sx, sy, sz, verbose);
 
         fp_homg = fopen(file_homg, "w+");
         if (fp_homg==NULL) verr("error on creating output file %s", file_homg);
@@ -945,11 +950,12 @@ int main (int argc, char **argv)
                     hdrs_Nfoc[l*nxim+j].trid    = 2;
                     hdrs_Nfoc[l*nxim+j].scalco  = -1000;
                     hdrs_Nfoc[l*nxim+j].scalel  = -1000;
-                    hdrs_Nfoc[l*nxim+j].sx      = xsyn[l*nxim+j]*(1e3);
-                    hdrs_Nfoc[l*nxim+j].sy      = ysyn[l*nxim+j]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].sx      = sx[l*nxim+j];
+                    hdrs_Nfoc[l*nxim+j].sy      = sy[l*nxim+j];
                     hdrs_Nfoc[l*nxim+j].gx      = xsyn[l*nxim+j]*(1e3);
                     hdrs_Nfoc[l*nxim+j].gy      = ysyn[l*nxim+j]*(1e3);
-                    hdrs_Nfoc[l*nxim+j].sdepth  = zsyn[l*nxim+j]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].sdepth  = sz[l*nxim+j];
+                    hdrs_Nfoc[l*nxim+j].selev   = -sz[l*nxim+j];
                     hdrs_Nfoc[l*nxim+j].f1      = zsyn[0];
                     hdrs_Nfoc[l*nxim+j].f2      = xsyn[0];
                     hdrs_Nfoc[l*nxim+j].d1      = dzim;
@@ -1031,8 +1037,8 @@ int main (int argc, char **argv)
                 hdrs_out[k*n2+i].sy     = NINT(ysyn[l]*1000);
                 hdrs_out[k*n2+i].offset = (long)NINT((f2+i*d2) - xsyn[l]);
                 hdrs_out[k*n2+i].tracf  = tracf++;
-                hdrs_out[k*n2+i].selev  = NINT(zsyn[l]*1000);
-                hdrs_out[k*n2+i].sdepth = NINT(-zsyn[l]*1000);
+                hdrs_out[k*n2+i].selev  = NINT(-zsyn[l]*1000);
+                hdrs_out[k*n2+i].sdepth = NINT(zsyn[l]*1000);
                 hdrs_out[k*n2+i].f1     = f1;
             }
         }
