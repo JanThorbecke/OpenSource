@@ -68,7 +68,7 @@ void synthesis3D(complex *Refl, complex *Fop, float *Top, float *iRN, long nx, l
     float dx, float dy, long ntfft, long nw, long nw_low, long nw_high,  long mode, long reci, long nshots, long nxsrc, long nysrc, 
     long *ixpos, long *iypos, long npos, double *tfft, long *isxcount, long *reci_xsrc,  long *reci_xrcv, float *ixmask, long verbose);
 
-long writeDataIter3D(char *file_iter, float *data, segy *hdrs, long n1, long n2, long n3, long Nfoc, float *xsyn, float *ysyn, float *zsyn, long *ixpos, int *iypos, long npos, long t0shift, long iter);
+long writeDataIter3D(char *file_iter, float *data, segy *hdrs, long n1, long n2, long n3, long Nfoc, float *xsyn, float *ysyn, float *zsyn, long *ixpos, long *iypos, long npos, long t0shift, long iter);
 
 void imaging3D(float *Image, float *Gmin, float *f1plus, long nx, long ny, long nt, float dx, float dy, float dt, long Nfoc, long verbose);
 
@@ -159,7 +159,7 @@ int main (int argc, char **argv)
     long    size, n1, n2, n3, ntap, tap, dxi, dyi, ntraces, pad, *sx, *sy, *sz;
     long    nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     long    reci, countmin, mode, n2out, n3out, verbose, ntfft;
-    long    iter, niter, tracf, *muteW, *tsynW, ampest, plane_wave;
+    long    iter, niter, tracf, *muteW, *tsynW, ampest, plane_wave, t0shift;
     long    hw, smooth, above, shift, *ixpos, *iypos, npos, ix, iy, nzim, nxim, nyim;
     long    nshots_r, *isxcount, *reci_xsrc, *reci_xrcv;
     float   fmin, fmax, *tapersh, *tapersy, fxf, fyf, dxf, dyf, *xsrc, *ysrc, *xrcv, *yrcv, *zsyn, *zsrc, *xrcvsyn, *yrcvsyn;
@@ -618,6 +618,7 @@ int main (int argc, char **argv)
             hdrs_out[i].gy     = NINT(1000*(f3+iy*d3));
             hdrs_out[i].scalel = -1000;
             hdrs_out[i].tracl  = i+1;
+	    }
 	}
 
     t1    = wallclock_time();
@@ -658,6 +659,7 @@ int main (int argc, char **argv)
         tsyn +=  t3 - t2;
 
         if (file_iter != NULL) {
+            t0shift=1;
             writeDataIter3D(file_iter, iRN, hdrs_iter, ntfft, nxs, nys, Nfoc, xsyn, ysyn, zsyn, ixpos, iypos, npos, t0shift, iter);
         }
 
