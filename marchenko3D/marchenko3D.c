@@ -605,19 +605,19 @@ int main (int argc, char **argv)
         for (i = 0; i < npos; i++) {
             ix = ixpos[i]; 
             iy = iypos[i]; 
-            hdrs_out[i].ns     = n1;
-            hdrs_out[i].trid   = 1;
-            hdrs_out[i].dt     = dt*1000000;
-            hdrs_out[i].f1     = f1;
-            hdrs_out[i].f2     = f2;
-            hdrs_out[i].d1     = d1;
-            hdrs_out[i].d2     = d2;
-            hdrs_out[i].trwf   = npos;
-            hdrs_out[i].scalco = -1000;
-            hdrs_out[i].gx     = NINT(1000*(f2+ix*d2));
-            hdrs_out[i].gy     = NINT(1000*(f3+iy*d3));
-            hdrs_out[i].scalel = -1000;
-            hdrs_out[i].tracl  = i+1;
+            hdrs_iter[i].ns     = n1;
+            hdrs_iter[i].trid   = 1;
+            hdrs_iter[i].dt     = dt*1000000;
+            hdrs_iter[i].f1     = f1;
+            hdrs_iter[i].f2     = f2;
+            hdrs_iter[i].d1     = d1;
+            hdrs_iter[i].d2     = d2;
+            hdrs_iter[i].trwf   = npos;
+            hdrs_iter[i].scalco = -1000;
+            hdrs_iter[i].gx     = NINT(1000*(f2+ix*d2));
+            hdrs_iter[i].gy     = NINT(1000*(f3+iy*d3));
+            hdrs_iter[i].scalel = -1000;
+            hdrs_iter[i].tracl  = i+1;
 	    }
 	}
 
