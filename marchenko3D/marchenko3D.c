@@ -934,12 +934,12 @@ int main (int argc, char **argv)
             hdrs_Nfoc[0].sx      = xsyn[0]*(1e3);
             hdrs_Nfoc[0].sy      = ysyn[0]*(1e3);
             hdrs_Nfoc[0].sdepth  = zsyn[0]*(1e3);
-            hdrs_Nfoc[0].f1      = zsyn[0];
-            hdrs_Nfoc[0].f2      = xsyn[0];
-            hdrs_Nfoc[0].ungpow  = xsyn[0];
-            hdrs_Nfoc[0].d1      = dzim;
-            hdrs_Nfoc[0].d2      = dxs;
-            hdrs_Nfoc[0].unscale = dys;
+            hdrs_Nfoc[0].f1      = roundf(zsyn[0]*100.0)/100.0;
+            hdrs_Nfoc[0].f2      = roundf(xsyn[0]*100.0)/100.0;
+            hdrs_Nfoc[0].ungpow  = roundf(xsyn[0]*100.0)/100.0;
+            hdrs_Nfoc[0].d1      = roundf(dzim*100.0)/100.0;
+            hdrs_Nfoc[0].d2      = roundf(dxs*100.0)/100.0;
+            hdrs_Nfoc[0].unscale = roundf(dys*100.0)/100.0;
             hdrs_Nfoc[0].dt      = (int)(dt*(1E6));
 
             if (fp_imag==NULL) verr("error on creating output file %s", file_imag);
@@ -998,9 +998,9 @@ int main (int argc, char **argv)
         if (fp_homg==NULL) verr("error on creating output file %s", file_homg);
 
         if (compact > 0) {
-            hdrs_Nfoc = (segy *)calloc(nxim*nyim,sizeof(segy));
+            hdrs_Nfoc = (segy *)calloc(1,sizeof(segy));
 
-            hdrs_Nfoc[0].ns      = nzim*nyim*nxim;
+            hdrs_Nfoc[0].ns      = nzim*nyim*nxim*ntfft;
             hdrs_Nfoc[0].fldr    = ntfft;
             hdrs_Nfoc[0].tracr   = nzim;
             hdrs_Nfoc[0].tracl   = nyim;
