@@ -27,6 +27,8 @@ double wallclock_time(void);
 long writeData3D(FILE *fp, float *data, segy *hdrs, long n1, long n2);
 long readSnapData3D(char *filename, float *data, segy *hdrs, long nsnaps, 
     long nx, long ny, long nz, long sx, long ex, long sy, long ey, long sz, long ez);
+void readCompact(char *filename, long *nx, long *ny, long *nz, long *nt, float *dx, float *dy, float *dz, long *dt,
+	float *fx, float *fy, float *fz, long *sx, long *sy, long *sz, float *scl);
 
 char *sdoc[] = {
 " ",
@@ -41,6 +43,7 @@ char *sdoc[] = {
 " ",
 " Optional parameters: ",
 " ",
+"   compact=0 ................ Save format of input data (0=normal), (1=transpose), (2=compact)",
 "   file_out= ................ Filename of the output",
 "   numb= .................... integer number of first file",
 "   dnumb= ................... integer number of increment in files",
@@ -51,10 +54,10 @@ int main (int argc, char **argv)
 {
 	FILE	*fp_in, *fp_out;
 	char	*fin, *fout, *ptr, fbegin[100], fend[100], fins[100], fin2[100], numb1[100];
-	float	*indata, *outdata, dt;
+	float	*indata, *outdata;
 	float	dz,  dy,  dx,  z0,  y0,  x0,  scl;
-	long	nt, nz, ny, nx, ntr, ix, iy, it, is, iz, pos, file_det, nzs;
-	long	numb, dnumb, ret, nzmax, transpose, verbose, nxyz, sx, sy, sz;
+	long	nt, nz, ny, nx, ntr, ix, iy, it, is, iz, pos, file_det, nzs, dt;
+	long	numb, dnumb, ret, nzmax, compact, verbose, nxyz, sx, sy, sz;
 	segy	*hdr_in, *hdr_out;
 
 	initargs(argc, argv);
@@ -69,7 +72,7 @@ int main (int argc, char **argv)
 	if (!getparlong("dnumb", &dnumb)) dnumb=0;
 	if (!getparlong("nzmax", &nzmax)) nzmax=0;
 	if (!getparlong("verbose", &verbose)) verbose=0;
-	if (!getparlong("transpose", &transpose)) transpose=0;
+	if (!getparlong("compact", &compact)) compact=0;
 	if (fin == NULL) verr("Incorrect downgoing input");
 
     /*----------------------------------------------------------------------------*
@@ -98,6 +101,8 @@ int main (int argc, char **argv)
             }
             else if (nzs == 1) { // There is only a single file
                 vmess("1 file detected");
+                file_det = 0;
+                break;
             }
             else { // Stop after the final file has been detected
                 vmess("%li files detected",nzs);
@@ -121,11 +126,17 @@ int main (int argc, char **argv)
 	sprintf(fins,"%li",numb);
     sprintf(fin2,"%s%s%s",fbegin,fins,fend);
 	nt = 1;
-    if (transpose==0) {
+    if (compact==0) {
+		if (verbose) vmess("Save fomat is normal");
 		getFileInfo3D(fin2, &nz, &nx, &ny, &nt, &dz, &dx, &dy, &z0, &x0, &y0, &scl, &ntr);
 	}
-	else {
+	else if (compact==1) {
+		if (verbose) vmess("Save fomat is transpose");
 		getFileInfo3D(fin2, &nx, &nz, &ny, &nt, &dz, &dx, &dy, &z0, &x0, &y0, &scl, &ntr);
+	}
+	else if (compact==2) {
+		if (verbose) vmess("Save fomat is compact");
+		readCompact(fin2, &nx, &ny, &nz, &nt, &dx, &dy, &dz, &dt, &x0, &y0, &z0, &sx, &sy, &sz, &scl);
 	}
 
 	nxyz = nx*ny*nzs*nz;
@@ -143,8 +154,13 @@ int main (int argc, char **argv)
     *----------------------------------------------------------------------------*/
 	hdr_out     = (segy *)calloc(nx*ny,sizeof(segy));	
 	outdata		= (float *)calloc(nxyz*nt,sizeof(float));
-	hdr_in      = (segy *)calloc(nx*ny*nt,sizeof(segy));
     indata    	= (float *)calloc(nx*ny*nz*nt,sizeof(float));
+	if (compact != 2) {	
+		hdr_in      = (segy *)calloc(nx*ny*nt,sizeof(segy));
+	}
+	else {
+		hdr_in      = (segy *)calloc(1,sizeof(segy));
+	}
 
 	/*----------------------------------------------------------------------------*
     *   Combine the separate files
@@ -158,7 +174,7 @@ int main (int argc, char **argv)
 			verr("Error opening file");
 		}
 		fclose(fp_in);
-		if (transpose==0) {
+		if (compact==0) {
 			readSnapData3D(fin2, indata, hdr_in, nt, nx, ny, nz, 0, nx, 0, ny, 0, nz);
 			for (it = 0; it < nt; it++) {
 				for (iy = 0; iy < ny; iy++) {
@@ -170,7 +186,7 @@ int main (int argc, char **argv)
 				}
 			}
 		}
-		else {
+		else if (compact==1) {
 			readSnapData3D(fin2, indata, hdr_in, nt, nz, ny, nx, 0, nz, 0, ny, 0, nx);
 			for (it = 0; it < nt; it++) {
 				for (iy = 0; iy < ny; iy++) {
@@ -182,12 +198,26 @@ int main (int argc, char **argv)
 				}
 			}
 		}
+		else if (compact==2) {
+			readSnapData3D(fin2, indata, hdr_in, 1, 1, 1, nx*ny*nz*nt, 0, 1, 0, 1, 0, nx*ny*nz*nt);
+			for (it = 0; it < nt; it++) {
+				for (iy = 0; iy < ny; iy++) {
+					for (ix = 0; ix < nx; ix++) {
+						for (iz = 0; iz < nz; iz++) {
+							outdata[it*ny*nx*nz*nzs+iy*nx*nz*nzs+ix*nz*nzs+iz+is] = indata[it*ny*nx*nz+iy*nx*nz+ix*nz+iz];
+						}
+					}
+				}
+			}
+		}
 	}
 	free(indata);
-	sx = hdr_in[0].sx;
-	sy = hdr_in[0].sy;
-	sz = hdr_in[0].sdepth;
-	dt = hdr_in[0].dt;
+	if (compact != 2) {
+		sx = hdr_in[0].sx;
+		sy = hdr_in[0].sy;
+		sz = hdr_in[0].sdepth;
+		dt = hdr_in[0].dt;
+	}
 	free(hdr_in);
 
 	/*----------------------------------------------------------------------------*
@@ -228,4 +258,47 @@ int main (int argc, char **argv)
 	free(outdata); free(hdr_out);
 	vmess("Wrote data");
 	return 0;
+}
+
+void readCompact(char *filename, long *nx, long *ny, long *nz, long *nt, float *dx, float *dy, float *dz, long *dt,
+	float *fx, float *fy, float *fz, long *sx, long *sy, long *sz, float *scl) 
+{
+	FILE *fp;
+	segy hdr;
+	size_t nread;
+
+	fp = fopen( filename, "r" );
+	if ( fp == NULL ) verr("Could not open %s",filename);
+	nread = fread(&hdr, 1, TRCBYTES, fp);
+	if (nread != TRCBYTES) verr("Could not read the header of the input file");
+
+	*nx	= hdr.tracf;
+	*ny	= hdr.tracl;
+	*nz	= hdr.tracr;
+	*nt = hdr.fldr;
+
+	*dx	= hdr.d2;
+	*dy	= hdr.unscale;
+	*dz	= hdr.d1;
+	*dt	= hdr.dt;
+
+	*fx	= hdr.f2;
+	*fy	= hdr.ungpow;
+	*fz	= hdr.f1;
+
+	*sx = hdr.sx;
+	*sy = hdr.sy;
+	*sz = hdr.sdepth;
+
+	if (hdr.scalco > 0) {
+		*scl = ((float)hdr.scalco);
+	}
+	else if (hdr.scalco < 0) {
+		*scl = (-1.0/((float)hdr.scalco));
+	}
+	else {
+		*scl = 1.0;
+	}
+
+	return;
 }
