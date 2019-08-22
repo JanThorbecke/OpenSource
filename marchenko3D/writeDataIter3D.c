@@ -20,7 +20,7 @@ long writeDataIter3D(char *file_iter, float *data, segy *hdrs, long n1, long n2,
 {
 	FILE *fp_iter;
 	size_t nwrite;
-	int i, l, j, ip, ret, tracf, size, ix, iy;
+	int i, l, j, ret, tracf, size, ix, iy;
     char number[16], filename[1024];
 	float *trace;
 
@@ -31,10 +31,11 @@ long writeDataIter3D(char *file_iter, float *data, segy *hdrs, long n1, long n2,
 	fp_iter = fopen(filename, "w+");
 	if (fp_iter==NULL) verr("error on creating output file %s", filename);
 	size=n1*n2*n3;
+	tracf=1;
 	for (l = 0; l < Nfoc; l++) {
         for (i = 0; i < npos; i++) {
-            ix = ixpos[ip]; /* select proper position */
-            iy = iypos[ip]; 
+            ix = ixpos[i]; /* select proper position */
+            iy = iypos[i]; 
             hdrs[i].fldr   = l+1; 
             hdrs[i].sx     = NINT(xsyn[l]*1000);
             hdrs[i].sy     = NINT(ysyn[l]*1000);
@@ -61,7 +62,6 @@ long writeDataIter3D(char *file_iter, float *data, segy *hdrs, long n1, long n2,
             assert(nwrite == TRCBYTES);
             nwrite = fwrite(trace, sizeof(float), n1, fp_iter);
             assert (nwrite == n1);
-            ip++;
         }
 	}
 	ret = fclose(fp_iter);

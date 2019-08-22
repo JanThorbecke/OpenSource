@@ -78,13 +78,13 @@ void src3D(float *time0, float *slow0, long nz, long nx, long ny, float h, float
 					  dvz = (1/s0(xx,yy,zz)-1/s0(xs,ys,zs))/(zz-zs);
 					dv = fabs(dvz);
 					if (dv == 0.)  {
-					  t0(xx,yy,zz) = s0(xs,ys,zs)*DIST(fxs,fys,fzs,xx,yy,zz);
+					  t0(xx,yy,zz) = s0(xs,ys,zs)*DIST(xs,ys,zs,xx,yy,zz);
 					  continue;
 					}
 					rzc = -v0/dv;
-					rx = h*(xx - fxs);
-					ry = h*(yy - fys);
-					rz = h*(zz - fzs);
+					rx = h*(xx - xs);
+					ry = h*(yy - ys);
+					rz = h*(zz - zs);
 					rz1 = rz*dvz/dv;
 					rxy1 = sqrt(rx*rx+ry*ry+rz*rz-rz1*rz1);
 					if (rxy1<=h/1.e6)
