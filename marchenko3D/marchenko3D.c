@@ -1008,9 +1008,9 @@ int main (int argc, char **argv)
             hdrs_Nfoc[0].trid    = 2;
             hdrs_Nfoc[0].scalco  = -1000;
             hdrs_Nfoc[0].scalel  = -1000;
-            hdrs_Nfoc[0].sx      = xsyn[0]*(1e3);
-            hdrs_Nfoc[0].sy      = ysyn[0]*(1e3);
-            hdrs_Nfoc[0].sdepth  = zsyn[0]*(1e3);
+            hdrs_Nfoc[0].sx      = sx[0];
+            hdrs_Nfoc[0].sy      = sy[0];
+            hdrs_Nfoc[0].sdepth  = sz[0];
             hdrs_Nfoc[0].f1      = zsyn[0];
             hdrs_Nfoc[0].f2      = xsyn[0];
             hdrs_Nfoc[0].ungpow  = xsyn[0];
@@ -1044,7 +1044,7 @@ int main (int argc, char **argv)
                         hdrs_Nfoc[l*nxim+j].f2      = xsyn[0];
                         hdrs_Nfoc[l*nxim+j].d1      = dzim;
                         hdrs_Nfoc[l*nxim+j].d2      = dxs;
-                        hdrs_Nfoc[l*nxim+j].dt      = (int)(hdrs_Nfoc[l*nxim+j].d1*(1E6));
+                        hdrs_Nfoc[l*nxim+j].dt      = (int)(dt*(1E6));
                         hdrs_Nfoc[l*nxim+j].trwf    = nxim*nyim;
                         hdrs_Nfoc[l*nxim+j].ntr     = nxim*nyim;
                     }
