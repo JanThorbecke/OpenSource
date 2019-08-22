@@ -68,8 +68,7 @@ void synthesis3D(complex *Refl, complex *Fop, float *Top, float *iRN, long nx, l
     float dx, float dy, long ntfft, long nw, long nw_low, long nw_high,  long mode, long reci, long nshots, long nxsrc, long nysrc, 
     long *ixpos, long *iypos, long npos, double *tfft, long *isxcount, long *reci_xsrc,  long *reci_xrcv, float *ixmask, long verbose);
 
-
-long writeDataIter3D(char *file_iter, float *data, segy *hdrs, long n1, long n2, long n3, float d2, float f2, long n2out, long Nfoc, float *xsyn, float *ysyn, float *zsyn, long *ixpos, int *iypos, long npos, long iter);
+long writeDataIter3D(char *file_iter, float *data, segy *hdrs, long n1, long n2, long n3, long Nfoc, float *xsyn, float *ysyn, float *zsyn, long *ixpos, int *iypos, long npos, long t0shift, long iter);
 
 void imaging3D(float *Image, float *Gmin, float *f1plus, long nx, long ny, long nt, float dx, float dy, float dt, long Nfoc, long verbose);
 
@@ -174,7 +173,7 @@ int main (int argc, char **argv)
     char    *file_tinv, *file_shot, *file_green, *file_iter, *file_imag, *file_homg, *file_ampscl;
     char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_pmin, *file_inp;
     char    *file_ray, *file_amp, *file_wav;
-    segy    *hdrs_out, *hdrs_Nfoc;
+    segy    *hdrs_out, *hdrs_Nfoc, *hdrs_iter;
 
     initargs(argc, argv);
     requestdoc(1);
@@ -599,6 +598,27 @@ int main (int argc, char **argv)
             hdrs_out[k*n2+i].tracl  = k*n2+i+1;
         }
     }
+    if (file_iter != NULL) {
+        hdrs_iter = (segy *) calloc(npos,sizeof(segy));
+        if (hdrs_iter == NULL) verr("allocation for hdrs_iter");
+        for (i = 0; i < npos; i++) {
+            ix = ixpos[i]; 
+            iy = iypos[i]; 
+            hdrs_out[i].ns     = n1;
+            hdrs_out[i].trid   = 1;
+            hdrs_out[i].dt     = dt*1000000;
+            hdrs_out[i].f1     = f1;
+            hdrs_out[i].f2     = f2;
+            hdrs_out[i].d1     = d1;
+            hdrs_out[i].d2     = d2;
+            hdrs_out[i].trwf   = npos;
+            hdrs_out[i].scalco = -1000;
+            hdrs_out[i].gx     = NINT(1000*(f2+ix*d2));
+            hdrs_out[i].gy     = NINT(1000*(f3+iy*d3));
+            hdrs_out[i].scalel = -1000;
+            hdrs_out[i].tracl  = i+1;
+	}
+
     t1    = wallclock_time();
     tread = t1-t0;
 
@@ -636,11 +656,10 @@ int main (int argc, char **argv)
         t3 = wallclock_time();
         tsyn +=  t3 - t2;
 
-/* ToDo
         if (file_iter != NULL) {
-            writeDataIter3D(file_iter, iRN, hdrs_out, ntfft, nxs, nys, d2, f2, n2out, n3out, Nfoc, xsyn,ysyn,  zsyn, ixpos, npos, iter);
+            writeDataIter3D(file_iter, iRN, hdrs_iter, ntfft, nxs, nys, Nfoc, xsyn, ysyn, zsyn, ixpos, iypos, npos, t0shift, iter);
         }
-*/ 
+
         /* N_k(x,t) = -N_(k-1)(x,-t) */
         /* p0^-(x,t) += iRN = (R * T_d^inv)(t) */
         for (l = 0; l < Nfoc; l++) {
