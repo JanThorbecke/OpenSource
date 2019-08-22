@@ -1,0 +1,93 @@
+#!/bin/bash -x
+#SBATCH -J marchenko_primaries
+#SBATCH --cpus-per-task=40
+#SBATCH --ntasks=1
+#SBATCH --time=2:40:00
+
+#cd $SLURM_SUBMIT_DIR
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+export OMP_NUM_THREADS=20
+
+#shot record to remove internal multiples
+select=451
+
+makewave fp=20 dt=0.004 file_out=wave.su nt=1024 t0=0.0 scale=0 scfft=1
+
+#INITIALISATION of SCHEME
+#original shot record from Reflection matrix
+suwind key=fldr min=$select max=$select < shotsdx5_rp.su > shotsx0.su
+
+#complex-conjugate(time reverse), scale with -1 and convolve with wavelet
+fconv file_in1=shotsx0.su file_in2=wave.su file_out=shotw.su
+basop file_in=shotw.su choice=5 | sugain scale=-1 > DD.su
+
+nts=1024
+itime=300 # select time sample to work on 1.2 seconds
+shift=20
+#mute time nts-ii+shift to compute G_d
+(( itmax = nts-itime+shift ))
+suzero itmax=$itmax < DD.su > G_d.su
+#f1min = -DD(-t) = shotw.su
+cp shotw.su f1min0.su
+
+#first iteration
+cp G_d.su N0.su
+
+#compute R*N0
+fconv file_in1=shotsdx5_rp.su file_in2=N0.su file_out=fconvN1.su verbose=1 fmax=90 
+
+suwind key=fldr min=451 max=451  < fconvN1.su | suximage 
+
+# Ni(t) = -1*RN0(-t)
+sustack < fconvN1.su key=fldr > RN0.su
+basop file_in=RN0.su choice=5 | sugain scale=-1 > N1.su
+
+#apply mute window for samples above nts-ii
+(( itmax = nts-itime+shift ))
+suzero itmax=$itmax < N1.su > N1m.su
+
+
+exit 
+#display
+file=fconvN1.su
+file_base=${file%.su}
+sumax < $file mode=abs outpar=nep
+clipref=`cat nep | awk '{print $1/2}'`
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < $file \
+    label1="time (s)" label2="distance (m)" \
+    n1tic=2 d2=5 x1beg=0 x1end=1.5 d1num=0.4 \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > ${file_base}_flip.eps
+
+
+
+exit;
+
+marchenko_primaries file_shot=shotsdx5_rp.su ishot=$select file_src=wave.su \
+	nshots=601 verbose=1 istart=40 fmax=90 \
+	niter=15 niterskip=600 shift=20 file_rr=pred_rr.su T=0
+
+#for reference original shot record from Reflection matrix
+suwind key=fldr min=$select max=$select < shotsdx5_rp.su > shotsx0.su
+fconv file_in1=shotsx0.su file_in2=wave.su file_out=shotw.su
+
+# for displaying results
+
+(suwind key=offset min=0 max=0 < pred_rr.su ; suwind key=offset min=0 max=0 < shotw.su) | suxgraph &
+
+sudiff shotw.su pred_rr.su > diff.su
+suximage < shotw.su  x1end=2.5 clip=1 title="original shot"&
+suximage < pred_rr.su  x1end=2.5 clip=1 title="shot with multiples removed"&
+suximage < diff.su   x1end=2.5 clip=1 title="removed multiples"&
+
+# tests for explaining primaries method
+
+#mute all events below the first arrival to get the intial focusing field
+fmute file_shot=iniFocus1300_rp.su file_out=p1300plus.su above=-1 shift=-8 verbose=1 check=0 hw=8
+
+#apply the Marchenko algorithm
+marchenko file_shot=shotsdx5_rp.su file_tinv=p1300plus.su nshots=901 verbose=2 \
+    tap=0 niter=8 hw=8 shift=12 smooth=3 \
+    file_green=pgreen.su file_gplus=Gplus0.su file_gmin=Gmin0.su  \
+    file_f1plus=f1plus0.su file_f1min=f1min0.su file_f2=f2.su
+

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+
+#define gridded model for migration
+makemod sizex=10000 sizez=1400 dx=5 dz=2.5 cp0=1800 ro0=1000 \
+        orig=-5000,0 file_base=modelmigr.su verbose=2 \
+        intt=def x=-5000,5000 z=400,400 poly=0 cp=2300 ro=3000 \
+        intt=def x=-5000,5000 z=700,700 poly=0 cp=2000 ro=1100 \
+        intt=def x=-5000,5000 z=1100,1100 poly=0 cp=2500 ro=4000
+
+migr file_vel=modelmigr_cp.su file_shot=f1min_276013.su file_src=f1plus_276014.su file_image=migr276.su conjgs=0
+migr file_vel=modelmigr_cp.su file_shot=f1min_176013.su file_src=f1plus_176014.su file_image=migr176.su conjgs=0
