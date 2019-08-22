@@ -143,6 +143,8 @@ char *sdoc[] = {
 "   file_homg= ............... output file with homogeneous Green's function ",
 "   file_ampscl= ............. output file with estimated amplitudes ",
 "   file_iter= ............... output file with -Ni(-t) for each iteration",
+"   compact=0 ................ Write out homg and imag in compact format",
+"   .......................... WARNING! This write-out cannot be displayed with SU"
 "   verbose=0 ................ silent option; >0 displays info",
 " ",
 " ",
@@ -160,7 +162,7 @@ int main (int argc, char **argv)
     long    size, n1, n2, n3, ntap, tap, dxi, dyi, ntraces, pad, *sx, *sy, *sz;
     long    nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     long    reci, countmin, mode, n2out, n3out, verbose, ntfft;
-    long    iter, niter, tracf, *muteW, *tsynW, ampest, plane_wave;
+    long    iter, niter, tracf, *muteW, *tsynW, ampest, plane_wave, compact;
     long    hw, smooth, above, shift, *ixpos, *iypos, npos, ix, iy, nzim, nxim, nyim;
     long    nshots_r, *isxcount, *reci_xsrc, *reci_xrcv;
     float   fmin, fmax, *tapersh, *tapersy, fxf, fyf, dxf, dyf, *xsrc, *ysrc, *xrcv, *yrcv, *zsyn, *zsrc, *xrcvsyn, *yrcvsyn;
@@ -169,7 +171,7 @@ int main (int argc, char **argv)
     float   *green, *f2p, *pmin, *G_d, dt, dx, dy, dxs, dys, scl, mem;
     float   *f1plus, *f1min, *iRN, *Ni, *Nig, *trace, *Gmin, *Gplus, *HomG;
     float   xmin, xmax, ymin, ymax, scale, tsq, Q, f0, *tmpdata;
-    float   *ixmask, *iymask, *ampscl, *Gd, *Image, dzim, dyim, dxim;
+    float   *ixmask, *iymask, *ampscl, *Gd, *Image, dzim;
     float   grad2rad, p, src_angle, src_velo;
     complex *Refl, *Fop;
     char    *file_tinv, *file_shot, *file_green, *file_iter, *file_imag, *file_homg, *file_ampscl;
@@ -225,6 +227,7 @@ int main (int argc, char **argv)
     if(!getparlong("smooth", &smooth)) smooth = 5;
     if(!getparlong("above", &above)) above = 0;
     if(!getparlong("shift", &shift)) shift=12;
+    if(!getparlong("compact", &compact)) compact=0;
 
     if (!getparlong("plane_wave", &plane_wave)) plane_wave = 0;
     if (!getparfloat("src_angle",&src_angle)) src_angle=0.;
@@ -551,6 +554,12 @@ int main (int argc, char **argv)
         vmess("number of output traces        = x:%li y:%li total:%li", n2out, n3out, n2out*n3out);
         vmess("number of output samples       = %li", ntfft);
         vmess("Size of output data/file       = %.1f MB", mem);
+        if (compact>0) {
+            vmess("Save format for homg and imag  = compact");
+        }
+        else {
+            vmess("Save format for homg and imag  = normal");
+        }
     }
 
 
@@ -887,37 +896,65 @@ int main (int argc, char **argv)
         imaging3D(Image, Gmin, f1plus, nxs, nys, ntfft, dxs, dys, dt, Nfoc, verbose);
         if (file_gmin==NULL) free(Gmin);
 
-        // Set headers
-        hdrs_Nfoc = (segy *)calloc(nxim*nyim,sizeof(segy));
-        for (l=0; l<nyim; l++){
-            for (j=0; j<nxim; j++){
-                hdrs_Nfoc[l*nxim+j].ns      = nzim;
-                hdrs_Nfoc[l*nxim+j].fldr    = 1;
-                hdrs_Nfoc[l*nxim+j].tracl   = 1;
-                hdrs_Nfoc[l*nxim+j].tracf   = l*nxim+j+1;
-                hdrs_Nfoc[l*nxim+j].trid    = 2;
-                hdrs_Nfoc[l*nxim+j].scalco  = -1000;
-                hdrs_Nfoc[l*nxim+j].scalel  = -1000;
-                hdrs_Nfoc[l*nxim+j].sx      = xsyn[l*nxim+j]*(1e3);
-                hdrs_Nfoc[l*nxim+j].sy      = ysyn[l*nxim+j]*(1e3);
-                hdrs_Nfoc[l*nxim+j].gx      = xsyn[l*nxim+j]*(1e3);
-                hdrs_Nfoc[l*nxim+j].gy      = ysyn[l*nxim+j]*(1e3);
-                hdrs_Nfoc[l*nxim+j].sdepth  = zsyn[l*nxim+j]*(1e3);
-                hdrs_Nfoc[l*nxim+j].f1      = zsyn[0];
-                hdrs_Nfoc[l*nxim+j].f2      = xsyn[0];
-                hdrs_Nfoc[l*nxim+j].d1      = dzim;
-                hdrs_Nfoc[l*nxim+j].d2      = dxs;
-                hdrs_Nfoc[l*nxim+j].dt      = (int)(hdrs_Nfoc[l*nxim+j].d1*(1E6));
-                hdrs_Nfoc[l*nxim+j].trwf    = nxim*nyim;
-                hdrs_Nfoc[l*nxim+j].ntr     = nxim*nyim;
+        // Set headers and write out image
+        fp_imag = fopen(file_imag, "w+");
+
+        if (compact > 0) {
+            hdrs_Nfoc = (segy *)calloc(1,sizeof(segy));
+
+            hdrs_Nfoc[0].ns      = nzim*nyim*nxim;
+            hdrs_Nfoc[0].fldr    = 1;
+            hdrs_Nfoc[0].tracr   = nzim;
+            hdrs_Nfoc[0].tracl   = nyim;
+            hdrs_Nfoc[0].tracf   = nxim;
+            hdrs_Nfoc[0].trid    = 2;
+            hdrs_Nfoc[0].scalco  = -1000;
+            hdrs_Nfoc[0].scalel  = -1000;
+            hdrs_Nfoc[0].sx      = xsyn[0]*(1e3);
+            hdrs_Nfoc[0].sy      = ysyn[0]*(1e3);
+            hdrs_Nfoc[0].sdepth  = zsyn[0]*(1e3);
+            hdrs_Nfoc[0].f1      = zsyn[0];
+            hdrs_Nfoc[0].f2      = xsyn[0];
+            hdrs_Nfoc[0].ungpow  = xsyn[0];
+            hdrs_Nfoc[0].d1      = dzim;
+            hdrs_Nfoc[0].d2      = dxs;
+            hdrs_Nfoc[0].unscale = dys;
+            hdrs_Nfoc[0].dt      = (int)(dt*(1E6));
+
+            if (fp_imag==NULL) verr("error on creating output file %s", file_imag);
+            ret = writeData3D(fp_imag, (float *)&Image[0], hdrs_Nfoc, nzim*nyim*nxim, 1);
+            if (ret < 0 ) verr("error on writing output file.");
+        }
+        else {
+            hdrs_Nfoc = (segy *)calloc(nxim*nyim,sizeof(segy));
+            for (l=0; l<nyim; l++){
+                for (j=0; j<nxim; j++){
+                    hdrs_Nfoc[l*nxim+j].ns      = nzim;
+                    hdrs_Nfoc[l*nxim+j].fldr    = 1;
+                    hdrs_Nfoc[l*nxim+j].tracl   = 1;
+                    hdrs_Nfoc[l*nxim+j].tracf   = l*nxim+j+1;
+                    hdrs_Nfoc[l*nxim+j].trid    = 2;
+                    hdrs_Nfoc[l*nxim+j].scalco  = -1000;
+                    hdrs_Nfoc[l*nxim+j].scalel  = -1000;
+                    hdrs_Nfoc[l*nxim+j].sx      = xsyn[l*nxim+j]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].sy      = ysyn[l*nxim+j]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].gx      = xsyn[l*nxim+j]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].gy      = ysyn[l*nxim+j]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].sdepth  = zsyn[l*nxim+j]*(1e3);
+                    hdrs_Nfoc[l*nxim+j].f1      = zsyn[0];
+                    hdrs_Nfoc[l*nxim+j].f2      = xsyn[0];
+                    hdrs_Nfoc[l*nxim+j].d1      = dzim;
+                    hdrs_Nfoc[l*nxim+j].d2      = dxs;
+                    hdrs_Nfoc[l*nxim+j].dt      = (int)(dt*(1E6));
+                    hdrs_Nfoc[l*nxim+j].trwf    = nxim*nyim;
+                    hdrs_Nfoc[l*nxim+j].ntr     = nxim*nyim;
+                }
             }
+            if (fp_imag==NULL) verr("error on creating output file %s", file_imag);
+            ret = writeData3D(fp_imag, (float *)&Image[0], hdrs_Nfoc, nzim, nxim*nyim);
+            if (ret < 0 ) verr("error on writing output file.");
         }
 
-        // Write out image
-        fp_imag = fopen(file_imag, "w+");
-        if (fp_imag==NULL) verr("error on creating output file %s", file_imag);
-        ret = writeData3D(fp_imag, (float *)&Image[0], hdrs_Nfoc, nzim, nxim*nyim);
-        if (ret < 0 ) verr("error on writing output file.");
         fclose(fp_imag);
         free(hdrs_Nfoc);
         free(Image);
@@ -931,44 +968,69 @@ int main (int argc, char **argv)
         sy = (long *)calloc(nxs*nys,sizeof(long));
         sz = (long *)calloc(nxs*nys,sizeof(long));
 
-        // Determine Image
+        // Determine Homogeneous Green's function
         HomG = (float *)calloc(Nfoc*ntfft,sizeof(float));
         homogeneousg3D(HomG, green, f2p, zsyn, nxs, nys, ntfft, dxs, dys, dt, Nfoc, sx, sy, sz, verbose);
 
+        // Set headers and write out the data
         fp_homg = fopen(file_homg, "w+");
         if (fp_homg==NULL) verr("error on creating output file %s", file_homg);
-        hdrs_Nfoc = (segy *)calloc(nxim*nyim,sizeof(segy));
 
-        for (i=0; i<ntfft; i++) {
-            // Set headers
-            for (l=0; l<nyim; l++){
-                for (j=0; j<nxim; j++){
-                    hdrs_Nfoc[l*nxim+j].ns      = nzim;
-                    hdrs_Nfoc[l*nxim+j].fldr    = i+1;
-                    hdrs_Nfoc[l*nxim+j].tracl   = 1;
-                    hdrs_Nfoc[l*nxim+j].tracf   = l*nxim+j+1;
-                    hdrs_Nfoc[l*nxim+j].trid    = 2;
-                    hdrs_Nfoc[l*nxim+j].scalco  = -1000;
-                    hdrs_Nfoc[l*nxim+j].scalel  = -1000;
-                    hdrs_Nfoc[l*nxim+j].sx      = sx[l*nxim+j];
-                    hdrs_Nfoc[l*nxim+j].sy      = sy[l*nxim+j];
-                    hdrs_Nfoc[l*nxim+j].gx      = xsyn[l*nxim+j]*(1e3);
-                    hdrs_Nfoc[l*nxim+j].gy      = ysyn[l*nxim+j]*(1e3);
-                    hdrs_Nfoc[l*nxim+j].sdepth  = sz[l*nxim+j];
-                    hdrs_Nfoc[l*nxim+j].selev   = -sz[l*nxim+j];
-                    hdrs_Nfoc[l*nxim+j].f1      = zsyn[0];
-                    hdrs_Nfoc[l*nxim+j].f2      = xsyn[0];
-                    hdrs_Nfoc[l*nxim+j].d1      = dzim;
-                    hdrs_Nfoc[l*nxim+j].d2      = dxs;
-                    hdrs_Nfoc[l*nxim+j].dt      = (int)(hdrs_Nfoc[l*nxim+j].d1*(1E6));
-                    hdrs_Nfoc[l*nxim+j].trwf    = nxim*nyim;
-                    hdrs_Nfoc[l*nxim+j].ntr     = nxim*nyim;
-                }
-            }
+        if (compact > 0) {
+            hdrs_Nfoc = (segy *)calloc(nxim*nyim,sizeof(segy));
 
-            // Write out homogeneous Green's function
-            ret = writeData3D(fp_homg, (float *)&HomG[i*Nfoc], hdrs_Nfoc, nzim, nxim*nyim);
+            hdrs_Nfoc[0].ns      = nzim*nyim*nxim;
+            hdrs_Nfoc[0].fldr    = ntfft;
+            hdrs_Nfoc[0].tracr   = nzim;
+            hdrs_Nfoc[0].tracl   = nyim;
+            hdrs_Nfoc[0].tracf   = nxim;
+            hdrs_Nfoc[0].trid    = 2;
+            hdrs_Nfoc[0].scalco  = -1000;
+            hdrs_Nfoc[0].scalel  = -1000;
+            hdrs_Nfoc[0].sx      = xsyn[0]*(1e3);
+            hdrs_Nfoc[0].sy      = ysyn[0]*(1e3);
+            hdrs_Nfoc[0].sdepth  = zsyn[0]*(1e3);
+            hdrs_Nfoc[0].f1      = zsyn[0];
+            hdrs_Nfoc[0].f2      = xsyn[0];
+            hdrs_Nfoc[0].ungpow  = xsyn[0];
+            hdrs_Nfoc[0].d1      = dzim;
+            hdrs_Nfoc[0].d2      = dxs;
+            hdrs_Nfoc[0].unscale = dys;
+            hdrs_Nfoc[0].dt      = (int)(dt*(1E6));
+
+            ret = writeData3D(fp_homg, (float *)&HomG[0], hdrs_Nfoc, nzim*nyim*nxim*ntfft, 1);
             if (ret < 0 ) verr("error on writing output file.");
+        }
+        else {
+            hdrs_Nfoc = (segy *)calloc(nxim*nyim,sizeof(segy));
+            for (i=0; i<ntfft; i++) {
+                for (l=0; l<nyim; l++){
+                    for (j=0; j<nxim; j++){
+                        hdrs_Nfoc[l*nxim+j].ns      = nzim;
+                        hdrs_Nfoc[l*nxim+j].fldr    = i+1;
+                        hdrs_Nfoc[l*nxim+j].tracl   = 1;
+                        hdrs_Nfoc[l*nxim+j].tracf   = l*nxim+j+1;
+                        hdrs_Nfoc[l*nxim+j].trid    = 2;
+                        hdrs_Nfoc[l*nxim+j].scalco  = -1000;
+                        hdrs_Nfoc[l*nxim+j].scalel  = -1000;
+                        hdrs_Nfoc[l*nxim+j].sx      = sx[l*nxim+j];
+                        hdrs_Nfoc[l*nxim+j].sy      = sy[l*nxim+j];
+                        hdrs_Nfoc[l*nxim+j].gx      = xsyn[l*nxim+j]*(1e3);
+                        hdrs_Nfoc[l*nxim+j].gy      = ysyn[l*nxim+j]*(1e3);
+                        hdrs_Nfoc[l*nxim+j].sdepth  = sz[l*nxim+j];
+                        hdrs_Nfoc[l*nxim+j].selev   = -sz[l*nxim+j];
+                        hdrs_Nfoc[l*nxim+j].f1      = zsyn[0];
+                        hdrs_Nfoc[l*nxim+j].f2      = xsyn[0];
+                        hdrs_Nfoc[l*nxim+j].d1      = dzim;
+                        hdrs_Nfoc[l*nxim+j].d2      = dxs;
+                        hdrs_Nfoc[l*nxim+j].dt      = (int)(hdrs_Nfoc[l*nxim+j].d1*(1E6));
+                        hdrs_Nfoc[l*nxim+j].trwf    = nxim*nyim;
+                        hdrs_Nfoc[l*nxim+j].ntr     = nxim*nyim;
+                    }
+                }
+                ret = writeData3D(fp_homg, (float *)&HomG[i*Nfoc], hdrs_Nfoc, nzim, nxim*nyim);
+                if (ret < 0 ) verr("error on writing output file.");
+            }
         }
 
         fclose(fp_homg);
