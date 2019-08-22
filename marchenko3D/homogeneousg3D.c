@@ -32,7 +32,8 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, fl
 void timeDiff(float *data, long nsam, long nrec, float dt, float fmin, float fmax, long opt);
 void depthDiff(float *data, long nsam, long nrec, float dt, float dx, float fmin, float fmax, float c, long opt);
 
-void homogeneousg3D(float *HomG, float *green, float *f2p, float *zsyn, long nx, long ny, long nt, float dx, float dy, float dt, long Nfoc, long verbose)
+void homogeneousg3D(float *HomG, float *green, float *f2p, float *zsyn, long nx, long ny, long nt, float dx, float dy,
+    float dt, long Nfoc, long *sx, long *sy, long *sz, long verbose)
 {
     char    *file_inp;
     long    i, j, k, l, ret, scheme, count=0, n_source;
@@ -73,6 +74,16 @@ void homogeneousg3D(float *HomG, float *green, float *f2p, float *zsyn, long nx,
     readSnapData3D(file_inp, input, hdr_inp, n_source, nx, ny, nt, 0, nx, 0, ny, 0, nt);
 
     zsrc = labs(hdr_inp[0].selev);
+    for (l = 0; l < nx*ny; l++) {
+        sx[l] = hdr_inp[0].sx;
+        sy[l] = hdr_inp[0].sy;
+        sz[l] = hdr_inp[0].sdepth;
+    }
+    for (l = 0; l < n_source; l++) {
+        sx[l] = hdr_inp[l*nx*ny].sx;
+        sy[l] = hdr_inp[l*nx*ny].sy;
+        sz[l] = hdr_inp[l*nx*ny].sdepth;
+    }
 
 	if (scheme==1) { // Scale the Green's functions if the classical scheme is used
 		if (verbose) vmess("Classical Homogeneous Green's function retrieval");

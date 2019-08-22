@@ -51,10 +51,10 @@ int main (int argc, char **argv)
 {
 	FILE    *fp_in, *fp_out;
 	char    *fin, *fout, *ptr, fbegin[100], fend[100], fins[100], fin2[100], numb1[100];
-	float   *indata, *outdata, fz, fy, fx, shift, dtshift, dt_time;
-	float   dt, dy, dx, t0, x0, y0, sclsxgx, dt2, dy2, dx2, t02, x02, y02, sclsxgx2, dxrcv, dyrcv, dzrcv;
-	long    nshots, nt, ny, nx, ntraces, nshots2, nt2, ny2, nx2, ntraces2, ix, iy, it, is, iz, pos, file_det, nxs, nys, nzs;
-	long    numb, dnumb, ret, nzmax, verbose, nshot_out, ishift, nshift;
+	float   *indata, *outdata, shift, dtshift, dt_time;
+	float   dt, dz, dy, dx, t0, x0, y0, z0, scl, dxrcv, dyrcv, dzrcv;
+	long    nt, nz, ny, nx, nxyz, ntr, ix, iy, it, is, iz, pos, file_det, nxs, nys, nzs;
+	long    numb, dnumb, ret, nzmax, verbose, nt_out, ishift, nshift, *sx, *sy, *sz;
 	segy    *hdr_in, *hdr_bin, *hdr_out;
 
 	initargs(argc, argv);
@@ -123,72 +123,77 @@ int main (int argc, char **argv)
     *----------------------------------------------------------------------------*/
 	sprintf(fins,"%li",numb);
     sprintf(fin2,"%s%s%s",fbegin,fins,fend);
-	nshots = 0;
-    getFileInfo3D(fin2, &nt, &nx, &ny, &nshots, &dt, &dx, &dy, &t0, &x0, &y0, &sclsxgx, &ntraces);
+	nt = 0;
+    getFileInfo3D(fin2, &nz, &nx, &ny, &nt, &dz, &dx, &dy, &z0, &x0, &y0, &scl, &ntr);
 
-	sprintf(fins,"%li",numb+dnumb);
-    sprintf(fin2,"%s%s%s",fbegin,fins,fend);
-    nshots = 0;
-    getFileInfo3D(fin2, &nt2, &nx2, &ny2, &nshots2, &dt2, &dx2, &dy2, &t02, &x02, &y02, &sclsxgx2, &ntraces2);
+	nxyz = nx*ny*nz;
 
-	dxrcv=dx*1000;
-    dyrcv=dy*1000;
-	dzrcv=t02-t0;
-
-	if (nshots==0) nshots=1;
-	nxs = ntraces;
+	if (verbose) {
+		vmess("number of time samples:      %li", nt);
+		vmess("Number of virtual receivers: %li, x: %li,  y: %li,  z: %li",nxyz,nx,ny,nz);
+		vmess("Starting distance for     x: %.3f, y: %.3f, z: %.3f",x0,y0,z0);
+		vmess("Sampling distance for     x: %.3f, y: %.3f, z: %.3f",dx,dy,dz);
+		vmess("Number of virtual sources:   %li",nzs);
+	}
 
 	/*----------------------------------------------------------------------------*
     *   Read in a single file to determine if the header values match
     *   and allocate the data
     *----------------------------------------------------------------------------*/
-	hdr_bin      = (segy *)calloc(nxs,sizeof(segy));
-    indata    	= (float *)calloc(nxs*nt,sizeof(float));
+	hdr_in      = (segy *)calloc(nx*ny,sizeof(segy));
+    indata    	= (float *)calloc(nxyz*nt,sizeof(float));
 
-	readSnapData3D(fin2, &indata[0], &hdr_bin[0], nshots, nxs, ny, nt, 0, nxs, 0, ny, 0, nt);
-	nshots 	= hdr_bin[nxs-1].fldr;
-	nxs		= hdr_bin[nxs-1].tracf;
+	readSnapData3D(fin2, indata, hdr_in, nt, nx, ny, nz, 0, nx, 0, ny, 0, nz);
 
-	nshot_out = nshots/2;
-	free(indata);
+	dt 		= ((float)hdr_in[0].dt)/1E6;
+    sx    	= (long *)calloc(nx*ny,sizeof(float));
+    sy    	= (long *)calloc(nx*ny,sizeof(float));
+    sz    	= (long *)calloc(nx*ny,sizeof(float));
 
-	hdr_out     = (segy *)calloc(nshot_out*nxs,sizeof(segy));	
-	outdata		= (float *)calloc(nshot_out*nxs*nt,sizeof(float));
+	for (ix = 0; ix < nx*ny; ix++) {
+		sx[ix] = hdr_in[0].sx;
+		sy[ix] = hdr_in[0].sy;
+		sz[ix] = hdr_in[0].sdepth;
+	}
 
-    /*----------------------------------------------------------------------------*
-    *   Write out the file info in case of verbose
-    *----------------------------------------------------------------------------*/
-    if (verbose) vmess("Number of virtual receivers: %li, nx=%li, ny=%li, nz=%li",nx*ny*nt,nx,ny,nt);
+	nt_out = nt/2+1;
+	free(indata); free(hdr_in);
+
+	hdr_out     = (segy *)calloc(nx*ny,sizeof(segy));	
+	outdata		= (float *)calloc(nt_out*nxyz,sizeof(float));
 
     /*----------------------------------------------------------------------------*
     *   Parallel loop for reading in and combining the various shots
     *----------------------------------------------------------------------------*/
 #pragma omp parallel default(shared) \
-  private(indata,iz,hdr_in,fins,fin2,fp_in,is,ix,iy,it,ishift)
+  private(indata,hdr_in,fins,fin2,fp_in,is,ix,iy,iz,it,ishift)
 {
-	indata     = (float *)calloc(ntraces*nt,sizeof(float));
-	hdr_in      = (segy *)calloc(ntraces,sizeof(segy));
+	indata     = (float *)calloc(nxyz*nt,sizeof(float));
+	hdr_in      = (segy *)calloc(nx*ny*nt,sizeof(segy));
 
 #pragma omp for
-	for (iz = 0; iz < nzs; iz++) {
-		if (verbose) vmess("Depth:%li out of %li",iz+1,nzs);
-		sprintf(fins,"%li",iz*dnumb+numb);
+	for (is = 0; is < nzs; is++) {
+		if (verbose) vmess("Depth:%li out of %li",is+1,nzs);
+		sprintf(fins,"%li",is*dnumb+numb);
        	sprintf(fin2,"%s%s%s",fbegin,fins,fend);
        	fp_in = fopen(fin2, "r");
 		if (fp_in == NULL) {
 			verr("Error opening file");
 		}
 		fclose(fp_in);
-		readSnapData3D(fin2, &indata[0], &hdr_in[0], nshots, nxs, ny, nt, 0, nxs, 0, ny, 0, nt);
-		if (iz==0) fz=hdr_in[0].f1; fx=hdr_in[0].f2;
-		if (iz==1) dzrcv=hdr_in[0].f1-fz;
+		readSnapData3D(fin2, indata, hdr_in, nt, nx, ny, nz, 0, nx, 0, ny, 0, nz);
+		sx[is] = hdr_in[0].sx;
+		sy[is] = hdr_in[0].sy;
+		sz[is] = hdr_in[0].sdepth;
 		
-		ishift = nshift*iz;
+		ishift = nshift*is;
 		if (verbose) vmess("Shifting %li timesteps for a total of %.3f seconds",ishift,shift+(dtshift*((float)iz)));
-		for (is = ishift; is < nshot_out; is++) {
-			for (ix = 0; ix < nxs; ix++) {
-				for (it = 0; it < nt; it++) {
-					outdata[is*nxs*nt+ix*nt+it] += indata[(is-ishift+(nshots/2))*nxs*nt+ix*nt+it];
+		for (it = ishift; it < nt_out; it++) {
+			for (iy = 0; iy < ny; iy++) {
+				for (ix = 0; ix < nx; ix++) {
+					for (iz = 0; iz < nz; iz++) {
+						outdata[it*nxyz+iy*nx*nz+ix*nz+iz] += indata[(it-ishift+(nt/2))*nxyz+iy*nx*nz+ix*nz+iz];
+					}
 				}
 			}
 		}
@@ -201,26 +206,31 @@ int main (int argc, char **argv)
     *----------------------------------------------------------------------------*/
 	fp_out = fopen(fout, "w+");
 
-	for (is = 0; is < nshot_out; is++) {
-		for (ix = 0; ix < nxs; ix++) {
-           	hdr_out[ix].fldr	= is+1;
-           	hdr_out[ix].tracl	= is*nxs+ix+1;
-           	hdr_out[ix].tracf	= ix+1;
-			hdr_out[ix].scalco  = -1000;
-   			hdr_out[ix].scalel	= -1000;
-			hdr_out[ix].sdepth	= hdr_bin[0].sdepth;
-			hdr_out[ix].trid	= 1;
-			hdr_out[ix].ns		= nt;
-			hdr_out[ix].trwf	= nxs;
-			hdr_out[ix].ntr		= hdr_out[ix].fldr*hdr_out[ix].trwf;
-			hdr_out[ix].f1		= fz;
-			hdr_out[ix].f2		= fx;
-			hdr_out[ix].dt      = dt_time*(1E6);
-			hdr_out[ix].d1      = dzrcv;
-           	hdr_out[ix].d2      = dxrcv;
-			hdr_out[ix].sx      = (int)roundf(fx + (ix*hdr_out[ix].d2));
-			hdr_out[ix].gx      = (int)roundf(fx + (ix*hdr_out[ix].d2));
-           	hdr_out[ix].offset	= (hdr_out[ix].gx - hdr_out[ix].sx)/1000.0;
+	for (it = 0; it < nt_out; it++) {
+		for (iy = 0; iy < ny; iy++) {
+			for (ix = 0; ix < nx; ix++) {
+				hdr_out[iy*nx+ix].fldr		= it+1;
+				hdr_out[iy*nx+ix].tracl		= it*ny*nx+iy*nx+ix+1;
+				hdr_out[iy*nx+ix].tracf		= iy*nx+ix+1;
+				hdr_out[iy*nx+ix].scalco	= -1000;
+				hdr_out[iy*nx+ix].scalel	= -1000;
+				hdr_out[iy*nx+ix].sdepth	= sz[iy*nx+ix];
+				hdr_out[iy*nx+ix].selev		= -sz[iy*nx+ix];
+				hdr_out[iy*nx+ix].trid		= 2;
+				hdr_out[iy*nx+ix].ns		= nz;
+				hdr_out[iy*nx+ix].trwf		= nx*ny;
+				hdr_out[iy*nx+ix].ntr		= hdr_out[iy*nx+ix].fldr*hdr_out[iy*nx+ix].trwf;
+				hdr_out[iy*nx+ix].f1		= z0;
+				hdr_out[iy*nx+ix].f2		= x0;
+				hdr_out[iy*nx+ix].dt		= dt*1E6;
+				hdr_out[iy*nx+ix].d1		= dz;
+				hdr_out[iy*nx+ix].d2		= dx;
+				hdr_out[iy*nx+ix].sx		= sx[iy*nx+ix];
+				hdr_out[iy*nx+ix].gx		= (int)roundf(x0 + (ix*dx))*1000;
+				hdr_out[iy*nx+ix].sy		= sy[iy*nx+ix];
+				hdr_out[iy*nx+ix].gy		= (int)roundf(y0 + (iy*dy))*1000;
+				hdr_out[iy*nx+ix].offset	= (hdr_out[iy*nx+ix].gx - hdr_out[iy*nx+ix].sx)/1000.0;
+			}
 		}
 		ret = writeData3D(fp_out, &outdata[is*nxs*nt], hdr_out, nt, nxs);
 		if (ret < 0 ) verr("error on writing output file.");
