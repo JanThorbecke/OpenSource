@@ -1,0 +1,60 @@
+#!/bin/bash
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+
+dx=2.5
+dt=0.0005
+
+makemod sizex=6000 sizez=2000 dx=$dx dz=$dx cp0=1900  ro0=1200 \
+        orig=-3000,0 file_base=synclDown.su verbose=2 \
+        intt=def x=-3000,500,3000 z=195,195,195 poly=1 cp=1950 ro=3700 \
+        intt=def x=-3000,3000 z=600,600 poly=0 cp=2050 ro=1750 \
+        intt=def x=-3000,3000 z=680,680 poly=0 cp=2150 ro=2220 \
+        intt=def x=-3000,3000 z=780,780 poly=0 cp=2230 ro=1700 \
+        intt=def x=-3000,-2200,-1500,0,1300,2100,3000 z=520,580,680,840,680,600,500 poly=2 cp=2400 ro=2800 \
+
+makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=1
+
+dxshot=10
+ishot=300
+nshots=301
+
+export KMP_AFFINITY=disabled
+export OMP_NUM_THREADS=16
+mkdir -p shots
+mkdir -p jobs
+
+while (( ishot < nshots ))
+do
+
+	(( xsrc = -3000 + ${ishot}*${dxshot} ))
+	echo xsrc=$xsrc
+	file_rcv=iniFocus_z1100_x${xsrc}.su
+	
+fdelmodc \
+	file_cp=synclDown_cp.su ischeme=1 iorder=4 \
+   	file_den=synclDown_ro.su \
+   	file_src=wave.su \
+   	file_rcv=$file_rcv \
+   	src_type=1 \
+	src_orient=1 \
+	src_injectionrate=1 \
+   	rec_type_vz=0 \
+   	rec_type_p=1 \
+   	rec_int_vz=2 \
+	rec_delay=0.1 \
+   	dtrcv=0.004 \
+   	verbose=2 \
+   	tmod=2.100 \
+   	dxrcv=10.0 \
+   	xrcv1=-3000 xrcv2=3000 \
+   	zrcv1=0 zrcv2=0 \
+   	xsrc=$xsrc zsrc=1100 \
+   	ntaper=200 \
+   	left=2 right=2 top=2 bottom=2
+
+	(( ishot = $ishot + 1))
+done
+
+
+

@@ -3,7 +3,7 @@
 export PATH=$HOME/src/OpenSource/bin/:$PATH:
 
 #mute to get pslinepos.asci files used in plotting only
-fmute file_shot=iniFocus_rp.su file_out=nep.su above=0 shift=8 verbose=1 check=1 hw=4
+fmute3D file_shot=iniFocus_rp.su file_out=nep.su above=0 shift=8 verbose=1 check=1 hw=4
 
 #set same clip factor for iteration updates
 file=iter_001.su
