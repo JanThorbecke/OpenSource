@@ -117,7 +117,7 @@ SEISMIC UNIX
 If you want to use the .su files with SU from CWP:
 git clone https://github.com/JohnWStockwellJr/SeisUnix
 
-==> Please make sure that SU is compiled without XDR (in $CWPROOT/Makefile.config make sure that XDRFLAG is NOT set). The SU output files of fdelmodc are all based on local IEEE data.
+==> Please make sure that SU is compiled without XDR (in $CWPROOT/Makefile.config make sure that XDRFLAG is NOT enabled). The SU output files of fdelmodc are all based on local IEEE data.
 
 ZFP
 ---

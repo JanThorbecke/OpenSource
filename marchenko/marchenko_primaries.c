@@ -675,7 +675,7 @@ int main (int argc, char **argv)
 
             t2 = wallclock_time();
             tcopy +=  t2 - t3;
-                if (verbose>2) vmess("*** Iteration %d finished ***", iter);
+            if (verbose>2) vmess("*** Iteration %d finished ***", iter);
     
         } /* end of iterations */
 
