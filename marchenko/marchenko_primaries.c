@@ -36,7 +36,7 @@ int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 int disp_fileinfo(char *file, int n1, int n2, float f1, float f2, float d1, float d2, segy *hdrs);
 double wallclock_time(void);
 
-void synthesis(complex *Refl, complex *Fop, float *Top, float *iRN, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int
+void synthesis(complex *Refl, complex *Fop, float *Top, float *RNi, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int
 Nfoc, float *xrcv, float *xsrc, int *xnx, float fxse, float fxsb, float dxs, float dxsrc, float dx, int ntfft, int
 nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int npos, double *tfft, int *isxcount, int
 *reci_xsrc,  int *reci_xrcv, float *ixmask, int verbose);
@@ -77,7 +77,7 @@ char *sdoc[] = {
 "   iend=nt .................. end sample of iterations for primaries",
 " MUTE-WINDOW ",
 "   shift=20 ................. number of points to account for wavelet (epsilon in papers)",
-"   smooth=5 ................. number of points to smooth mute with cosine window",
+"   smooth=shift/2 ........... number of points to smooth mute with cosine window",
 " REFLECTION RESPONSE CORRECTION ",
 "   tsq=0.0 .................. scale factor n for t^n for true amplitude recovery",
 "   Q=0.0 .......,............ Q correction factor",
@@ -114,7 +114,7 @@ int main (int argc, char **argv)
     double  t0, t1, t2, t3, t4, tsyn, tread, tfft, tcopy, tii;
     float   d1, d2, f1, f2, fxsb, fxse, ft, fx, *xsyn, dxsrc;
     float   *G_d, *DD, *RR, dt, dx, dxs, scl, mem;
-    float   *rtrace, *tmpdata, *f1min, *f1plus, *iRN, *Ni, *trace;
+    float   *rtrace, *tmpdata, *f1min, *f1plus, *RNi, *Ni, *trace;
     float   xmin, xmax, scale, tsq;
 	float   Q, f0, *ixmask, *costaper;
     complex *Refl, *Fop, *ctrace, *cwave;
@@ -155,7 +155,7 @@ int main (int argc, char **argv)
     if(!getparint("niterskip", &niterskip)) niterskip = 50;
     if(!getparint("hw", &hw)) hw = 15;
     if(!getparint("shift", &shift)) shift=20;
-    if(!getparint("smooth", &smooth)) smooth = 5;
+    if(!getparint("smooth", &smooth)) smooth = shift/2;
     if(!getparint("ishot", &ishot)) ishot=300;
     if (reci && ntap) vwarn("tapering influences the reciprocal result");
 
@@ -213,7 +213,7 @@ int main (int argc, char **argv)
     Fop     = (complex *)calloc(nxs*nw*Nfoc,sizeof(complex));
     f1min   = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     f1plus  = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
-    iRN     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
+    RNi     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     Ni      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     G_d     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     DD      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
@@ -239,7 +239,6 @@ int main (int argc, char **argv)
     }
 
 /*================ Read focusing operator(s) ================*/
-/* G_d = p_0^+ = G_d (-t) ~ Tinv */
 
     if (file_tinv != NULL) {  /*  G_d is named DD */
         muteW   = (int *)calloc(Nfoc*nxs,sizeof(int));
@@ -351,7 +350,7 @@ int main (int argc, char **argv)
     }
 
 /*================ Defining focusing operator(s) from R ================*/
-/* G_d = -R(ishot,-t)*/
+/* G_d = -R(ishot,-t) */
 
     /* use ishot from Refl, complex-conjugate(time reverse), scale with -1 and convolve with wavelet */
     if (file_tinv == NULL) {
@@ -507,7 +506,7 @@ int main (int argc, char **argv)
 		if ( ((ii-istart)%niterskip==0) || (ii==istart) ) {
 			niterrun=niter;
 			recur=0;
-			if (verbose>2) vmess("Doing %d iterations to reset recursion at time-sample %d\n",niterrun,ii);
+			if (verbose>1) vmess("Doing %d iterations to reset recursion at time-sample %d\n",niterrun,ii);
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < nxs; i++) {
                     for (j = 0; j < nts; j++) {
@@ -520,9 +519,6 @@ int main (int argc, char **argv)
                     for (j = nts-ii+T*shift-smooth, k=1; j < nts-ii+T*shift; j++, k++) {
                         G_d[l*nxs*nts+i*nts+j] *= costaper[smooth-k];
                     }
-                    //for (j = 0; j < nts-ii+T*shift; j++) {
-                    //    G_d[l*nxs*nts+i*nts+j] = 0.0;
-                    //}
                 }
                 for (i = 0; i < npos; i++) {
                     ix = ixpos[i];
@@ -537,11 +533,12 @@ int main (int argc, char **argv)
                     //}
 			    }
 			}
+           	writeDataIter("G_d.su", G_d, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, 1000*ii);
 		}
 		else { /* use f1min from previous iteration as starting point and do niterec iterations */
 			niterrun=niterec;
 			recur=1;
-			if (verbose>2) vmess("Doing %d iterations using previous result at time-sample %d",niterrun,ii);
+			if (verbose>1) vmess("Doing %d iterations using previous result at time-sample %d",niterrun,ii);
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < npos; i++) {
 					j=0;
@@ -557,9 +554,6 @@ int main (int argc, char **argv)
                     for (j = nts-ii+T*shift-smooth, k=1; j < nts-ii+T*shift; j++, k++) {
                         G_d[l*nxs*nts+i*nts+j] *= costaper[smooth-k];
                     }
-                    //for (j = 0; j < nts-ii+T*shift; j++) {
-                    //    G_d[l*nxs*nts+i*nts+j] = 0.0;
-                    //}
                 }
             }
         }
@@ -575,12 +569,12 @@ int main (int argc, char **argv)
     
 /*================ construction of Ni(-t) = - \int R(x,t) Ni(t)  ================*/
 
-            synthesis(Refl, Fop, Ni, iRN, nx, nt, nxs, nts, dt, xsyn, Nfoc,
+            synthesis(Refl, Fop, Ni, RNi, nx, nt, nxs, nts, dt, xsyn, Nfoc,
                 xrcv, xsrc, xnx, fxse, fxsb, dxs, dxsrc, dx, ntfft, nw, nw_low, nw_high, mode,
                 reci, nshots, ixpos, npos, &tfft, isxcount, reci_xsrc, reci_xrcv, ixmask, verbose);
 
         	if (file_iter != NULL) {
-            	writeDataIter(file_iter, iRN, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 1, 1000*ii+iter);
+            	writeDataIter(file_iter, RNi, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, 1000*ii+iter);
         	}
 
             t3 = wallclock_time();
@@ -591,9 +585,9 @@ int main (int argc, char **argv)
                 for (i = 0; i < npos; i++) {
                     j = 0;
                     ix = ixpos[i];
-                    Ni[l*nxs*nts+i*nts+j]    = -iRN[l*nxs*nts+ix*nts+j];
+                    Ni[l*nxs*nts+i*nts+j]    = -RNi[l*nxs*nts+ix*nts+j];
                     for (j = 1; j < nts; j++) {
-                        Ni[l*nxs*nts+i*nts+j]    = -iRN[l*nxs*nts+ix*nts+nts-j];
+                        Ni[l*nxs*nts+i*nts+j]    = -RNi[l*nxs*nts+ix*nts+nts-j];
                     }
                 }
             }
@@ -603,10 +597,10 @@ int main (int argc, char **argv)
                 for (l = 0; l < Nfoc; l++) {
                     for (i = 0; i < npos; i++) {
 						/* apply mute window for samples after ii */
-                        for (j = ii-T*shift; j < nts; j++) {
+                        for (j = ii-T*shift+smooth; j < nts; j++) {
                             Ni[l*nxs*nts+i*nts+j] = 0.0;
                         }
-                        for (j = ii-T*shift+smooth, k=0; j < ii-T*shift; j++, k++) {
+                        for (j = ii-T*shift+smooth, k=0; j < ii; j++, k++) {
                             Ni[l*nxs*nts+i*nts+j] *= costaper[k];
                         }
 						/* apply mute window for delta function at t=0*/
@@ -672,6 +666,9 @@ int main (int argc, char **argv)
             		writeDataIter("f1min.su", f1min, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, 1000*ii+iter);
 				}
             } /* end else (iter) branch */
+        	if (file_iter != NULL) {
+                writeDataIter("Ni.su", Ni, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, 1000*ii+iter);
+			}
 
             t2 = wallclock_time();
             tcopy +=  t2 - t3;
