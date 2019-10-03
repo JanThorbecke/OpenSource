@@ -43,26 +43,14 @@ sufft < wavefw.su | suamp | sugain scale=$dt | supsgraph \
     label1="frequency (1/s)" label2="amplitude" \
     d1num=10 wbox=6 hbox=3 x1end=125 x2end=1.1 > wavefw_freq.eps
  
-
 #shot record
 file=shot5_rp.su
 sumax < $file mode=abs outpar=nep
-clipref=`cat nep | awk '{print $1/3}'`
+clipref=`cat nep | awk '{print $1/15}'`
 suwind key=gx min=-2250000 max=2250000 < $file | \
-        supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 \
-    	label1="time (s)" label2="lateral distance (m)" \
-        n1tic=2 d2=5 f1=0.0 x1beg=0 x1end=2.004 d1num=0.4 \
+        supsimage hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
+    	label1="time sample number" label2="lateral distance (m)" \
+        n1tic=2 d2=5 f1=0.0 x1beg=0 x1end=500 d1=1 f1=0 d1num=100 \
         f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > shotx0_rp.eps
-
-#Initial focusing operator
-file=iniFocus_rp.su
-file_base=${file%.su}
-sumax < $file mode=abs outpar=nep
-clipref=`cat nep | awk '{print $1/3}'`
-suwind key=gx min=-2250000 max=2250000 < $file | \
-        supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 \
-    	label1="time (s)" label2="lateral distance (m)" \
-        n1tic=2 d2=5 f1=0.0 x1beg=0 x1end=2.004 d1num=0.4 \
-        f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > $file_base.eps
 
 rm nep 

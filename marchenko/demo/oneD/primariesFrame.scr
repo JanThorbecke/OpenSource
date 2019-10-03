@@ -23,19 +23,19 @@ fconv file_in1=shotsx0.su file_in2=wave.su file_out=shotw.su
 basop file_in=shotw.su choice=5 | sugain scale=-1 > DD.su
 
 nts=1024
-itime=300 # select time sample to work on 1.2 seconds
+itime=276 # select time sample to work on 1.2 seconds
 shift=20
 #mute time nts-ii+shift to compute G_d
 (( itmax = nts-itime+shift ))
-suzero itmax=$itmax < DD.su > G_d.su
+#suzero itmax=$itmax < DD.su > G_d.su
 #f1min = -DD(-t) = shotw.su
-cp shotw.su f1min0.su
+#cp shotw.su f1min0.su
 
 #first iteration
-cp G_d.su N0.su
+cp G_d_276000.su N0.su
 
 #compute R*N0
-fconv file_in1=shotsdx5_rp.su file_in2=N0.su file_out=fconvN1.su verbose=1 fmax=90 
+fconv file_in1=shotsdx5_rp.su file_in2=N0.su file_out=fconvN1.su verbose=1 fmax=120 
 
 suwind key=fldr min=451 max=451  < fconvN1.su | suximage 
 
@@ -49,6 +49,7 @@ suzero itmax=$itmax < N1.su > N1m.su
 
 
 exit 
+
 #display
 file=fconvN1.su
 file_base=${file%.su}
