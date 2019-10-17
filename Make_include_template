@@ -83,13 +83,15 @@ OPTC += -fopenmp
 
 #############################################################################
 # BLAS and LAPACK libraries 
-MKLROOT=/opt/intel/mkl/
+# and FFT LIBRARIES
+#MKLROOT=/opt/intel/mkl/
 MKLLIB=${MKLROOT}/lib
+OPTC += -DMKL -I$(MKLROOT)/include -I$(MKLROOT)/include/fftw
 #for GNU compilers
 #you might need to add intel64 to : ${MKLROOT}/lib/intel64
 BLAS = -L${MKLROOT}/lib/ -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
-#for GNU on OSX
-#BLAS = -L${MKLROOT}/lib/ -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
+#for GNU/clang on OSX
+#BLAS = -Wl,-rpath ${MKLLIB} -L${MKLROOT}/lib/ -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
 #on linux you want to use groups and MKL is in lib/intel64
 #MKLLIB=${MKLROOT}/lib/intel64
 #BLAS = -Wl,-rpath ${MKLLIB} -Wl,--start-group -L${MKLLIB} -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group -lpthread -lm -ldl
@@ -97,27 +99,13 @@ BLAS = -L${MKLROOT}/lib/ -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread -lm
 #BLAS = -mkl
 
 #############################################################################
-# FOR FFT LIBRARIES
-#AMD ACML 4.4.0
+# AMD ACML 4.4.0
 #AMDROOT = /home/thorbcke/amdsdk/v1.0/acml/open64_64
 #OPTC += -DACML440 -I$(AMDROOT)/include
 #BLAS = -L$(AMDROOT)/lib -lacml -lfortran -lffio -lrt -lm
-#Intel MKL
-MKLROOT=/opt/intel/mkl/
-MKLLIB=${MKLROOT}/lib
-OPTC += -DMKL -I$(MKLROOT)/include
-#for GNU compilers
-FFT = -Wl,-rpath ${MKLLIB} -L${MKLLIB} -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
-#for GNU on OSX
-#FFT = -L${MKLROOT}/lib/ -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
-#on linux you want to use groups and MKL is in lib/intel64
-#MKLLIB=${MKLROOT}/lib/intel64
-#FFT = -Wl,-rpath ${MKLLIB} -Wl,--start-group -L${MKLLIB} -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group -lpthread -lm -ldl
-#for Intel compilers
-#FFT = -Wl,-rpath ${MKLLIB} -L${MKLLIB} -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
 
 #LIBARIES
-LIBS= -L$L -lgenfft $(FFT) $(BLAS)
+LIBS= -L$L -lgenfft  $(BLAS)
 
 
 ########################################################################
