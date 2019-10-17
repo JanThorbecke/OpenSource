@@ -283,7 +283,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 
 	/* Check stability and dispersion setting */
 
-	if (cp_max > dx*stabfactor/dt) {
+	if (cp_max > (dx*stabfactor)/dt) {
 		vwarn("************ ! Stability ! ****************");
 		vwarn("From the input file maximum P-wave velocity");
 		vwarn("in the current model is %f !!", cp_max);
