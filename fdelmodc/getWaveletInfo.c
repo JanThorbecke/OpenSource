@@ -41,7 +41,7 @@ int getWaveletInfo(char *file_src, int *n1, int *n2, float *d1, float *d2, float
     off_t   bytes;
     int     ret, one_shot, ntraces;
     int     optn, nfreq, i, iwmax;
-    float   *trace;
+    float   *trace, df;
 	float   ampl, amplmax, tampl, tamplmax; 
     complex *ctrace;
     segy hdr;
@@ -73,8 +73,9 @@ int getWaveletInfo(char *file_src, int *n1, int *n2, float *d1, float *d2, float
 
     /* check to find out number of traces in shot gather */
 
-	optn = optncr(*n1);
+	optn  = optncr(*n1);
 	nfreq = optn/2 + 1;
+    df    = 1.0/(optn*(*d1));
 	ctrace = (complex *)malloc(nfreq*sizeof(complex));
     one_shot = 1;
     trace = (float *)malloc(optn*sizeof(float));
@@ -107,12 +108,13 @@ int getWaveletInfo(char *file_src, int *n1, int *n2, float *d1, float *d2, float
 				iwmax = i;
 			}
 		}
+
 		/* from the maximum amplitude position look for the largest frequency
          * which has an amplitude 400 times weaker than the maximum amplitude */
 		for (i=iwmax;i<nfreq;i++) {
 			ampl = sqrt(ctrace[i].r*ctrace[i].r+ctrace[i].i*ctrace[i].i);
 			if (400*ampl < amplmax) {
-				*fmax = (i-1)*(1.0/(optn*(*d1)));
+				*fmax = (i-1)*df;
 				break;
 			}
 		}

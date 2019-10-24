@@ -143,6 +143,8 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 
 		/* Force source */
 
+#pragma omp critical 
+{
 		if (src.type == 6) {
 			vx[ix*n1+iz] += src_ampl*rox[ix*n1+iz]/(l2m[ix*n1+iz]);
 			/* stable implementation from "Numerical Techniques for Conservation Laws with Source Terms" by Justin Hudson */
@@ -338,6 +340,7 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 				txz[ix*n1+iz] -= Mxz*src_ampl;
 			} /* src.type */
 		} /* ischeme */
+}
 	} /* loop over isrc */
 
 	return 0;

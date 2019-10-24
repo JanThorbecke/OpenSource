@@ -35,11 +35,6 @@ typedef struct _complexStruct { /* complex number */
 
 double wallclock_time(void);
 
-void synthesis(complex *Refl, complex *Fop, float *Top, float *iRN, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int
-Nfoc, float *xrcv, float *xsrc, int *xnx, float fxse, float fxsb, float dxs, float dxsrc, float dx, int ntfft, int
-nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int npos, double *tfft, int *isxcount, int
-*reci_xsrc,  int *reci_xrcv, float *ixmask, int verbose);
-
 void synthesisPositions(int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nfoc, float *xrcv, float *xsrc, int *xnx,
 float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos, int *npos, int *isxcount, int countmin, int reci, int verbose);
 
@@ -49,9 +44,9 @@ int linearsearch(int *array, size_t N, int value);
 /* Refl has the full acquisition grid R(x_r, x_s) 
  * Fop has the acquisition grid of the operator, ideally this should be equal to the acquisition grid of Refl, 
  *   so all traces can be used to compute R*Fop.
- * The output iRN has the traces in the grid of Fop, these are the x_s positions of R(x_r,x_s) */
+ * The output RNi has the traces in the grid of Fop, these are the x_s positions of R(x_r,x_s) */
 
-void synthesis(complex *Refl, complex *Fop, float *Top, float *iRN, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int
+void synthesis(complex *Refl, complex *Fop, float *Top, float *RNi, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int
 Nfoc, float *xrcv, float *xsrc, int *xnx, float fxse, float fxsb, float dxs, float dxsrc, float dx, int ntfft, int
 nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int npos, double *tfft, int *isxcount, int
 *reci_xsrc,  int *reci_xrcv, float *ixmask, int verbose)
@@ -90,7 +85,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
     t0 = wallclock_time();
 
     /* reset output data to zero */
-    memset(&iRN[0], 0, Nfoc*nxs*nts*sizeof(float));
+    memset(&RNi[0], 0, Nfoc*nxs*nts*sizeof(float));
     ctrace = (complex *)calloc(ntfft,sizeof(complex));
 
 /* this first check is done to support an acquisition geometry that has more receiver than source
@@ -142,7 +137,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
 /*================ SYNTHESIS ================*/
 
 #pragma omp parallel default(none) \
- shared(iRN, dx, npe, nw, verbose, nshots, xnx) \
+ shared(RNi, dx, npe, nw, verbose, nshots, xnx) \
  shared(Refl, Nfoc, reci, xsrc, xsyn, fxsb, fxse, nxs, dxs) \
  shared(nx, dxsrc, nfreq, nw_low, nw_high, fxb, fxe) \
  shared(Fop, size, nts, ntfft, scl, ixrcv) \
@@ -177,7 +172,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
 
                 /* place result at source position ixsrc; dx = receiver distance */
                 for (j = 0; j < nts; j++) 
-                    iRN[l*size+ixsrc*nts+j] += rtrace[j]*scl*dx;
+                    RNi[l*size+ixsrc*nts+j] += rtrace[j]*scl*dx;
             
             } /* end of Nfoc loop */
 
@@ -196,7 +191,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
     if (reci != 0) {
 
 #pragma omp parallel default(none) \
- shared(iRN, dx, nw, verbose) \
+ shared(RNi, dx, nw, verbose) \
  shared(Refl, Nfoc, reci, xsrc, xsyn, fxsb, fxse, nxs, dxs) \
  shared(nx, dxsrc, nfreq, nw_low, nw_high, fxb, fxe) \
  shared(reci_xrcv, reci_xsrc, ixmask, isxcount) \
@@ -233,7 +228,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
 
                 /* place result at source position ixsrc; dxsrc = shot distance */
                 for (j = 0; j < nts; j++) 
-                    iRN[l*size+ixsrc*nts+j] = ixmask[ixsrc]*(iRN[l*size+ixsrc*nts+j]+rtrace[j]*scl*dxsrc);
+                    RNi[l*size+ixsrc*nts+j] = ixmask[ixsrc]*(RNi[l*size+ixsrc*nts+j]+rtrace[j]*scl*dxsrc);
                 
             } /* end of Nfoc loop */
 

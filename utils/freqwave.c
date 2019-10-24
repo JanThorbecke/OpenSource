@@ -43,9 +43,9 @@ void freqwave(float *wave, int nt, float dt, float fp, float fmin, float flef, f
     optn    = optncr(nt);
     nfreq    = 1+(optn/2);
     df        = 1.0/(dt*optn);
-    iof     = MAX(NINT(fmax/df), NINT(fp/df));
     att        = pow(10.0, db/20.0);
-
+    if (fp < 0) iof  = NINT(fmax/df);
+    else iof  = NINT(fp/df);
     if (iof > nfreq) verr("characterizing frequency aliased");
 
     cwave     = (complex *)malloc(nfreq*sizeof(complex));
