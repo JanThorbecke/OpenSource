@@ -7,10 +7,11 @@ LIBS    += -L$L -lgenfft -lm $(LIBSM)
 
 #ALL: fmute marchenko marchenko2
 
-ALL: marchenko3D fmute3D
+ALL: marchenko3D fmute3D TWtransform
 
 SRCT	= marchenko3D.c \
 		getFileInfo3D.c  \
+		getFileInfo3DW.c  \
 		readData3D.c \
 		readShotData3D.c \
 		readTinvData3D.c \
@@ -41,6 +42,16 @@ SRCJ3	= fmute3D.c \
 		docpkge.c \
 		getpars.c
 
+SRCTW	= TWtransform.c \
+		getFileInfo3D.c  \
+		writeData3D.c \
+		wallclock_time.c \
+		name_ext.c  \
+		verbosepkg.c  \
+		atopkge.c \
+		docpkge.c \
+		getpars.c
+
 OBJT	= $(SRCT:%.c=%.o)
 
 marchenko3D:	$(OBJT) 
@@ -51,14 +62,18 @@ OBJJ3	= $(SRCJ3:%.c=%.o)
 fmute3D:	$(OBJJ3) 
 	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o fmute3D $(OBJJ3) $(LIBS)
 
-OBJMS	= $(SRCMS:%.c=%.o)
+OBJTW	= $(SRCTW:%.c=%.o)
 
-install: marchenko3D fmute3D
+TWtransform:	$(OBJTW) 
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o TWtransform $(OBJTW) $(LIBS)
+
+install: marchenko3D fmute3D TWtransform
 	cp marchenko3D $B
 	cp fmute3D $B
+	cp TWtransform $B
 
 clean:
-		rm -f core marchenko3D $(OBJT) fmute3D $(OBJJ3)
+		rm -f core marchenko3D $(OBJT) fmute3D $(OBJJ3) TWtransform $(OBJTW)
 
 realclean: clean
-		rm -f $B/marchenko2 $B/marchenko3D $B/fmute3D
+		rm -f $B/marchenko3D $B/fmute3D $B/TWtransform
