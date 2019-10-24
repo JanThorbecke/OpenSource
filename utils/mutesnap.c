@@ -163,8 +163,8 @@ int main (int argc, char **argv)
     /*----------------------------------------------------------------------------*
     *   Apply the muting to the data
     *----------------------------------------------------------------------------*/
-    for (iy = 0; iy < nyh; iy++) {
-        for (iz = 0; iz < nzh; iz++) {
+    for (iz = 0; iz < nzh; iz++) {
+        for (iy = 0; iy < nyh; iy++) {
             for (ix = 0; ix < nxh; ix++) {
                 if (mode != 2) {
                     for (it = 0; it < nth; it++) {
@@ -183,17 +183,17 @@ int main (int argc, char **argv)
                 rmt = MAX(MIN(nth-indrcv,indrcv)-shift-smooth,0);
                 for (it = ht-rmt+1; it < ht+1; it++) {
                     if (it-(ht-rmt+1) < smooth) {
-                        homdata[it*nxh*nzh+ix*nzh+iz] *= costaper[it-(ht-rmt+1)];
-                        homdata[(nth-it)*nxh*nzh+ix*nzh+iz] *= costaper[it-(ht-rmt+1)];
+                        homdata[it*nyh*nxh*nzh+iy*nxh*nzh+ix*nzh+iz] *= costaper[it-(ht-rmt+1)];
+                        homdata[(nth-it)*nyh*nxh*nzh+iy*nxh*nzh+ix*nzh+iz] *= costaper[it-(ht-rmt+1)];
                     }
                     else{
-                        homdata[it*nxh*nzh+ix*nzh+iz] = 0.0;
-                        homdata[(nth-it)*nxh*nzh+ix*nzh+iz] = 0.0;
+                        homdata[it*nyh*nxh*nzh+iy*nxh*nzh+ix*nzh+iz] = 0.0;
+                        homdata[(nth-it)*nyh*nxh*nzh+iy*nxh*nzh+ix*nzh+iz] = 0.0;
                     }
                 }
             }
-            if (verbose) vmess("Muting Homogeneous Green's function at depth %li from %li depths",iz+1,nzh);
         }
+        if (verbose) vmess("Muting Homogeneous Green's function at depth %li from %li depths",iz+1,nzh);
     }
     free(rtrace);
     if (smooth) free(costaper); 

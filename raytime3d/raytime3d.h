@@ -35,6 +35,7 @@ typedef struct _receiverPar { /* Receiver Parameters */
 	long n;
 	long nx;
 	long ny;
+	long nz;
 	long nt;
 	long max_nrec;
 	long *z;

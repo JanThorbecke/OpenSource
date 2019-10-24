@@ -346,12 +346,12 @@ long getParameters3d(modPar *mod, recPar *rec, srcPar *src, shotPar *shot, rayPa
 		if (rec->n) {
 			dyrcv = rec->yr[rec->nx]-rec->yr[0];
 			dxrcv = rec->xr[MIN(1,rec->n-1)]-rec->xr[0];
-			dzrcv = rec->zr[MIN(1,rec->n-1)]-rec->zr[0];
+			dzrcv = rec->zr[rec->n-1]-rec->zr[0];
 			vmess("*******************************************");
 			vmess("************* receiver info ***************");
 			vmess("*******************************************");
 			vmess("ntrcv   = %li nrcv    = %li ", rec->nt, rec->n);
-			vmess("nxrcv   = %li nyrcv   = %li ", rec->nx, rec->ny);
+			vmess("nxrcv   = %li nyrcv   = %li nzrcv   = %li ", rec->nx, rec->ny, rec->nz);
 			vmess("dzrcv   = %f dxrcv   = %f dyrcv   = %f ", dzrcv, dxrcv, dyrcv);
 			vmess("Receiver array at coordinates: ");
 			vmess("zmin    = %f zmax    = %f ", rec->zr[0]+sub_z0, rec->zr[rec->n-1]+sub_z0);
