@@ -6,7 +6,7 @@ include ../Make_include
 #OPTC += -g -O0 -Wall 
 
 
-ALL: fmute marchenko marchenko_primaries
+ALL: fmute marchenko #marchenko_primaries
 
 SRCJ	= fmute.c \
 		getFileInfo.c  \
@@ -35,20 +35,20 @@ SRCH	= marchenko.c \
 		docpkge.c \
 		getpars.c
 
-SRCP	= marchenko_primaries.c \
-		synthesis.c  \
-		getFileInfo.c  \
-		readData.c \
-		readShotData.c \
-		readTinvData.c \
-		writeData.c \
-		writeDataIter.c \
-		wallclock_time.c \
-		name_ext.c  \
-		verbosepkg.c  \
-		atopkge.c \
-		docpkge.c \
-		getpars.c
+#SRCP	= marchenko_primaries.c \
+#		synthesis.c  \
+#		getFileInfo.c  \
+#		readData.c \
+#		readShotData.c \
+#		readTinvData.c \
+#		writeData.c \
+#		writeDataIter.c \
+#		wallclock_time.c \
+#		name_ext.c  \
+#		verbosepkg.c  \
+#		atopkge.c \
+#		docpkge.c \
+#		getpars.c
 
 OBJJ	= $(SRCJ:%.c=%.o)
 
