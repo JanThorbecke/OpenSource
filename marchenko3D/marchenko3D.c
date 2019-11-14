@@ -46,7 +46,11 @@ void convol(float *data1, float *data2, float *con, long nrec, long nsam, float 
 
 void applyMute3D(float *data, long *mute, long smooth, long above, long Nfoc, long nxs, long nys, long nt, long *xrcvsyn, long *yrcvsyn, long npos, long shift);
 
-long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, float *d1, float *d2, float *d3, float *f1, float *f2, float *f3,
+long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath,
+    float *d1, float *d2, float *d3, float *f1, float *f2, float *f3,
+    float *sclsxgxsygy, long *nxm);
+long getFileInfo3DW(char *filename, long *n1, long *n2, long *n3, long *ngath,
+    float *d1, float *d2, float *d3, float *f1, float *f2, float *f3, float *fmin, float *fmax,
     float *sclsxgxsygy, long *nxm);
 long readData3D(FILE *fp, float *data, segy *hdrs, long n1);
 long writeData3D(FILE *fp, float *data, segy *hdrs, long n1, long n2);
@@ -175,7 +179,7 @@ int main (int argc, char **argv)
     complex *Refl, *Fop;
     char    *file_tinv, *file_shot, *file_green, *file_iter, *file_imag, *file_homg, *file_ampscl;
     char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_pmin, *file_inp;
-    char    *file_ray, *file_amp, *file_wav;
+    char    *file_ray, *file_amp, *file_wav, *file_shotw;
     segy    *hdrs_out, *hdrs_Nfoc, *hdrs_iter;
 
     initargs(argc, argv);
@@ -185,6 +189,8 @@ int main (int argc, char **argv)
     t0   = wallclock_time();
 
     if (!getparstring("file_shot", &file_shot)) file_shot = NULL;
+    if (!getparstring("file_shotw", &file_shotw)) file_shotw = NULL;
+        if (file_shot==NULL && file_shotw==NULL) verr("No input for the shot data given");
     if (!getparstring("file_tinv", &file_tinv)) file_tinv = NULL;
     if (!getparstring("file_ray", &file_ray)) file_ray = NULL;
     if (!getparstring("file_amp", &file_amp)) file_amp = NULL;
@@ -203,8 +209,8 @@ int main (int argc, char **argv)
     if (file_homg!=NULL && file_inp==NULL) verr("Cannot create HomG if no file_inp is given");
     if (!getparstring("file_ampscl", &file_ampscl)) file_ampscl = NULL;
     if (!getparlong("verbose", &verbose)) verbose = 0;
-    if (file_tinv == NULL && file_shot == NULL) 
-        verr("file_tinv and file_shot cannot be both input pipe");
+    if (file_tinv == NULL && file_shot == NULL && file_shotw == NULL) 
+        verr("file_tinv, file_shotw and file_shot cannot be both input pipe");
     if (!getparstring("file_green", &file_green)) {
         if (verbose) vwarn("parameter file_green not found, assume pipe");
         file_green = NULL;
@@ -265,9 +271,16 @@ int main (int argc, char **argv)
         fxsb = f2;
         fysb = f3;
     }
+    if (verbose) vmess("Retrieved file info of the first arrivals");
 
     ngath = 0; /* setting ngath=0 scans all traces; nx contains maximum traces/gather */
-    ret = getFileInfo3D(file_shot, &nt, &nx, &ny, &ngath, &d1, &dx, &dy, &ft, &fx, &fy, &scl, &ntraces);
+    if (file_shot!=NULL) {
+        ret = getFileInfo3D(file_shot, &nt, &nx, &ny, &ngath, &d1, &dx, &dy, &ft, &fx, &fy, &scl, &ntraces);
+    }
+    else if (file_shotw!=NULL) {
+        ret = getFileInfo3DW(file_shotw, &nt, &nx, &ny, &ngath, &d1, &dx, &dy, &ft, &fx, &fy, &fmin, &fmax, &scl, &ntraces);
+    }
+    if (verbose) vmess("Retrieved file info of the shot data");
     nshots = ngath;
     assert (nxs*nys >= nshots);
 
@@ -334,6 +347,7 @@ int main (int argc, char **argv)
         readTinvData3D(file_tinv, xrcvsyn, yrcvsyn, xsyn, ysyn, zsyn, xnxsyn, Nfoc,
             nxs, nys, ntfft, mode, muteW, G_d, hw, verbose);
     }
+    if (verbose) vmess("Read in first arrivals");
     /* reading data added zero's to the number of time samples to be the same as ntfft */
     nts   = ntfft;
 
@@ -430,9 +444,17 @@ int main (int argc, char **argv)
 
 /*================ Reading shot records ================*/
 
-    mode=1;
-    readShotData3D(file_shot, xrcv, yrcv, xsrc, ysrc, zsrc, xnx, Refl, nw,
+    if (file_shot!=NULL) {
+        mode=1;
+        readShotData3D(file_shot, xrcv, yrcv, xsrc, ysrc, zsrc, xnx, Refl, nw,
         nw_low, nshots, nx, ny, ntfft, mode, scale, verbose);
+    }
+    else {
+        mode=0;
+        readShotData3D(file_shotw, xrcv, yrcv, xsrc, ysrc, zsrc, xnx, Refl, nw,
+        nw_low, nshots, nx, ny, ntfft, mode, scale, verbose);
+    }
+    mode=1;
 
     tapersh = (float *)malloc(nx*sizeof(float));
     if (tap == 2 || tap == 3) {
@@ -934,12 +956,12 @@ int main (int argc, char **argv)
             hdrs_Nfoc[0].sx      = xsyn[0]*(1e3);
             hdrs_Nfoc[0].sy      = ysyn[0]*(1e3);
             hdrs_Nfoc[0].sdepth  = zsyn[0]*(1e3);
-            hdrs_Nfoc[0].f1      = roundf(zsyn[0]*100.0)/100.0;
-            hdrs_Nfoc[0].f2      = roundf(xsyn[0]*100.0)/100.0;
-            hdrs_Nfoc[0].ungpow  = roundf(xsyn[0]*100.0)/100.0;
-            hdrs_Nfoc[0].d1      = roundf(dzim*100.0)/100.0;
-            hdrs_Nfoc[0].d2      = roundf(dxs*100.0)/100.0;
-            hdrs_Nfoc[0].unscale = roundf(dys*100.0)/100.0;
+            hdrs_Nfoc[0].f1      = roundf(zsyn[0]*1000.0)/1000.0;
+            hdrs_Nfoc[0].f2      = roundf(xsyn[0]*1000.0)/1000.0;
+            hdrs_Nfoc[0].ungpow  = roundf(ysyn[0]*1000.0)/1000.0;
+            hdrs_Nfoc[0].d1      = roundf(dzim*1000.0)/1000.0;
+            hdrs_Nfoc[0].d2      = roundf(dxs*1000.0)/1000.0;
+            hdrs_Nfoc[0].unscale = roundf(dys*1000.0)/1000.0;
             hdrs_Nfoc[0].dt      = (int)(dt*(1E6));
 
             if (fp_imag==NULL) verr("error on creating output file %s", file_imag);
@@ -1011,12 +1033,12 @@ int main (int argc, char **argv)
             hdrs_Nfoc[0].sx      = sx[0];
             hdrs_Nfoc[0].sy      = sy[0];
             hdrs_Nfoc[0].sdepth  = sz[0];
-            hdrs_Nfoc[0].f1      = zsyn[0];
-            hdrs_Nfoc[0].f2      = xsyn[0];
-            hdrs_Nfoc[0].ungpow  = xsyn[0];
-            hdrs_Nfoc[0].d1      = dzim;
-            hdrs_Nfoc[0].d2      = dxs;
-            hdrs_Nfoc[0].unscale = dys;
+            hdrs_Nfoc[0].f1      = roundf(zsyn[0]*100.0)/1000.0;
+            hdrs_Nfoc[0].f2      = roundf(xsyn[0]*1000.0)/1000.0;
+            hdrs_Nfoc[0].ungpow  = roundf(ysyn[0]*1000.0)/1000.0;
+            hdrs_Nfoc[0].d1      = roundf(dzim*1000.0)/1000.0;
+            hdrs_Nfoc[0].d2      = roundf(dxs*1000.0)/1000.0;
+            hdrs_Nfoc[0].unscale = roundf(dys*1000.0)/1000.0;
             hdrs_Nfoc[0].dt      = (int)(dt*(1E6));
 
             ret = writeData3D(fp_homg, (float *)&HomG[0], hdrs_Nfoc, nzim*nyim*nxim*ntfft, 1);

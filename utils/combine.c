@@ -34,8 +34,8 @@ char *sdoc[] = {
 " ",
 " combine - Combine results into a single result ",
 " ",
-" authors  : Joeri Brackenhoff	: (J.A.Brackenhoff@tudelft.nl)",
-"		   : Jan Thorbecke 		: (janth@xs4all.nl)",
+" authors  : Joeri Brackenhoff  : (J.A.Brackenhoff@tudelft.nl)",
+"          : Jan Thorbecke      : (janth@xs4all.nl)",
 " ",
 " Required parameters: ",
 "",
@@ -44,10 +44,11 @@ char *sdoc[] = {
 " Optional parameters: ",
 " ",
 "   compact=0 ................ Save format of input data (0=normal), (1=transpose), (2=compact)",
-"   file_out= ................ Filename of the output",
-"   numb= .................... integer number of first file",
-"   dnumb= ................... integer number of increment in files",
-"	nzmax= ................... Maximum number of files read",
+"   file_out=out.su .......... Filename of the output",
+"   numb=0 ................... integer number of first file",
+"   dnumb=1 .................. integer number of increment in files",
+"   nzmax=0 .................. Maximum number of files read",
+"   verbose=1 ................ Give detailed information of process",
 NULL};
 
 int main (int argc, char **argv)
@@ -69,9 +70,9 @@ int main (int argc, char **argv)
 	if (!getparstring("file_in", &fin)) fin = NULL;
     if (!getparstring("file_out", &fout)) fout = "out.su";
 	if (!getparlong("numb", &numb)) numb=0;
-	if (!getparlong("dnumb", &dnumb)) dnumb=0;
+	if (!getparlong("dnumb", &dnumb)) dnumb=1;
 	if (!getparlong("nzmax", &nzmax)) nzmax=0;
-	if (!getparlong("verbose", &verbose)) verbose=0;
+	if (!getparlong("verbose", &verbose)) verbose=1;
 	if (!getparlong("compact", &compact)) compact=0;
 	if (fin == NULL) verr("Incorrect downgoing input");
 
@@ -176,6 +177,9 @@ int main (int argc, char **argv)
 		fclose(fp_in);
 		if (compact==0) {
 			readSnapData3D(fin2, indata, hdr_in, nt, nx, ny, nz, 0, nx, 0, ny, 0, nz);
+			if (dz == 1.0) {
+				if (is==1) dz = hdr_in[0].f1-z0;
+			}
 			for (it = 0; it < nt; it++) {
 				for (iy = 0; iy < ny; iy++) {
 					for (ix = 0; ix < nx; ix++) {
@@ -188,6 +192,9 @@ int main (int argc, char **argv)
 		}
 		else if (compact==1) {
 			readSnapData3D(fin2, indata, hdr_in, nt, nz, ny, nx, 0, nz, 0, ny, 0, nx);
+			if (dz == 1.0) {
+				if (is==1) dz = hdr_in[0].f1-z0;
+			}
 			for (it = 0; it < nt; it++) {
 				for (iy = 0; iy < ny; iy++) {
 					for (ix = 0; ix < nx; ix++) {
@@ -200,6 +207,9 @@ int main (int argc, char **argv)
 		}
 		else if (compact==2) {
 			readSnapData3D(fin2, indata, hdr_in, 1, 1, 1, nx*ny*nz*nt, 0, 1, 0, 1, 0, nx*ny*nz*nt);
+			if (dz == 1.0) {
+				if (is==1) dz = hdr_in[0].f1-z0;
+			}
 			for (it = 0; it < nt; it++) {
 				for (iy = 0; iy < ny; iy++) {
 					for (ix = 0; ix < nx; ix++) {
@@ -239,11 +249,11 @@ int main (int argc, char **argv)
 				hdr_out[iy*nx+ix].ns		= nz*nzs;
 				hdr_out[iy*nx+ix].trwf		= nx*ny;
 				hdr_out[iy*nx+ix].ntr		= hdr_out[iy*nx+ix].fldr*hdr_out[iy*nx+ix].trwf;
-				hdr_out[iy*nx+ix].f1		= z0;
-				hdr_out[iy*nx+ix].f2		= x0;
+				hdr_out[iy*nx+ix].f1		= roundf(z0*1000.0)/1000.0;
+				hdr_out[iy*nx+ix].f2		= roundf(x0*1000.0)/1000.0;
 				hdr_out[iy*nx+ix].dt		= dt;
-				hdr_out[iy*nx+ix].d1		= dz;
-				hdr_out[iy*nx+ix].d2		= dx;
+				hdr_out[iy*nx+ix].d1		= roundf(dz*1000.0)/1000.0;
+				hdr_out[iy*nx+ix].d2		= roundf(dx*1000.0)/1000.0;
 				hdr_out[iy*nx+ix].sx		= sx;
 				hdr_out[iy*nx+ix].gx		= (int)roundf(x0 + (ix*dx))*1000;
 				hdr_out[iy*nx+ix].sy		= sy;

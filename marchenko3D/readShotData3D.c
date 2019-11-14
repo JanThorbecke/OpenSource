@@ -16,7 +16,9 @@ int optncr(int n);
 void cc1fft(complex *data, int n, int sign);
 void rc1fft(float *rdata, complex *cdata, int n, int sign);
 
-long readShotData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float *ysrc, float *zsrc, long *xnx, complex *cdata, long nw, long nw_low, long nshots, long nx, long ny, long ntfft, long mode, float scale, long verbose)
+long readShotData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float *ysrc, float *zsrc,
+	long *xnx, complex *cdata, long nw, long nw_low, long nshots, long nx, long ny, long ntfft,
+	long mode, float scale, long verbose)
 {
 	FILE *fp;
 	segy hdr;
@@ -56,8 +58,14 @@ long readShotData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float
 	nt = hdr.ns;
 	dt = hdr.dt/(1E6);
 
-	trace  = (float *)calloc(ntfft,sizeof(float));
-	ctrace = (complex *)malloc(ntfft*sizeof(complex));
+	if (mode==0){
+		trace  = (float *)calloc(2*nw,sizeof(float));
+		ctrace = (complex *)malloc(nw*sizeof(complex));
+	}
+	else {
+		trace  = (float *)calloc(ntfft,sizeof(float));
+		ctrace = (complex *)malloc(ntfft*sizeof(complex));
+	}
 	isx = (long *)malloc((nxy*nshots)*sizeof(long));
 	igx = (long *)malloc((nxy*nshots)*sizeof(long));
 	isy = (long *)malloc((nxy*nshots)*sizeof(long));
@@ -94,17 +102,30 @@ long readShotData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float
 			xrcv[igath*nxy+itrace] = hdr.gx*scl;
 			yrcv[igath*nxy+itrace] = hdr.gy*scl;
 
-			nread = fread( trace, sizeof(float), nt, fp );
-			assert (nread == hdr.ns);
+			if (mode==0) {
+				nread = fread( trace, sizeof(float), 2*nw, fp );
+				assert (nread == hdr.ns);
 
-			/* transform to frequency domain */
-			if (ntfft > hdr.ns) 
-			memset( &trace[nt-1], 0, sizeof(float)*(ntfft-nt) );
+				for (iw=0; iw<nw; iw++) {
+					cdata[igath*nxy*nw+iw*nxy+itrace].r = trace[(iw*2)];
+					cdata[igath*nxy*nw+iw*nxy+itrace].i = trace[(iw*2)+1];
+				}
+				//nread = fread(&cdata[igath*nxy*nw+iw*nxy+itrace].r, sizeof(float), 2*nw, fp);
+				//assert (nread == hdr.ns);
+			}
+			else {
+				nread = fread( trace, sizeof(float), nt, fp );
+				assert (nread == hdr.ns);
 
-			rc1fft(trace,ctrace,(int)ntfft,-1);
-			for (iw=0; iw<nw; iw++) {
-				cdata[igath*nxy*nw+iw*nxy+itrace].r = scale*ctrace[nw_low+iw].r;
-				cdata[igath*nxy*nw+iw*nxy+itrace].i = scale*mode*ctrace[nw_low+iw].i;
+				/* transform to frequency domain */
+				if (ntfft > hdr.ns) 
+				memset( &trace[nt-1], 0, sizeof(float)*(ntfft-nt) );
+
+				rc1fft(trace,ctrace,(int)ntfft,-1);
+				for (iw=0; iw<nw; iw++) {
+					cdata[igath*nxy*nw+iw*nxy+itrace].r = scale*ctrace[nw_low+iw].r;
+					cdata[igath*nxy*nw+iw*nxy+itrace].i = scale*mode*ctrace[nw_low+iw].i;
+				}
 			}
 			itrace++;
 			xnx[igath]+=1;
