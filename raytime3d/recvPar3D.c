@@ -28,13 +28,13 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 	float dx, float dy, float dz, long nx, long ny, long nz)
 {
 	float   *xrcv1, *xrcv2, *yrcv1, *yrcv2, *zrcv1, *zrcv2;
-	long    i, ix, iy, ir, verbose;
+	long    i, ix, iy, iz, ir, verbose;
 	float   dxrcv, dyrcv, dzrcv, *dxr, *dyr, *dzr;
 	float   rrcv, dphi, oxrcv, oyrcv, ozrcv, arcv;
 	double  circ, h, a, b, e, s, xr, yr, zr, dr, srun, phase;
 	float   xrange, yrange, zrange, sub_x1, sub_y1, sub_z1;
 	long    Nx1, Nx2, Ny1, Ny2, Nz1, Nz2, Ndx, Ndy, Ndz, iarray, nrec, nh;
-	long    nxrcv, nyrcv, nzrcv, ncrcv, nrcv, ntrcv, *nlxrcv, *nlyrcv;
+	long    nxrcv, nyrcv, nzrcv, ncrcv, nrcv, ntrcv, *nlxrcv, *nlyrcv, *nlzrcv;
 	float   *xrcva, *yrcva, *zrcva;
 	char*   rcv_txt;
 	FILE    *fp;
@@ -267,21 +267,45 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 		nrcv = 0;
         nlxrcv=(long *)malloc(Nx1*sizeof(long));
         nlyrcv=(long *)malloc(Nx1*sizeof(long));
+        nlzrcv=(long *)malloc(Nx1*sizeof(long));
 		for (iarray=0; iarray<Nx1; iarray++) {
 			xrange = (xrcv2[iarray]-xrcv1[iarray]); 
 			yrange = (yrcv2[iarray]-yrcv1[iarray]); 
 			zrange = (zrcv2[iarray]-zrcv1[iarray]); 
-			if (dxr[iarray] != 0.0 && dyr[iarray] != 0.0) {
+			if (dxr[iarray] != 0.0 && dyr[iarray] != 0.0 && dzr[iarray] != 0.0) {
 				nlxrcv[iarray] = NINT(fabs(xrange/dxr[iarray]))+1;
 				nlyrcv[iarray] = NINT(fabs(yrange/dyr[iarray]))+1;
+				nlzrcv[iarray] = NINT(fabs(zrange/dzr[iarray]))+1;
+			}
+			else if (dxr[iarray] != 0.0 && dyr[iarray] != 0.0) {
+				nlxrcv[iarray] = NINT(fabs(xrange/dxr[iarray]))+1;
+				nlyrcv[iarray] = NINT(fabs(yrange/dyr[iarray]))+1;
+				nlzrcv[iarray] = 1;
+			}
+			else if (dxr[iarray] != 0.0 && dzr[iarray] != 0.0) {
+				nlxrcv[iarray] = NINT(fabs(xrange/dxr[iarray]))+1;
+				nlyrcv[iarray] = 1;
+				nlzrcv[iarray] = NINT(fabs(zrange/dzr[iarray]))+1;
+			}
+			else if (dyr[iarray] != 0.0 && dzr[iarray] != 0.0) {
+				nlxrcv[iarray] = 1;
+				nlyrcv[iarray] = NINT(fabs(yrange/dyr[iarray]))+1;
+				nlzrcv[iarray] = NINT(fabs(zrange/dzr[iarray]))+1;
 			}
 			else if (dxr[iarray] != 0.0) {
 				nlxrcv[iarray] = NINT(fabs(xrange/dxr[iarray]))+1;
 				nlyrcv[iarray] = 1;
+				nlzrcv[iarray] = 1;
 			}
 			else if (dyr[iarray] != 0.0) {
 				nlxrcv[iarray] = 1;
 				nlyrcv[iarray] = NINT(fabs(yrange/dyr[iarray]))+1;
+				nlzrcv[iarray] = 1;
+			}
+			else if (dzr[iarray] != 0.0) {
+				nlxrcv[iarray] = 1;
+				nlyrcv[iarray] = 1;
+				nlzrcv[iarray] = NINT(fabs(zrange/dzr[iarray]))+1;
 			}
 			else {
 				if (dzr[iarray] == 0) {
@@ -289,11 +313,13 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 				}
 				nlxrcv[iarray] = NINT(fabs(zrange/dzr[iarray]))+1;
 				nlyrcv[iarray] = NINT(fabs(zrange/dzr[iarray]))+1;
+				nlzrcv[iarray] = NINT(fabs(zrange/dzr[iarray]))+1;
 			}
-            nrcv+=nlyrcv[iarray]*nlxrcv[iarray];
+            nrcv+=nlzrcv[iarray]*nlyrcv[iarray]*nlxrcv[iarray];
 		}
         rec->nx=nlxrcv[0];
         rec->ny=nlyrcv[0];
+        rec->nz=nlzrcv[0];
 
         /* Calculate Number of Receivers */
         if (verbose) vmess("Total number of linear array receivers: %li",nrcv);
@@ -309,6 +335,7 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
             free(dzr);
             free(nlxrcv);
             free(nlyrcv);
+            free(nlzrcv);
         }
         rec->max_nrec+=nrcv;
     } 
@@ -448,10 +475,12 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 			yrange = (yrcv2[iarray]-yrcv1[iarray]); 
 			zrange = (zrcv2[iarray]-zrcv1[iarray]); 
 			if (dxr[iarray] != 0.0) {
-				nrcv = nlyrcv[iarray]*nlxrcv[iarray];
+				nrcv = nlzrcv[iarray]*nlyrcv[iarray]*nlxrcv[iarray];
 				dxrcv = dxr[iarray];
-				dyrcv = yrange/(nlyrcv[iarray]-1);
-				dzrcv = zrange/(nlxrcv[iarray]-1);
+				if (nlyrcv[iarray]<2) dyrcv=0.0;
+				else dyrcv = yrange/(nlyrcv[iarray]-1);
+				if (nlzrcv[iarray]<2) dzrcv=0.0;
+				else dzrcv = zrange/(nlzrcv[iarray]-1);
 				if (dyrcv != dyr[iarray]) {
 					vwarn("For receiver array %li: calculated dyrcv=%f given=%f", iarray, dyrcv, dyr[iarray]);
 					vwarn("The calculated receiver distance %f is used", dyrcv);
@@ -462,10 +491,12 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 				}
 			}
             else if (dyr[iarray] != 0.0) {
-				nrcv = nlyrcv[iarray]*nlxrcv[iarray];
-				dxrcv = xrange/(nlxrcv[iarray]-1);
+				nrcv = nlzrcv[iarray]*nlyrcv[iarray]*nlxrcv[iarray];
+				if (nlxrcv[iarray]<2) dxrcv=0.0;
+				else dxrcv = xrange/(nlxrcv[iarray]-1);
 				dyrcv = dyr[iarray];
-				dzrcv = zrange/(nlxrcv[iarray]-1);
+				if (nlzrcv[iarray]<2) dzrcv=0.0;
+				else dzrcv = zrange/(nlzrcv[iarray]-1);
 				if (dxrcv != dxr[iarray]) {
 					vwarn("For receiver array %li: calculated dxrcv=%f given=%f", iarray, dxrcv, dxr[iarray]);
 					vwarn("The calculated receiver distance %f is used", dxrcv);
@@ -479,10 +510,10 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 				if (dzr[iarray] == 0) {
 					verr("For receiver array %li: receiver distance dzrcv is not given", iarray);
 				}
-				nrcv = nlyrcv[iarray]*nlxrcv[iarray];
+				nrcv = nlzrcv[iarray]*nlyrcv[iarray]*nlxrcv[iarray];
 				dxrcv = xrange/(nrcv-1);
 				dyrcv = yrange/(nrcv-1);
-				dzrcv = dzr[iarray];
+				dzrcv = zrange/(nrcv-1);
 				if (dxrcv != dxr[iarray]) {
 					vwarn("For receiver array %li: calculated dxrcv=%f given=%f", iarray, dxrcv, dxr[iarray]);
 					vwarn("The calculated receiver distance %f is used", dxrcv);
@@ -494,18 +525,20 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 			}
 
 			// calculate coordinates
-			for (iy=0; iy<nlyrcv[iarray]; iy++) {
-                for (ix=0; ix<nlxrcv[iarray]; ix++) {
-                    rec->xr[nrec]=xrcv1[iarray]-sub_x0+ix*dxrcv;
-                    rec->yr[nrec]=yrcv1[iarray]-sub_y0+iy*dyrcv;
-                    rec->zr[nrec]=zrcv1[iarray]-sub_z0+ix*dzrcv;
+			for (iz=0; iz<nlzrcv[iarray]; iz++) {
+				for (iy=0; iy<nlyrcv[iarray]; iy++) {
+					for (ix=0; ix<nlxrcv[iarray]; ix++) {
+						rec->xr[nrec]=xrcv1[iarray]-sub_x0+ix*dxrcv;
+						rec->yr[nrec]=yrcv1[iarray]-sub_y0+iy*dyrcv;
+						rec->zr[nrec]=zrcv1[iarray]-sub_z0+iz*dzrcv;
 
-                    rec->x[nrec]=NINT((rec->xr[nrec])/dx);
-                    rec->y[nrec]=NINT((rec->yr[nrec])/dy);
-                    rec->z[nrec]=NINT((rec->zr[nrec])/dz);
-                    nrec++;
-                }
-            }
+						rec->x[nrec]=NINT((rec->xr[nrec])/dx);
+						rec->y[nrec]=NINT((rec->yr[nrec])/dy);
+						rec->z[nrec]=NINT((rec->zr[nrec])/dz);
+						nrec++;
+					}
+				}
+			}
 		}
 		free(xrcv1);
 		free(xrcv2);
@@ -518,6 +551,7 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 		free(dzr);
         free(nlxrcv);
         free(nlyrcv);
+        free(nlzrcv);
 	}
 
     rec->n=rec->max_nrec;
