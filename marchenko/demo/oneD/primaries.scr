@@ -8,16 +8,18 @@
 #cd $SLURM_SUBMIT_DIR
 
 export PATH=$HOME/src/OpenSource/bin:$PATH:
-export OMP_NUM_THREADS=20
+export OMP_NUM_THREADS=40
 
 #shot record to remove internal multiples
-select=451
+select=51
 
 makewave fp=20 dt=0.004 file_out=wave.su nt=2048 t0=0.0 scale=0 scfft=1
 
 ../../marchenko_primaries file_shot=shotsdx5_rp.su ishot=$select file_src=wave.su \
-	nshots=601 verbose=2 istart=40 iend=500 fmax=90 pad=1024 \
-	niter=25 smooth=10 niterskip=600 shift=20 file_rr=pred_rr.su T=0
+	nshots=901 verbose=2 istart=40 iend=500 fmax=90 pad=1024 \
+	niter=20 smooth=10 niterskip=1 shift=20 file_rr=pred_rr.su T=0
+
+exit;
 
 #for reference original shot record from Reflection matrix
 suwind key=fldr min=$select max=$select < shotsdx5_rp.su itmax=2047 > shotsx0.su
