@@ -695,7 +695,7 @@ int main (int argc, char **argv)
             if((ii-istart)==10)t4=wallclock_time();
             if((ii-istart)==20){
                 t4=(wallclock_time()-t4)*((iend-istart)/10.0);
-                fprintf(stderr,"\r    %s: Estimated total compute time = %.2fs.\n    %s: Progress: %3d%%",xargv[0],t4,xargv[0],(ii-istart)/((iend-istart)/100.0));
+                fprintf(stderr,"\r    %s: Estimated total compute time = %.2f s.\n    %s: Progress: %.0f%%",xargv[0],(float)t4,xargv[0],(ii-istart)/((iend-istart)/100.0));
             }
             //t4=wallclock_time();
             tii=(t4-t1)*((float)(iend-istart)/(ii-istart+1.0))-(t4-t1);
