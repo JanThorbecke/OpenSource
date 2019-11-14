@@ -124,7 +124,7 @@ XDRFLAG =
 
 so the XDRFLAG is empty. If you have made that change you have to remake SU with the commands:
 make remake
-make xtremane
+make xtremake
 
 ZFP
 ---
