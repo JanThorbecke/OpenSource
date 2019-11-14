@@ -4,6 +4,7 @@ include ../Make_include
 
 #LIBS    += -L$L -lgenfft -lm $(LIBSM)
 #OPTC += -g -O0 -Wall 
+#OPTC += -g -traceback #-check-pointers=rw -check-pointers-undimensioned
 
 
 ALL: fmute marchenko marchenko_primaries
