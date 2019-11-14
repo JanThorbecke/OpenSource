@@ -187,6 +187,8 @@ int main (int argc, char **argv)
     if (!getparfloat("dt", &dt)) dt = d1;
     if(!getparint("istart", &istart)) istart=20;
     if(!getparint("iend", &iend)) iend=nt;
+    iend = MIN(iend, nt-shift-1);
+    istart = MIN(MAX(1,istart),iend);
 
     if (file_tinv == NULL) {/* 'G_d' is one of the shot records */
         if(!getparint("ishot", &ishot)) ishot=1+(nshots-1)/2;
@@ -513,10 +515,10 @@ int main (int argc, char **argv)
                         G_d[l*nxs*nts+i*nts+j] = DD[l*nxs*nts+i*nts+j];
                     }
 					/* apply mute window for samples above nts-ii */
-                    for (j = 0; j < nts-ii+T*shift-smooth; j++) {
+                    for (j = 0; j < MIN(nts, nts-ii+T*shift-smooth); j++) {
                         G_d[l*nxs*nts+i*nts+j] = 0.0;
                     }
-                    for (j = nts-ii+T*shift-smooth, k=1; j < nts-ii+T*shift; j++, k++) {
+                    for (j = nts-ii+T*shift-smooth, k=1; j < MIN(nts, nts-ii+T*shift); j++, k++) {
                         G_d[l*nxs*nts+i*nts+j] *= costaper[smooth-k];
                     }
                 }
@@ -533,7 +535,9 @@ int main (int argc, char **argv)
                     //}
 			    }
 			}
-           	writeDataIter("G_d.su", G_d, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, 1000*ii);
+        	if (file_iter != NULL) {
+           	    writeDataIter("G_d.su", G_d, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, 1000*ii);
+			}
 		}
 		else { /* use f1min from previous iteration as starting point and do niterec iterations */
 			niterrun=niterec;
@@ -548,10 +552,10 @@ int main (int argc, char **argv)
                         G_d[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts+nts-j] - f1min[l*nxs*nts+i*nts+nts-j];
                     }
 					/* apply mute window for samples above nts-ii */
-                    for (j = 0; j < nts-ii+T*shift-smooth; j++) {
+                    for (j = 0; j < MIN(nts,nts-ii+T*shift-smooth); j++) {
                         G_d[l*nxs*nts+i*nts+j] = 0.0;
                     }
-                    for (j = nts-ii+T*shift-smooth, k=1; j < nts-ii+T*shift; j++, k++) {
+                    for (j = nts-ii+T*shift-smooth, k=1; j < MIN(nts, nts-ii+T*shift); j++, k++) {
                         G_d[l*nxs*nts+i*nts+j] *= costaper[smooth-k];
                     }
                 }
@@ -597,17 +601,17 @@ int main (int argc, char **argv)
                 for (l = 0; l < Nfoc; l++) {
                     for (i = 0; i < npos; i++) {
 						/* apply mute window for samples after ii */
-                        for (j = ii-T*shift+smooth; j < nts; j++) {
+                        for (j = MAX(0,ii-T*shift+smooth); j < nts; j++) {
                             Ni[l*nxs*nts+i*nts+j] = 0.0;
                         }
-                        for (j = ii-T*shift+smooth, k=0; j < ii; j++, k++) {
+                        for (j = MAX(0,ii-T*shift+smooth), k=0; j < ii; j++, k++) {
                             Ni[l*nxs*nts+i*nts+j] *= costaper[k];
                         }
 						/* apply mute window for delta function at t=0*/
                         for (j = 0; j < shift-smooth; j++) {
                             Ni[l*nxs*nts+i*nts+j] = 0.0;
                         }
-                        for (j = shift-smooth, k=1; j < shift; j++, k++) {
+                        for (j = MAX(0,shift-smooth), k=1; j < shift; j++, k++) {
                             Ni[l*nxs*nts+i*nts+j] *= costaper[smooth-k];
                         }
                         f1plus[l*nxs*nts+i*nts+j] += Ni[l*nxs*nts+i*nts+j];
@@ -616,9 +620,11 @@ int main (int argc, char **argv)
                         }
                     }
                 }
+/*
         		if (file_iter != NULL) {
             		writeDataIter("f1plus.su", f1plus, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, 1000*ii+iter);
 				}
+*/
             }
             else {/* odd iterations: => f_1^-(t)  */
                 for (l = 0; l < Nfoc; l++) {
@@ -645,7 +651,7 @@ int main (int argc, char **argv)
                         for (j = nts-shift+smooth; j < nts; j++) {
                             Ni[l*nxs*nts+i*nts+j] = 0.0;
                         }
-                        for (j = nts-shift, k=0; j < nts-shift+smooth; j++, k++) {
+                        for (j = nts-shift, k=0; j < MIN(nts, nts-shift+smooth); j++, k++) {
                             Ni[l*nxs*nts+i*nts+j] *= costaper[k];
                         }
 						/* apply mute window for samples above nts-ii */
@@ -654,10 +660,10 @@ int main (int argc, char **argv)
                         //   	Ni[l*nxs*nts+i*nts+j] = 0.0;
                        	//}
 					    /* apply mute window for samples above nts-ii */
-                        for (j = 0; j < nts-ii+T*shift-smooth; j++) {
+                        for (j = 0; j < MIN(nts,nts-ii+T*shift-smooth); j++) {
                             Ni[l*nxs*nts+i*nts+j] = 0.0;
                         }
-                        for (j = nts-ii+T*shift-smooth, k=1; j < nts-ii+T*shift; j++, k++) {
+                        for (j = nts-ii+T*shift-smooth, k=1; j < MIN(nts,nts-ii+T*shift); j++, k++) {
                             Ni[l*nxs*nts+i*nts+j] *= costaper[smooth-k];
                         }
                     }
@@ -689,7 +695,7 @@ int main (int argc, char **argv)
             if((ii-istart)==10)t4=wallclock_time();
             if((ii-istart)==20){
                 t4=(wallclock_time()-t4)*((iend-istart)/10.0);
-                fprintf(stderr,"\r    %s: Estimated total compute time = %.2fs.\n    %s: Progress: %3d%%",xargv[0],t4,xargv[0],(ii-istart)/((iend-istart)/100));
+                fprintf(stderr,"\r    %s: Estimated total compute time = %.2fs.\n    %s: Progress: %3d%%",xargv[0],t4,xargv[0],(ii-istart)/((iend-istart)/100.0));
             }
             //t4=wallclock_time();
             tii=(t4-t1)*((float)(iend-istart)/(ii-istart+1.0))-(t4-t1);

@@ -95,7 +95,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
     /* transform muted Ni (Top) to frequency domain, input for next iteration  */
         for (l = 0; l < Nfoc; l++) {
             /* set Fop to zero, so new operator can be defined within ixpos points */
-            memset(&Fop[l*nxs*nw].r, 0, nxs*nw*2*sizeof(float));
+           memset(&Fop[l*nxs*nw], 0, nxs*nw*sizeof(complex));
             for (i = 0; i < npos; i++) {
                 rc1fft(&Top[l*size+i*nts],ctrace,ntfft,-1);
                 ix = ixpos[i];
@@ -111,7 +111,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
         first=0;
         for (l = 0; l < Nfoc; l++) {
             /* set Fop to zero, so new operator can be defined within all ix points */
-            memset(&Fop[l*nxs*nw].r, 0, nxs*nw*2*sizeof(float));
+            memset(&Fop[l*nxs*nw], 0, nxs*nw*sizeof(complex));
             for (i = 0; i < nxs; i++) {
                 rc1fft(&Top[l*size+i*nts],ctrace,ntfft,-1);
                 for (iw=0; iw<nw; iw++) {

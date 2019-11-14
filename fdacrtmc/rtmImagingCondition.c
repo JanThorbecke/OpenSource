@@ -66,6 +66,8 @@ int rtmImagingCondition(modPar *mod, wavPar *wav, migPar *mig, decompPar *decomp
 							}
 						}
 					}
+					free(mig->wav[mig->it].vx);
+					free(mig->wav[mig->it].vz);
 					break;
 				case 1: // Up-Down Imaging
 					for(ix=0,ix1=mod->ioPx+mig->x1;ix<mig->nx;ix++,ix1+=mig->skipdx){
@@ -78,6 +80,7 @@ int rtmImagingCondition(modPar *mod, wavPar *wav, migPar *mig, decompPar *decomp
 							if(pzf*pzb>0) mig->image[ix*mig->nz+iz]+=mig->dt*(wav->tzz[ix1*mod->naz+iz1]*mig->wav[mig->it].tzz[ix*mig->nz+iz]);
 						}
 					}
+					free(mig->wav[mig->it].vz);
 					break;
 				case 2: // Left-Right Imaging
 					for(ix=0,ix1=mod->ioPx+mig->x1;ix<mig->nx;ix++,ix1+=mig->skipdx){
@@ -90,6 +93,7 @@ int rtmImagingCondition(modPar *mod, wavPar *wav, migPar *mig, decompPar *decomp
 							if(pxf*pxb<0) mig->image[ix*mig->nz+iz]+=mig->dt*(wav->tzz[ix1*mod->naz+iz1]*mig->wav[mig->it].tzz[ix*mig->nz+iz]);
 						}
 					}
+					free(mig->wav[mig->it].vx);
 					break;
 				case 3: //Normal Imaging
 					//Not yet implemented
@@ -103,8 +107,6 @@ int rtmImagingCondition(modPar *mod, wavPar *wav, migPar *mig, decompPar *decomp
 				break;
 			}
 			free(mig->wav[mig->it].tzz);
-			free(mig->wav[mig->it].vx);
-			free(mig->wav[mig->it].vz);
 			break;
 		case 3: /* Wavefield decomposition zero-lag pressure cross-correlation */
 			mig->it--;break;
