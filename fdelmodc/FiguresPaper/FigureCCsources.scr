@@ -36,6 +36,8 @@ echo $file_shot
 zsrc1=500
 zsrc2=4090
 
+set -x
+pwd
 ../fdelmodc \
 	file_cp=simple_cp.su ischeme=1 \
 	file_den=simple_ro.su \
@@ -64,6 +66,6 @@ zsrc2=4090
 	ntaper=45 \
     left=4 right=4 top=1 bottom=4 
 
-    mv src_nwaw.su source_volume_S${nsrc}_Dt${tsrc2}_F${fmax}.su
+cp src_nwav.su source_volume_S${nsrc}_Dt${tsrc2}_F${fmax}.su
 
 
