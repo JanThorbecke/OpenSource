@@ -97,6 +97,9 @@ BLAS = -L${MKLROOT}/lib/ -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread -lm
 #BLAS = -Wl,-rpath ${MKLLIB} -Wl,--start-group -L${MKLLIB} -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group -lpthread -lm -ldl
 #for intel compilers
 #BLAS = -mkl
+#
+#If you do not want to use MKL
+#BLAS = -llapack -lblas
 
 #############################################################################
 # AMD ACML 4.4.0

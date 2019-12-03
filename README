@@ -110,7 +110,7 @@ Usually the MKL libraries are installed in $MKL_ROOT. If that variable is not se
 find /opt/intel -name libmkl_gf_lp64.so
 
 and adjust MKLROOT in Make_include accordingly. 
-You can also completely disable the use of MKL by commenting out these parts in Make_include. 
+You can also completely disable the use of MKL by commenting out the MKL parts in Make_include. 
 
 SEISMIC UNIX
 -----------
