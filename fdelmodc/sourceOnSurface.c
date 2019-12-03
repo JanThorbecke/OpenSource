@@ -306,7 +306,7 @@ int reStoreSourceOnSurface(modPar mod, srcPar src, bndPar bnd, int ixsrc, int iz
 
 	/* restore source positions on the edge */
 	is0 = -1*floor((src.n-1)/2);
-#pragma omp	for private (isrc, ixs, izs, store) 
+//#pragma omp	for private (isrc, ixs, izs, store) 
 	for (isrc=0; isrc<src.n; isrc++) {
 		/* calculate the source position */
 		if (src.random || src.multiwav) {
