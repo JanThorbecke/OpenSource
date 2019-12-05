@@ -224,7 +224,7 @@ int main (int argc, char **argv)
     G_d     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     muteW   = (int *)calloc(Nfoc*nxs,sizeof(int));
     tsynW   = (int *)malloc(Nfoc*nxs*sizeof(int)); // time-shift for Giovanni's plane-wave on non-zero times
-    energyN0= (float *)malloc(Nfoc*sizeof(float));
+    energyN0= (double *)malloc(Nfoc*sizeof(double));
     trace   = (float *)malloc(ntfft*sizeof(float));
     xrcvsyn = (float *)calloc(Nfoc*nxs,sizeof(float)); // x-rcv postions of focal points
     xsyn    = (float *)malloc(Nfoc*sizeof(float)); // x-src position of focal points
