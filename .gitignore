@@ -3,6 +3,7 @@
 bin/*
 *.su
 *.bin
+*.asci
 */.DS*
 **/.DS*
 .DS*
@@ -60,3 +61,6 @@ marchenko3D/fmute3D
 marchenko3D/marchenko3D
 fdelmodc3D/fdelmodc3D
 fdacrtmc/fdacrtmc
+marchenko3D/TWtransform
+utils/mutesnap
+utils/snap2shot

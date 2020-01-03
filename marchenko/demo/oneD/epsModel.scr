@@ -50,7 +50,7 @@ clipref=`cat nep | awk '{print $1/15}'`
 suwind key=gx min=-2250000 max=2250000 < $file | \
         supsimage hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
     	label1="time sample number" label2="lateral distance (m)" \
-        n1tic=2 d2=5 f1=0.0 x1beg=0 x1end=500 d1=1 f1=0 d1num=100 \
+        n1tic=2 d2=5 f1=0.0 x1beg=0 x1end=400 d1=1 f1=0 d1num=100 \
         f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > shotx0_rp.eps
 
 rm nep 
