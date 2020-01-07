@@ -34,6 +34,11 @@ echo "clipiter="$clipiter "clipref="$clipref "clipf1="$clipf1
 clipiter=$clipref
 clipf1=$clipref
 
+# Initialisation and First iteration
+if [[ "$1" == "Figure3" ]];
+then
+file=M0_276000.su
+file_base=${file%.su}
 supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
 	n1tic=2 d2=5 x1beg=$nstart x1end=$ns d1=1 f1=0 f1num=700 d1num=100 \
 	label1="time sample number" label2="lateral distance" \
@@ -45,7 +50,6 @@ supsimage hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
 	label1="time sample number" label2="lateral distance" \
     f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > ${file_base}_flip.eps
 
-# First iteration
 #convolve M0 with middle shot record of R
 select=451
 #original shot record from Reflection matrix
@@ -58,9 +62,16 @@ fconv file_in1=shotsx0.su file_in2=N0.su file_out=fconvN0.su verbose=1 fmax=90
 file=fconvN0.su
 file_base=${file%.su}
 supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
-	n1tic=2 d2=5 x1beg=624 x1end=1024 d1=1 f1=0 f1num=700 d1num=100 \
+	n1tic=2 d2=5 x1beg=0 d1=1 f1=0 f1num=0 d1num=200 \
 	label1="time sample number" label2="lateral distance" \
-    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > $file_base.eps
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > ${file_base}fulltime.eps
+
+file=fconvN0.su
+file_base=${file%.su}
+supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
+	n1tic=2 d2=5 x1beg=$nstart x1end=$ns d1=1 f1=0 f1num=700 d1num=100 \
+	label1="time sample number" label2="lateral distance" \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > ${file_base}zoom.eps
 
 suflip < fconvN0.su flip=3 | sugain scale=-1 > fconvN0flip.su
 file=fconvN0flip.su
@@ -70,14 +81,21 @@ supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
 	label1="time sample number" label2="lateral distance" \
     f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > $file_base.eps
 
-file=fconvN0.su
+iter=1
+piter=$(printf %03d $iter)
+file=Mi_${istart}${piter}.su
 file_base=${file%.su}
 supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
-	n1tic=2 d2=5 x1beg=0 d1=1 f1=0 f1num=0 d1num=200 \
+	n1tic=2 d2=5 x1beg=0 x1end=$nsd d1=1 d1num=100 \
 	label1="time sample number" label2="lateral distance" \
-    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > ${file_base}fulltime.eps
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipiter > $file_base.eps
+
+fi
+
 
 # second iteration
+if [[ "$1" == "Figure4" ]];
+then
 suwind itmax=1023 <  Mi_276001.su > N0.su
 #compute R*N0
 fconv file_in1=shotsx0.su file_in2=N0.su file_out=fconvN1.su verbose=1 fmax=90
@@ -96,29 +114,27 @@ supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
 	n1tic=2 d2=5 x1beg=0 d1=1 f1=0 f1num=0 d1num=200 \
 	label1="time sample number" label2="lateral distance" \
     f2=-2250 f2num=-2000 d2num=1000 clip=$clipm1 > ${file_base}fulltime.eps
-
-#RNi
-file=iter_276000.su
-file_base=${file%.su}
-#clipref=$clipiter
-supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
-	n1tic=2 d2=5 x1beg=0 d1=1 d1num=100 \
-	label1="time sample number" label2="lateral distance" \
-    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > $file_base.eps
+fi
 
 #Iterations
+if [[ "$1" == "Figure5" ]];
+then
 for (( iter=0; iter<=21; iter+=2 ))
 do
 piter=$(printf %03d $iter)
 echo $piter
 file=Mi_${istart}${piter}.su
 file_base=${file%.su}
+#possibly add suflip flip=3 to flip the time-axis
 supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
 	n1tic=2 d2=5 x1beg=$nstart x1end=$ns d1=1 d1num=100 \
 	label1="time sample number" label2="lateral distance" \
     f2=-2250 f2num=-2000 d2num=1000 clip=$clipiter > $file_base.eps
 done
+fi
 
+if [[ "$1" == "Figure5" ]];
+then
 for (( iter=1; iter<=21; iter+=2 ))
 do
 piter=$(printf %03d $iter)
@@ -130,7 +146,9 @@ supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
 	label1="time sample number" label2="lateral distance" \
     f2=-2250 f2num=-2000 d2num=1000 clip=$clipiter > $file_base.eps
 done
+fi
 
+exit;
 #iterations
 for (( iter=0; iter<=31; iter+=2 ))
 do

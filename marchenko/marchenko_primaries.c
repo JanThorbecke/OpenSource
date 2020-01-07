@@ -70,7 +70,8 @@ char *sdoc[] = {
 "   plane_wave=0 ............. model plane wave",
 "   src_angle=0 .............. angle with horizontal of plane source array",
 "   src_velo=1500 ............ velocity to use in src_angle definition",
-"   xorig=nrecv/2 ............ center of plane-wave",
+"   t0=0.1 ................... time shift in plane-wave source wavelet for migration",
+//"   xorig=nrecv/2 ............ center of plane-wave",
 " MARCHENKO ITERATIONS ",
 "   niter=22 ................. number of iterations to initialize and restart",
 "   niterec=2 ................ number of iterations in recursive part of the time-samples",
@@ -119,8 +120,8 @@ int main (int argc, char **argv)
     float   fmin, fmax, tom, deltom, *tapersh, *tapersy, fxf, dxf, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
     double  t0, t1, t2, t3, t4, tsyn, tread, tfft, tcopy, tii;
 	double  energyMi, *energyM0;
-    float   d1, d2, f1, f2, fxsb, fxse, ft, fx, *xsyn, dxsrc;
-    float   *M0, *DD, *RR, dt, dx, dxs, scl, mem;
+    float   tt0, d1, d2, f1, f2, fxsb, fxse, ft, fx, *xsyn, dxsrc;
+    float   *M0, *DD, *RR, *SRC, dt, dx, dxs, scl, mem;
     float   *rtrace, *tmpdata, *f1min, *f1plus, *RMi, *Mi, *trace;
 	float   *Mup, *Msp;
     float   xmin, xmax, scale, tsq;
@@ -168,6 +169,7 @@ int main (int argc, char **argv)
     if(!getparint("plane_wave", &plane_wave)) plane_wave=0;
     if(!getparfloat("src_angle", &src_angle)) src_angle = 0.0;
     if (!getparfloat("src_velo",&src_velo)) src_velo=1500.;
+    if (!getparfloat("t0",&tt0)) tt0=0.1;
 
     if (T>0) {
 		T=-1;
@@ -223,17 +225,24 @@ int main (int argc, char **argv)
         fxsb = fx;
     }
     assert (nxs >= nshots); /* ToDo allow other geometries */
-    if(!getparint("xorig", &xorig)) xorig=-(nxs-1)/2;
+    //if(!getparint("xorig", &xorig)) xorig=-(nxs-1)/2;
 
 	/* compute time delay for plane-wave responses */
     twplane = (float *) calloc(nxs,sizeof(float));
 	if (plane_wave==1) {
         grad2rad = 17.453292e-3;
-        //p = sin(src_angle*grad2rad)/src_velo;
-		for (i=0; i<nxs; i++) {
-			//twplane[i] = (xorig+i)*dxs*p;
-			twplane[i] = dxs*(xorig+i)*tan(src_angle*grad2rad)/src_velo;
-			//fprintf(stderr,"plane-wave i=%d x=%f t=%f\n", i, dxs*(xorig+i), twplane[i]);
+        p = sin(src_angle*grad2rad)/src_velo;
+        if (p < 0.0) {
+			for (i=0; i<nxs; i++) {
+				twplane[i] = fabsf((nxs-i-1)*dxs*p)+tt0;
+            }
+        }
+		else {
+			for (i=0; i<nxs; i++) {
+				twplane[i] = (i)*dxs*p+tt0;
+				//twplane[i] = dxs*(xorig+i)*tan(src_angle*grad2rad)/src_velo;
+//				fprintf(stderr,"plane-wave i=%d x=%f t=%f %f\n", i, dxs*(xorig+i), twplane[i], (xorig+i)*dxs*p);
+			}
 		}
 	}
 
@@ -257,6 +266,7 @@ int main (int argc, char **argv)
     Mi      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     M0     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     DD      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
+    SRC     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     RR      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     Mup     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     Msp     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
@@ -436,6 +446,20 @@ int main (int argc, char **argv)
             	for (j = 0; j < nts; j++) {
                		DD[0*nxs*nts+l*nts+j] = -1.0*scl*rtrace[j];
         		}
+				/* compute Source wavelet for plane-wave imaging */
+            	for (j = nw_low, m = 0; j <= nw_high; j++, m++) {
+            		tom = j*deltom*twplane[l];
+            		csum.r = cos(-tom);
+            		csum.i = sin(-tom);
+                	//cwav.r = csum.r*cwave[j].r - csum.i*cwave[j].i;
+                	//cwav.i = csum.i*cwave[j].r + csum.r*cwave[j].i;
+					ctrace[j] = csum;
+				}
+            	/* transfrom result back to time domain */
+            	cr1fft(ctrace, rtrace, ntfft, 1);
+            	for (j = 0; j < nts; j++) {
+               		SRC[0*nxs*nts+l*nts+j] = scl*rtrace[j];
+        		}
 			}
 		}
         free(ctrace);
@@ -563,7 +587,11 @@ int main (int argc, char **argv)
 	}
     perc=(iend-istart)/100;if(!perc)perc=1;
 
-    if (plane_wave) writeDataIter("DDplane.su", DD, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, NINT(src_angle));
+    if (plane_wave) {
+		writeDataIter("SRCplane.su", SRC, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, NINT(src_angle));
+		writeDataIter("DDplane.su", DD, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, NINT(src_angle));
+	}
+	free(SRC);
 
 /*================ start loop over number of time-samples ================*/
 

@@ -42,39 +42,40 @@ The full R matrix is build up from the the shot record computed with model.scr
 
 This R is the only input of the Marchenko Primaries algorithm.
 
+==> run './iterations.scr ./iterations.scr Figure3467' to compute the intermediate results of the first iterations of the Marchenko Primaries algorithm.
+This will take 10 seconds. The generated files are:
 
-==> run marchenkoIter.scr to compute the first 4 iteration of the Marchenko algorithm. This will take 1-2 minutes. The generated files are:
-	- p0plus.su
-	- pgreen_001.su
-	- f1plus_001.su
-	- f1min_001.su
-	- Gplus_001.su
-	- Gmin_001.su
-	- pgreen_002.su
-	- f1plus_002.su
-	- f1min_002.su
-	- Gplus_002.su
-	- Gmin_002.su
-	- pgreen_003.su
-	- f1plus_003.su
-	- f1min_003.su
-	- Gplus_003.su
-	- Gmin_003.su
-	- pgreen_004.su
-	- f1plus_004.su
-	- f1min_004.su
-	- Gplus_004.su
-	- Gmin_004.su
+	- M0_276000.su
+	- iter_2760##.su (not used)
+	- Mi_2760##.su
+	- f1min_2760##.su
+	- pred_rr_276.su (not used)
 
-To generate all postscript files for Figure 4, 5 and 6
+	where ## ranges from 01 to 33
 
-==> run './epsPrimaries.scr Figure3' to generate the postscript files of Figure 3 
+To generate the postscript files for Figure 3:
 
-==> run epsMarchenkoIter.scr
+==> run './epsPrimaries.scr Figure3' 
 
-shotx0_rp.eps 		=> Figure 4 R == Figure 3c
-p0plus.eps	 	=> Figure 4 G_d
-iter_001.eps	 	=> Figure 4 N_0
+This will produce the following files:
+
+shotx0_rp.eps 		=> Figure 2c == Figure 3a
+M0_276000_flip.eps	=> Figure 3b
+fconvN0fulltime.eps => Figure 3c
+fconvN0flip.eps 	=> Figure 3d
+Mi_276001.eps		=> Figure 3e
+
+
+To generate the postscript files for Figure 4:
+==> run './epsPrimaries.scr Figure4' 
+
+To generate the postscript files for Figure 6:
+==> run './epsPrimaries.scr Figure6' 
+
+To generate the postscript files for Figure 7:
+==> run './epsPrimaries.scr Figure7' 
+
+
 
 shotx0_rp.eps 		=> Figure 5 R == Figure 3c
 f1min_001.eps	 	=> Figure 5 f^-_1,0
