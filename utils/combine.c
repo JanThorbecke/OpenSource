@@ -48,17 +48,19 @@ char *sdoc[] = {
 "   numb=0 ................... integer number of first file",
 "   dnumb=1 .................. integer number of increment in files",
 "   nzmax=0 .................. Maximum number of files read",
+"   direction=z .............. The direction over which the data is stacked",
 "   verbose=1 ................ Give detailed information of process",
 NULL};
 
 int main (int argc, char **argv)
 {
 	FILE	*fp_in, *fp_out;
-	char	*fin, *fout, *ptr, fbegin[100], fend[100], fins[100], fin2[100], numb1[100];
+	char	*fin, *fout, *ptr, fbegin[100], fend[100], fins[100], fin2[100], numb1[100], *direction;
 	float	*indata, *outdata;
 	float	dz,  dy,  dx,  z0,  y0,  x0,  scl;
 	long	nt, nz, ny, nx, ntr, ix, iy, it, is, iz, pos, file_det, nzs, dt;
 	long	numb, dnumb, ret, nzmax, compact, verbose, nxyz, sx, sy, sz;
+	long 	nxout, nyout, nzout, ixout, iyout, izout;
 	segy	*hdr_in, *hdr_out;
 
 	initargs(argc, argv);
@@ -69,6 +71,7 @@ int main (int argc, char **argv)
     *----------------------------------------------------------------------------*/
 	if (!getparstring("file_in", &fin)) fin = NULL;
     if (!getparstring("file_out", &fout)) fout = "out.su";
+    if (!getparstring("direction", &direction)) direction = "z";
 	if (!getparlong("numb", &numb)) numb=0;
 	if (!getparlong("dnumb", &dnumb)) dnumb=1;
 	if (!getparlong("nzmax", &nzmax)) nzmax=0;
@@ -76,16 +79,22 @@ int main (int argc, char **argv)
 	if (!getparlong("compact", &compact)) compact=0;
 	if (fin == NULL) verr("Incorrect downgoing input");
 
+
+	vmess("Direction given is %s",direction);
+	if (strcmp(direction,"x") != 0 && strcmp(direction,"y") != 0 && strcmp(direction,"z") != 0) {
+		verr("Direction needs to be either x, y or z");
+	}
+
     /*----------------------------------------------------------------------------*
     *   Determine the position of the number in the string
     *   and split the file into beginning, middle and end
     *----------------------------------------------------------------------------*/
 	if (dnumb < 1) dnumb = 1;
-	sprintf(numb1,"%li",numb);
+	sprintf(numb1,"%s%li",direction,numb);
 	ptr  = strstr(fin,numb1);
     pos = ptr - fin + 1;
     sprintf(fbegin,"%*.*s", pos-1, pos-1, fin);
-   	sprintf(fend,"%s", fin+pos);
+   	sprintf(fend,"%s", fin+pos+1);
 
     /*----------------------------------------------------------------------------*
     *   Determine the amount of files that are present
@@ -93,7 +102,7 @@ int main (int argc, char **argv)
 	file_det = 1;
 	nzs=0;
 	while (file_det) { // Check for a file with the filename
-        sprintf(fins,"%li",nzs*dnumb+numb);
+        sprintf(fins,"%s%li",direction,nzs*dnumb+numb);
         sprintf(fin,"%s%s%s",fbegin,fins,fend);
         fp_in = fopen(fin, "r");
         if (fp_in == NULL) { // If the filename does not exist
@@ -124,7 +133,7 @@ int main (int argc, char **argv)
     *   Read in the first two files and determine the header values
     *   of the output
     *----------------------------------------------------------------------------*/
-	sprintf(fins,"%li",numb);
+	sprintf(fins,"%s%li",direction,numb);
     sprintf(fin2,"%s%s%s",fbegin,fins,fend);
 	nt = 1;
     if (compact==0) {
@@ -140,11 +149,27 @@ int main (int argc, char **argv)
 		readCompact(fin2, &nx, &ny, &nz, &nt, &dx, &dy, &dz, &dt, &x0, &y0, &z0, &sx, &sy, &sz, &scl);
 	}
 
-	nxyz = nx*ny*nzs*nz;
+	if (strcmp(direction,"z") == 0) {
+		nxout = nx;
+		nyout = ny;
+		nzout = nz*nzs;
+	}
+	if (strcmp(direction,"y") == 0) {
+		nxout = nx;
+		nyout = ny*nzs;
+		nzout = nz;
+	}
+	if (strcmp(direction,"x") == 0) {
+		nxout = nx*nzs;
+		nyout = ny;
+		nzout = nz;
+	}
+
+	nxyz = nxout*nyout*nzout;
 
 	if (verbose) {
 		vmess("number of time samples:      %li", nt);
-		vmess("Number of virtual receivers: %li, x: %li,  y: %li,  z: %li",nxyz,nx,ny,nzs*nz);
+		vmess("Number of virtual receivers: %li, x: %li,  y: %li,  z: %li",nxyz,nxout,nyout,nzout);
 		vmess("Starting distance for     x: %.3f, y: %.3f, z: %.3f",x0,y0,z0);
 		vmess("Sampling distance for     x: %.3f, y: %.3f, z: %.3f",dx,dy,dz);
 	}
@@ -153,7 +178,7 @@ int main (int argc, char **argv)
     *   Read in a single file to determine if the header values match
     *   and allocate the data
     *----------------------------------------------------------------------------*/
-	hdr_out     = (segy *)calloc(nx*ny,sizeof(segy));	
+	hdr_out     = (segy *)calloc(nxout*nyout,sizeof(segy));	
 	outdata		= (float *)calloc(nxyz*nt,sizeof(float));
     indata    	= (float *)calloc(nx*ny*nz*nt,sizeof(float));
 	if (compact != 2) {	
@@ -168,7 +193,7 @@ int main (int argc, char **argv)
     *----------------------------------------------------------------------------*/
 	for (is = 0; is < nzs; is++) {
 		if (verbose) vmess("Combining file %li out of %li",is+1,nzs);
-		sprintf(fins,"%li",is*dnumb+numb);
+		sprintf(fins,"%s%li",direction,is*dnumb+numb);
        	sprintf(fin2,"%s%s%s",fbegin,fins,fend);
        	fp_in = fopen(fin2, "r");
 		if (fp_in == NULL) {
@@ -177,14 +202,21 @@ int main (int argc, char **argv)
 		fclose(fp_in);
 		if (compact==0) {
 			readSnapData3D(fin2, indata, hdr_in, nt, nx, ny, nz, 0, nx, 0, ny, 0, nz);
-			if (dz == 1.0) {
-				if (is==1) dz = hdr_in[0].f1-z0;
+			if (is==1) {
+				if (dz == 1.0) dz = hdr_in[0].f1-z0;
+				if (dx == 1.0) dx = hdr_in[0].f2-x0;
 			}
 			for (it = 0; it < nt; it++) {
 				for (iy = 0; iy < ny; iy++) {
+					if (strcmp(direction,"y") == 0) iyout = iy+is;
+					else iyout = iy; 
 					for (ix = 0; ix < nx; ix++) {
+						if (strcmp(direction,"x") == 0) ixout = ix+is;
+						else ixout = ix; 
 						for (iz = 0; iz < nz; iz++) {
-							outdata[it*ny*nx*nz*nzs+iy*nx*nz*nzs+ix*nz*nzs+iz+is] = indata[it*ny*nx*nz+iy*nx*nz+ix*nz+iz];
+							if (strcmp(direction,"z") == 0) izout = iz+is;
+							else izout = iz; 
+							outdata[it*nyout*nxout*nzout+iyout*nxout*nzout+ixout*nzout+izout] = indata[it*ny*nx*nz+iy*nx*nz+ix*nz+iz];
 						}
 					}
 				}
@@ -192,14 +224,21 @@ int main (int argc, char **argv)
 		}
 		else if (compact==1) {
 			readSnapData3D(fin2, indata, hdr_in, nt, nz, ny, nx, 0, nz, 0, ny, 0, nx);
-			if (dz == 1.0) {
-				if (is==1) dz = hdr_in[0].f1-z0;
+			if (is==1) {
+				if (dz == 1.0) dz = hdr_in[0].f1-z0;
+				if (dx == 1.0) dx = hdr_in[0].f2-x0;
 			}
 			for (it = 0; it < nt; it++) {
 				for (iy = 0; iy < ny; iy++) {
+					if (strcmp(direction,"y") == 0) iyout = iy+is;
+					else iyout = iy; 
 					for (ix = 0; ix < nx; ix++) {
+						if (strcmp(direction,"x") == 0) ixout = ix+is;
+						else ixout = ix; 
 						for (iz = 0; iz < nz; iz++) {
-							outdata[it*ny*nx*nz*nzs+iy*nx*nz*nzs+ix*nz*nzs+iz+is] = indata[it*ny*nz*nx+iy*nz*nx+iz*nx+ix];
+							if (strcmp(direction,"z") == 0) izout = iz+is;
+							else izout = iz; 
+							outdata[it*nyout*nxout*nzout+iyout*nxout*nzout+ixout*nzout+izout] = indata[it*ny*nz*nx+iy*nz*nx+iz*nx+ix];
 						}
 					}
 				}
@@ -207,14 +246,21 @@ int main (int argc, char **argv)
 		}
 		else if (compact==2) {
 			readSnapData3D(fin2, indata, hdr_in, 1, 1, 1, nx*ny*nz*nt, 0, 1, 0, 1, 0, nx*ny*nz*nt);
-			if (dz == 1.0) {
-				if (is==1) dz = hdr_in[0].f1-z0;
+			if (is==1) {
+				if (dz == 1.0) dz = hdr_in[0].f1-z0;
+				if (dx == 1.0) dx = hdr_in[0].f2-x0;
 			}
 			for (it = 0; it < nt; it++) {
 				for (iy = 0; iy < ny; iy++) {
+					if (strcmp(direction,"y") == 0) iyout = iy+is;
+					else iyout = iy; 
 					for (ix = 0; ix < nx; ix++) {
+						if (strcmp(direction,"x") == 0) ixout = ix+is;
+						else ixout = ix; 
 						for (iz = 0; iz < nz; iz++) {
-							outdata[it*ny*nx*nz*nzs+iy*nx*nz*nzs+ix*nz*nzs+iz+is] = indata[it*ny*nx*nz+iy*nx*nz+ix*nz+iz];
+							if (strcmp(direction,"z") == 0) izout = iz+is;
+							else izout = iz; 
+							outdata[it*nyout*nxout*nzout+iyout*nxout*nzout+ixout*nzout+izout] = indata[it*ny*nx*nz+iy*nx*nz+ix*nz+iz];
 						}
 					}
 				}
@@ -236,32 +282,32 @@ int main (int argc, char **argv)
 	fp_out = fopen(fout, "w+");
 
 	for (it = 0; it < nt; it++) {
-		for (iy = 0; iy < ny; iy++) {
-			for (ix = 0; ix < nx; ix++) {
-				hdr_out[iy*nx+ix].fldr		= it+1;
-				hdr_out[iy*nx+ix].tracl		= it*ny*nx+iy*nx+ix+1;
-				hdr_out[iy*nx+ix].tracf		= iy*nx+ix+1;
-				hdr_out[iy*nx+ix].scalco	= -1000;
-				hdr_out[iy*nx+ix].scalel	= -1000;
-				hdr_out[iy*nx+ix].sdepth	= sz;
-				hdr_out[iy*nx+ix].selev		= -sz;
-				hdr_out[iy*nx+ix].trid		= 2;
-				hdr_out[iy*nx+ix].ns		= nz*nzs;
-				hdr_out[iy*nx+ix].trwf		= nx*ny;
-				hdr_out[iy*nx+ix].ntr		= hdr_out[iy*nx+ix].fldr*hdr_out[iy*nx+ix].trwf;
-				hdr_out[iy*nx+ix].f1		= roundf(z0*1000.0)/1000.0;
-				hdr_out[iy*nx+ix].f2		= roundf(x0*1000.0)/1000.0;
-				hdr_out[iy*nx+ix].dt		= dt;
-				hdr_out[iy*nx+ix].d1		= roundf(dz*1000.0)/1000.0;
-				hdr_out[iy*nx+ix].d2		= roundf(dx*1000.0)/1000.0;
-				hdr_out[iy*nx+ix].sx		= sx;
-				hdr_out[iy*nx+ix].gx		= (int)roundf(x0 + (ix*dx))*1000;
-				hdr_out[iy*nx+ix].sy		= sy;
-				hdr_out[iy*nx+ix].gy		= (int)roundf(y0 + (iy*dy))*1000;
-				hdr_out[iy*nx+ix].offset	= (hdr_out[iy*nx+ix].gx - hdr_out[iy*nx+ix].sx)/1000.0;
+		for (iy = 0; iy < nyout; iy++) {
+			for (ix = 0; ix < nxout; ix++) {
+				hdr_out[iy*nxout+ix].fldr		= it+1;
+				hdr_out[iy*nxout+ix].tracl		= it*nyout*nxout+iy*nxout+ix+1;
+				hdr_out[iy*nxout+ix].tracf		= iy*nxout+ix+1;
+				hdr_out[iy*nxout+ix].scalco		= -1000;
+				hdr_out[iy*nxout+ix].scalel		= -1000;
+				hdr_out[iy*nxout+ix].sdepth		= sz;
+				hdr_out[iy*nxout+ix].selev		= -sz;
+				hdr_out[iy*nxout+ix].trid		= 2;
+				hdr_out[iy*nxout+ix].ns			= nzout;
+				hdr_out[iy*nxout+ix].trwf		= nxout*nyout;
+				hdr_out[iy*nxout+ix].ntr		= hdr_out[iy*nxout+ix].fldr*hdr_out[iy*nxout+ix].trwf;
+				hdr_out[iy*nxout+ix].f1			= roundf(z0*1000.0)/1000.0;
+				hdr_out[iy*nxout+ix].f2			= roundf(x0*1000.0)/1000.0;
+				hdr_out[iy*nxout+ix].dt			= dt;
+				hdr_out[iy*nxout+ix].d1			= roundf(dz*1000.0)/1000.0;
+				hdr_out[iy*nxout+ix].d2			= roundf(dx*1000.0)/1000.0;
+				hdr_out[iy*nxout+ix].sx			= sx;
+				hdr_out[iy*nxout+ix].gx			= (int)roundf(x0 + (ix*dx))*1000;
+				hdr_out[iy*nxout+ix].sy			= sy;
+				hdr_out[iy*nxout+ix].gy			= (int)roundf(y0 + (iy*dy))*1000;
+				hdr_out[iy*nxout+ix].offset		= (hdr_out[iy*nxout+ix].gx - hdr_out[iy*nxout+ix].sx)/1000.0;
 			}
 		}
-		ret = writeData3D(fp_out, &outdata[it*nxyz], hdr_out, nz*nzs, nx*ny);
+		ret = writeData3D(fp_out, &outdata[it*nxyz], hdr_out, nzout, nxout*nyout);
 		if (ret < 0 ) verr("error on writing output file.");
 	}
 	fclose(fp_out);

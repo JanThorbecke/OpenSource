@@ -64,6 +64,7 @@ void makeWindow3D(char *file_ray, char *file_amp, char *file_wav, float dt, floa
         rc1fft(wavelet,cwav,ntfft,-1);
         free(wavtmp);
         free(wavelet);
+        vmess("Read the wavelet");
     }
 
 
@@ -150,7 +151,10 @@ void makeWindow3D(char *file_ray, char *file_amp, char *file_wav, float dt, floa
         }
     }
     free(timeval); free(hdrs_mute);
-    if (file_amp!=NULL) free(amp); free(hdrs_amp);
+    if (file_amp!=NULL) {
+        free(amp);
+        free(hdrs_amp);
+    }
 
 	return;
 }

@@ -59,10 +59,12 @@ long readShotData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float
 	dt = hdr.dt/(1E6);
 
 	if (mode==0){
+		if (verbose) vmess("Reading in frequency traces");
 		trace  = (float *)calloc(2*nw,sizeof(float));
 		ctrace = (complex *)malloc(nw*sizeof(complex));
 	}
 	else {
+		if (verbose) vmess("Reading in time traces"); 
 		trace  = (float *)calloc(ntfft,sizeof(float));
 		ctrace = (complex *)malloc(ntfft*sizeof(complex));
 	}

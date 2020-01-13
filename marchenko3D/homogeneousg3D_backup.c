@@ -24,7 +24,6 @@ void conjugate(float *data, long nsam, long nrec, float dt);
 
 void corr(float *data1, float *data2, float *cov, long nrec, long nsam, float dt, long shift);
 void convol(float *data1, float *data2, float *con, long nrec, long nsam, float dt, long shift);
-void convol2(float *data1, float *data2, float *con, long nrec, long nsam, float dt, float fmin, float fmax, long opt);
 
 long readSnapData3D(char *filename, float *data, segy *hdrs, long nsnaps, long nx, long ny, long nz, long sx, long ex, long sy, long ey, long sz, long ez);
 long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, float *d1, float *d2, float *d3, float *f1, float *f2, float *f3, float *sclsxgxsygy, long *nxm);
@@ -33,7 +32,7 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, fl
 void timeDiff(float *data, long nsam, long nrec, float dt, float fmin, float fmax, long opt);
 void depthDiff(float *data, long nsam, long nrec, float dt, float dx, float fmin, float fmax, float c, long opt);
 
-void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1m, float *zsyn, long nx, long ny, long nt, float dx, float dy,
+void homogeneousg3D(float *HomG, float *green, float *f2p, float *zsyn, long nx, long ny, long nt, float dx, float dy,
     float dt, long Nfoc, long *sx, long *sy, long *sz, long verbose)
 {
     char    *file_inp;
@@ -128,36 +127,6 @@ void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1
 	else if (scheme==5) {
 		if (verbose) vmess("Marchenko Homogeneous Green's function retrieval with f2 source");
 	}
-	else if (scheme==8) { // 0=f1p 1=f1m
-		if (verbose) vmess("f1+ redatuming");
-        if (n_source<2) verr("Not enough input for the homogeneous Green's function");
-        for (k = 0; k < ny; k++) {
-            depthDiff(&input[0*ny*nx*nt+k*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
-            conjugate(&input[0*ny*nx*nt+k*nx*nt], nt, nx, dt);
-            depthDiff(&input[1*ny*nx*nt+k*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
-            conjugate(&input[1*ny*nx*nt+k*nx*nt], nt, nx, dt);
-        }
-	}
-	else if (scheme==9) { // 0=f1p 1=f1m
-		if (verbose) vmess("f1- redatuming");
-        if (n_source<2) verr("Not enough input for the homogeneous Green's function");
-        for (k = 0; k < ny; k++) {
-            depthDiff(&input[0*ny*nx*nt+k*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
-            depthDiff(&input[1*ny*nx*nt+k*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
-        }
-	}
-	else if (scheme==10) { 
-		if (verbose) vmess("2i IM(f1) redatuming");
-		inputjkz	= (float *)calloc(n_source*nx*ny*nt,sizeof(float));
-        for (k = 0; k < ny; k++) {
-            for (l = 0; l < nx*nt; l++) {
-                inputjkz[k*nx*nt+l] = input[k*nx*nt+l];
-            }
-            conjugate(&inputjkz[k*nx*nt], nt, nx, dt);
-            depthDiff(&inputjkz[k*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
-            depthDiff(&input[k*nx*nt]   , nt, nx, dt, dx, fmin, fmax, cp, 1);
-        }
-	}
 	else {
 		if (verbose) vmess("Marchenko Homogeneous Green's function retrieval with G source");
 	}
@@ -170,7 +139,7 @@ void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1
 		tmp1	= (float *)calloc(nx*nt,sizeof(float));
 		tmp2	= (float *)calloc(nx*nt,sizeof(float));
 	}
-	if (scheme==3 || scheme==8 || scheme==9 || scheme==10) tmp1 = (float *)calloc(nx*nt,sizeof(float));
+	if (scheme==3) tmp1 = (float *)calloc(nx*nt,sizeof(float));
 
 #pragma omp for schedule(guided,1)
 	for (l = 0; l < Nfoc; l++) {
@@ -212,42 +181,6 @@ void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1
                 }
             }
 		}
-        else if (scheme==8) { // f1+ redatuming 0=f1p 1=f1m
-            for (k = 0; k < ny; k++) {
-                convol2(&input[0*ny*nx*nt+k*nx*nt], &f1p[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, fmin, fmax, 1);
-                convol2(&input[1*ny*nx*nt+k*nx*nt], &f1m[l*ny*nx*nt+k*nx*nt], tmp1, nx, nt, dt, fmin, fmax, 1);
-                for (i=0; i<nx; i++) {
-                    for (j=0; j<nt/2; j++) {
-                        HomG[(j+nt/2)*Nfoc+l]   -= 2.0*(conv[i*nt+j]        + tmp1[i*nt+j])/rho;
-                        HomG[j*Nfoc+l]          -= 2.0*(conv[i*nt+(j+nt/2)] + tmp1[i*nt+(j+nt/2)])/rho;
-                    }
-                }
-            }
-		}
-        else if (scheme==9) { // f1- redatuming 0=f1p 1=f1m
-            for (k = 0; k < ny; k++) {
-                convol2(&input[0*ny*nx*nt+k*nx*nt], &f1m[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, fmin, fmax, 1);
-                convol2(&input[1*ny*nx*nt+k*nx*nt], &f1p[l*ny*nx*nt+k*nx*nt], tmp1, nx, nt, dt, fmin, fmax, 1);
-                for (i=0; i<nx; i++) {
-                    for (j=0; j<nt/2; j++) {
-                        HomG[(j+nt/2)*Nfoc+l]   += 2.0*(conv[i*nt+j]        + tmp1[i*nt+j])/rho;
-                        HomG[j*Nfoc+l]          += 2.0*(conv[i*nt+(j+nt/2)] + tmp1[i*nt+(j+nt/2)])/rho;
-                    }
-                }
-            }
-		}
-        else if (scheme==10) { // 2i IM(f1) redatuming
-            for (k = 0; k < ny; k++) {
-                convol2(&input[k*nx*nt]   , &f1m[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, fmin, fmax, 2);
-                convol2(&inputjkz[k*nx*nt], &f1p[l*ny*nx*nt+k*nx*nt], tmp1, nx, nt, dt, fmin, fmax, 2);
-                for (i=0; i<nx; i++) {
-                    for (j=0; j<nt/2; j++) {
-                        HomG[(j+nt/2)*Nfoc+l]   += 4.0*(conv[i*nt+j]        - tmp1[i*nt+j])/rho;
-                        HomG[j*Nfoc+l]          += 4.0*(conv[i*nt+(j+nt/2)] - tmp1[i*nt+(j+nt/2)])/rho;
-                    }
-                }
-            }
-		}
 		else if (scheme==1) { //classical representation
             for (k = 0; k < ny; k++) {
                 convol(&greenjkz[l*ny*nx*nt+k*nx*nt], &input[k*nx*nt], tmp1, nx, nt, dt, 0);
@@ -269,11 +202,12 @@ void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1
 		else if (scheme==2) { //Marchenko representation without time-reversal G source
             for (k = 0; k < ny; k++) {
                 depthDiff(&f2p[l*ny*nx*nt+k*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
-                convol2(&input[k*nx*nt], &f2p[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, fmin, fmax, 1);
+                convol(&input[k*nx*nt], &f2p[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, 0);
+                timeDiff(conv, nt, nx, dt, fmin, fmax, -1);
                 for (i=0; i<nx; i++) {
                     for (j=0; j<nt/2; j++) {
-                        HomG[(j+nt/2)*Nfoc+l] += 2.0*conv[i*nt+j]/rho;
-                        HomG[j*Nfoc+l] += 2.0*conv[i*nt+(j+nt/2)]/rho;
+                        HomG[(j+nt/2)*Nfoc+l] += 2*conv[i*nt+j]/rho;
+                        HomG[j*Nfoc+l] += 2*conv[i*nt+(j+nt/2)]/rho;
                     }
                 }
             }
@@ -285,8 +219,8 @@ void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1
                 timeDiff(conv, nt, nx, dt, fmin, fmax, -1);
                 for (i=0; i<nx; i++) {
                     for (j=0; j<nt/2; j++) {
-                        HomG[(j+nt/2)*Nfoc+l] += 2.0*conv[i*nt+j]/rho;
-                        HomG[j*Nfoc+l] += 2.0*conv[i*nt+(j+nt/2)]/rho;
+                        HomG[(j+nt/2)*Nfoc+l] += 2*conv[i*nt+j]/rho;
+                        HomG[j*Nfoc+l] += 2*conv[i*nt+(j+nt/2)]/rho;
                     }
                 }
             }
@@ -308,8 +242,8 @@ void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1
                     timeDiff(conv, nt, nx, dt, fmin, fmax, -1);
                     for (i=0; i<nx; i++) {
                         for (j=0; j<nt/2; j++) {
-                            HomG[(j+nt/2)*Nfoc+l] += 2.0*conv[i*nt+j]/rho;
-                            HomG[j*Nfoc+l] += 2.0*conv[i*nt+(j+nt/2)]/rho;
+                            HomG[(j+nt/2)*Nfoc+l] += 2*conv[i*nt+j]/rho;
+                            HomG[j*Nfoc+l] += 2*conv[i*nt+(j+nt/2)]/rho;
                         }
                     }
                 }
@@ -640,107 +574,4 @@ void conjugate(float *data, long nsam, long nrec, float dt)
     free(rdata);
 
     return;
-}
-
-void convol2(float *data1, float *data2, float *con, long nrec, long nsam, float dt, float fmin, float fmax, long opt)
-{
-	long     optn, iom, iomin, iomax, nfreq, ix, sign, i, j, n;
-    float   omin, omax, deltom, om, df, dw, tau, scl;
-	float 	*qr, *qi, *p1r, *p1i, *p2r, *p2i, *rdata1, *rdata2;
-    complex *cdata1, *cdata2, *ccon, tmp, *cdatascl;
-
-    optn = optncr(nsam);
-    nfreq = optn/2+1;
-    df    = 1.0/(optn*dt);
-
-    cdata1 = (complex *)malloc(nfreq*nrec*sizeof(complex));
-	if (cdata1 == NULL) verr("memory allocation error for cdata1");
-	cdata2 = (complex *)malloc(nfreq*nrec*sizeof(complex));
-	if (cdata2 == NULL) verr("memory allocation error for cdata2");
-	ccon = (complex *)malloc(nfreq*nrec*sizeof(complex));
-	if (ccon == NULL) verr("memory allocation error for ccov");
-	
-	rdata1 = (float *)malloc(optn*nrec*sizeof(float));
-	if (rdata1 == NULL) verr("memory allocation error for rdata1");
-	rdata2 = (float *)malloc(optn*nrec*sizeof(float));
-	if (rdata2 == NULL) verr("memory allocation error for rdata2");
-
-	/* pad zeroes until Fourier length is reached */
-	pad_data(data1, nsam, nrec, optn, rdata1);
-	pad_data(data2, nsam, nrec, optn, rdata2);
-
-	/* forward time-frequency FFT */
-	sign = -1;
-	rcmfft(&rdata1[0], &cdata1[0], (int)optn, (int)nrec, (int)optn, (int)nfreq, (int)sign);
-	rcmfft(&rdata2[0], &cdata2[0], (int)optn, (int)nrec, (int)optn, (int)nfreq, (int)sign);
-
-	/* apply convolution */
-	p1r = (float *) &cdata1[0];
-	p2r = (float *) &cdata2[0];
-	qr = (float *) &ccon[0].r;
-	p1i = p1r + 1;
-	p2i = p2r + 1;
-	qi = qr + 1;
-	n = nrec*nfreq;
-	for (j = 0; j < n; j++) {
-		*qr = (*p2r**p1r-*p2i**p1i);
-		*qi = (*p2r**p1i+*p2i**p1r);
-		qr += 2;
-		qi += 2;
-		p1r += 2;
-		p1i += 2;
-		p2r += 2;
-		p2i += 2;
-	}
-	free(cdata1);
-	free(cdata2);
-
-    deltom = 2.*PI*df;
-    omin   = 2.*PI*fmin;
-    omax   = 2.*PI*fmax;
-    iomin  = (long)MIN((omin/deltom), (nfreq));
-    iomin  = MAX(iomin, 1);
-    iomax  = MIN((long)(omax/deltom), (nfreq));
-
-    cdatascl = (complex *)malloc(nfreq*nrec*sizeof(complex));
-    if (cdatascl == NULL) verr("memory allocation error for cdatascl");
-
-    for (ix = 0; ix < nrec; ix++) {
-        for (iom = 0; iom < iomin; iom++) {
-            cdatascl[ix*nfreq+iom].r = 0.0;
-            cdatascl[ix*nfreq+iom].i = 0.0;
-        }
-        for (iom = iomax; iom < nfreq; iom++) {
-            cdatascl[ix*nfreq+iom].r = 0.0;
-            cdatascl[ix*nfreq+iom].i = 0.0;
-        }
-        if (opt==1) {
-            for (iom = iomin ; iom < iomax ; iom++) {
-                om = 1.0/(deltom*iom);
-                cdatascl[ix*nfreq+iom].r = om*ccon[ix*nfreq+iom].i;
-                cdatascl[ix*nfreq+iom].i = -om*ccon[ix*nfreq+iom].r;
-            }
-        }
-        else if (opt==2) {
-            for (iom = iomin ; iom < iomax ; iom++) {
-                om = 1.0/(deltom*iom);
-                cdatascl[ix*nfreq+iom].r = 0.0;
-                cdatascl[ix*nfreq+iom].i = -om*ccon[ix*nfreq+iom].r;
-            }
-        }
-    }
-    free(ccon);
-
-    /* Inverse frequency-time FFT and scale result */
-    sign = 1;
-    scl = 1.0/(float)optn;
-    crmfft(&cdatascl[0], &rdata1[0], optn, nrec, nfreq, optn, sign);
-    scl_data(rdata1,optn,nrec,scl,con,nsam);
-
-    free(cdatascl);
-    free(rdata1);
-    free(rdata2);
-
-    return;
-	return;
 }
