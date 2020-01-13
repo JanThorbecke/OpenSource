@@ -9,17 +9,35 @@
 
 select=451
 
+if [[ "$1" == "Figure3467" ]];
+then
 for istart in 276
-#for istart in 176 200 276 400
-#for istart in 246 256 266 276 286 296 306 316
 do
 (( iend = istart + 1 ))
 
 ../../marchenko_primaries file_shot=shotsdx5_rp.su ishot=$select file_src=wave.su \
 	nshots=901 verbose=2 istart=$istart iend=$iend fmax=90 \
-	pad=0 niter=4 smooth=10 niterskip=600 shift=20 file_rr=pred_rr_${istart}.su T=0 file_iter=iter.su 
-
-#suximage < f1min_${istart}043.su  clip=1 title="${istart}" &
-
+	pad=512 niter=33 smooth=8 niterskip=600 shift=16 file_rr=pred_rr_${istart}.su T=0 file_iter=iter.su 
 done
+fi
 
+if [[ "$1" == "Figure8" ]];
+then
+for istart in 246 256 266 276 286 296 306 316
+do
+(( iend = istart + 1 ))
+
+../../marchenko_primaries file_shot=shotsdx5_rp.su ishot=$select file_src=wave.su \
+	nshots=901 verbose=2 istart=$istart iend=$iend fmax=90 \
+	pad=512 niter=33 smooth=8 niterskip=600 shift=16 file_rr=pred_rr_${istart}.su T=0 file_iter=iter.su 
+done
+fi
+
+if [[ "$1" == "Figure10" ]];
+then
+istart=276
+(( iend = istart + 1 ))
+../../marchenko_primaries file_shot=shotsdx5_rp.su ishot=$select file_src=wave.su \
+	nshots=901 verbose=2 istart=$istart iend=$iend fmax=90 \
+	pad=512 niter=33 smooth=8 niterskip=600 shift=16 file_rr=pred_rr_${istart}.su T=1 file_iter=iterT.su 
+fi

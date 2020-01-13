@@ -125,7 +125,7 @@ int main (int argc, char **argv)
     int     hw, smooth, above, shift, *ixpos, npos, ix, plane_wave;
     int     nshots_r, *isxcount, *reci_xsrc, *reci_xrcv;
     float   fmin, fmax, *tapersh, *tapersy, fxf, dxf, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
-    double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, energyNi, energyN0;
+    double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, energyNi, *energyN0;
     float   d1, d2, f1, f2, fxsb, fxse, ft, fx, *xsyn, dxsrc;
     float   *green, *f2p, *pmin, *G_d, dt, dx, dxs, scl, mem;
     float   *f1plus, *f1min, *iRN, *Ni, *Nig, *trace, *Gmin, *Gplus;
@@ -224,6 +224,7 @@ int main (int argc, char **argv)
     G_d     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     muteW   = (int *)calloc(Nfoc*nxs,sizeof(int));
     tsynW   = (int *)malloc(Nfoc*nxs*sizeof(int)); // time-shift for Giovanni's plane-wave on non-zero times
+    energyN0= (double *)malloc(Nfoc*sizeof(double));
     trace   = (float *)malloc(ntfft*sizeof(float));
     xrcvsyn = (float *)calloc(Nfoc*nxs,sizeof(float)); // x-rcv postions of focal points
     xsyn    = (float *)malloc(Nfoc*sizeof(float)); // x-src position of focal points
@@ -488,9 +489,9 @@ int main (int argc, char **argv)
 					}
 				}
             }
-            if (iter==0) energyN0 = energyNi;
+            if (iter==0) energyN0[Nfoc] = energyNi;
             if (verbose >=2) vmess(" - iSyn %d: Ni at iteration %d has energy %e; relative to N0 %e", l, iter, sqrt(energyNi),
-sqrt(energyNi/energyN0));
+sqrt(energyNi/energyN0[Nfoc]));
         }
 
         /* apply mute window based on times of direct arrival (in muteW) */
@@ -628,6 +629,7 @@ sqrt(energyNi/energyN0));
 
     free(muteW);
     free(tsynW);
+    free(energyN0);
 
     t2 = wallclock_time();
     if (verbose) {

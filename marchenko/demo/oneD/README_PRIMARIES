@@ -1,0 +1,182 @@
+Description of files:
+
+
+1) model.scr computes the model and the 'basis' shot of R => shot5_rp.su
+2) p5all.scr create from basis shot full Reflection response matrix => shotsdx5_rp.su (3.3 GB)
+3) primaries.scr computes the internal multiple attenuated (middle) shot record.
+4) itertions.scr computes the intermediate results of the multiple attenutation scheme and produces all output files that are used in the manuscript.
+5) epsPrimaries.scr selected output form 4) are converted to .eps pictures that are used in the Figures to explain the method.
+   reproduce the postscript files of the manuscript using SU postscript plotting programs.
+
+extra scripts
++) primariesPlane.scr: computes the internal moval scheme for plane-waves (see Meles 2020)
++) clean: remove all produced files and start with a clean directory
+
+To reproduce the Figures in the Manuscript:
+
+--------------------------
+* Figure 2: Model + Initial wavefield
+
+==> run model.scr to generate the data .su files: this will take 3-4 minutes. The files generate are:
+	- hom_cp.su, hom_ro.su
+	- model10_cp.su, model10_ro.su
+	- shot5_fd_rp.su
+	- shot5_hom_fd_rp.su
+	- shot5_rp.su
+	- wave.su
+	- wavefw.su
+
+==> run './epsPrimaries.scr Figure2' to generate the postscript files of Figure 2 
+
+model_cp_line.eps 	=> Figure 2a 
+model_ro_line.eps 	=> Figure 2b
+shotx0_rp.eps 		=> Figure 2c
+
+--------------------------
+* Figure 3: First Iteration
+
+The full R matrix is build up from the the shot record computed with model.scr
+
+==> run p5all.scr to generate the full R matrix for a fixed spread geometry. This will take less than one minute. The file generated is
+	- shotsdx5_rp.su this file has a size of 3.3 GB
+
+This R is the only input of the Marchenko Primaries algorithm.
+
+==> run './iterations.scr ./iterations.scr Figure3467' to compute the intermediate results of the first iterations of the Marchenko Primaries algorithm.
+This will take 10 seconds. The generated files are:
+
+	- M0_276000.su
+	- iter_2760##.su (not used)
+	- Mi_2760##.su
+	- f1min_2760##.su
+	- pred_rr_276.su (not used)
+
+	where ## ranges from 01 to 33
+
+To generate the postscript files for Figure 3:
+
+==> run './epsPrimaries.scr Figure3' 
+
+This will produce the following files:
+
+shotx0_rp.eps 		=> Figure 2c == Figure 3a
+M0_276000_flip.eps	=> Figure 3b
+fconvN0fulltime.eps => Figure 3c
+fconvN0flip.eps 	=> Figure 3d
+Mi_276001.eps		=> Figure 3e
+
+
+To generate the postscript files for Figure 4:
+==> run './epsPrimaries.scr Figure4' 
+
+To generate the postscript files for Figure 6:
+==> run './epsPrimaries.scr Figure6' 
+
+To generate the postscript files for Figure 7:
+==> run './epsPrimaries.scr Figure7' 
+
+
+
+shotx0_rp.eps 		=> Figure 5 R == Figure 3c
+f1min_001.eps	 	=> Figure 5 f^-_1,0
+iter_002.eps	 	=> Figure 5 -N_1
+f1plus_002.eps	 	=> Figure 5 f^+_1,0
+
+-- Figure 6 column 1
+iter_001.eps
+iter_002.eps
+iter_003.eps
+iter_004.eps
+-- Figure 6 column 2
+f1min_001.eps
+f1min_002.eps
+f1min_003.eps
+f1min_004.eps
+-- Figure 6 column 3
+p0plus_flip.eps
+f1plus_002.eps
+f1plus_003.eps
+f1plus_004.eps
+-- Figure 6 column 4
+pgreen_001.eps
+pgreen_002.eps
+pgreen_003.eps
+pgreen_004.eps
+-- Figure 6 column 5
+compare_001.eps
+compare_002.eps
+compare_003.eps
+compare_004.eps
+
+
+Note that the script epsIterwithLabels.scr produces the same figures, but with axis-labels. 
+
+--------------------------
+* Figure 7: Comparison of Marchenko result with reference
+
+To compute the marchenko results for 8 iterations.  
+
+==> run marchenko.scr This will take less than 1 minute. The generated files are:
+	- pgreen.su, pgreen512.su
+	- diffref.su
+	- Gplus0.su
+	- Gmin0.su
+	- f1plus0.su
+	- f1min0.su
+	- f2.su 
+
+
+At the end of the run the script will display in X11 a comparison of the middle trace. 
+
+To make the postscript figure 
+
+==> run epsCompare.scr
+
+mergeGreenRef.eps 	=> Figure 7
+
+--------------------------
+* Figure 8: snapshots of back propagating f2 in actual medium 
+
+To compute the snapshots 
+
+==> run backpropf2.scr This will take about 1 minute. The generated output file is
+	- backpropf2_sp.su
+
+The postscript files of Figure 8 are generated with 
+
+==> run epsBackprop.scr
+
+-- Figure 8 column 1
+backpropf2_-0.30.eps
+backpropf2_-0.15.eps
+backpropf2_-0.03.eps
+backpropf2_-0.02.eps
+backpropf2_0.00.eps
+-- Figure 8 column 2
+backpropf2_0.30.eps
+backpropf2_0.15.eps
+backpropf2_0.03.eps
+backpropf2_0.02.eps
+backpropf2_0.00.eps
+-- Figure 8 column 3
+backpropf2sum_0.30.eps
+backpropf2sum_0.15.eps
+backpropf2sum_0.03.eps
+backpropf2sum_0.02.eps
+backpropf2_0.00.eps
+
+
+The figures in the appendix, to explain the different options in the programs, are reproduced by
+
+==> run figAppendi.scr
+
+-- Figure A-1
+noise_above0.eps
+noise_above1.eps
+noise_above-1.eps
+noise_above2.eps
+noise_above4.eps
+
+-- Figure A-2
+iniFocus_shifts.eps
+
