@@ -60,7 +60,6 @@ int storeVerticalParticleVelocitySnapshot(modPar *mod, wavPar *wav, migPar *mig)
 	else farr=(float*)malloc(mig->sizem*sizeof(float));
 
 	// Store Vertical Particle Velocity Field - Interpolate to Tzz(P)-Grid
-	mig->wav[mig->it].vz=(float*)malloc(mig->sizem*sizeof(float));
 	for(ix=0,ix1=mod->ioZx+mig->x1;ix<mig->nx;ix++,ix1+=mig->skipdx){
 		for(iz=0,iz1=mod->ioZz+mig->z1;iz<mig->nz;iz++,iz1+=mig->skipdz){
 			farr[ix*mig->nz+iz]=(wav->vz[ix1*mod->naz+iz1]+wav->vz[ix1*mod->naz+iz1+1])/2.0;
@@ -77,9 +76,6 @@ int storeVerticalParticleVelocitySnapshot(modPar *mod, wavPar *wav, migPar *mig)
 int extractMigrationSnapshots(modPar *mod, wavPar *wav, migPar *mig, decompPar *decomp){
 	size_t ix, ix1, iz, iz1;
 
-//if(mig->it<100){mig->it++;return(0);}
-
-
 	switch(mig->mode){
 		case 1: /* Conventional Migration - Store Pressure Field (Tzz) */
 			// P (Tzz)
@@ -90,8 +86,10 @@ int extractMigrationSnapshots(modPar *mod, wavPar *wav, migPar *mig, decompPar *
 			storePressureSnapshot(mod,wav,mig);
 			switch(mig->orient){ //Migration Orientation
 				case 0: //Image Wavefields not travelling in the same direction
+					// Vertical Particle Velocity - Interpolate to Tzz(P)-Grid
+					storeVerticalParticleVelocitySnapshot(mod,wav,mig);
 					// Horizontal Particle Velocity - Interpolate to Tzz(P)-Grid
-					storeVerticalParticleVelocitySnapshot(mod,wav,mig); //TODO: What does this case actually do?
+					storeHorizontalParticleVelocitySnapshot(mod,wav,mig); //TODO: What does this case actually do?
 					break;
 				case 1: //Up-Down Imaging
 					// Vertical Particle Velocity - Interpolate to Tzz(P)-Grid

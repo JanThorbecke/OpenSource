@@ -2,7 +2,7 @@
 
 include ../../Make_include
 
-LIBS = -L$L -lextrap3d  -lgenfft -lblas -llapack -lm 
+LIBS += -L$L -lextrap3d -lgenfft -lm 
 
 LDFLAGS += $(LIBS)
 
@@ -23,7 +23,7 @@ $(CPROGS):	$(CTARGET) $L/libextrap3d.a
 	mv $@.tmp $B/$@
 
 migr3d_mpi: migr3d.c  $L/libextrap3d.a
-	mpicc $(CFLAGS) -DMPI $(OPTC) $(CPPFLAGS) migr3d.c $(LDFLAGS) -o $@.tmp
+	mpicc -cc=icc $(CFLAGS) -DMPI $(OPTC) $(CPPFLAGS) migr3d.c $(LDFLAGS) -o $@.tmp
 	test ! -f $@ || $(RM) $@
 	mv $@.tmp $B/$@
 

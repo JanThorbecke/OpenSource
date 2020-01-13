@@ -242,7 +242,6 @@ int main (int argc, char **argv)
         if (verbose>=2) vmess("dimensions used: %d x %d",ntmax,nxmax);
     }
 	if (!getparfloat("dt", &dt)) dt = d1;
-	fprintf(stderr,"dt=%e\n", dt);
     
     size     = ntmax * nxmax;
 	xrcv     = (float *)malloc(nxmax*sizeof(float));
@@ -501,6 +500,7 @@ int main (int argc, char **argv)
 
 		for (i = 0; i < n2; i++) {
             hdrs_out[i].ns     = n1;
+            hdrs_out[i].dt     = (unsigned short)(dt*1000000);
             hdrs_out[i].trid   = hdrs_in[i].trid;
             hdrs_out[i].f1     = f1;
             hdrs_out[i].f2     = f2;
@@ -510,7 +510,7 @@ int main (int argc, char **argv)
 			hdrs_out[i].trwf   = n2out;
 			hdrs_out[i].scalco = -1000;
 			hdrs_out[i].sx = NINT(xsyn[l]*1000);
-			hdrs_out[i].gx = NINT(1000*(f2+i*d2));
+			hdrs_out[i].gx = NINT(1000.0*(f2+i*d2));
 			hdrs_out[i].offset = (long)NINT((f2+i*d2) - xsyn[l]);
 			hdrs_out[i].scalel = -1000;
 			hdrs_out[i].selev  = NINT(zsyn[l]*1000);
