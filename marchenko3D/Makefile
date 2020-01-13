@@ -12,8 +12,10 @@ ALL: marchenko3D fmute3D TWtransform
 SRCT	= marchenko3D.c \
 		getFileInfo3D.c  \
 		getFileInfo3DW.c  \
+		getFileInfo3Dzfp.c  \
 		readData3D.c \
 		readShotData3D.c \
+		readShotData3Dzfp.c \
 		readTinvData3D.c \
 		synthesis3D.c \
 		applyMute3D.c \
