@@ -1,6 +1,6 @@
 #!/bin/bash -x
 #SBATCH -J marchenko_primaries
-#SBATCH --cpus-per-task=40
+#SBATCH --cpus-per-task=10
 #SBATCH --ntasks=1
 #SBATCH --time=2:40:00
 
@@ -8,20 +8,20 @@
 #cd $SLURM_SUBMIT_DIR
 
 export PATH=$HOME/src/OpenSource/bin:$PATH:
-export OMP_NUM_THREADS=40
+export OMP_NUM_THREADS=10
 
 #shot record to remove internal multiples
 select=451
 
 makewave fp=20 dt=0.004 file_out=wave.su nt=1024 t0=0.0 scale=0 scfft=1
 
-#../../marchenko_primaries file_shot=shotsdx5_rp.su plane_wave=1 file_src=wave.su src_angle=10 \
+#../../marchenko_primaries file_shot=shotsdx5_rp.su plane_wave=1 file_src=wave.su src_angle=30 \
 #	nshots=901 verbose=2 istart=276 iend=277 fmax=90 pad=1024 \
-# xorig=900 niter=2 smooth=10 niterskip=1 file_iter=iterplane.su shift=20 file_rr=plane2_10_rr.su T=0
+#    niter=2 smooth=10 niterskip=1 file_iter=iterplane.su shift=20 file_rr=plane2_10_rr.su T=0
 #exit
-../../marchenko_primaries file_shot=shotsdx5_rp.su plane_wave=1 file_src=wave.su src_angle=-10 \
+../../marchenko_primaries file_shot=shotsdx5_rp.su plane_wave=1 file_src=wave.su src_angle=30.0 \
 	nshots=901 verbose=2 istart=40 iend=1000 fmax=90 pad=1024 \
-	niter=20 smooth=10 niterskip=40 niterec=0 shift=20 file_rr=plane2_10_rr.su T=0
+	niter=20 smooth=10 niterskip=60 niterec=2 shift=20 file_rr=plane2_10_rr.su T=0
 
 exit
 

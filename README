@@ -13,19 +13,20 @@ For more information, go to http://software.seg.org/2017/00XX .
 You must read and accept usage terms at:
 http://software.seg.org/disclaimer.txt before use.
 
-DOI reference of release
-1.4.0 https://zenodo.org/badge/latestdoi/23060862
 
 REFERENCES
 ---------
--1- If the Finite Difference code has helped you in your research please refer to our paper in your publications:
+-0- DOI reference of this software release 
+https://zenodo.org/badge/latestdoi/23060862
+
+-1- If the Finite Difference code has helped you in your research please refer to the following paper in your publications:
 
 Finite-difference modeling experiments for seismic interferometry
 Jan Thorbecke and Deyan Draganov
 2011, Geophysics, Vol. 76, no. 6 (November-December); p H1--H18, doi: 10.1190/GEO2010-0039.1
 Download: https://janth.home.xs4all.nl/Publications/Articles/ThorbeckeDraganov2012.pdf
 
--2- If the Machenko code has helped you in your research please refer to our paper in your publications:
+-2- If the Machenko code has helped you in your research please refer to this paper in your publications:
 
 Implementation of the Marchenko method
 Jan Thorbecke, Evert Slob, Joeri Brackenhoff, Joost van der Neut, and Kees Wapenaar
@@ -38,6 +39,15 @@ Free-surface and internal multiple elimination in one step without adaptive subt
 Lele Zhang1 and Evert Slob2
 2019, Geophysics, Vol. 84, no. 1 (January-February); p. A7-A11, doi: 10.1190/GEO2018-0548.1
 Download: http://homepage.tudelft.nl/t4n4v/BeyondInterferometry/geo_19h.pdf
+
+-4- If you use the fdacrtmc code of Max Holicki please refer to the following paper:
+
+Acoustic directional snapshot wavefield decomposition
+Holicki, M., Drijkoningen, G., and Wapenaar, K., 2019, Acoustic directional snapshot wavefield decomposition: Geophysical
+Prospecting, Vol. 67, 32-51
+Download: http://homepage.tudelft.nl/t4n4v/4_Journals/Geophys.Prosp/GP_19a.pdf
+
+-5- 
 
 
 INSTALLATION
@@ -99,18 +109,21 @@ The MDD kernels depend on BLAS and LAPACK calls. Free downloads of these librari
 https://www.netlib.org/blas/index.html
 https://www.netlib.org/lapack/index.html
 
+
 MKL libraries
 -------------
 If you are running on x64_86 processors you can download (for free) Intel's highly optimised MKL package:
 
 https://software.intel.com/en-us/mkl/choose-download
  
-Usually the MKL libraries are installed in $MKL_ROOT. If that variable is not set, you can try to find the correct path by searching for one of the libraries:
+These Libraries include highly optimised libraries of BLAS, LAPACK, and FFT(W). 
+Usually the MKL libraries are installed in $MKLROOT. If that variable is not set, you can try to find the correct path by searching for one of the libraries:
 
 find /opt/intel -name libmkl_gf_lp64.so
 
 and adjust MKLROOT in Make_include accordingly. 
 You can also completely disable the use of MKL by commenting out the MKL parts in Make_include. 
+
 
 SEISMIC UNIX
 -----------
@@ -126,11 +139,27 @@ so the XDRFLAG is empty. If you have made that change you have to remake SU with
 make remake
 make xtremake
 
+
 ZFP
 ---
-The fdacrtmc code makes use of ZFP compression to store the snaphots in CPU memory. This package is included in this repository for your convenience. The latest package and detailed explanation can be found on:
+The fdacrtmc and the 3D Marchenko code makes use of ZFP compression to store snaphots in CPU memory or do effient IO. This package is included in this repository for your convenience. The latest package and detailed explanation can be found on:
 
 https://github.com/LLNL/zfp
+
+FDACRTMC
+--------
+fdacrtmc uses FFTW and the wisdom computations are stored on disk for re-usage.  This directory is defined in fdacrtmc.h
+
+#ifndef WISDOMDIR
+#define WISDOMDIR "/tmp/fftw/"
+#endif
+
+For the code to run properly the directory /tmp/fftw/ must exist. It is also possible to compile the fdacrtmc code that defines
+WISDOMDIR. In fdacrtmc/Makefile add:
+
+CFLAGS  += -DWISDOMDIR="/directory/that/exists"
+
+or you can change the name of WISDOMDIR in fdacrtmc.h
 
 
 MISC
@@ -147,7 +176,7 @@ The latest version of the source code and manual can be found at:
 
 http://www.xs4all.nl/~janth/Software/Software.html
 
- or at github:
+or at github:
 
 git clone https://github.com/JanThorbecke/OpenSource.git
 git clone git://github.com/JanThorbecke/OpenSource.git

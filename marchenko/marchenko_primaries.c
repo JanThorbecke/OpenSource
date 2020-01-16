@@ -29,6 +29,7 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 
 int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nfoc, int nx, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose);
 
+int findFirstBreak(float *shot, int nx, int nt, int ishot, float *maxval, int tr, int hw, int verbose);
 int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, float d2, float f2, int n2out, int Nfoc, float *xsyn, float *zsyn, int *ixpos, int npos, int t0shift, int iter);
 int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *nxm);
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
@@ -110,7 +111,7 @@ int main (int argc, char **argv)
     FILE    *fp_out, *fp_rr, *fp_w, *fp_up;
 	size_t  nread;
     int     i, j, k, l, ret, nshots, Nfoc, nt, nx, nts, nxs, ngath;
-    int     size, n1, n2, ntap, tap, di, ntraces;
+    int     size, n1, n2, ntap, tap, di, ntraces, tr;
     int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     int     reci, countmin, mode, ixa, ixb, n2out, verbose, ntfft;
     int     iter, niter, niterec, recur, niterskip, niterrun, tracf, *muteW;
@@ -121,9 +122,9 @@ int main (int argc, char **argv)
     double  t0, t1, t2, t3, t4, tsyn, tread, tfft, tcopy, tii;
 	double  energyMi, *energyM0;
     float   tt0, d1, d2, f1, f2, fxsb, fxse, ft, fx, *xsyn, dxsrc;
-    float   *M0, *DD, *RR, *SRC, dt, dx, dxs, scl, mem;
+    float   *M0, *DD, *RR, *SRC, dt, dx, dxs, scl, mem, scltap;
     float   *rtrace, *tmpdata, *f1min, *f1plus, *RMi, *Mi, *trace;
-	float   *Mup, *Msp;
+	float   *Mup, *Msp, *maxval;
     float   xmin, xmax, scale, tsq;
 	float   Q, f0, *ixmask, *costaper;
 	float   src_velo, src_angle, grad2rad, p, *twplane;
@@ -228,20 +229,20 @@ int main (int argc, char **argv)
     //if(!getparint("xorig", &xorig)) xorig=-(nxs-1)/2;
 
 	/* compute time delay for plane-wave responses */
-    twplane = (float *) calloc(nxs,sizeof(float));
+    twplane = (float *) calloc(nxs,sizeof(float)); /* initialize with zeros */
 	if (plane_wave==1) {
         grad2rad = 17.453292e-3;
         p = sin(src_angle*grad2rad)/src_velo;
         if (p < 0.0) {
 			for (i=0; i<nxs; i++) {
 				twplane[i] = fabsf((nxs-i-1)*dxs*p)+tt0;
+				if (verbose >=3) vmess("plane-wave delay-time i=%d x=%f t=%f", i, dxs*(nxs-i-1), twplane[i]);
             }
         }
 		else {
 			for (i=0; i<nxs; i++) {
 				twplane[i] = (i)*dxs*p+tt0;
-				//twplane[i] = dxs*(xorig+i)*tan(src_angle*grad2rad)/src_velo;
-//				fprintf(stderr,"plane-wave i=%d x=%f t=%f %f\n", i, dxs*(xorig+i), twplane[i], (xorig+i)*dxs*p);
+				if (verbose >=3) vmess("plane-wave delay-time i=%d x=%f t=%f", i, dxs*(i), twplane[i]);
 			}
 		}
 	}
@@ -367,9 +368,9 @@ int main (int argc, char **argv)
 
     if (tap == 2 || tap == 3) {
     	tapersh = (float *)malloc(nx*sizeof(float));
-        for (j = 0; j < ntap; j++)
-            tapersh[j] = (cos(PI*(j-ntap)/ntap)+1)/2.0;
-        for (j = ntap; j < nx-ntap; j++)
+        for (j = 1; j < ntap; j++)
+            tapersh[j-1] = (cos(PI*(j-ntap)/ntap)+1)/2.0;
+        for (j = ntap-1; j < nx-ntap; j++)
             tapersh[j] = 1.0;
         for (j = nx-ntap; j < nx; j++)
             tapersh[j] =(cos(PI*(j-(nx-ntap))/ntap)+1)/2.0;
@@ -382,7 +383,6 @@ int main (int argc, char **argv)
                 }   
             }   
         }
-    	free(tapersh);
     }
 
     /* check consistency of header values */
@@ -413,6 +413,7 @@ int main (int argc, char **argv)
         scl   = 1.0/((float)2.0*ntfft);
         rtrace = (float *)calloc(ntfft,sizeof(float));
         ctrace = (complex *)calloc(nfreq+1,sizeof(complex));
+
         for (i = 0; i < xnx[ishot]; i++) {
             for (j = nw_low, m = 0; j <= nw_high; j++, m++) {
                 ctrace[j].r =  Refl[ishot*nw*nx+m*nx+i].r*cwave[j].r + Refl[ishot*nw*nx+m*nx+i].i*cwave[j].i;
@@ -423,9 +424,22 @@ int main (int argc, char **argv)
             for (j = 0; j < nts; j++) {
                 DD[0*nxs*nts+i*nts+j] = -1.0*scl*rtrace[j];
             }
+		    /* remove taper at edges for selected shot record */
+    	    //if (tap == 2 || tap == 3) scltap= scl/tapersh[i];
+            //for (j = 0; j < nts; j++) {
+            //    DD[0*nxs*nts+i*nts+j] = -1.0*scltap*rtrace[j];
+            //}
         }
+		/* set timereversal for searching First Break */
+		/* for experimenting with non flat truncation windows */
+        //maxval = (float *)calloc(nxs,sizeof(float));
+		//tr = 1;
+        //findFirstBreak(DD, xnx[ishot], nts, ishot, maxval, tr, hw, verbose);
+    	//twplane = (float *) calloc(nxs,sizeof(float));
+		//for (i=0; i<nxs; i++) twplane[i] = dt*(maxval[i]-maxval[ishot]);
+        //for (i = 0; i < xnx[ishot]; i++) fprintf(stderr,"maxval[%d] = %f tw=%f\n", i, dt*maxval[i], twplane[i]);
 
-		/* construct plane wave from all shot records */
+		/* construct plane wave (time reversed and multiplid with -1) from all shot records */
 		if (plane_wave==1) {
         	for (l=0; l<nshots; l++) {
 				memset(ctrace, 0, sizeof(complex)*(nfreq+1));
@@ -451,6 +465,7 @@ int main (int argc, char **argv)
             		tom = j*deltom*twplane[l];
             		csum.r = cos(-tom);
             		csum.i = sin(-tom);
+                	/* Optional add wavelet to SRC-field */
                 	//cwav.r = csum.r*cwave[j].r - csum.i*cwave[j].i;
                 	//cwav.i = csum.i*cwave[j].r + csum.r*cwave[j].i;
 					ctrace[j] = csum;
@@ -523,8 +538,21 @@ int main (int argc, char **argv)
         vmess("number of time samples fft nt nts = %d %d %d", ntfft, nt, nts);
         vmess("time sampling                   = %e ", dt);
         vmess("smoothing taper for time-window = %d ", smooth);
+    	if (plane_wave) {
+        	vmess("*** Plane-wave processing selected *** ");
+        	vmess("plane-wave angle                = %f ", src_angle);
+        	vmess("plane-wave velocity             = %f ", src_velo);
+        	vmess("plane-wave t0-shift             = %f ", tt0);
+        	vmess("plane-wave DD input vector      = DDplane%03d.su ", src_angle);
+        	vmess("plane-wave SRC for migration    = SRCplane%03d.su ", src_angle);
+		}
         if (file_rr != NULL) vmess("RR output file                  = %s ", file_rr);
-        if (file_iter != NULL)  vmess("Iterations output file          = %s ", file_iter);
+        if (file_iter != NULL)  {
+			vmess("Iterations output file          = %s ", file_iter);
+			vmess("Initialisation input data       = M0_%06d.su ", 1000*istart);
+			vmess("f1min intermediate array        = f1min_%03d'iter'.su ", istart);
+			vmess("Mi intermediate array           = Mi_%03d'iter'.su ", istart);
+		}
     }
 
 /*================ initializations ================*/
@@ -813,8 +841,10 @@ int main (int argc, char **argv)
             for (i = 0; i < npos; i++) {
            		ix = ixpos[i];
 				iw = NINT((ii*dt+twplane[ix])/dt);
-                RR[l*nxs*nts+i*nts+iw] = f1min[l*nxs*nts+i*nts+iw];
-       			if (file_update != NULL) Msp[l*nxs*nts+i*nts+iw] = Mup[l*nxs*nts+i*nts+iw];
+                if ( iw<nts && iw>=0 )  {
+                    RR[l*nxs*nts+i*nts+iw] = f1min[l*nxs*nts+i*nts+iw];
+       			    if (file_update != NULL) Msp[l*nxs*nts+i*nts+iw] = Mup[l*nxs*nts+i*nts+iw];
+				}
             }
         }
 

@@ -42,6 +42,7 @@ SRCP	= marchenko_primaries.c \
 		readData.c \
 		readShotData.c \
 		readTinvData.c \
+		findFirstBreak.c \
 		writeData.c \
 		writeDataIter.c \
 		wallclock_time.c \
