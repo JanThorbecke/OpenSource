@@ -617,7 +617,15 @@ int main (int argc, char **argv)
 
     if (plane_wave) {
 		writeDataIter("SRCplane.su", SRC, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, NINT(src_angle));
-		writeDataIter("DDplane.su", DD, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, NINT(src_angle));
+		/* make DD causal again and undo the -1 multplication */
+        for (l=0; l<nshots; l++) {
+            j=0;
+            SRC[l*nts+j] = -1.0*DD[l*nts+j];
+            for (j = 1; j < nts; j++) {
+                SRC[l*nts+j] = -1.0*DD[l*nts+nts-j];
+            }
+        }
+		writeDataIter("DDplane.su", SRC, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, NINT(src_angle));
 	}
 	free(SRC);
 
