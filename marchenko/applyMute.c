@@ -60,6 +60,26 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
                 }
             }
         }
+        else if (above==-2){
+            for (i = 0; i < npos; i++) {
+                imute = ixpos[i];
+                tmute = mute[isyn*nxs+imute];
+                ts = tsynW[isyn*nxs+imute];
+                if (tmute >= nt/2) {
+                    memset(&data[isyn*nxs*nt+i*nt],0, sizeof(float)*nt);
+                    continue;
+                }
+                for (j = MAX(0,-2*ts+tmute+shift),l=0; j < MAX(0,-2*ts+tmute+shift+smooth); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+j] *= costaper[l];
+                }
+                for (j = MAX(0,-2*ts+tmute+shift+smooth)+1; j < MIN(nt,nt+1-tmute-shift-smooth); j++) {
+                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                }
+                for (j = MIN(nt,nt-tmute-shift-smooth),l=0; j < MIN(nt,nt-tmute-shift); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
+                }
+            }
+        }
         else if (above==-1){
             for (i = 0; i < npos; i++) {
                 imute = ixpos[i];

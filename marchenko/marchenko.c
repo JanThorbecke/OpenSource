@@ -509,6 +509,7 @@ sqrt(energyNi/energyN0[Nfoc]));
                         }
                     }
                 }
+                if (above==-2) applyMute(f1min, muteW, smooth, 0, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
 			}
 			else { /* plane wave scheme */
                 for (l = 0; l < Nfoc; l++) {
@@ -522,6 +523,7 @@ sqrt(energyNi/energyN0[Nfoc]));
                         }
                     }
                 }
+                if (above==-2) applyMute(f1min, muteW, smooth, 0, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
 			}
         }
         else {/* odd iterations update: => f_1^+(t)  */

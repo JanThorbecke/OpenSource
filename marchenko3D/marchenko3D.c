@@ -36,6 +36,8 @@ typedef struct _complexStruct { /* complex number */
 
 long readShotData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float *ysrc, float *zsrc, long *xnx, complex *cdata,
     long nw, long nw_low, long nshots, long nx, long ny, long ntfft, long mode, float scale, long verbose);
+long readShotData3Dzfp(char *filename, float *xrcv, float *yrcv, float *xsrc, float *ysrc, float *zsrc,
+	long *xnx, complex *cdata, long nw, long nshots, long nx, long ny, float scale, long verbose);
 long readTinvData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float *ysrc, float *zsrc,
     long *xnx, long Nfoc, long nx, long ny, long ntfft, long mode, long *maxval, float *tinv, long hw, long verbose);
 long unique_elements(float *arr, long len);
@@ -52,6 +54,9 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath,
 long getFileInfo3DW(char *filename, long *n1, long *n2, long *n3, long *ngath,
     float *d1, float *d2, float *d3, float *f1, float *f2, float *f3, float *fmin, float *fmax,
     float *sclsxgxsygy, long *nxm);
+long getFileInfo3Dzfp(char *filename, long *n1, long *n2, long *n3, long *ngath,
+    float *d1, float *d2, float *d3, float *f1, float *f2, float *f3,
+    float *fmin, float *fmax, float *scl, long *nxm);
 long readData3D(FILE *fp, float *data, segy *hdrs, long n1);
 long writeData3D(FILE *fp, float *data, segy *hdrs, long n1, long n2);
 long disp_fileinfo3D(char *file, long n1, long n2, long n3, float f1, float f2, float f3, float d1, float d2, float d3, segy *hdrs);
@@ -76,7 +81,7 @@ long writeDataIter3D(char *file_iter, float *data, segy *hdrs, long n1, long n2,
 
 void imaging3D(float *Image, float *Gmin, float *f1plus, long nx, long ny, long nt, float dx, float dy, float dt, long Nfoc, long verbose);
 
-void homogeneousg3D(float *HomG, float *green, float *f2p, float *zsyn, long nx, long ny, long nt, float dx, float dy,
+void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1m, float *zsyn, long nx, long ny, long nt, float dx, float dy,
     float dt, long Nfoc, long *sx, long *sy, long *sz, long verbose);
 
 long linearsearch(long *array, size_t N, long value);
@@ -169,17 +174,17 @@ int main (int argc, char **argv)
     long    hw, smooth, above, shift, *ixpos, *iypos, npos, ix, iy, nzim, nxim, nyim, compact;
     long    nshots_r, *isxcount, *reci_xsrc, *reci_xrcv;
     float   fmin, fmax, *tapersh, *tapersy, fxf, fyf, dxf, dyf, *xsrc, *ysrc, *xrcv, *yrcv, *zsyn, *zsrc, *xrcvsyn, *yrcvsyn;
-    double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, energyNi, energyN0;
+    double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, energyNi, *energyN0;
     float   d1, d2, d3, f1, f2, f3, fxsb, fxse, fysb, fyse, ft, fx, fy, *xsyn, *ysyn, dxsrc, dysrc;
     float   *green, *f2p, *pmin, *G_d, dt, dx, dy, dxs, dys, scl, mem;
     float   *f1plus, *f1min, *iRN, *Ni, *Nig, *trace, *Gmin, *Gplus, *HomG;
     float   xmin, xmax, ymin, ymax, scale, tsq, Q, f0, *tmpdata;
     float   *ixmask, *iymask, *ampscl, *Gd, *Image, dzim;
-    float   grad2rad, p, src_angle, src_velo;
+    float   grad2rad, p, src_angle, src_velo, *mutetest;
     complex *Refl, *Fop;
     char    *file_tinv, *file_shot, *file_green, *file_iter, *file_imag, *file_homg, *file_ampscl;
     char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_pmin, *file_inp;
-    char    *file_ray, *file_amp, *file_wav, *file_shotw;
+    char    *file_ray, *file_amp, *file_wav, *file_shotw, *file_shotzfp;
     segy    *hdrs_out, *hdrs_Nfoc, *hdrs_iter;
 
     initargs(argc, argv);
@@ -190,7 +195,8 @@ int main (int argc, char **argv)
 
     if (!getparstring("file_shot", &file_shot)) file_shot = NULL;
     if (!getparstring("file_shotw", &file_shotw)) file_shotw = NULL;
-        if (file_shot==NULL && file_shotw==NULL) verr("No input for the shot data given");
+    if (!getparstring("file_shotzfp", &file_shotzfp)) file_shotzfp = NULL;
+        if (file_shot==NULL && file_shotw==NULL && file_shotzfp==NULL) verr("No input for the shot data given");
     if (!getparstring("file_tinv", &file_tinv)) file_tinv = NULL;
     if (!getparstring("file_ray", &file_ray)) file_ray = NULL;
     if (!getparstring("file_amp", &file_amp)) file_amp = NULL;
@@ -209,8 +215,8 @@ int main (int argc, char **argv)
     if (file_homg!=NULL && file_inp==NULL) verr("Cannot create HomG if no file_inp is given");
     if (!getparstring("file_ampscl", &file_ampscl)) file_ampscl = NULL;
     if (!getparlong("verbose", &verbose)) verbose = 0;
-    if (file_tinv == NULL && file_shot == NULL && file_shotw == NULL) 
-        verr("file_tinv, file_shotw and file_shot cannot be both input pipe");
+    if (file_tinv == NULL && file_shot == NULL && file_shotw == NULL && file_shotzfp==NULL) 
+        verr("file_tinv, file_shotw, file_shotzfp and file_shot cannot all be input pipe");
     if (!getparstring("file_green", &file_green)) {
         if (verbose) vwarn("parameter file_green not found, assume pipe");
         file_green = NULL;
@@ -274,11 +280,17 @@ int main (int argc, char **argv)
     if (verbose) vmess("Retrieved file info of the first arrivals");
 
     ngath = 0; /* setting ngath=0 scans all traces; nx contains maximum traces/gather */
-    if (file_shot!=NULL) {
-        ret = getFileInfo3D(file_shot, &nt, &nx, &ny, &ngath, &d1, &dx, &dy, &ft, &fx, &fy, &scl, &ntraces);
+    if (file_shotzfp!=NULL) {
+        vmess("zfp shot data");
+        ret = getFileInfo3Dzfp(file_shotzfp, &nt, &nx, &ny, &ngath, &d1, &dx, &dy, &ft, &fx, &fy, &fmin, &fmax, &scl, &ntraces);
     }
     else if (file_shotw!=NULL) {
+        vmess("Frequency shot data");
         ret = getFileInfo3DW(file_shotw, &nt, &nx, &ny, &ngath, &d1, &dx, &dy, &ft, &fx, &fy, &fmin, &fmax, &scl, &ntraces);
+    }
+    else if (file_shot!=NULL) {
+        vmess("Time shot data");
+        ret = getFileInfo3D(file_shot, &nt, &nx, &ny, &ngath, &d1, &dx, &dy, &ft, &fx, &fy, &scl, &ntraces);
     }
     if (verbose) vmess("Retrieved file info of the shot data");
     nshots = ngath;
@@ -319,6 +331,7 @@ int main (int argc, char **argv)
     xnxsyn  = (long *)calloc(Nfoc,sizeof(long)); // number of traces per focal point
     ixpos   = (long *)calloc(nys*nxs,sizeof(long)); // x-position of source of shot in G_d domain (nxs*nys with dxs, dys)
     iypos   = (long *)calloc(nys*nxs,sizeof(long)); // y-position of source of shot in G_d domain (nxs*nys with dxs, dys)
+    energyN0= (double *)calloc(Nfoc,sizeof(double)); // minimum energy for each focal position
 
     Refl    = (complex *)malloc(nw*ny*nx*nshots*sizeof(complex));
     tapersh = (float *)malloc(nx*sizeof(float));
@@ -379,6 +392,18 @@ int main (int argc, char **argv)
             tsynW[i] = 0;
         }
     }
+
+    // mutetest  = (float *)calloc(Nfoc*nys*nxs*ntfft,sizeof(float));
+    // for (i=0; i<Nfoc*nys*nxs*ntfft; i++) {
+    //     mutetest[i] = 1.0;
+    // }
+    // applyMute3D(mutetest, muteW, smooth, above, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift);
+
+    // fp_out = fopen( "mute.bin", "w+" );
+    // for (i=0; i<nx*ny; i++) {
+    //     fprintf(fp_out,"%.7f\n",mutetest[i]);
+    // }
+    // fclose(fp_out);
 
 
     /* define tapers to taper edges of acquisition */
@@ -444,14 +469,18 @@ int main (int argc, char **argv)
 
 /*================ Reading shot records ================*/
 
-    if (file_shot!=NULL) {
-        mode=1;
-        readShotData3D(file_shot, xrcv, yrcv, xsrc, ysrc, zsrc, xnx, Refl, nw,
-        nw_low, nshots, nx, ny, ntfft, mode, scale, verbose);
+    if (file_shotzfp!=NULL){
+        readShotData3Dzfp(file_shotzfp, xrcv, yrcv, xsrc, ysrc, zsrc, xnx, Refl,
+        nw, nshots, nx, ny, scl, verbose);
     }
-    else {
+    else if (file_shotw!=NULL) {
         mode=0;
         readShotData3D(file_shotw, xrcv, yrcv, xsrc, ysrc, zsrc, xnx, Refl, nw,
+        nw_low, nshots, nx, ny, ntfft, mode, scale, verbose);
+    }
+    else if (file_shot!=NULL) {
+        mode=1;
+        readShotData3D(file_shot, xrcv, yrcv, xsrc, ysrc, zsrc, xnx, Refl, nw,
         nw_low, nshots, nx, ny, ntfft, mode, scale, verbose);
     }
     mode=1;
@@ -488,7 +517,7 @@ int main (int argc, char **argv)
     nyshot = nshots/nxshot;
 
     fxf = xsrc[0];
-    if (nx > 1) dxf = (xrcv[ny*nx-1] - xrcv[0])/(float)(nx-1);
+    if (nx > 1) dxf = xrcv[1] - xrcv[0];
     else dxf = d2;
     if (NINT(dx*1e3) != NINT(fabs(dxf)*1e3)) {
         vmess("dx in hdr.d2 (%.3f) and hdr.gx (%.3f) not equal",dx, dxf);
@@ -497,7 +526,7 @@ int main (int argc, char **argv)
         vmess("dx used => %f", dx);
     }
     fyf = ysrc[0];
-    if (ny > 1) dyf = (yrcv[ny*nx-1] - yrcv[0])/(float)(ny-1);
+    if (ny > 1) dyf = yrcv[nx] - yrcv[0];
     else dyf = d3;
     if (NINT(dy*1e3) != NINT(fabs(dyf)*1e3)) {
         vmess("dy in hdr.d3 (%.3f) and hdr.gy (%.3f) not equal",dy, dyf);
@@ -536,7 +565,7 @@ int main (int argc, char **argv)
     if (nt != nts) 
         vmess("Time samples in shot (%li) and focusing operator (%li) are not equal",nt, nts);
     if (verbose) {
-        vmess("Number of focusing operators    = %li, x:%li, y%li, z:%li", Nfoc, nxim, nyim, nzim);
+        vmess("Number of focusing operators    = %li, x:%li, y:%li, z:%li", Nfoc, nxim, nyim, nzim);
         vmess("Number of receivers in focusop  = x:%li y:%li total:%li", nxs, nys, nxs*nys);
         vmess("number of shots                 = %li", nshots);
         vmess("number of receiver/shot         = x:%li y:%li total:%li", nx, ny, nx*ny);
@@ -548,6 +577,7 @@ int main (int argc, char **argv)
         vmess("receiver distance               = x:%.2f y:%.2f", dxf, dyf);
         vmess("direction of increasing traces  = x:%li y:%li", dxi, dyi);
         vmess("number of time samples (nt,nts) = %li (%li,%li)", ntfft, nt, nts);
+        vmess("frequency cutoffs               = min:%.3f max:%.3f",fmin,fmax);
         vmess("time sampling                   = %e ", dt);
         if (file_green != NULL) vmess("Green output file              = %s ", file_green);
         if (file_gmin != NULL)  vmess("Gmin output file               = %s ", file_gmin);
@@ -717,9 +747,9 @@ int main (int argc, char **argv)
                     }
                 }
             }
-            if (iter==0) energyN0 = energyNi;
+            if (iter==0) energyN0[l] = energyNi;
             if (verbose >=2) vmess(" - iSyn %li: Ni at iteration %li has energy %e; relative to N0 %e",
-                l, iter, sqrt(energyNi), sqrt(energyNi/energyN0));
+                l, iter, sqrt(energyNi), sqrt(energyNi/energyN0[l]));
         }
 
         /* apply mute window based on times of direct arrival (in muteW) */
@@ -1013,7 +1043,7 @@ int main (int argc, char **argv)
 
         // Determine Homogeneous Green's function
         HomG = (float *)calloc(Nfoc*ntfft,sizeof(float));
-        homogeneousg3D(HomG, green, f2p, zsyn, nxs, nys, ntfft, dxs, dys, dt, Nfoc, sx, sy, sz, verbose);
+        homogeneousg3D(HomG, green, f2p, f1plus, f1min, zsyn, nxs, nys, ntfft, dxs, dys, dt, Nfoc, sx, sy, sz, verbose);
 
         // Set headers and write out the data
         fp_homg = fopen(file_homg, "w+");
@@ -1095,9 +1125,10 @@ int main (int argc, char **argv)
 
 /*================ write output files ================*/
 
-
-    fp_out = fopen(file_green, "w+");
-    if (fp_out==NULL) verr("error on creating output file %s", file_green);
+    if (file_green != NULL) {
+        fp_out = fopen(file_green, "w+");
+        if (fp_out==NULL) verr("error on creating output file %s", file_green);
+    }
     if (file_gmin != NULL) {
         fp_gmin = fopen(file_gmin, "w+");
         if (fp_gmin==NULL) verr("error on creating output file %s", file_gmin);
@@ -1148,8 +1179,10 @@ int main (int argc, char **argv)
             }
         }
 
-        ret = writeData3D(fp_out, (float *)&green[l*size], hdrs_out, n1, n2*n3);
-        if (ret < 0 ) verr("error on writing output file.");
+        if (file_green != NULL) {
+            ret = writeData3D(fp_out, (float *)&green[l*size], hdrs_out, n1, n2*n3);
+            if (ret < 0 ) verr("error on writing output file.");
+        }
 
         if (file_gmin != NULL) {
             ret = writeData3D(fp_gmin, (float *)&Gmin[l*size], hdrs_out, n1, n2*n3);
@@ -1168,37 +1201,15 @@ int main (int argc, char **argv)
             if (ret < 0 ) verr("error on writing output file.");
         }
         if (file_f1plus != NULL) {
-            /* rotate to get t=0 in the middle */
-            for (i = 0; i < n2*n3; i++) {
-                hdrs_out[i].f1     = -n1*0.5*dt;
-                memcpy(&trace[0],&f1plus[l*size+i*nts],nts*sizeof(float));
-                for (j = 0; j < n1/2; j++) {
-                    f1plus[l*size+i*nts+n1/2+j] = trace[j];
-                }
-                for (j = n1/2; j < n1; j++) {
-                    f1plus[l*size+i*nts+j-n1/2] = trace[j];
-                }
-            }
             ret = writeData3D(fp_f1plus, (float *)&f1plus[l*size], hdrs_out, n1, n2*n3);
             if (ret < 0 ) verr("error on writing output file.");
         }
         if (file_f1min != NULL) {
-            /* rotate to get t=0 in the middle */
-            for (i = 0; i < n2*n3; i++) {
-                hdrs_out[i].f1     = -n1*0.5*dt;
-                memcpy(&trace[0],&f1min[l*size+i*nts],nts*sizeof(float));
-                for (j = 0; j < n1/2; j++) {
-                    f1min[l*size+i*nts+n1/2+j] = trace[j];
-                }
-                for (j = n1/2; j < n1; j++) {
-                    f1min[l*size+i*nts+j-n1/2] = trace[j];
-                }
-            }
             ret = writeData3D(fp_f1min, (float *)&f1min[l*size], hdrs_out, n1, n2*n3);
             if (ret < 0 ) verr("error on writing output file.");
         }
     }
-    ret = fclose(fp_out);
+    if (file_green != NULL) {ret += fclose(fp_out);}
     if (file_gplus != NULL) {ret += fclose(fp_gplus);}
     if (file_gmin != NULL) {ret += fclose(fp_gmin);}
     if (file_f2 != NULL) {ret += fclose(fp_f2);}
@@ -1231,7 +1242,7 @@ long unique_elements(float *arr, long len)
         is_unique = 1;
         for (inner = 0; is_unique && inner < outer; ++inner)
         {  
-             if ((arr[inner] >= arr[outer]-1.0) && (arr[inner] <= arr[outer]+1.0)) is_unique = 0;
+             if ((arr[inner] >= arr[outer]-0.1) && (arr[inner] <= arr[outer]+0.1)) is_unique = 0;
         }
         if (is_unique) ++unique;
      }
