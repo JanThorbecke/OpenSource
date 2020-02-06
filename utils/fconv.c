@@ -507,7 +507,7 @@ void corr(float *data1, float *data2, float *cov, int nrec, int nsam, float dt, 
 
 	/* inverse frequency-time FFT and scale result */
 	sign = 1;
-	scl = 1.0/(float)optn;
+	scl = dt/(float)optn;
 	crmfft(&ccov[0], &rdata1[0], optn, nrec, nfreq, optn, sign);
 	scl_data(rdata1,optn,nrec,scl,cov,nsam);
 
@@ -578,7 +578,7 @@ void corr3(float *data1, float *data2, float *cov, int nrec, int nsam, float dt)
 
 	/* inverse frequency-time FFT and scale result */
 	sign = 1;
-	scl = 1.0/(float)optn;
+	scl = dt/(float)optn;
 	crmfft(&ccov[0], &rdata1[0], optn, nrec, nfreq, optn, sign);
 	scl_data(rdata1,optn,nrec,scl,cov,ntout);
 
@@ -689,7 +689,7 @@ void deconv(float *data1, float *data2, float *decon, int nrec, int nsam,
 
 	/* inverse frequency-time FFT and scale result */
 	sign = 1;
-	scl = 1.0/(float)optn;
+	scl = dt/(float)optn;
 	crmfft(&cdec[0], &rdata1[0], optn, nrec, nfreq, optn, sign);
 	scl_data(rdata1,optn,nrec,scl,decon,nsam);
 
@@ -777,7 +777,7 @@ void power(float *data1, float *data2, float *cov, int nrec, int nsam, float dt,
 
         /* inverse frequency-time FFT and scale result */
 	sign = 1;
-	scl = 1.0/(float)optn;
+	scl = dt/(float)optn;
 	crmfft(&acov[0], &rdata1[0], optn, nrec, nfreq, optn, sign);
 	scl_data(rdata1,optn,nrec,scl,cov,nsam);
 
@@ -866,7 +866,7 @@ void convol(float *data1, float *data2, float *con, int nrec, int nsam, float dt
 
         /* inverse frequency-time FFT and scale result */
 	sign = 1;
-	scl = 1.0/((float)(optn));
+	scl = dt/((float)(optn));
 	crmfft(&ccon[0], &rdata1[0], optn, nrec, nfreq, optn, sign);
 	scl_data(rdata1,optn,nrec,scl,con,nsam);
 
@@ -979,7 +979,7 @@ void cohr(float *data1, float *data2, float *cov, int nrec, int nsam, float dt, 
     
 	/* inverse frequency-time FFT and scale result */
 	sign = 1;
-	scl = 1.0/(float)optn;
+	scl = dt/(float)optn;
 	crmfft(&ccov[0], &rdata1[0], optn, nrec, nfreq, optn, sign);
 	scl_data(rdata1,optn,nrec,scl,cov,nsam);
     
