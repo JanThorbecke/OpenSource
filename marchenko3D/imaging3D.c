@@ -7,6 +7,14 @@
 #include <assert.h>
 #include <genfft.h>
 
+/*
+The imaging is computed using the double-focusing method
+For more information about the double-focusing method see:
+Myrna Staring, Roberto Pereira, Huub Douma, Joost van der Neut, and Kees Wapenaar, (2018), 
+"Source-receiver Marchenko redatuming on field data using an adaptive double-focusing method," GEOPHYSICS 83: S579-S590.
+https://doi.org/10.1190/geo2017-0796.1
+*/
+
 double wallclock_time(void);
 
 void scl_data(float *data, long nsam, long nrec, float scl, float *datout, long nsamout);
