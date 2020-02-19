@@ -82,8 +82,7 @@ OPTC += -fopenmp
 #LDFLAGS = -static -Ofast
 
 #############################################################################
-# BLAS and LAPACK libraries 
-# and FFT LIBRARIES
+# BLAS and LAPACK libraries and FFT LIBRARIES
 #MKLROOT=/opt/intel/mkl/
 MKLLIB=${MKLROOT}/lib
 OPTC += -DMKL -I$(MKLROOT)/include -I$(MKLROOT)/include/fftw
@@ -98,7 +97,8 @@ BLAS = -L${MKLROOT}/lib/ -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread -lm
 #for intel compilers
 #BLAS = -mkl
 #
-#If you do not want to use MKL
+#If you do not want or can not use MKL you can try the basic lapack and blas libaries that are default installed on most Linux
+#systems
 #BLAS = -llapack -lblas
 
 #############################################################################
@@ -108,7 +108,7 @@ BLAS = -L${MKLROOT}/lib/ -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread -lm
 #BLAS = -L$(AMDROOT)/lib -lacml -lfortran -lffio -lrt -lm
 
 #LIBARIES
-LIBS= -L$L -lgenfft  $(BLAS)
+LIBS= -L$L -lgenfft $(BLAS)
 
 
 ########################################################################
