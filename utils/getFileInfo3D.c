@@ -48,6 +48,10 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, fl
 	if (ret<0) perror("fseeko");
     bytes = ftello( fp );
 
+    if (hdr.scalco < 0) scl = 1.0/fabs((float)hdr.scalco);
+    else if (hdr.scalco == 0) scl = 1.0;
+    else scl = hdr.scalco;
+
     *n1 = hdr.ns;
     if ( (hdr.trid == 1) && (hdr.dt != 0) ) {
         *d1 = ((float) hdr.dt)*1.e-6;
@@ -58,15 +62,11 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, fl
         *f1 = hdr.f1;
     }
     *f2 = hdr.f2;
-    *f3 = hdr.gy;
+    *f3 = hdr.gy*scl;
 
     data_sz = sizeof(float)*(*n1);
     trace_sz = sizeof(float)*(*n1)+TRCBYTES;
     ntraces  = (long) (bytes/trace_sz);
-
-    if (hdr.scalco < 0) scl = 1.0/fabs((float)hdr.scalco);
-    else if (hdr.scalco == 0) scl = 1.0;
-    else scl = hdr.scalco;
 
 	*sclsxgxsygy = scl;
     /* check to find out number of traces in shot gather */

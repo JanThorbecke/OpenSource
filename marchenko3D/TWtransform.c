@@ -28,21 +28,22 @@ char *sdoc[] = {
 " ",
 " TWtransform - Transform data from uncompressed time domain to compressed frequency domain",
 " ",
-" TWtransform file_T= file_W= [optional parameters]",
+" TWtransform file_in= file_out= [optional parameters]",
 " ",
 " Required parameters: ",
 " ",
-"   file_T= .................. File containing the uncompressed time domain data",
-"   file_W= .................. Output for the compressed frequency domain data",
+"   file_in= ................. File containing the uncompressed time domain data",
+"   file_out= ................ Output for the (compressed) frequency domain data",
 " ",
 " Optional parameters: ",
 " ",
-"   verbose=0 ................ silent option; >0 displays info",
+"   verbose=1 ................ silent option; >0 displays info",
 "   fmin=0 ................... minimum frequency in the output",
 "   fmax=70 .................. maximum frequency in the output",
 "   mode=1 ................... sign of the frequency transform",
-"   zfp=0 .................... compress the transformed data using zfp",
-"   tolerance=1e-3 ........... accuracy of the zfp compression",
+"   zfp=0 .................... (=1) compress the transformed data using zfp",
+"   tolerance=1e-3 ........... accuracy of the zfp compression,",
+"   smaller values give more accuracy to the compressed data but will decrease the compression rate",
 "   weight=2.0 ............... scaling of the reflection data",
 " ",
 " ",
@@ -63,7 +64,7 @@ int main (int argc, char **argv)
 	long	inx, iny, gy;
 	float   scl, *trace, dt, dx, dy, ft, fx, fy, fmin, fmax, *cdata, scale;
 	double	tolerance;
-    char    *file_T, *file_W;
+    char    *file_in, *file_out;
 	complex *ctrace;
 	zfptop	zfpt;
 	zfpmar  zfpm;
@@ -71,10 +72,10 @@ int main (int argc, char **argv)
     initargs(argc, argv);
     requestdoc(1);
 
-    if (!getparstring("file_T", &file_T)) file_T = "in.su";
-        if (file_T==NULL) verr("No file_in is given");
-    if (!getparstring("file_W", &file_W)) file_W = NULL;
-        if (file_W==NULL) verr("No file_W is given");
+    if (!getparstring("file_in", &file_in)) file_in = NULL;
+        if (file_in==NULL) verr("No file_in is given");
+    if (!getparstring("file_out", &file_out)) file_out = NULL;
+        if (file_out==NULL) verr("No file_out is given");
     if (!getparfloat("fmin", &fmin)) fmin = 0;
     if (!getparfloat("fmax", &fmax)) fmax = 70;
     if (!getpardouble("tolerance", &tolerance)) tolerance = 1e-3;
@@ -84,7 +85,7 @@ int main (int argc, char **argv)
     if (!getparlong("zfp", &zfp)) zfp = 0;
 
     nshots = 0;
-    ret = getFileInfo3D(file_T, &nt, &nx, &ny, &nshots, &dt, &dx, &dy, &ft, &fx, &fy, &scl, &ntraces);
+    ret = getFileInfo3D(file_in, &nt, &nx, &ny, &nshots, &dt, &dx, &dy, &ft, &fx, &fy, &scl, &ntraces);
 
     ntfft = loptncr(nt); 
     nfreq = ntfft/2+1;
@@ -97,19 +98,19 @@ int main (int argc, char **argv)
 
 	/* Reading first header  */
 
-	if (file_T == NULL) fp = stdin;
-	else fp = fopen( file_T, "r" );
+	if (file_in == NULL) fp = stdin;
+	else fp = fopen( file_in, "r" );
 	if ( fp == NULL ) {
-		fprintf(stderr,"input file %s has an error\n", file_T);
+		fprintf(stderr,"input file %s has an error\n", file_in);
 		perror("error in opening file: ");
 		fflush(stderr);
 		return -1;
 	}
 
-	if (file_W == NULL) fp_out = stdin;
-	else fp_out = fopen( file_W, "w+" );
+	if (file_out == NULL) fp_out = stdin;
+	else fp_out = fopen( file_out, "w+" );
 	if ( fp_out == NULL ) {
-		fprintf(stderr,"input file %s has an error\n", file_W);
+		fprintf(stderr,"input file %s has an error\n", file_out);
 		perror("error in opening file: ");
 		fflush(stderr);
 		return -1;

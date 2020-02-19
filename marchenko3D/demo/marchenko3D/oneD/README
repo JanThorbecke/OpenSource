@@ -1,0 +1,6 @@
+In this directory, you can run the 3D marchenko code.
+!!!!!!!!!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Due to the size of the data, one requires around 256 GB of RAM. Keep this limitation in mind
+
+To avoid the need for large storage space on your directory, we reccomend using the ZFP compressed option. 
+This is the standard option included in the data. You can just execute execute.sh and everything will be done for you. It will take a considerable amount of time, depending on your machine.

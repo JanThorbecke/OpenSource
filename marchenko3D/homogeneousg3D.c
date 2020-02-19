@@ -7,6 +7,25 @@
 #include <assert.h>
 #include <genfft.h>
 
+/*
+The schemes in this module use a variety of retrieval representations
+For more information about Green's function retrieval see:
+Brackenhoff, J., Thorbecke, J., & Wapenaar, K. (2019). 
+Virtual sources and receivers in the real Earth: Considerations for practical applications. 
+Journal of Geophysical Research: Solid Earth, 124, 11802– 11821. 
+https://doi.org/10.1029/2019JB018485 
+
+Brackenhoff, J., Thorbecke, J., and Wapenaar, K.: 
+Monitoring of induced distributed double-couple sources using Marchenko-based virtual receivers.
+Solid Earth, 10, 1301–1319, 
+https://doi.org/10.5194/se-10-1301-2019, 2019. 
+
+Wapenaar, K., Brackenhoff, J., Thorbecke, J. et al. 
+Virtual acoustics in inhomogeneous media with single-sided access. 
+Sci Rep 8, 2497 (2018). 
+https://doi.org/10.1038/s41598-018-20924-x
+*/
+
 #ifndef MAX
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #endif
@@ -29,7 +48,6 @@ void convol2(float *data1, float *data2, float *con, long nrec, long nsam, float
 long readSnapData3D(char *filename, float *data, segy *hdrs, long nsnaps, long nx, long ny, long nz, long sx, long ex, long sy, long ey, long sz, long ez);
 long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, float *d1, float *d2, float *d3, float *f1, float *f2, float *f3, float *sclsxgxsygy, long *nxm);
 
-//void kxwfilter(float *data, long nt, long nx, float dt, float dx, float fmin, float fmax, float angle, float cp, float perc);
 void timeDiff(float *data, long nsam, long nrec, float dt, float fmin, float fmax, long opt);
 void depthDiff(float *data, long nsam, long nrec, float dt, float dx, float fmin, float fmax, float c, long opt);
 
@@ -38,22 +56,19 @@ void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1
 {
     char    *file_inp;
     long    i, j, k, l, ret, scheme, count=0, n_source;
-    long    is, kxwfilt, n1, n2, n3, ngath, ntraces, zsrc;
+    long    is, n1, n2, n3, ngath, ntraces, zsrc;
     float   d1, d2, d3, f1, f2, f3, scl;
-	float   *conv, fmin, fmax, alpha, cp, rho, perc;
+	float   *conv, fmin, fmax, cp, rho;
 	float   *greenjkz, *input, *inputjkz, *tmp1, *tmp2;
     double  t0, t2, tfft;
     segy    *hdr_inp;
 
     if (!getparstring("file_inp", &file_inp)) file_inp = NULL;
 	if (!getparlong("scheme", &scheme)) scheme = 0;
-	if (!getparlong("kxwfilt", &kxwfilt)) kxwfilt = 0;
 	if (!getparfloat("fmin", &fmin)) fmin = 0.0;
 	if (!getparfloat("fmax", &fmax)) fmax = 100.0;
-	if (!getparfloat("alpha", &alpha)) alpha = 65.0;
 	if (!getparfloat("cp", &cp)) cp = 1000.0;
 	if (!getparfloat("rho", &rho)) rho = 1000.0;
-	if (!getparfloat("perc", &perc)) perc = 0.15;
 
 	tfft = 0.0;
 	ret = 0;
@@ -69,6 +84,8 @@ void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1
     if (NINT(d1*1000.0)!=NINT(dt*1000.0)) verr("dt sampling between input (%.3e) and retrieved (%.3e) is not equal",d1,dt);
     if (NINT(d2*1000.0)!=NINT(dx*1000.0)) verr("dx sampling between input (%.3e) and retrieved (%.3e) is not equal",d2,dx);
     if (NINT(d3*1000.0)!=NINT(dy*1000.0)) verr("dy sampling between input (%.3e) and retrieved (%.3e) is not equal",d3,dy);
+
+    scl = dx*dy*dt;
 
     input   = (float *)calloc(n_source*nx*ny*nt,sizeof(float));
     hdr_inp = (segy *)calloc(n_source*nx*ny,sizeof(segy));
@@ -86,7 +103,22 @@ void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1
         sz[l] = hdr_inp[l*nx*ny].sdepth;
     }
 
-	if (scheme==1) { // Scale the Green's functions if the classical scheme is used
+    if (scheme==0) {
+		if (verbose) vmess("Marchenko Homogeneous Green's function retrieval with G source");
+	}
+    else if (scheme==1) {
+		if (verbose) vmess("Marchenko Homogeneous Green's function retrieval with f2 source");
+	}
+    else if (scheme==2) {
+		if (verbose) vmess("Marchenko Green's function retrieval with source depending on position");
+	}
+	else if (scheme==3) {
+		if (verbose) vmess("Marchenko Green's function retrieval with G source");
+	}
+    else if (scheme==4) {
+		if (verbose) vmess("Marchenko Green's function retrieval with f2 source");
+	}
+	else if (scheme==5) { // Scale the Green's functions if the classical scheme is used
 		if (verbose) vmess("Classical Homogeneous Green's function retrieval");
 		greenjkz	= (float *)calloc(Nfoc*nx*ny*nt,sizeof(float));
 		inputjkz	= (float *)calloc(n_source*nx*ny*nt,sizeof(float));
@@ -108,25 +140,13 @@ void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1
             }
         }
 	}
-	else if (scheme==2) {
-		if (verbose) vmess("Marchenko Green's function retrieval with G source");
-	}
-    else if (scheme==6) {
-		if (verbose) vmess("Marchenko Green's function retrieval with f2 source");
-	}
-    else if (scheme==7) {
-		if (verbose) vmess("Marchenko Green's function retrieval with source depending on position");
-	}
-	else if (scheme==3) {
+	else if (scheme==6) {
 		if (verbose) vmess("Marchenko Homogeneous Green's function retrieval with multiple sources");
         if (verbose) vmess("Looping over %li source positions",n_source);
 	}
-    else if (scheme==4) {
+    else if (scheme==7) {
 		if (verbose) vmess("Back propagation with multiple sources");
         if (verbose) vmess("Looping over %li source positions",n_source);
-	}
-	else if (scheme==5) {
-		if (verbose) vmess("Marchenko Homogeneous Green's function retrieval with f2 source");
 	}
 	else if (scheme==8) { // 0=f1p 1=f1m
 		if (verbose) vmess("f1+ redatuming");
@@ -150,12 +170,11 @@ void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1
 		if (verbose) vmess("2i IM(f1) redatuming");
 		inputjkz	= (float *)calloc(n_source*nx*ny*nt,sizeof(float));
         for (k = 0; k < ny; k++) {
+            depthDiff(&input[k*nx*nt]   , nt, nx, dt, dx, fmin, fmax, cp, 1);
             for (l = 0; l < nx*nt; l++) {
                 inputjkz[k*nx*nt+l] = input[k*nx*nt+l];
             }
             conjugate(&inputjkz[k*nx*nt], nt, nx, dt);
-            depthDiff(&inputjkz[k*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
-            depthDiff(&input[k*nx*nt]   , nt, nx, dt, dx, fmin, fmax, cp, 1);
         }
 	}
 	else {
@@ -166,11 +185,11 @@ void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1
   private(i,j,k,is,conv,tmp1,tmp2,zsrc) 
 {	
 	conv	= (float *)calloc(nx*nt,sizeof(float));
-	if (scheme==1) {
+	if (scheme==5) {
 		tmp1	= (float *)calloc(nx*nt,sizeof(float));
 		tmp2	= (float *)calloc(nx*nt,sizeof(float));
 	}
-	if (scheme==3 || scheme==8 || scheme==9 || scheme==10) tmp1 = (float *)calloc(nx*nt,sizeof(float));
+	if (scheme==6 || scheme==8 || scheme==9 || scheme==10) tmp1 = (float *)calloc(nx*nt,sizeof(float));
 
 #pragma omp for schedule(guided,1)
 	for (l = 0; l < Nfoc; l++) {
@@ -185,113 +204,28 @@ void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1
                 depthDiff(&f2p[l*ny*nx*nt+k*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
                 convol(&input[k*nx*nt], &f2p[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, 0);
                 timeDiff(conv, nt, nx, dt, fmin, fmax, -3);
-                if (kxwfilt) {
-                    //kxwfilter(conv, nt, nx, dt, dx, fmin, fmax, alpha, cp, perc);
-                }
                 for (i=0; i<nx; i++) {
                     for (j=0; j<nt/2; j++) {
-                        HomG[(j+nt/2)*Nfoc+l] += conv[i*nt+j]/rho;
-                        HomG[j*Nfoc+l] += conv[i*nt+(j+nt/2)]/rho;
+                        HomG[(j+nt/2)*Nfoc+l] += scl*conv[i*nt+j]/rho;
+                        HomG[j*Nfoc+l] += scl*conv[i*nt+(j+nt/2)]/rho;
                     }
                 }
             }
 		}
-        else if (scheme==5) { //Marchenko representation with f2 source
+        else if (scheme==1) { //Marchenko representation with f2 source
             for (k = 0; k < ny; k++) {
                 depthDiff(&green[l*ny*nx*nt+k*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
                 convol(&input[k*nx*nt], &green[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, 0);
                 timeDiff(conv, nt, nx, dt, fmin, fmax, -3);
-                if (kxwfilt) {
-                    //kxwfilter(conv, nt, nx, dt, dx, fmin, fmax, alpha, cp, perc);
-                }
                 for (i=0; i<nx; i++) {
                     for (j=0; j<nt/2; j++) {
-                        HomG[(j+nt/2)*Nfoc+l] += conv[i*nt+j]/rho;
-                        HomG[j*Nfoc+l] += conv[i*nt+(j+nt/2)]/rho;
+                        HomG[(j+nt/2)*Nfoc+l] += scl*conv[i*nt+j]/rho;
+                        HomG[j*Nfoc+l] += scl*conv[i*nt+(j+nt/2)]/rho;
                     }
                 }
             }
 		}
-        else if (scheme==8) { // f1+ redatuming 0=f1p 1=f1m
-            for (k = 0; k < ny; k++) {
-                convol2(&input[0*ny*nx*nt+k*nx*nt], &f1p[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, fmin, fmax, 1);
-                convol2(&input[1*ny*nx*nt+k*nx*nt], &f1m[l*ny*nx*nt+k*nx*nt], tmp1, nx, nt, dt, fmin, fmax, 1);
-                for (i=0; i<nx; i++) {
-                    for (j=0; j<nt/2; j++) {
-                        HomG[(j+nt/2)*Nfoc+l]   -= 2.0*(conv[i*nt+j]        + tmp1[i*nt+j])/rho;
-                        HomG[j*Nfoc+l]          -= 2.0*(conv[i*nt+(j+nt/2)] + tmp1[i*nt+(j+nt/2)])/rho;
-                    }
-                }
-            }
-		}
-        else if (scheme==9) { // f1- redatuming 0=f1p 1=f1m
-            for (k = 0; k < ny; k++) {
-                convol2(&input[0*ny*nx*nt+k*nx*nt], &f1m[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, fmin, fmax, 1);
-                convol2(&input[1*ny*nx*nt+k*nx*nt], &f1p[l*ny*nx*nt+k*nx*nt], tmp1, nx, nt, dt, fmin, fmax, 1);
-                for (i=0; i<nx; i++) {
-                    for (j=0; j<nt/2; j++) {
-                        HomG[(j+nt/2)*Nfoc+l]   += 2.0*(conv[i*nt+j]        + tmp1[i*nt+j])/rho;
-                        HomG[j*Nfoc+l]          += 2.0*(conv[i*nt+(j+nt/2)] + tmp1[i*nt+(j+nt/2)])/rho;
-                    }
-                }
-            }
-		}
-        else if (scheme==10) { // 2i IM(f1) redatuming
-            for (k = 0; k < ny; k++) {
-                convol2(&input[k*nx*nt]   , &f1m[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, fmin, fmax, 2);
-                convol2(&inputjkz[k*nx*nt], &f1p[l*ny*nx*nt+k*nx*nt], tmp1, nx, nt, dt, fmin, fmax, 2);
-                for (i=0; i<nx; i++) {
-                    for (j=0; j<nt/2; j++) {
-                        HomG[(j+nt/2)*Nfoc+l]   += 4.0*(conv[i*nt+j]        - tmp1[i*nt+j])/rho;
-                        HomG[j*Nfoc+l]          += 4.0*(conv[i*nt+(j+nt/2)] - tmp1[i*nt+(j+nt/2)])/rho;
-                    }
-                }
-            }
-		}
-		else if (scheme==1) { //classical representation
-            for (k = 0; k < ny; k++) {
-                convol(&greenjkz[l*ny*nx*nt+k*nx*nt], &input[k*nx*nt], tmp1, nx, nt, dt, 0);
-                convol(&green[l*ny*nx*nt+k*nx*nt], &inputjkz[k*nx*nt], tmp2, nx, nt, dt, 0);
-                for (i = 0; i < nx; i++) {
-                    for (j = 0; j < nt; j++) {
-                        conv[i*nt+j] = tmp1[i*nt+j]+tmp2[i*nt+j];
-                    }
-                }
-                timeDiff(conv, nt, nx, dt, fmin, fmax, -1);
-                for (i=0; i<nx; i++) {
-                    for (j=0; j<nt/2; j++) {
-                        HomG[(j+nt/2)*Nfoc+l] += conv[i*nt+j]/rho;
-                        HomG[j*Nfoc+l] += conv[i*nt+(j+nt/2)]/rho;
-                    }
-                }
-            }
-		}
-		else if (scheme==2) { //Marchenko representation without time-reversal G source
-            for (k = 0; k < ny; k++) {
-                depthDiff(&f2p[l*ny*nx*nt+k*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
-                convol2(&input[k*nx*nt], &f2p[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, fmin, fmax, 1);
-                for (i=0; i<nx; i++) {
-                    for (j=0; j<nt/2; j++) {
-                        HomG[(j+nt/2)*Nfoc+l] += 2.0*conv[i*nt+j]/rho;
-                        HomG[j*Nfoc+l] += 2.0*conv[i*nt+(j+nt/2)]/rho;
-                    }
-                }
-            }
-		}
-		else if (scheme==6) { //Marchenko representation without time-reversal f2 source
-            for (k = 0; k < ny; k++) {
-                depthDiff(&green[l*ny*nx*nt+k*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
-                convol(&input[k*nx*nt], &green[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, 0);
-                timeDiff(conv, nt, nx, dt, fmin, fmax, -1);
-                for (i=0; i<nx; i++) {
-                    for (j=0; j<nt/2; j++) {
-                        HomG[(j+nt/2)*Nfoc+l] += 2.0*conv[i*nt+j]/rho;
-                        HomG[j*Nfoc+l] += 2.0*conv[i*nt+(j+nt/2)]/rho;
-                    }
-                }
-            }
-		}
-        else if (scheme==7) { //Marchenko representation without time-reversal using varying sources
+        else if (scheme==2) { //Marchenko representation without time-reversal using varying sources
             for (k = 0; k < ny; k++) {
                 depthDiff(&f2p[l*ny*nx*nt+k*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
                 depthDiff(&green[l*ny*nx*nt+k*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
@@ -308,60 +242,133 @@ void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1
                     timeDiff(conv, nt, nx, dt, fmin, fmax, -1);
                     for (i=0; i<nx; i++) {
                         for (j=0; j<nt/2; j++) {
-                            HomG[(j+nt/2)*Nfoc+l] += 2.0*conv[i*nt+j]/rho;
-                            HomG[j*Nfoc+l] += 2.0*conv[i*nt+(j+nt/2)]/rho;
+                            HomG[(j+nt/2)*Nfoc+l] += 2.0*scl*conv[i*nt+j]/rho;
+                            HomG[j*Nfoc+l] += 2.0*scl*conv[i*nt+(j+nt/2)]/rho;
                         }
                     }
                 }
             }
 		}
-		else if (scheme==3) { //Marchenko representation with multiple shot gathers
+		else if (scheme==3) { //Marchenko representation without time-reversal G source
+            for (k = 0; k < ny; k++) {
+                depthDiff(&f2p[l*ny*nx*nt+k*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
+                convol2(&input[k*nx*nt], &f2p[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, fmin, fmax, 1);
+                for (i=0; i<nx; i++) {
+                    for (j=0; j<nt/2; j++) {
+                        HomG[(j+nt/2)*Nfoc+l] += 2.0*scl*conv[i*nt+j]/rho;
+                        HomG[j*Nfoc+l] += 2.0*scl*conv[i*nt+(j+nt/2)]/rho;
+                    }
+                }
+            }
+		}
+		else if (scheme==4) { //Marchenko representation without time-reversal f2 source
+            for (k = 0; k < ny; k++) {
+                depthDiff(&green[l*ny*nx*nt+k*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
+                convol(&input[k*nx*nt], &green[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, 0);
+                timeDiff(conv, nt, nx, dt, fmin, fmax, -1);
+                for (i=0; i<nx; i++) {
+                    for (j=0; j<nt/2; j++) {
+                        HomG[(j+nt/2)*Nfoc+l] += 2.0*scl*conv[i*nt+j]/rho;
+                        HomG[j*Nfoc+l] += 2.0*scl*conv[i*nt+(j+nt/2)]/rho;
+                    }
+                }
+            }
+		}
+		else if (scheme==5) { //classical representation
+            for (k = 0; k < ny; k++) {
+                convol(&greenjkz[l*ny*nx*nt+k*nx*nt], &input[k*nx*nt], tmp1, nx, nt, dt, 0);
+                convol(&green[l*ny*nx*nt+k*nx*nt], &inputjkz[k*nx*nt], tmp2, nx, nt, dt, 0);
+                for (i = 0; i < nx; i++) {
+                    for (j = 0; j < nt; j++) {
+                        conv[i*nt+j] = tmp1[i*nt+j]+tmp2[i*nt+j];
+                    }
+                }
+                timeDiff(conv, nt, nx, dt, fmin, fmax, -1);
+                for (i=0; i<nx; i++) {
+                    for (j=0; j<nt/2; j++) {
+                        HomG[(j+nt/2)*Nfoc+l] += scl*conv[i*nt+j]/rho;
+                        HomG[j*Nfoc+l] += scl*conv[i*nt+(j+nt/2)]/rho;
+                    }
+                }
+            }
+		}
+		else if (scheme==6) { //Marchenko representation with multiple shot gathers
             for (k = 0; k < ny; k++) {
                 depthDiff(&f2p[l*ny*nx*nt+k*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1); 
                 for (is=0; is<n_source; is++) {
                     convol(&input[is*ny*nx*nt+k*nx*nt], &f2p[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, 0);
                     timeDiff(conv, nt, nx, dt, fmin, fmax, -3);
-                    if (kxwfilt) {
-                        //kxwfilter(conv, nt, nx, dt, dx, fmin, fmax, alpha, cp, perc);
-                    }
                     for (i=0; i<nx; i++) {
                         for (j=0; j<nt/2; j++) {
-                            HomG[is*nt*Nfoc+(j+nt/2)*Nfoc+l] += conv[i*nt+j]/rho;
-                            HomG[is*nt*Nfoc+j*Nfoc+l] += conv[i*nt+(j+nt/2)]/rho;
+                            HomG[is*nt*Nfoc+(j+nt/2)*Nfoc+l] += scl*conv[i*nt+j]/rho;
+                            HomG[is*nt*Nfoc+j*Nfoc+l] += scl*conv[i*nt+(j+nt/2)]/rho;
                         }
                     }
                 }
             }
         }
-		else if (scheme==4) { //Marchenko representation with multiple shot gathers without time-reversal
+		else if (scheme==7) { //Marchenko representation with multiple shot gathers without time-reversal
             for (k = 0; k < ny; k++) {
                 depthDiff(&f2p[l*ny*nx*nt+k*nx*nt], nt, nx, dt, dx, fmin, fmax, cp, 1);
                 for (is=0; is<n_source; is++) {
                     convol(&input[is*ny*nx*nt+k*nx*nt], &f2p[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, 0);
                     timeDiff(conv, nt, nx, dt, fmin, fmax, -1);
-                    if (kxwfilt) {
-                        //kxwfilter(conv, nt, nx, dt, dx, fmin, fmax, alpha, cp, perc);
-                    }
                     for (i=0; i<nx; i++) {
                         for (j=0; j<nt/2; j++) {
-                            HomG[is*nt*Nfoc+(j+nt/2)*Nfoc+l] += conv[i*nt+j]/rho;
-                            HomG[is*nt*Nfoc+j*Nfoc+l] += conv[i*nt+(j+nt/2)]/rho;
+                            HomG[is*nt*Nfoc+(j+nt/2)*Nfoc+l] += scl*conv[i*nt+j]/rho;
+                            HomG[is*nt*Nfoc+j*Nfoc+l] += scl*conv[i*nt+(j+nt/2)]/rho;
                         }
                     }
                 }
             }
         }
+        else if (scheme==8) { // f1+ redatuming 0=f1p 1=f1m
+            for (k = 0; k < ny; k++) {
+                convol2(&input[0*ny*nx*nt+k*nx*nt], &f1p[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, fmin, fmax, 1);
+                convol2(&input[1*ny*nx*nt+k*nx*nt], &f1m[l*ny*nx*nt+k*nx*nt], tmp1, nx, nt, dt, fmin, fmax, 1);
+                for (i=0; i<nx; i++) {
+                    for (j=0; j<nt/2; j++) {
+                        HomG[(j+nt/2)*Nfoc+l]   -= 2.0*scl*(conv[i*nt+j]        + tmp1[i*nt+j])/rho;
+                        HomG[j*Nfoc+l]          -= 2.0*scl*(conv[i*nt+(j+nt/2)] + tmp1[i*nt+(j+nt/2)])/rho;
+                    }
+                }
+            }
+		}
+        else if (scheme==9) { // f1- redatuming 0=f1p 1=f1m
+            for (k = 0; k < ny; k++) {
+                convol2(&input[0*ny*nx*nt+k*nx*nt], &f1m[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, fmin, fmax, 1);
+                convol2(&input[1*ny*nx*nt+k*nx*nt], &f1p[l*ny*nx*nt+k*nx*nt], tmp1, nx, nt, dt, fmin, fmax, 1);
+                for (i=0; i<nx; i++) {
+                    for (j=0; j<nt/2; j++) {
+                        HomG[(j+nt/2)*Nfoc+l]   += 2.0*scl*(conv[i*nt+j]        + tmp1[i*nt+j])/rho;
+                        HomG[j*Nfoc+l]          += 2.0*scl*(conv[i*nt+(j+nt/2)] + tmp1[i*nt+(j+nt/2)])/rho;
+                    }
+                }
+            }
+		}
+        else if (scheme==10) { // 2i IM(f1) redatuming
+            for (k = 0; k < ny; k++) {
+                convol2(&input[k*nx*nt]   , &f1m[l*ny*nx*nt+k*nx*nt], conv, nx, nt, dt, fmin, fmax, 2);
+                convol2(&inputjkz[k*nx*nt], &f1p[l*ny*nx*nt+k*nx*nt], tmp1, nx, nt, dt, fmin, fmax, 2);
+                for (i=0; i<nx; i++) {
+                    for (j=0; j<nt/2; j++) {
+                        HomG[(j+nt/2)*Nfoc+l]   += 4.0*scl*(conv[i*nt+j]        - tmp1[i*nt+j])/rho;
+                        HomG[j*Nfoc+l]          += 4.0*scl*(conv[i*nt+(j+nt/2)] - tmp1[i*nt+(j+nt/2)])/rho;
+                    }
+                }
+            }
+		}
         
 	}
     free(conv);
-	if (scheme==1) { 
+	if (scheme==5) { 
 		free(tmp1);
 		free(tmp2);
 	}
-	if (scheme==3) free(tmp1);
-    if (scheme==4) free(tmp1);
+	if (scheme==6) free(tmp1);
+    if (scheme==7) free(tmp1);
 }
-	if (scheme==1) {
+	if (scheme==5) {
 		free(input);
 		free(inputjkz);
         free(greenjkz);
