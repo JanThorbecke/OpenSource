@@ -77,7 +77,7 @@ long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, l
 			}
 		}
 	}
-             
+       
 /*
 * for plane wave sources the sources are placed 
 * around the central shot position 
@@ -119,7 +119,6 @@ long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, l
 		else { /* multi-wavelet sources */
 			src_ampl = src_nwav[isrc][id1]*(id2-time/dt) + src_nwav[isrc][id2]*(time/dt-id1);
 		}
-
 		if (src_ampl==0.0) continue;
 		if ( ((ix-ibndx)<0) || ((ix-ibndx)>mod.nx) ) continue; /* source outside grid */
         if ( ((iy-ibndy)<0) || ((iy-ibndy)>mod.ny) ) continue; /* source outside grid */

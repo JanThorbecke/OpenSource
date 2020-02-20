@@ -143,9 +143,11 @@ long *ixpos, long *iypos, long npos, double *tfft, long *isxcount, long *reci_xs
     long     i, j, l, m, iw, ix, iy, k, isrc, il, ik, nxy, nxys;
     float   *rtrace, idxs, idys, fxb, fyb, fxe, fye;
     complex *sum, *ctrace;
-    long     npe;
+    long     npe, norm;
     static long first=1, *ixrcv, *iyrcv;
     static double t0, t1, t;
+
+    if (!getparlong("norm", &norm)) norm = 0;
 
     if (fxsb < 0) fxb = 1.001*fxsb;
     else          fxb = 0.999*fxsb;
@@ -164,7 +166,12 @@ long *ixpos, long *iypos, long npos, double *tfft, long *isxcount, long *reci_xs
     /* scale factor 1/N for backward FFT,
      * scale dt for correlation/convolution along time, 
      * scale dx*dy (or dxsrc*dysrc) for integration over receiver (or shot) coordinates */
-    scl   = 1.0*dt/((float)ntfft);
+    if (norm==0) { //pressure normalization
+        scl     = (1.0*dt*dx*dy)/((float)ntfft);
+    }
+    else { // flux normalization
+        scl     = 1.0/((float)ntfft);
+    }
 
 #ifdef _OPENMP
     npe   = (long)omp_get_max_threads();
@@ -268,7 +275,7 @@ long *ixpos, long *iypos, long npos, double *tfft, long *isxcount, long *reci_xs
 
                 /* place result at source position ixsrc; dx = receiver distance */
                 for (j = 0; j < nts; j++) 
-                    iRN[l*size+isrc*nts+j] += rtrace[j]*scl*dx*dy;
+                    iRN[l*size+isrc*nts+j] += rtrace[j]*scl;
             
             } /* end of Nfoc loop */
 
