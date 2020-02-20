@@ -115,7 +115,7 @@ long defineSource3D(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_
 		optnscale  = optn;
 		nfreqscale = optnscale/2 + 1;
 	}
-//	fprintf(stderr,"define S optn=%li ns=%li %e nt=%li %e\n", optn, wav.ns, wav.ds, optnscale, wav.dt);
+	// fprintf(stderr,"define S optn=%li ns=%li %e nt=%li %e\n", optn, wav.ns, wav.ds, optnscale, wav.dt);
 
     ctrace = (complex *)calloc(nfreqscale,sizeof(complex));
     trace = (float *)calloc(optnscale,sizeof(float));

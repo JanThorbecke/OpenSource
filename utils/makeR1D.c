@@ -147,7 +147,7 @@ int main (int argc, char **argv)
         nysrc = ((nyin+1)/2-1)/dysf+1;
         if (verbose) vmess("No nysrc given, setting it to maximum possibility (%li)",((nyin+1)/2-1)/dysf+1);
     }
-    else if (nysrc>(((nyin+1)/2-1)/dysf+1)) verr("nxsrc given (%li) is higher than the maximum (%li)",nysrc,((nyin+1)/2-1)/dysf+1);
+    else if (nysrc>(((nyin+1)/2-1)/dysf+1)) verr("nysrc given (%li) is higher than the maximum (%li)",nysrc,((nyin+1)/2-1)/dysf+1);
     if (nxrcv==-1) {
         nxrcv = ((nxin+1)/2-1)/dxrf+1;
         if (verbose) vmess("No nxrcv given, setting it to maximum possibility (%li)",((nxin+1)/2-1)/dxrf+1);
@@ -155,12 +155,12 @@ int main (int argc, char **argv)
     else if (nxrcv>(((nxin+1)/2-1)/dxrf+1)) verr("nxrcv given (%li) is higher than the maximum (%li)",nxrcv,((nxin+1)/2-1)/dxrf+1);
     if (nyrcv==-1) {
         nyrcv = ((nyin+1)/2-1)/dyrf+1;
-        if (verbose) vmess("No nysrc given, setting it to maximum possibility (%li)",((nyin+1)/2-1)/dyrf+1);
+        if (verbose) vmess("No nyrcv given, setting it to maximum possibility (%li)",((nyin+1)/2-1)/dyrf+1);
     }
-    else if (nyrcv>(((nyin+1)/2-1)/dyrf+1)) verr("nrcv given (%li) is higher than the maximum (%li)",nyrcv,((nyin+1)/2-1)/dyrf+1);
+    else if (nyrcv>(((nyin+1)/2-1)/dyrf+1)) verr("nyrcv given (%li) is higher than the maximum (%li)",nyrcv,((nyin+1)/2-1)/dyrf+1);
     t0out = t0in;
-    x0rcv = x0in+((nxrcv-1)/2)*dxrcv; x0src = x0in+((nxsrc-1)/2)*dxsrc;
-    y0rcv = y0in+((nyrcv-1)/2)*dyrcv; y0src = y0in+((nysrc-1)/2)*dysrc;
+    x0rcv = x0in+((nxin-1)/2)*dxin-((nxrcv-1)/2)*dxrcv; x0src = x0in+((nxin-1)/2)*dxin-((nxsrc-1)/2)*dxsrc;
+    y0rcv = y0in+((nyin-1)/2)*dyin-((nyrcv-1)/2)*dyrcv; y0src = y0in+((nyin-1)/2)*dyin-((nysrc-1)/2)*dysrc;
     x0out = MINL(x0rcv,x0src);
     y0out = MINL(y0rcv,y0src);
 	if (verbose) {

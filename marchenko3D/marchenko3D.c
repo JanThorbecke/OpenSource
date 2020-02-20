@@ -95,9 +95,13 @@ char *sdoc[] = {
 " ",
 " Required parameters: ",
 " ",
+"   First arrival input options:",
 "   file_tinv= ............... direct arrival from focal point: G_d",
 "   file_ray= ................ direct arrival from raytimes",
-"   file_shot= ............... Reflection response: R",
+"   Shot data input options:",
+"   file_shot= ............... Reflection response (time data): R(t)",
+"   file_shotw= .............. Reflection response (frequency data): R(w)",
+"   file_shotzfp= ............ Reflection response (frequency compressed data): zfp[R(w)]",
 " ",
 " Optional parameters: ",
 " ",
@@ -112,32 +116,35 @@ char *sdoc[] = {
 " MUTE-WINDOW ",
 "   file_amp= ................ amplitudes for the raytime estimation",
 "   file_wav= ................ Wavelet applied to the raytime data",
-"   above=0 .................. mute above(1), around(0) or below(-1) the first travel times of file_tinv",
+"   above=0 .................. mute above(1), around(0) or below(-1) the travel times of the first arrival",
 "   shift=12 ................. number of points above(positive) / below(negative) travel time for mute",
 "   hw=8 ..................... window in time samples to look for maximum in next trace",
 "   smooth=5 ................. number of points to smooth mute with cosine window",
 "   plane_wave=0 ............. enable plane-wave illumination function"
-// angles to be implemented currently only angle=0 works.
-//"   src_angle=0 .............. angle of plane source array",
-//"   src_velo=1500 ............ velocity to use in src_angle definition",
 " REFLECTION RESPONSE CORRECTION ",
-"   scale=2 .................. scale factor of R for summation of Ni with G_d",
+"   scale=2 .................. scale factor of R for summation of Ni with G_d (only for time shot data)",
 "   pad=0 .................... amount of samples to pad the reflection series",
-"   reci=0 ................... 1; add receivers as shots 2; only use receivers as shot positions",
-"   countmin=0 ............... 0.3*nxrcv; minumum number of reciprocal traces for a contribution",
 " HOMOGENEOUS GREEN'S FUNCTION RETRIEVAL OPTIONS ",
+"   file_homg= ............... output file with homogeneous Green's function ",
+"   The homogeneous Green's function is computed if a filename is given",
 "   file_inp= ................ Input source function for the retrieval",
-"   scheme=0 ................. Scheme for homogeneous Green's function retrieval",
-"   .......................... scheme=0 Marchenko HomG retrieval with time-reversal",
-"   .......................... scheme=1 Classical retrieval scheme",
-"   .......................... scheme=2 Marchenko HomG retrieval without time-reversal",
-"   .......................... scheme=3 Back propagation with multiple sources",
-"   .......................... scheme=4 Marchenko HomG retrieval with multiple sources",
-"   kxwfilt=0 ................ Apply a dip filter before integration",
-"   alpha=65.0 ............... Alpha filter for the kxwfilter",
-"   perc=0.15 ................ Percentage for the kxwfilter",
+"   scheme=0 ................. Scheme for the retrieval",
+"   .......................... scheme=0 Marchenko homogeneous Green's function retrieval with G source",
+"   .......................... scheme=1 Marchenko homogeneous Green's function retrieval with f2 source",
+"   .......................... scheme=2 Marchenko Green's function retrieval with source depending on virtual receiver location",
+"   .......................... scheme=3 Marchenko Green's function retrieval with G source",
+"   .......................... scheme=4 Marchenko Green's function retrieval with f2 source",
+"   .......................... scheme=5 Classical homogeneous Green's function retrieval",
+"   .......................... scheme=6 Marchenko homogeneous Green's function retrieval with multiple G sources",
+"   .......................... scheme=7 Marchenko Green's function retrieval with multiple G sources",
+"   .......................... scheme=8 f1+ redatuming",
+"   .......................... scheme=9 f1- redatuming",
+"   .......................... scheme=10 2i IM(f1) redatuming",
 "   cp=1000.0 ................ Velocity of upper layer for certain operations",
 "   rho=1000.0 ............... Density of upper layer for certain operations",
+" IMAGING",
+"   file_imag= ............... output file with image ",
+"   The image is computed if a filename is given",
 " OUTPUT DEFINITION ",
 "   file_green= .............. output file with full Green function(s)",
 "   file_gplus= .............. output file with G+ ",
@@ -147,12 +154,10 @@ char *sdoc[] = {
 "   file_f2= ................. output file with f2 (=p+) ",
 "   file_pplus= .............. output file with p+ ",
 "   file_pmin= ............... output file with p- ",
-"   file_imag= ............... output file with image ",
-"   file_homg= ............... output file with homogeneous Green's function ",
 "   file_ampscl= ............. output file with estimated amplitudes ",
 "   file_iter= ............... output file with -Ni(-t) for each iteration",
 "   compact=0 ................ Write out homg and imag in compact format",
-"   .......................... WARNING! This write-out cannot be displayed with SU"
+"   .......................... WARNING! This write-out cannot be displayed with SU",
 "   verbose=0 ................ silent option; >0 displays info",
 " ",
 " ",
@@ -169,16 +174,16 @@ int main (int argc, char **argv)
     long    i, j, l, k, ret, nshots, nxshot, nyshot, Nfoc, nt, nx, ny, nts, nxs, nys, ngath;
     long    size, n1, n2, n3, ntap, tap, dxi, dyi, ntraces, pad, *sx, *sy, *sz;
     long    nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
-    long    reci, countmin, mode, n2out, n3out, verbose, ntfft;
+    long    reci, mode, n2out, n3out, verbose, ntfft;
     long    iter, niter, tracf, *muteW, *tsynW, ampest, plane_wave, t0shift;
     long    hw, smooth, above, shift, *ixpos, *iypos, npos, ix, iy, nzim, nxim, nyim, compact;
-    long    nshots_r, *isxcount, *reci_xsrc, *reci_xrcv;
+    long    *isxcount, *reci_xsrc, *reci_xrcv;
     float   fmin, fmax, *tapersh, *tapersy, fxf, fyf, dxf, dyf, *xsrc, *ysrc, *xrcv, *yrcv, *zsyn, *zsrc, *xrcvsyn, *yrcvsyn;
     double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, energyNi, *energyN0;
     float   d1, d2, d3, f1, f2, f3, fxsb, fxse, fysb, fyse, ft, fx, fy, *xsyn, *ysyn, dxsrc, dysrc;
     float   *green, *f2p, *pmin, *G_d, dt, dx, dy, dxs, dys, scl, mem;
     float   *f1plus, *f1min, *iRN, *Ni, *Nig, *trace, *Gmin, *Gplus, *HomG;
-    float   xmin, xmax, ymin, ymax, scale, tsq, Q, f0, *tmpdata;
+    float   scale, *tmpdata;
     float   *ixmask, *iymask, *ampscl, *Gd, *Image, dzim;
     float   grad2rad, p, src_angle, src_velo, *mutetest;
     complex *Refl, *Fop;
@@ -225,16 +230,13 @@ int main (int argc, char **argv)
     if (!getparfloat("fmax", &fmax)) fmax = 70.0;
     if (!getparlong("reci", &reci)) reci = 0;
     if (!getparfloat("scale", &scale)) scale = 2.0;
-    if (!getparfloat("tsq", &tsq)) tsq = 0.0;
-    if (!getparfloat("Q", &Q)) Q = 0.0;
-    if (!getparfloat("f0", &f0)) f0 = 0.0;
     if (!getparlong("tap", &tap)) tap = 0;
     if (!getparlong("ntap", &ntap)) ntap = 0;
     if (!getparlong("pad", &pad)) pad = 0;
     if (!getparlong("ampest", &ampest)) ampest = 0;
 
     if(!getparlong("niter", &niter)) niter = 10;
-    if(!getparlong("hw", &hw)) hw = 15;
+    if(!getparlong("hw", &hw)) hw = 8;
     if(!getparlong("smooth", &smooth)) smooth = 5;
     if(!getparlong("above", &above)) above = 0;
     if(!getparlong("shift", &shift)) shift=12;
@@ -305,7 +307,6 @@ int main (int argc, char **argv)
     nw_high = MIN((long)(fmax*ntfft*dt), nfreq-1);
     nw  = nw_high - nw_low + 1;
     scl   = 1.0/((float)ntfft);
-    if (!getparlong("countmin", &countmin)) countmin = 0.3*nx*ny;
     
 /*================ Allocating all data arrays ================*/
 
@@ -392,19 +393,6 @@ int main (int argc, char **argv)
             tsynW[i] = 0;
         }
     }
-
-    // mutetest  = (float *)calloc(Nfoc*nys*nxs*ntfft,sizeof(float));
-    // for (i=0; i<Nfoc*nys*nxs*ntfft; i++) {
-    //     mutetest[i] = 1.0;
-    // }
-    // applyMute3D(mutetest, muteW, smooth, above, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift);
-
-    // fp_out = fopen( "mute.bin", "w+" );
-    // for (i=0; i<nx*ny; i++) {
-    //     fprintf(fp_out,"%.7f\n",mutetest[i]);
-    // }
-    // fclose(fp_out);
-
 
     /* define tapers to taper edges of acquisition */
     if (tap == 1 || tap == 3) {
@@ -768,6 +756,7 @@ int main (int argc, char **argv)
                         }
                     }
                 }
+                if (above==-2) applyMute3D(f1min, muteW, smooth, 0, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift);
             }
             else { /* plane wave scheme */
                 for (l = 0; l < Nfoc; l++) {
@@ -781,6 +770,7 @@ int main (int argc, char **argv)
                         }
                     }
                 }
+                if (above==-2) applyMute3D(f1min, muteW, smooth, 0, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift);
             }
         }
         else {/* odd iterations update: => f_1^+(t)  */
@@ -1063,7 +1053,7 @@ int main (int argc, char **argv)
             hdrs_Nfoc[0].sx      = sx[0];
             hdrs_Nfoc[0].sy      = sy[0];
             hdrs_Nfoc[0].sdepth  = sz[0];
-            hdrs_Nfoc[0].f1      = roundf(zsyn[0]*100.0)/1000.0;
+            hdrs_Nfoc[0].f1      = roundf(zsyn[0]*1000.0)/1000.0;
             hdrs_Nfoc[0].f2      = roundf(xsyn[0]*1000.0)/1000.0;
             hdrs_Nfoc[0].ungpow  = roundf(ysyn[0]*1000.0)/1000.0;
             hdrs_Nfoc[0].d1      = roundf(dzim*1000.0)/1000.0;

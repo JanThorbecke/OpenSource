@@ -194,9 +194,11 @@ long readTinvData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float
 
         /* search forward in y-trace direction from maximum in file */
         for (i = iymax+1; i < ny1; i++) {
+            tstart = MAX(0, (maxval[isyn*nxy+(i-1)*nx+ixmax]-hw));
+            tend   = MIN(nt-1, (maxval[isyn*nxy+(i-1)*nx+ixmax]+hw));
             tmax=0.0;
-        	jmax = 0;
-            for(j = 0; j <= nt; j++) {
+        	jmax = tstart;
+            for(j = tstart; j <= tend; j++) {
                 lmax = fabs(tinv[ig+i*nx*ntfft+ixmax*ntfft+j]);
                 if (lmax > tmax) {
                     jmax = j;
@@ -239,9 +241,11 @@ long readTinvData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float
 
         /* search backward in y-trace direction from maximum in file */
         for (i = iymax-1; i >= 0; i--) {
+            tstart = MAX(0, (maxval[isyn*nxy+(i+1)*nx+ixmax]-hw));
+            tend   = MIN(nt-1, (maxval[isyn*nxy+(i+1)*nx+ixmax]+hw));
             tmax=0.0;
-        	jmax = 0;
-            for(j = 0; j <= nt; j++) {
+        	jmax = tstart;
+            for(j = tstart; j <= tend; j++) {
                 lmax = fabs(tinv[ig+i*nx*ntfft+ixmax*ntfft+j]);
                 if (lmax > tmax) {
                     jmax = j;

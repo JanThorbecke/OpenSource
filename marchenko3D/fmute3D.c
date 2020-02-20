@@ -302,9 +302,11 @@ int main (int argc, char **argv)
 
         /* search forward in y-trace direction from maximum in file */
         for (i = iymax+1; i < ny1; i++) {
+            tstart = MAX(0, (maxval[(i-1)*nx1+ixmax]-hw));
+            tend   = MIN(nt1-1, (maxval[(i-1)*nx1+ixmax]+hw));
             tmax=0.0;
-            jmax = 0;
-            for (j = 0; j < nt1; j++) {
+            jmax = tstart;
+            for (j = tstart; j < tend; j++) {
                 lmax = fabs(tmpdata[i*nx1*nt1+ixmax*nt1+j]);
                 if (lmax > tmax) {
                     jmax = j;
@@ -347,9 +349,11 @@ int main (int argc, char **argv)
 
         /* search backward in y-trace direction from maximum in file */
         for (i = iymax-1; i >= 0; i--) {
+            tstart = MAX(0, (maxval[(i+1)*nx1+ixmax]-hw));
+            tend   = MIN(nt1-1, (maxval[(i+1)*nx1+ixmax]+hw));
             tmax=0.0;
-            jmax = 0;
-            for (j = 0; j < nt1; j++) {
+            jmax = tstart;
+            for (j = tstart; j < tend; j++) {
                 lmax = fabs(tmpdata[i*nx1*nt1+ixmax*nt1+j]);
                 if (lmax > tmax) {
                     jmax = j;
