@@ -7,7 +7,7 @@
 # 5 different source signature lengths, 5x3.5 hours
 
 
-export PATH=../../bin:$PATH
+export PATH=.:../../bin:$PATH
 
 makemod sizex=10000 sizez=5000 dx=5 dz=5 cp0=1500 ro0=1000 file_base=simple.su \
    intt=def poly=0 x=0,10000 z=1300,1300 cp=2000 ro=1400 \
