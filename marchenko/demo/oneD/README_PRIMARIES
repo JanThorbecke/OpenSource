@@ -2,10 +2,9 @@ Description of files:
 
 
 1) model.scr computes the model and the 'basis' shot of R => shot5_rp.su
-2) p5all.scr create from basis shot full Reflection response matrix => shotsdx5_rp.su (3.3 GB)
-3) primaries.scr computes the internal multiple attenuated (middle) shot record.
-4) itertions.scr computes the intermediate results of the multiple attenutation scheme and produces all output files that are used in the manuscript.
-5) epsPrimaries.scr selected output form 4) are converted to .eps pictures that are used in the Figures to explain the method.
+2) primaries.scr computes the internal multiple attenuated (middle) shot record.
+3) itertions.scr computes the intermediate results of the multiple attenutation scheme and produces all output files that are used in the manuscript.
+4) epsPrimaries.scr selected output from 3) are converted to .eps pictures that are used in the Figures to explain the method.
    reproduce the postscript files of the manuscript using SU postscript plotting programs.
 
 extra scripts

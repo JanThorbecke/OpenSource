@@ -89,16 +89,16 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
     ctrace = (complex *)calloc(ntfft,sizeof(complex));
 
 /* this first check is done to support an acquisition geometry that has more receiver than source
- * postions. In the first iteration the int R(x_r,x_s) Fop(x_r) d x_r results in a grid on x_s. 
- * so for the next interations onlt x_s traces have to be computed on Fop */
+ * positions. In the first iteration the int R(x_r,x_s) Fop(x_r) d x_r results in a grid on x_s. 
+ * so for the next interations only x_s traces have to be computed on Fop */
     if (!first) {
-    /* transform muted Ni (Top) to frequency domain, input for next iteration  */
+    	/* transform muted Ni (Top) to frequency domain, input for next iteration  */
         for (l = 0; l < Nfoc; l++) {
             /* set Fop to zero, so new operator can be defined within ixpos points */
            memset(&Fop[l*nxs*nw], 0, nxs*nw*sizeof(complex));
             for (i = 0; i < npos; i++) {
-                rc1fft(&Top[l*size+i*nts],ctrace,ntfft,-1);
                 ix = ixpos[i];
+                rc1fft(&Top[l*size+i*nts],ctrace,ntfft,-1);
                 for (iw=0; iw<nw; iw++) {
                     Fop[l*nxs*nw+iw*nxs+ix].r = ctrace[nw_low+iw].r;
                     Fop[l*nxs*nw+iw*nxs+ix].i = mode*ctrace[nw_low+iw].i;
@@ -107,7 +107,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
         }
     }
     else { /* only for first call to synthesis using all nxs traces in G_d */
-    /* transform G_d to frequency domain, over all nxs traces */
+    	/* transform G_d to frequency domain, over all nxs traces */
         first=0;
         for (l = 0; l < Nfoc; l++) {
             /* set Fop to zero, so new operator can be defined within all ix points */
@@ -271,6 +271,7 @@ float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos
         for (k=0; k<nshots; k++) {
 
             ixsrc = NINT((xsrc[k] - fxsb)/dxs);
+                vmess("source position:     %.2f in operator %d", xsrc[k], ixsrc);
             if (verbose>=3) {
                 vmess("source position:     %.2f in operator %d", xsrc[k], ixsrc);
                 vmess("receiver positions:  %.2f <--> %.2f", xrcv[k*nx+0], xrcv[k*nx+nx-1]);
