@@ -34,6 +34,7 @@ SRCC	= $(PRG).c \
 		getWaveletInfo.c  \
 		getModelInfo.c  \
 		applySource.c  \
+		applyRupture.c \
 		getRecTimes.c  \
 		getBeamTimes.c  \
 		writeSnapTimes.c  \
