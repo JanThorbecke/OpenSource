@@ -133,6 +133,40 @@ supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
 done
 fi
 
+if [[ "$1" == "inaction" ]];
+then
+rm vplus.su
+istart=200
+for (( iter=1; iter<=29; iter+=2 ))
+do
+piter=$(printf %03d $iter)
+echo $piter
+file=f1plus_${istart}${piter}.su
+file_base=${file%.su}
+suwind < $file key=offset min=0 max=0 >> vplus.su
+done
+
+basop file_in=vplus.su file_out=vplus_env.su choice=4
+sumax < vplus_env.su verbose=1 mode=max 
+supsmax < vplus_env.su n=15 verbose=1 mode=max \
+	style=normal linewidth=2.0 f1=1 labelsize=14 label1="iteration number" label2="amplitude" \
+    d1num=2 d2num=0.2 wbox=6 hbox=3 grid1=dot grid2=dot n1tic=2 n2tic=2 x2end=2.9 x2beg=1.8 > v1plus_max.eps
+
+file=f1plus_${istart}001.su
+file_base=${file%.su}
+supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
+	n1tic=2 d2=5 x1beg=0 x1end=$nsd d1=1 d1num=100 \
+	label1="time sample number" label2="lateral distance" \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipiter > $file_base.eps
+
+file=f1min_${istart}030.su
+file_base=${file%.su}
+supsimage hbox=6 wbox=4 labelsize=14 linewidth=0.0 < $file\
+	n1tic=2 d2=5 x1beg=0 x1end=$nsd d1=1 d1num=100 \
+	label1="time sample number" label2="lateral distance" \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > $file_base.eps
+fi
+
 if [[ "$1" == "Figure5" ]];
 then
 for (( iter=1; iter<=21; iter+=2 ))
@@ -148,7 +182,8 @@ supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
 done
 fi
 
-exit;
+if [[ "$1" == "Figure7" ]];
+then
 #iterations
 for (( iter=0; iter<=31; iter+=2 ))
 do
@@ -174,7 +209,10 @@ supsimage hbox=6 wbox=4 labelsize=14 linewidth=0.0 < $file\
     f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > $file_base.eps
 
 done
+fi
 
+if [[ "$1" == "Figure8" ]];
+then
 iter=32
 piter=$(printf %03d $iter)
 echo $piter
@@ -187,6 +225,7 @@ supsimage hbox=6 wbox=4 labelsize=14 linewidth=0.0 < $file\
 	label1="time sample number" label2="lateral distance" \
     f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > $file_base.eps
 done
+fi
 
 exit;
 
