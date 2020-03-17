@@ -37,7 +37,7 @@ SRCH	= marchenko.c \
 		getpars.c
 
 SRCP	= marchenko_primaries.c \
-		synthesisp.c  \
+		synthesis.c  \
 		getFileInfo.c  \
 		readData.c \
 		readShotData.c \
