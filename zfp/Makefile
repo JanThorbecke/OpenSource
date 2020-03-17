@@ -44,6 +44,9 @@ ifneq ($(BUILD_EXAMPLES),0)
 	@cd examples; $(MAKE) clean all
 endif
 
+install:
+	-cp -rp include/* $I
+	-cp -rp lib/* $L
 
 # run basic regression tests
 test:

@@ -10,7 +10,7 @@ all: mkdirs
 	cd corrvir		; $(MAKE) install
 	cd raytime		; $(MAKE) install
 	cd MDD			; $(MAKE) install
-	cd zfp			; $(MAKE) 
+	cd zfp			; $(MAKE) install
 	cd fdacrtmc		; $(MAKE) install
 
 
