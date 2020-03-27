@@ -95,7 +95,7 @@ char *sdoc[] = {
 "   file_iter= ............... output file with -Mi(-t) for each iteration: writes",
 "              ............... M0.su=M0 : initialisation of algorithm",
 "              ............... RMi: iterative terms ",
-"              ............... u1min.su: u1min terms ",
+"              ............... k1min.su: k1min terms ",
 "   file_update= ............. output file with updates only => removed internal multiples",
 "   T=0 ...................... :1 compute transmission-losses compensated primaries ",
 "   verbose=0 ................ silent option; >0 displays info",
@@ -119,11 +119,11 @@ int main (int argc, char **argv)
     int     smooth, *ixpos, *ixp, npos, ix, ixrcv, m, pad, T, isms, isme, perc;
     int     nshots_r, *isxcount, *reci_xsrc, *reci_xrcv, shift, plane_wave;
     float   fmin, fmax, tom, deltom, *tapersh, *tapersy, fxf, dxf, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
-    double  t0, t1, t2, t3, t4, tsyn, tread, tfft, tcopy, tii;
+    double  t0, t1, t2, t3, t4, ttime, t5, tsyn, tread, tfft, tcopy, tii;
 	double  energyMi, *energyM0;
     float   tt0, d1, d2, f1, f2, fxsb, fxse, ft, fx, *xsyn, dxsrc;
     float   *M0, *DD, *RR, *SRC, dt, dx, dxs, scl, mem, scltap;
-    float   *rtrace, *tmpdata, *u1min, *v1plus, *RMi, *Mi, *trace;
+    float   *rtrace, *tmpdata, *k1min, *v1plus, *RMi, *Mi, *trace;
 	float   *Mup, *Msp, *maxval;
     float   xmin, xmax, scale, tsq;
 	float   Q, f0, *ixmask, *costaper;
@@ -269,7 +269,7 @@ int main (int argc, char **argv)
     DD      = (float *)calloc(Nfoc*nacq*ntfft,sizeof(float));
     Mi      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     M0      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
-    u1min   = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
+    k1min   = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     v1plus  = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     SRC     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     RR      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
@@ -573,7 +573,7 @@ int main (int argc, char **argv)
         if (file_iter != NULL)  {
 			vmess("Iterations output file          = %s ", file_iter);
 			vmess("Initialisation input data       = M0_%06d.su ", 1000*istart);
-			vmess("u1min intermediate array        = u1min_%03d'iter'.su ", istart);
+			vmess("k1min intermediate array        = k1min_%03d'iter'.su ", istart);
 			vmess("Mi intermediate array           = Mi_%03d'iter'.su ", istart);
 		}
     }
@@ -655,6 +655,7 @@ int main (int argc, char **argv)
 
 /*================ initialization ================*/
 
+        t5 = wallclock_time();
         memset(M0, 0, Nfoc*nxs*ntfft*sizeof(float));
         memset(v1plus, 0, Nfoc*nxs*ntfft*sizeof(float));
         /* once every 'niterskip' time-steps start from fresh M0 and do niter (~20) iterations */
@@ -681,9 +682,9 @@ int main (int argc, char **argv)
                 for (i = 0; i < npos; i++) {
                     ix = ixpos[i];
                     j = 0;
-                    u1min[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts+j];
+                    k1min[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts+j];
                     for (j = 1; j < nts; j++) {
-                       u1min[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts+nts-j];
+                       k1min[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts+nts-j];
                     }
 			    }
 			}
@@ -691,7 +692,7 @@ int main (int argc, char **argv)
            	    writeDataIter("M0.su", M0, hdrs_out, ntfft, nacq, d2, f2, n2out, Nfoc, xsyn, zsyn, ixp, npos, 0, 1000*ii);
 			}
 		}
-		else { /* use u1min from previous iteration as starting point and do niterec iterations */
+		else { /* use k1min from previous iteration as starting point and do niterec iterations */
 			niterrun=niterec;
 			recur=1;
 			if (verbose>1) vmess("Doing %d iterations using previous result at time-sample %d",niterrun,ii);
@@ -701,9 +702,9 @@ int main (int argc, char **argv)
                     ix = ixpos[i];
 					iw = NINT((ii*dt+twplane[ix])/dt);
 					//iw = ii;
-                    M0[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts] - u1min[l*nxs*nts+i*nts+j];
+                    M0[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts] - k1min[l*nxs*nts+i*nts+j];
                     for (j = 1; j < nts; j++) {
-                        M0[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts+nts-j] - u1min[l*nxs*nts+i*nts+nts-j];
+                        M0[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts+nts-j] - k1min[l*nxs*nts+i*nts+nts-j];
                     }
 					/* apply mute window for samples above nts-ii */
                     for (j = 0; j < MIN(nts,nts-iw+isms); j++) {
@@ -767,7 +768,7 @@ int main (int argc, char **argv)
                 }
             }
     
-            if (iter % 2 == 0) { /* even iterations: => f_1^+(t) */
+            if (iter % 2 == 0) { /* even iterations, correlation => v_1^+(t) */
                 /* apply muting for the acausal part */
                 for (l = 0; l < Nfoc; l++) {
                     for (i = 0; i < npos; i++) {
@@ -798,32 +799,32 @@ int main (int argc, char **argv)
             		writeDataIter("v1plus.su", v1plus, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixp, npos, 0, 1000*ii+iter+1);
 				}
             }
-            else {/* odd iterations: => f_1^-(t)  */
+            else {/* odd iterations, convolution => k_1^-(t)  */
                 for (l = 0; l < Nfoc; l++) {
                     for (i = 0; i < npos; i++) {
                     	ix = ixpos[i];
-						if (recur==1) { /* use u1min from previous iteration */
+						if (recur==1) { /* use k1min from previous iteration */
                             for (j = 0; j < nts; j++) {
                                 Mi[l*nxs*nts+i*nts+j] += DD[l*nxs*nts+ix*nts+j];
 						    }
                             j = 0;
-                            u1min[l*nxs*nts+i*nts+j] = -Mi[l*nxs*nts+i*nts+j];
+                            k1min[l*nxs*nts+i*nts+j] = -Mi[l*nxs*nts+i*nts+j];
                             for (j = 1; j < nts; j++) {
-                                u1min[l*nxs*nts+i*nts+j] = -Mi[l*nxs*nts+i*nts+nts-j];
+                                k1min[l*nxs*nts+i*nts+j] = -Mi[l*nxs*nts+i*nts+nts-j];
                             }
         		        	if (file_update != NULL) {
 								j=0;
-                            	Mup[l*nxs*nts+i*nts+j] += u1min[l*nxs*nts+i*nts+j]+DD[l*nxs*nts+ix*nts+j];
+                            	Mup[l*nxs*nts+i*nts+j] += k1min[l*nxs*nts+i*nts+j]+DD[l*nxs*nts+ix*nts+j];
                             	for (j = 1; j < nts; j++) {
-                                	Mup[l*nxs*nts+i*nts+j] += u1min[l*nxs*nts+i*nts+j]+DD[l*nxs*nts+ix*nts+nts-j];
+                                	Mup[l*nxs*nts+i*nts+j] += k1min[l*nxs*nts+i*nts+j]+DD[l*nxs*nts+ix*nts+nts-j];
                             	}
 							}
 						}
 						else {
                             j = 0;
-                            u1min[l*nxs*nts+i*nts+j] -= Mi[l*nxs*nts+i*nts+j];
+                            k1min[l*nxs*nts+i*nts+j] -= Mi[l*nxs*nts+i*nts+j];
                             for (j = 1; j < nts; j++) {
-                                u1min[l*nxs*nts+i*nts+j] -= Mi[l*nxs*nts+i*nts+nts-j];
+                                k1min[l*nxs*nts+i*nts+j] -= Mi[l*nxs*nts+i*nts+nts-j];
                             }
         		        	if (file_update != NULL) {
 								j=0;
@@ -833,7 +834,7 @@ int main (int argc, char **argv)
                             	}
 							}
 					    }
-						/* apply mute window for delta function at t=0*/
+						/* apply mute window for delta function at t=0
 						iw = NINT((twplane[ix])/dt);
                         for (j = nts-shift+smooth+iw; j < nts; j++) {
                             Mi[l*nxs*nts+i*nts+j] = 0.0;
@@ -841,6 +842,7 @@ int main (int argc, char **argv)
                         for (j = nts-shift+iw, k=0; j < MIN(nts, nts-shift+smooth+iw); j++, k++) {
                             Mi[l*nxs*nts+i*nts+j] *= costaper[k];
                         }
+						*/
 					    /* apply mute window for samples above nts-ii */
 						iw = NINT((ii*dt+twplane[ix])/dt);
 						//iw = ii;
@@ -853,7 +855,7 @@ int main (int argc, char **argv)
                     }
                 }
         		if (file_iter != NULL) {
-            		writeDataIter("u1min.su", u1min, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixp, npos, 0, 1000*ii+iter+1);
+            		writeDataIter("k1min.su", k1min, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixp, npos, 0, 1000*ii+iter+1);
 				}
             } /* end else (iter) branch */
         	if (file_iter != NULL) {
@@ -871,7 +873,7 @@ int main (int argc, char **argv)
            		ix = ixpos[i];
 				iw = NINT((ii*dt+twplane[ix])/dt);
                 if ( iw<nts && iw>=0 )  {
-                    RR[l*nxs*nts+i*nts+iw] = u1min[l*nxs*nts+i*nts+iw];
+                    RR[l*nxs*nts+i*nts+iw] = k1min[l*nxs*nts+i*nts+iw];
        			    if (file_update != NULL) Msp[l*nxs*nts+i*nts+iw] = Mup[l*nxs*nts+i*nts+iw];
 				}
             }
@@ -891,12 +893,15 @@ int main (int argc, char **argv)
             //vmess("Remaining compute time at time-sample %d = %.2f s.",ii, tii);
         }
 
+        ttime = wallclock_time()-t5;
+        if (verbose>2) vmess("Compute time at time-sample %d = %.3f s.",ii, ttime);
+
     } /* end of time iterations ii */
 
     free(Mi);
     free(energyM0);
     free(M0);
-    free(u1min);
+    free(k1min);
     free(v1plus);
 
     t2 = wallclock_time();

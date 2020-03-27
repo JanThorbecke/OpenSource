@@ -15,26 +15,7 @@ select=451
 
 makewave fp=20 dt=0.004 file_out=wave.su nt=1024 t0=0.0 scale=0 scfft=1
 
-#../../marchenko_primaries file_shot=shotsdx5_rp.su plane_wave=1 file_src=wave.su src_angle=30 \
-#	nshots=901 verbose=2 istart=276 iend=277 fmax=90 pad=1024 \
-#    niter=2 smooth=10 niterskip=1 file_iter=iterplane.su shift=20 file_rr=plane2_10_rr.su T=0
-#exit
-../../marchenko_primaries file_shot=shotsdx5_rp.su plane_wave=1 file_src=wave.su src_angle=30.0 \
+../../marchenko_primaries file_shot=shotsdx5_rp.su plane_wave=1 file_src=wave.su src_angle=10.0 \
 	nshots=901 verbose=2 istart=40 iend=1000 fmax=90 pad=1024 \
 	niter=20 smooth=10 niterskip=60 niterec=2 shift=20 file_rr=plane2_10_rr.su T=0
-
-exit
-
-#for reference original shot record from Reflection matrix
-suwind key=fldr min=$select max=$select < shotsdx5_rp.su itmax=2047 > shotsx0.su
-fconv file_in1=shotsx0.su file_in2=wave.su file_out=shotw.su
-
-# for displaying results
-
-(suwind key=offset min=0 max=0 < pred_rr.su ; suwind key=offset min=0 max=0 < shotw.su) | suxgraph &
-
-sudiff shotw.su pred_rr.su > diff.su
-suximage < shotw.su  x1end=2.5 clip=1 title="original shot"&
-suximage < pred_rr.su  x1end=2.5 clip=1 title="shot with multiples removed"&
-suximage < diff.su   x1end=2.5 clip=1 title="removed multiples"&
 

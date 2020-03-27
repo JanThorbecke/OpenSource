@@ -467,7 +467,6 @@ float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos
         for (k=0; k<nshots; k++) {
 
             ixsrc = NINT((xsrc[k] - fxsb)/dxs);
-                vmess("source position:     %.2f in operator %d", xsrc[k], ixsrc);
             if (verbose>=3) {
                 vmess("source position:     %.2f in operator %d", xsrc[k], ixsrc);
                 vmess("receiver positions:  %.2f <--> %.2f", xrcv[k*nx+0], xrcv[k*nx+nx-1]);
