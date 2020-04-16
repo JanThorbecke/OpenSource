@@ -156,6 +156,10 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 			/* stable implementation changes amplitude and more work is needed */
 			//vz[ix*n1+iz] = 0.5*(vz[ix*n1+iz-1]+vz[ix*n1+iz+1])+src_ampl*roz[ix*n1+iz]/(l2m[ix*n1+iz]);
 			//vz[ix*n1+iz] = 0.25*(vz[ix*n1+iz-2]+vz[ix*n1+iz-1]+vz[ix*n1+iz]+vz[ix*n1+iz+1])+src_ampl*roz[ix*n1+iz]/(l2m[ix*n1+iz]);
+        } 
+		else if (src.type == 10) {
+		    tzz[ix*n1+iz-1] -= src_ampl;
+		    tzz[ix*n1+iz+1] += src_ampl;
         } /* src.type */
 
         

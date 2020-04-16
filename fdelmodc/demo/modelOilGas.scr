@@ -16,19 +16,19 @@ makemod sizex=5000 sizez=2500 dx=$dx dz=$dx cp0=$cp ro0=$rho \
 
 makewave w=g1 fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
 
-export OMP_NUM_THREADS=1
+export OMP_NUM_THREADS=4
 
 zsrc=1100
 zsrc=0
 
 which fdelmodc
 
-fdelmodc \
+../fdelmodc \
     file_cp=syncl_cp.su ischeme=1 iorder=4 \
     file_den=syncl_ro.su \
     file_src=wave.su \
     file_rcv=shot_fd.su \
-    src_type=7 \
+    src_type=1 \
 	src_orient=1 \
 	src_injectionrate=0 \
     rec_type_vz=1 \
@@ -37,13 +37,13 @@ fdelmodc \
     dtrcv=0.004 \
 	rec_delay=0.1 \
     verbose=2 \
-    tmod=2.01 \
+    tmod=0.01 \
     dxrcv=10.0 \
     xrcv1=-2250 xrcv2=2250 \
     zrcv1=0 zrcv2=0 \
     xsrc=0 zsrc=$zsrc \
 	file_snap=snapF_$zsrc \
-	tsnap1=0.1 tsnap2=2.0 dtsnap=0.05 dxsnap=$dx dzsnap=$dx \
+	tsnap1=0.1 tsnap2=0.0 dtsnap=0.05 dxsnap=$dx dzsnap=$dx \
     ntaper=101 \
 	snapwithbnd=1 \
     left=2 right=2 top=2 bottom=2
