@@ -2,7 +2,7 @@
 #SBATCH -J marchenko_primaries
 #SBATCH --cpus-per-task=10
 #SBATCH --ntasks=1
-#SBATCH --time=2:40:00
+#SBATCH --time=0:30:00
 
 
 #cd $SLURM_SUBMIT_DIR
@@ -10,12 +10,9 @@
 export PATH=$HOME/src/OpenSource/bin:$PATH:
 export OMP_NUM_THREADS=10
 
-#shot record to remove internal multiples
-select=451
-
 makewave fp=20 dt=0.004 file_out=wave.su nt=1024 t0=0.0 scale=0 scfft=1
 
-../../marchenko_primaries file_shot=shotsdx5_rp.su plane_wave=1 file_src=wave.su src_angle=10.0 \
-	nshots=901 verbose=2 istart=40 iend=1000 fmax=90 pad=1024 \
-	niter=20 smooth=10 niterskip=60 niterec=2 shift=20 file_rr=plane2_10_rr.su T=0
+../../marchenko_primaries1 file_shot=shotsdx5_rp.su plane_wave=1 file_src=wave.su src_angle=10.0 \
+	nshots=901 verbose=4 istart=40 iend=500 fmax=90 pad=1024 \
+	niter=30 smooth=10 niterskip=60 niterec=2 shift=20 file_rr=plane1_10_rr.su T=0
 

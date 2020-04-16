@@ -1,8 +1,9 @@
 #!/bin/bash -x
 #SBATCH -J marchenko_primaries
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=20
 #SBATCH --ntasks=1
-#SBATCH --time=0:15:00
+##SBATCH --time=1:29:00
+#SBATCH -p max2h
 
 # Generate the model and Reflection data
 #modelpm.scr 
@@ -10,7 +11,7 @@
 #cd $SLURM_SUBMIT_DIR
 
 export PATH=$HOME/src/OpenSource/bin:$PATH:
-export OMP_NUM_THREADS=8
+export OMP_NUM_THREADS=20
 
 #shot record to remove internal multiples
 R=shotsdx5_rp.su
@@ -20,7 +21,7 @@ makewave fp=20 dt=0.004 file_out=wave.su nt=2048 t0=0.0 scale=0 scfft=1
 
 ../../marchenko_primaries file_shot=$R ishot=$select file_src=wave.su \
 	nshots=901 verbose=2 istart=40 iend=500 fmax=90 pad=1024 \
-	niter=31 smooth=10 niterec=2 niterskip=50 shift=20 file_rr=pred_rr.su T=0 file_update=update.su
+	niter=31 shift=20 smooth=10 niterec=2 niterskip=50 file_rr=pred_rr.su T=0 file_update=update.su
 
 exit;
 
