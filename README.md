@@ -59,32 +59,36 @@ INSTALLATION
 -------------
 
 1) To compile and link the code you first have to set the ROOT variable in the Make_include file which can be found in the directory where you have found this README.
-You can use Make_include_template as a first start: cp Make_include_template Make_include
+You can use Make_include_template as a first start: 
+
+```
+cp Make_include_template Make_include
+```
 
 2) Check the compiler and CFLAGS options in the file Make_include and adapt to the system you are using. The default options are set for a the GNU C-compiler on a Linux system. A Fortran or C++ compiler are not needed to compile the code. The Makefile has been tested with GNU make. 
 
 3) If the compiler options are set in the Make_include file you can type 
-
-> make 
-
+```
+make clean
+make 
+```
 and the Makefile will make:
 
 - FFT library 
-- fdelmodc
-- marchenko
+- fdelmodc / 3D
+- marchenko / 3D
 - utils
 
 The libraries will be placed in the lib/ directory and the executables in the bin/ directory.
 
 To use the executables don't forget to include the pathname in your PATH:
 
+```
 bash/sh:
 export PATH='path_to_this_directory'/bin:$PATH:
 csh:
 setenv PATH 'path_to_this_directory'/bin:$PATH:
-
-
-> make clean
+```
 
 Finite Difference Modeling: FDELMODC
 ------------------------------------
@@ -94,18 +98,20 @@ If the compilation has finished without errors and produced an executable called
 
 in the directory fdelmodc/demo/ 
 
-The demo directory contains scripts which demonstrate the different possibilities of the modeling program. 
+The demo directory contains many scripts which demonstrate the different possibilities of the modeling program. 
 
 To reproduce the Figures shown in the GEOPHYICS manuscript "Finite-difference modeling experiments for seismic interferometry" the scripts in FiguresPaper directory can be used. Please read the README in the FiguresPaper directory for more instructions and guidelines. 
 
 
 Marchenko method : MARCHENKO
 ----------------------------
-If the compilation has finished without errors and produced an executable called bin/marchenko you can run one of the demo programs by running a set of scripts that are explained in a README in one of the directories marchenko/demo/*
+If the compilation has finished without errors and produced an executable called bin/marchenko you can run one of the demo programs by running a set of scripts that are explained in a README in one of the directories marchenko/demo/oneD or demo/twoD
 
 To reproduce the Figures shown in the GEOPHYICS paper "Implementation of the Marchenko method" the scripts in marchenko/demo/oneD directory can be used. The README in this directory gives more instructions and guidelines. 
 
 To reproduce the Figures shown in the Scientific Reports paper "Virtual acoustics in inhomogeneous media with single-sided access" the scripts in marchenko/demo/ScientificReports directory can be used. The README in this directory gives more instructions and guidelines. 
+
+To reproduce the Figures shown in the GEOPHYICS paper "Implementation of the Marchenko Multiple Elimination algorithm" the scripts in marchenko/demo/oneD directory can be used. The README_PRIMARIES in this directory gives more instructions and guidelines. 
 
 MDD
 ---
