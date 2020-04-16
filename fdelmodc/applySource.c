@@ -89,7 +89,10 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 			ix = src.x[isrc] + ibndx;
 			iz = src.z[isrc] + ibndz;
 		}
-		else { /* plane wave and point sources */
+        else if (src.plane) {/* plane wave sources */
+            ix = ixsrc + ibndx + src.x[isrc];
+            iz = izsrc + ibndz + src.z[isrc];
+		else { /* point sources */
             ix = ixsrc + ibndx + is0 + isrc;
             iz = izsrc + ibndz;
 		}

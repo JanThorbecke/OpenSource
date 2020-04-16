@@ -1,18 +1,24 @@
-%%%%%%%
+
+ACKNOWLEDGEMENT
+---------
+This work received funding from the European Research Council (grant 742703) and the  NWO Domain Applied and Engineering Sciences (grant 13939).
+
+LICENSE
+---------
 THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS COMMON PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
 
 A copy of this license can be found in the file 'Common_Public_License.txt' in the directory where you have found this README.
 
 http://www.opensource.org/licenses/cpl1.0.php
 
+SU
+--
 Some routines are from Seismic Unix and include the SU LEGAL_STATEMENT in the source code.
-%%%%%%%
 
 Copyright (c) 2017 by the Society of Exploration Geophysicists.
 For more information, go to http://software.seg.org/2017/00XX .
 You must read and accept usage terms at:
 http://software.seg.org/disclaimer.txt before use.
-
 
 REFERENCES
 ---------
@@ -36,7 +42,7 @@ Download: https://janth.home.xs4all.nl/Publications/Articles/ThorbeckeGPY2017.pd
 -3- When you are using the marchenko_primaries algorithm developed by Lele Zhang please refer to the following paper
 
 Free-surface and internal multiple elimination in one step without adaptive subtraction
-Lele Zhang1 and Evert Slob2
+Lele Zhang and Evert Slob
 2019, Geophysics, Vol. 84, no. 1 (January-February); p. A7-A11, doi: 10.1190/GEO2018-0548.1
 Download: http://homepage.tudelft.nl/t4n4v/BeyondInterferometry/geo_19h.pdf
 
@@ -48,7 +54,6 @@ Prospecting, Vol. 67, 32-51
 Download: http://homepage.tudelft.nl/t4n4v/4_Journals/Geophys.Prosp/GP_19a.pdf
 
 -5- 
-
 
 INSTALLATION
 -------------
