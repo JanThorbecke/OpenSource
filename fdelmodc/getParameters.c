@@ -173,7 +173,6 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	/* check if receiver delays is defined; option inactive: add delay time to total modeling time */
 	if (!getparfloat("rec_delay",&rdelay)) rdelay=0.0;
 	rec->delay=NINT(rdelay/mod->dt);
-//	mod->tmod += rdelay;
 	mod->nt = NINT(mod->tmod/mod->dt);
 	dt = mod->dt;
 
@@ -925,6 +924,9 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			wav->nst = nsamp; /* put total number of samples in nst part */
 		}
 	}
+    if (src->type==7) { /* set also src_injectionrate=1  */
+        src->injectionrate=1;
+    }
 
 	if (src->multiwav) {
 		if (wav->nx != nsrc) {
@@ -956,6 +958,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			case 6 : fprintf(stderr,"Fx "); break;
 			case 7 : fprintf(stderr,"Fz "); break;
 			case 8 : fprintf(stderr,"P-potential"); break;
+			case 9 : fprintf(stderr,"double-couple"); break;
+			case 10 : fprintf(stderr,"Fz on P grid with +/-"); break;
 		}
 		fprintf(stderr,"\n");
 		if (wav->random) vmess("Wavelet has a random signature with fmax=%.2f", wav->fmax);
@@ -1110,7 +1114,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	rec->skipdt=NINT(dtrcv/dt);
 	dtrcv = mod->dt*rec->skipdt;
 	if (!getparfloat("rec_delay",&rdelay)) rdelay=0.0;
-	if (!getparint("rec_ntsam",&rec->nt)) rec->nt=NINT((mod->tmod-rdelay)/dtrcv)+1;
+	if (!getparint("rec_ntsam",&rec->nt)) rec->nt=(int)round((mod->tmod-rdelay+0.01*mod->dt)/dtrcv)+1;
 	if (!getparint("rec_int_p",&rec->int_p)) rec->int_p=0;
 	if (!getparint("rec_int_vx",&rec->int_vx)) rec->int_vx=0;
 	if (!getparint("rec_int_vz",&rec->int_vz)) rec->int_vz=0;
@@ -1118,7 +1122,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparint("scale",&rec->scale)) rec->scale=0;
 	if (!getparfloat("dxspread",&dxspread)) dxspread=0;
 	if (!getparfloat("dzspread",&dzspread)) dzspread=0;
-	rec->nt=MIN(rec->nt, NINT((mod->tmod-rdelay)/dtrcv)+1);
+	rec->nt=MIN(rec->nt, NINT((mod->tmod-rdelay+0.01*mod->dt)/dtrcv)+1);
 
 /* allocation of receiver arrays is done in recvPar */
 /*

@@ -27,11 +27,11 @@ OPTC = -O3 -ffast-math
 OPTC += -fopenmp
 
 # for better performing code you can try:
-#OPTC = -O3 -fno-trapping-math -ffast-math -funroll-all-loops -mavx -fomit-frame-pointer -mfpmath=sse -ftree-vectorizer-verbose=1
-# Linux gcc version 3.x
-#OPTC = -O3 -ffast-math -funroll-all-loops -mfpmath=sse
+#OPTC = -O3 -fno-trapping-math -ffast-math -funroll-all-loops -fomit-frame-pointer -ftree-vectorizer-verbose=1
+# Linux gcc very old version 3.x
+#OPTC = -O3 -ffast-math -funroll-all-loops 
 
-#for double precision use FFTlib and emmod
+#enable double precision only for use in FFTlib and emmod
 #OPTC += -DDOUBLE
 #OPTF += -fdefault-double-8 -fdefault-real-8
 
