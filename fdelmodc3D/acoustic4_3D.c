@@ -165,7 +165,6 @@ long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lo
     if (bnd.lef==2) mod.ioPx -= bnd.npml;
     if (bnd.rig==2) mod.iePx += bnd.npml;
 
-
 	/* Add stress source */
 	if (src.type < 6) {
         applySource3D(mod, src, wav, bnd, itime, ixsrc, iysrc, izsrc, vx, vy, vz, p, NULL, NULL, NULL, NULL, NULL, rox, roy, roz, l2m, src_nwav, verbose);

@@ -161,6 +161,8 @@ typedef struct _waveletPar { /* Wavelet Parameters */
 
 typedef struct _sourcePar { /* Source Array Parameters */
 	long n;
+	long nx;
+	long ny;
 	long type;
 	long orient;
 	long *z;
@@ -181,6 +183,8 @@ typedef struct _sourcePar { /* Source Array Parameters */
 	float strike;
 	float rake;
 	long distribution;
+	long nxwindow;
+	long nywindow;
 	long window;
     long injectionrate;
 	long sinkdepth;

@@ -197,7 +197,7 @@ void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1
 		count+=1;
         zsrc = hdr_inp[0].selev;
 
-        if (verbose>2) vmess("Creating Homogeneous G at location %li out of %li",l,Nfoc);
+        if (verbose>2) vmess("Creating Homogeneous G at location %li out of %li",l+1,Nfoc);
 
 		if (scheme==0) { //Marchenko representation with G source
             for (k = 0; k < ny; k++) {
@@ -365,8 +365,7 @@ void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1
 		free(tmp1);
 		free(tmp2);
 	}
-	if (scheme==6) free(tmp1);
-    if (scheme==7) free(tmp1);
+	if (scheme==6 || scheme==8 || scheme==9 || scheme==10) free(tmp1);
 }
 	if (scheme==5) {
 		free(input);
