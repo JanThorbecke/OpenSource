@@ -2,6 +2,7 @@
 
 all: mkdirs 
 	cd FFTlib		; $(MAKE)
+	cd zfp			; $(MAKE) install
 	cd fdelmodc		; $(MAKE) install
 	cd fdelmodc3D	; $(MAKE) install
 	cd utils		; $(MAKE) install
@@ -10,7 +11,6 @@ all: mkdirs
 	cd corrvir		; $(MAKE) install
 	cd raytime		; $(MAKE) install
 	cd MDD			; $(MAKE) install
-	cd zfp			; $(MAKE) 
 	cd fdacrtmc		; $(MAKE) install
 
 
@@ -21,6 +21,7 @@ mkdirs:
 
 clean:
 	cd FFTlib 		; $(MAKE) $@
+	cd zfp			; $(MAKE) $@
 	cd fdelmodc		; $(MAKE) $@
 	cd fdelmodc3D	; $(MAKE) $@
 	cd utils		; $(MAKE) $@
@@ -29,11 +30,11 @@ clean:
 	cd corrvir		; $(MAKE) $@
 	cd raytime		; $(MAKE) $@
 	cd MDD			; $(MAKE) $@
-	cd zfp			; $(MAKE) $@
 	cd fdacrtmc		; $(MAKE) $@
 
 realclean:
 	cd FFTlib 		; $(MAKE) $@
+	cd zfp			; $(MAKE) $@
 	cd fdelmodc		; $(MAKE) $@
 	cd fdelmodc3D	; $(MAKE) $@
 	cd fdelrtmc		; $(MAKE) $@
@@ -43,7 +44,6 @@ realclean:
 	cd corrvir		; $(MAKE) $@
 	cd raytime		; $(MAKE) $@
 	cd MDD			; $(MAKE) $@
-	cd zfp			; $(MAKE) $@
 	cd fdacrtmc		; $(MAKE) $@
 	rm -f lib/*
 	rm -f include/*

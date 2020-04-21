@@ -2,28 +2,30 @@ Description of files:
 
 
 1) model.scr computes the model and the 'basis' shot of R => shot5_rp.su
-2) p5all.scr create from basis shot full Reflection response matrix => shotsdx5_rp.su (3.3 GB)
-3) primaries.scr computes the internal multiple attenuated (middle) shot record.
-4) itertions.scr computes the intermediate results of the multiple attenutation scheme and produces all output files that are used in the manuscript.
-5) epsPrimaries.scr selected output form 4) are converted to .eps pictures that are used in the Figures to explain the method.
-   reproduce the postscript files of the manuscript using SU postscript plotting programs.
+   - runtime on 4 cores is 4-5 minutes and produces a 3.3 GB data file with 901 shots
+2) itertions.scr computes the intermediate results of the multiple attenutation scheme and produces all output files that are used in the manuscript.
+   - runtime on 4 cores is 
+3) epsPrimaries.scr selected output from step 2) are converted to .eps pictures that are used in the Figures to explain the method.
+   To reproduce the postscript files of the manuscript SU postscript plotting programs are required.
+-3) epsModel.scr to generate the postscript files for the numerical model
 
-extra scripts
+optional scripts not needed to reproduce the figures:
++) primaries.scr computes the internal multiple attenuated (middle) shot record.
+   - runtime on 4 cores is ~500 s.
 +) primariesPlane.scr: computes the internal moval scheme for plane-waves (see Meles 2020)
 +) clean: remove all produced files and start with a clean directory
 
+--------------------------
 To reproduce the Figures in the Manuscript:
-
 --------------------------
 * Figure 2: Model + Initial wavefield
 
-==> run model.scr to generate the data .su files: this will take 3-4 minutes. The files generate are:
+==> run model.scr to generate the data .su files: this will take 4-5 minutes. The files generate are:
 	- hom_cp.su, hom_ro.su
 	- model10_cp.su, model10_ro.su
 	- shot5_fd_rp.su
 	- shot5_hom_fd_rp.su
 	- shot5_rp.su
-	- wave.su
 	- wavefw.su
 
 ==> run './epsPrimaries.scr Figure2' to generate the postscript files of Figure 2 
@@ -32,24 +34,23 @@ model_cp_line.eps 	=> Figure 2a
 model_ro_line.eps 	=> Figure 2b
 shotx0_rp.eps 		=> Figure 2c
 
+It also produces two extra pictures of the wavelet used in the FD modelling:
+wavefw_freq.eps
+wavefw.eps 
+
 --------------------------
 * Figure 3: First Iteration
 
-The full R matrix is build up from the the shot record computed with model.scr
-
-==> run p5all.scr to generate the full R matrix for a fixed spread geometry. This will take less than one minute. The file generated is
-	- shotsdx5_rp.su this file has a size of 3.3 GB
-
-This R is the only input of the Marchenko Primaries algorithm.
-
-==> run './iterations.scr ./iterations.scr Figure3467' to compute the intermediate results of the first iterations of the Marchenko Primaries algorithm.
-This will take 10 seconds. The generated files are:
+==> run './iterations.scr Figure34910' to compute the intermediate results of the first iterations of the Marchenko Primaries algorithm.
+This will take 15 seconds. The generated files are:
 
 	- M0_276000.su
-	- iter_2760##.su (not used)
 	- Mi_2760##.su
-	- f1min_2760##.su
+	- k1min_2760##.su
+	- v1plus_2760##.su
+	- iter_2760##.su (not used)
 	- pred_rr_276.su (not used)
+	- DDshot_450.su (not used): selected shot record convolved with file_src=wave.su
 
 	where ## ranges from 01 to 33
 
@@ -66,117 +67,123 @@ fconvN0flip.eps 	=> Figure 3d
 Mi_276001.eps		=> Figure 3e
 
 
+--------------------------
+* Figure 4 second iteration
 To generate the postscript files for Figure 4:
 ==> run './epsPrimaries.scr Figure4' 
+
+This will produce the following files:
+
+fconvN1fulltime.eps	=> Figure 4c
+fconvN1flip.eps		=> Figure 4d
+Mi_276002.eps		=> Figure 4e
+
+The window time function in Figure 5 is not reproduced. 
+
+--------------------------
+* Figure 6 v1plus and convergence
+==> run './iterations.scr Figure6' to compute the marchenko results with ii=200
 
 To generate the postscript files for Figure 6:
 ==> run './epsPrimaries.scr Figure6' 
 
-To generate the postscript files for Figure 7:
-==> run './epsPrimaries.scr Figure7' 
-
-
-
-shotx0_rp.eps 		=> Figure 5 R == Figure 3c
-f1min_001.eps	 	=> Figure 5 f^-_1,0
-iter_002.eps	 	=> Figure 5 -N_1
-f1plus_002.eps	 	=> Figure 5 f^+_1,0
-
--- Figure 6 column 1
-iter_001.eps
-iter_002.eps
-iter_003.eps
-iter_004.eps
--- Figure 6 column 2
-f1min_001.eps
-f1min_002.eps
-f1min_003.eps
-f1min_004.eps
--- Figure 6 column 3
-p0plus_flip.eps
-f1plus_002.eps
-f1plus_003.eps
-f1plus_004.eps
--- Figure 6 column 4
-pgreen_001.eps
-pgreen_002.eps
-pgreen_003.eps
-pgreen_004.eps
--- Figure 6 column 5
-compare_001.eps
-compare_002.eps
-compare_003.eps
-compare_004.eps
-
-
-Note that the script epsIterwithLabels.scr produces the same figures, but with axis-labels. 
+This will produce the following files:
+v1plus_200001.eps		=> Figure 6a
+v1plus_max.eps			=> Figure 6b
+k1min_200030.eps		=> Figure 6b
 
 --------------------------
-* Figure 7: Comparison of Marchenko result with reference
+* Figure 8 To compute the convergence for a strong contrast medium:
+cd strongContrast
+==> run ./model.scr
+==> run ./iterations.scr Figure8
 
-To compute the marchenko results for 8 iterations.  
+To generate the postscript files for Figure 8:
+==> run './epsPrimaries.scr Figure8' 
 
-==> run marchenko.scr This will take less than 1 minute. The generated files are:
-	- pgreen.su, pgreen512.su
-	- diffref.su
-	- Gplus0.su
-	- Gmin0.su
-	- f1plus0.su
-	- f1min0.su
-	- f2.su 
+This will produce the following files:
+v1plusStrong_max.eps		=> Figure 8
 
+Don't forget to go back to the main directory with the results
+cd ../
 
-At the end of the run the script will display in X11 a comparison of the middle trace. 
-
-To make the postscript figure 
-
-==> run epsCompare.scr
-
-mergeGreenRef.eps 	=> Figure 7
 
 --------------------------
-* Figure 8: snapshots of back propagating f2 in actual medium 
+* Figure 9 iterations M_i
 
-To compute the snapshots 
+To generate the postscript files for Figure 9:
+==> run './epsPrimaries.scr Figure9' 
 
-==> run backpropf2.scr This will take about 1 minute. The generated output file is
-	- backpropf2_sp.su
-
-The postscript files of Figure 8 are generated with 
-
-==> run epsBackprop.scr
-
--- Figure 8 column 1
-backpropf2_-0.30.eps
-backpropf2_-0.15.eps
-backpropf2_-0.03.eps
-backpropf2_-0.02.eps
-backpropf2_0.00.eps
--- Figure 8 column 2
-backpropf2_0.30.eps
-backpropf2_0.15.eps
-backpropf2_0.03.eps
-backpropf2_0.02.eps
-backpropf2_0.00.eps
--- Figure 8 column 3
-backpropf2sum_0.30.eps
-backpropf2sum_0.15.eps
-backpropf2sum_0.03.eps
-backpropf2sum_0.02.eps
-backpropf2_0.00.eps
+This will produce the following files:
+Mi_276002.eps	=> Figure 9b
+Mi_276004.eps	=> Figure 9d
+Mi_276012.eps	=> Figure 9f
+Mi_276020.eps	=> Figure 9h
+Mi_276001.eps	=> Figure 9a
+Mi_276003.eps	=> Figure 9c
+Mi_276011.eps	=> Figure 9e
+Mi_276019.eps	=> Figure 9g
 
 
-The figures in the appendix, to explain the different options in the programs, are reproduced by
+--------------------------
+* Figure 10 iterations M_i and k_1^-
 
-==> run figAppendi.scr
+To generate the postscript files for Figure 10:
+==> run './epsPrimaries.scr Figure10' 
 
--- Figure A-1
-noise_above0.eps
-noise_above1.eps
-noise_above-1.eps
-noise_above2.eps
-noise_above4.eps
+This will produce the following files:
+Mi_276002flip.eps	=> Figure 10a
+k1min_276002.eps	=> Figure 10b
+Mi_276004flip.eps	=> Figure 10c
+k1min_276004.eps	=> Figure 10d
+Mi_276010flip.eps	=> Figure 10e
+k1min_276010.eps	=> Figure 10f
+Mi_276020flip.eps	=> Figure 10g
+k1min_276020.eps	=> Figure 10h
 
--- Figure A-2
-iniFocus_shifts.eps
+
+--------------------------
+* Figure 11 iterations k_1^- for different ii 246:316:10
+
+To generate the data 
+==> run ./iterations.scr Figure11
+this will take ~2 minutes and generate a lot of files
+
+To generate the postscript files for Figure 11:
+==> run './epsPrimaries.scr Figure11' 
+
+This will produce the following files:
+k1min_246032.eps	=> Figure 11a
+k1min_256032.eps	=> Figure 11b
+k1min_266032.eps	=> Figure 11c
+k1min_276032.eps	=> Figure 11d
+k1min_286032.eps	=> Figure 11e
+k1min_296032.eps	=> Figure 11f
+k1min_306032.eps	=> Figure 11g
+k1min_316032.eps	=> Figure 11h
+
+
+--------------------------
+* Figure 13 iterations M_i and k_1^- for ii-276 T-MME scheme
+
+To generate the data 
+==> run ./iterations.scr Figure13
+this will take ~15 seconds
+****NOTE this will overwrite the results of the MME-scheme !
+
+To generate the postscript files for Figure 13:
+==> run './epsPrimaries.scr Figure13' 
+
+This will produce the following files:
+Mi_276002T.eps	=> Figure 13a
+Mi_276004T.eps	=> Figure 13b
+Mi_276001T.eps	=> Figure 13c
+Mi_276003T.eps	=> Figure 13d
+k1min_276002T.eps	=> Figure 13e
+k1min_276004T.eps	=> Figure 13f
+k1min_276010T.eps	=> Figure 13g
+k1min_276020T.eps	=> Figure 13h
+
+
+
 

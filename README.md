@@ -1,18 +1,24 @@
-%%%%%%%
+
+ACKNOWLEDGEMENT
+---------
+This work received funding from the European Research Council (grant 742703) and the  NWO Domain Applied and Engineering Sciences (grant 13939).
+
+LICENSE
+---------
 THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS COMMON PUBLIC LICENSE ("AGREEMENT"). ANY USE, REPRODUCTION OR DISTRIBUTION OF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.
 
 A copy of this license can be found in the file 'Common_Public_License.txt' in the directory where you have found this README.
 
 http://www.opensource.org/licenses/cpl1.0.php
 
+SU
+--
 Some routines are from Seismic Unix and include the SU LEGAL_STATEMENT in the source code.
-%%%%%%%
 
 Copyright (c) 2017 by the Society of Exploration Geophysicists.
 For more information, go to http://software.seg.org/2017/00XX .
 You must read and accept usage terms at:
 http://software.seg.org/disclaimer.txt before use.
-
 
 REFERENCES
 ---------
@@ -36,7 +42,7 @@ Download: https://janth.home.xs4all.nl/Publications/Articles/ThorbeckeGPY2017.pd
 -3- When you are using the marchenko_primaries algorithm developed by Lele Zhang please refer to the following paper
 
 Free-surface and internal multiple elimination in one step without adaptive subtraction
-Lele Zhang1 and Evert Slob2
+Lele Zhang and Evert Slob
 2019, Geophysics, Vol. 84, no. 1 (January-February); p. A7-A11, doi: 10.1190/GEO2018-0548.1
 Download: http://homepage.tudelft.nl/t4n4v/BeyondInterferometry/geo_19h.pdf
 
@@ -49,37 +55,40 @@ Download: http://homepage.tudelft.nl/t4n4v/4_Journals/Geophys.Prosp/GP_19a.pdf
 
 -5- 
 
-
 INSTALLATION
 -------------
 
 1) To compile and link the code you first have to set the ROOT variable in the Make_include file which can be found in the directory where you have found this README.
-You can use Make_include_template as a first start: cp Make_include_template Make_include
+You can use Make_include_template as a first start: 
+
+```
+cp Make_include_template Make_include
+```
 
 2) Check the compiler and CFLAGS options in the file Make_include and adapt to the system you are using. The default options are set for a the GNU C-compiler on a Linux system. A Fortran or C++ compiler are not needed to compile the code. The Makefile has been tested with GNU make. 
 
 3) If the compiler options are set in the Make_include file you can type 
-
-> make 
-
+```
+make clean
+make 
+```
 and the Makefile will make:
 
 - FFT library 
-- fdelmodc
-- marchenko
+- fdelmodc / 3D
+- marchenko / 3D
 - utils
 
 The libraries will be placed in the lib/ directory and the executables in the bin/ directory.
 
 To use the executables don't forget to include the pathname in your PATH:
 
+```
 bash/sh:
 export PATH='path_to_this_directory'/bin:$PATH:
 csh:
 setenv PATH 'path_to_this_directory'/bin:$PATH:
-
-
-> make clean
+```
 
 Finite Difference Modeling: FDELMODC
 ------------------------------------
@@ -89,18 +98,20 @@ If the compilation has finished without errors and produced an executable called
 
 in the directory fdelmodc/demo/ 
 
-The demo directory contains scripts which demonstrate the different possibilities of the modeling program. 
+The demo directory contains many scripts which demonstrate the different possibilities of the modeling program. 
 
 To reproduce the Figures shown in the GEOPHYICS manuscript "Finite-difference modeling experiments for seismic interferometry" the scripts in FiguresPaper directory can be used. Please read the README in the FiguresPaper directory for more instructions and guidelines. 
 
 
 Marchenko method : MARCHENKO
 ----------------------------
-If the compilation has finished without errors and produced an executable called bin/marchenko you can run one of the demo programs by running a set of scripts that are explained in a README in one of the directories marchenko/demo/*
+If the compilation has finished without errors and produced an executable called bin/marchenko you can run one of the demo programs by running a set of scripts that are explained in a README in one of the directories marchenko/demo/oneD or demo/twoD
 
 To reproduce the Figures shown in the GEOPHYICS paper "Implementation of the Marchenko method" the scripts in marchenko/demo/oneD directory can be used. The README in this directory gives more instructions and guidelines. 
 
 To reproduce the Figures shown in the Scientific Reports paper "Virtual acoustics in inhomogeneous media with single-sided access" the scripts in marchenko/demo/ScientificReports directory can be used. The README in this directory gives more instructions and guidelines. 
+
+To reproduce the Figures shown in the GEOPHYICS paper "Implementation of the Marchenko Multiple Elimination algorithm" the scripts in marchenko/demo/oneD directory can be used. The README_PRIMARIES in this directory gives more instructions and guidelines. 
 
 MDD
 ---

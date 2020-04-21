@@ -127,13 +127,13 @@ char *sdoc[] = {
 "   verbose=0 ......... silent mode; =1: display info",
 " ",
 " SHOT AND GENERAL SOURCE DEFINITION:",
-"   src_type=1 ........ 1=P 2=Txz 3=Tzz 4=Txx 5=S-pot 6=Fx 7=Fz 8=P-pot 9=double-couple",
+"   src_type=1 ........ 1=P 2=Txz 3=Tzz 4=Txx 5=S-pot 6=Fx 7=Fz 8=P-pot 9=double-couple 10=Fz by P",
 "   src_orient=1 ...... orientation of the source",
 "                     - 1=monopole",
 "                     - 2=dipole +/- vertical oriented",
 "                     - 3=dipole - + horizontal oriented",
-//"                     - 4=dipole +/0/-",
-//"                     - 5=dipole + -",
+"                     - 4=dipole +/0/-",
+"                     - 5=dipole + -",
 "   dip=0 ............. dip for double-couple source",
 "   strike=0 .......... strike for double-couple source",
 "   xsrc=middle ....... x-position of (first) shot ",
@@ -749,6 +749,23 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 		free(p);
 		free(q);
 	}
+	if (bnd.ntap) {
+		free(bnd.tapx);
+		free(bnd.tapz);
+		free(bnd.tapxz);
+	}
+	free(bnd.surface);
+	free(shot.x);
+	free(shot.z);
+    free(src.x);
+	free(src.z);
+	free(src.tbeg);
+	free(src.tend);
+    free(rec.x);
+    free(rec.z);
+    free(rec.xr);
+    free(rec.zr);
+    if(wav.nsamp!=NULL) free(wav.nsamp);
 
 #ifdef MPI  
     MPI_Finalize();

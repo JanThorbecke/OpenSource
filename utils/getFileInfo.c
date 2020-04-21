@@ -43,6 +43,8 @@ int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *
     ret = fseeko( fp, 0, SEEK_END );
 	if (ret<0) perror("fseeko");
     bytes = ftello( fp );
+	*xmax = hdr.gx;
+	*xmin = hdr.gx;
 
     *n1 = hdr.ns;
     if ( (hdr.trid == 1) && (hdr.dt != 0) ) {
@@ -112,9 +114,7 @@ int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *
         one_shot    = 1;
         igath       = 0;
         fseeko( fp, 0, SEEK_SET );
-		offset = (NINT((hdr.gx-hdr.sx)*scl*100)/100.0);
-    	*xmax = offset;
-    	*xmin = offset;
+		//offset = (NINT((hdr.gx-hdr.sx)*scl*100)/100.0);
         dxrcv = *d2;
 
         while (!end_of_file) {
@@ -125,6 +125,8 @@ int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *
             sx_shot   = hdr.sx;
             gx_start  = hdr.gx;
             gx_end    = hdr.gx;
+    		*xmax = MAX(MAX(hdr.gx,*xmax),hdr.sx);
+    		*xmin = MIN(MIN(hdr.gx,*xmin),hdr.sx);
     
             itrace = 0;
             while (one_shot) {
@@ -132,9 +134,11 @@ int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *
                 itrace++;
                 if (hdr.gx != gx_end) dxrcv = MIN(dxrcv,abs(hdr.gx-gx_end));
                 gx_end = hdr.gx;
-				offset = (NINT((hdr.gx-hdr.sx)*scl*100)/100.0);
-            	*xmax = MAX(*xmax,offset);
-            	*xmin = MIN(*xmin,offset);
+				//offset = (NINT((hdr.gx-hdr.sx)*scl*100)/100.0);
+            	//*xmax = MAX(*xmax,offset);
+            	//*xmin = MIN(*xmin,offset);
+    			*xmax = MAX(MAX(hdr.gx,*xmax),hdr.sx);
+    			*xmin = MIN(MIN(hdr.gx,*xmin),hdr.sx);
                 nread = fread( &hdr, 1, TRCBYTES, fp );
                 if (nread != TRCBYTES) {
                     one_shot = 0;
@@ -167,14 +171,18 @@ int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *
 
         fseeko( fp, -trace_sz, SEEK_END );
         nread = fread( &hdr, 1, TRCBYTES, fp );
-		offset = (NINT((hdr.gx-hdr.sx)*scl*100)/100.0);
-        *xmax = MAX(*xmax,offset);
-        *xmin = MIN(*xmin,offset);
-		*xmin = MIN(sx_shot,hdr.sx*scl);
+		//offset = (NINT((hdr.gx-hdr.sx)*scl*100)/100.0);
+        //*xmax = MAX(*xmax,offset);
+        //*xmin = MIN(*xmin,offset);
+		//*xmin = MIN(sx_shot,hdr.sx*scl);
+    	*xmax = MAX(MAX(hdr.gx,*xmax),hdr.sx);
+    	*xmin = MIN(MIN(hdr.gx,*xmin),hdr.sx);
 		*ngath = ntraces/(*n2);
     }
 //    *nxm = NINT((*xmax-*xmin)/dxrcv)+1;
 	*nxm = (int)ntraces;
+	*xmax *= scl;
+	*xmin *= scl;
 
     fclose( fp );
     free(trace);

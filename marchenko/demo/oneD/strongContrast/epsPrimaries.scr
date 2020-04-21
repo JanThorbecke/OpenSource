@@ -1,0 +1,25 @@
+#!/bin/bash
+
+export PATH=$HOME/src/OpenSource/bin/:$PATH:
+
+if [[ "$1" == "Figure8" ]];
+then
+rm vplus.su
+istart=200
+for (( iter=1; iter<=29; iter+=2 ))
+do
+piter=$(printf %03d $iter)
+echo $piter
+file=v1plus_${istart}${piter}.su
+file_base=${file%.su}
+suwind < $file key=offset min=0 max=0 >> vplus.su
+done
+
+basop file_in=vplus.su file_out=vplus_env.su choice=4
+sumax < vplus_env.su verbose=1 mode=max 
+supsmax < vplus_env.su n=15 verbose=1 mode=max \
+	style=normal linewidth=2.0 f1=1 labelsize=14 label1="iteration number" label2="amplitude" \
+    d1num=2 d2num=0.5 wbox=6 hbox=3 grid1=dot grid2=dot n1tic=2 n2tic=2 x2end=6.9 x2beg=1.8 > v1plusStrong_max.eps
+
+fi
+

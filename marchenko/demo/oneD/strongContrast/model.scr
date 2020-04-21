@@ -1,0 +1,106 @@
+#!/bin/bash
+#SBATCH -J marchenko_primaries
+#SBATCH --cpus-per-task=10
+#SBATCH --ntasks=1
+#SBATCH --time=1:59:00
+#SBATCH -p max2h
+
+#adjust this PATH to where the code is installed
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+
+dx=2.5
+dt=0.0005
+
+#define gridded model for FD computations
+makemod sizex=10000 sizez=1400 dx=$dx dz=$dx cp0=1800 ro0=500 \
+        orig=-5000,0 file_base=model10.su verbose=2 \
+        intt=def x=-5000,5000 z=400,400 poly=0 cp=2300 ro=5000 \
+        intt=def x=-5000,5000 z=700,700 poly=0 cp=2000 ro=500 \
+        intt=def x=-5000,5000 z=1100,1100 poly=0 cp=2500 ro=5000
+
+#define wavelet for modeling R
+makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3 scale=0 scfft=1
+
+#define wavelet for reference and intial focusing field.
+makewave fp=25 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=1
+
+export OMP_NUM_THREADS=10
+
+#Model shot record in middle of model
+fdelmodc \
+    file_cp=model10_cp.su ischeme=1 iorder=4 \
+    file_den=model10_ro.su \
+    file_src=wavefw.su \
+    file_rcv=shot5_fd.su \
+    src_type=7 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.004 \
+    rec_delay=0.3 \
+    verbose=2 \
+    tmod=4.392 \
+    dxrcv=5.0 \
+    xrcv1=-4500 xrcv2=4500 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=0 \
+    npml=101 \
+    left=2 right=2 top=2 bottom=2 
+
+#define homogenoeus model to compute direct wave only
+makemod sizex=10000 sizez=1200 dx=$dx dz=$dx cp0=1800 ro0=1000 \
+        orig=-5000,0 file_base=hom.su verbose=2
+
+#Model direct wave only in middle of model
+fdelmodc \
+    file_cp=hom_cp.su ischeme=1 iorder=4 \
+    file_den=hom_ro.su \
+    file_src=wavefw.su \
+    file_rcv=shot5_hom_fd.su \
+    src_type=7 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.004 \
+    rec_delay=0.3 \
+    verbose=2 \
+    tmod=4.392 \
+    dxrcv=5.0 \
+    xrcv1=-4500 xrcv2=4500 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=0 \
+    npml=101 \
+    left=2 right=2 top=2 bottom=2 
+
+#subtract direct wave from full model shot record: this defines R
+sudiff shot5_fd_rp.su shot5_hom_fd_rp.su > shot5_rp.su
+
+
+# Generate the full R matrix for a fixed spread geometry.
+
+dxshot=5000 # with scalco factor of 1000
+ishot=0
+nshots=901
+
+rm shotsdx5_rp.su 
+
+while (( ishot < nshots ))
+do
+
+	(( xsrc = -2250000 + ${ishot}*${dxshot} ))
+	(( tr1 = $nshots - ${ishot} ))
+	(( tr2 = ${tr1} + $nshots - 1 ))
+	echo xsrc=$xsrc tr1=$tr1 tr2=$tr2
+
+	(( ishot = $ishot + 1))
+
+	suwind < shot5_rp.su key=tracl min=$tr1 max=$tr2 | \
+	sushw key=sx,gx,fldr,trwf \
+	a=$xsrc,-2250000,$ishot,$nshots b=0,$dxshot,0,0 j=0,$nshots,0,0 | \
+	suchw key1=offset key2=gx key3=sx c=-1 d=1000 >> shotsdx5_rp.su
+
+done
