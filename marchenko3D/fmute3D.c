@@ -26,7 +26,8 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, fl
 long readData3D(FILE *fp, float *data, segy *hdrs, long n1);
 long writeData3D(FILE *fp, float *data, segy *hdrs, long n1, long n2);
 long disp_fileinfo3D(char *file, long n1, long n2, long n3, float f1, float f2, float f3, float d1, float d2, float d3, segy *hdrs);
-void applyMute3D( float *data, long *mute, long smooth, long above, long Nfoc, long nxs, long nys, long nt, long *ixpos, long *iypos, long npos, long shift);
+void applyMute3D( float *data, long *mute, long smooth, long above, long Nfoc, long nxs, long nys, long nt, 
+    long *ixpos, long *iypos, long npos, long shift, long *tsynW);
 double wallclock_time(void);
 
 /*********************** self documentation **********************/
@@ -66,7 +67,7 @@ int main (int argc, char **argv)
     FILE    *fp_in1, *fp_in2, *fp_out, *fp_chk, *fp_psline1, *fp_psline2;
     long        verbose, shift, k, nx1, ny1, nt1, nx2, ny2, nt2, nxy;
     long     ntmax, nxmax, nymax, ret, i, j, l, jmax, ixmax, iymax, above, check;
-    long     size, ntraces, ngath, *maxval, hw, smooth;
+    long     size, ntraces, ngath, *maxval, *tsynW, hw, smooth;
     long     tstart, tend, scale, *xrcv, *yrcv;
     float   dt, dt1, dx1, dy1, ft1, fx1, fy1, t0, t1, dt2, dx2, dy2, ft2, fx2, fy2;
     float    w1, w2, dxrcv, dyrcv;
@@ -176,6 +177,7 @@ int main (int argc, char **argv)
 
     nxy    = nx1*ny1;
     maxval = (long *)calloc(nxy,sizeof(long));
+    tsynW  = (long *)calloc(nxy,sizeof(long));
     xrcv   = (long *)calloc(nxy,sizeof(long));
     yrcv   = (long *)calloc(nxy,sizeof(long));
     
@@ -236,7 +238,7 @@ int main (int argc, char **argv)
         dxrcv = (hdrs_in1[nxy-1].gx - hdrs_in1[0].gx)*sclsxgx/(float)(nx1-1);
         dyrcv = (hdrs_in1[nxy-1].gy - hdrs_in1[0].gy)*sclsxgx/(float)(ny1-1);
         ixmax = NINT(((hdrs_in1[0].sx-hdrs_in1[0].gx)*sclsxgx)/dxrcv);
-        iymax = NINT(((hdrs_in1[0].sy-hdrs_in1[0].gy)*sclsxgx)/dxrcv);
+        iymax = NINT(((hdrs_in1[0].sy-hdrs_in1[0].gy)*sclsxgx)/dyrcv);
         if (iymax > ny1-1) {
             vmess("source of y is past array, snapping to nearest y");
             iymax = ny1-1;
@@ -416,7 +418,7 @@ int main (int argc, char **argv)
 
 /*================ apply mute window ================*/
         
-        applyMute3D(tmpdata2, maxval, smooth, above, 1, nx2, ny2, nt2, xrcv, yrcv, nx2*ny2, shift);
+        applyMute3D(tmpdata2, maxval, smooth, above, 1, nx2, ny2, nt2, xrcv, yrcv, nx2*ny2, shift, tsynW);
 
 /*================ write result to output file ================*/
 

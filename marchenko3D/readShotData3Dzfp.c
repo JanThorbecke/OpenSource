@@ -97,6 +97,7 @@ long readShotData3Dzfp(char *filename, float *xrcv, float *yrcv, float *xsrc, fl
 		}
 	}
 
+	fclose(fp);
 	free(trace);
 
 	return 0;
