@@ -617,6 +617,7 @@ int main (int argc, char **argv)
         vmess("number of time samples (nt,nts) = %li (%li,%li)", ntfft, nt, nts);
         vmess("frequency cutoffs               = min:%.3f max:%.3f",fmin,fmax);
         vmess("time sampling                   = %e ", dt);
+        if (plane_wave) vmess("Plane wave focusing is applied");
         if (file_green != NULL) vmess("Green output file               = %s ", file_green);
         if (file_gmin != NULL)  vmess("Gmin output file                = %s ", file_gmin);
         if (file_gplus != NULL) vmess("Gplus output file               = %s ", file_gplus);
