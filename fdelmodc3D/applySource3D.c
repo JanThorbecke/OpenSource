@@ -25,7 +25,7 @@ long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, l
 	float ***rox, float ***roy, float ***roz, float ***l2m, float **src_nwav, long verbose)
 {
 	long is0, ibndz, ibndy, ibndx;
-	long isrc, ix, iy, iz, n1, n2;
+	long isrc, ix, iy, iz, n1, n2, ix0, iy0, ixe, iye;
 	long id1, id2, id3;
 	float src_ampl, time, scl, dt, sdx;
 	float Mxx, Myy, Mzz, Mxz, Myz, Mxy;
@@ -98,9 +98,19 @@ long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, l
 			iy = src.y[isrc] + ibndy;
 			iz = src.z[isrc] + ibndz;
 		}
-		else { /* plane wave and point sources */
-            ix = ixsrc + ibndx + is0 + isrc;
-            iy = iysrc + ibndy + is0 + isrc;
+		else if (src.plane) {/* plane wave sources */
+            ix = ixsrc + ibndx + src.x[isrc];
+            iy = iysrc + ibndy + src.y[isrc];
+            iz = izsrc + ibndz + src.z[isrc];
+			ix0 = ixsrc + ibndx + src.x[0];
+			ixe = ixsrc + ibndx + src.x[src.n-1];
+			iy0 = iysrc + ibndy + src.y[0];
+			iye = iysrc + ibndy + src.y[src.n-1];
+			// vmess("ix0 %li ixe %li iy0 %li iye %li",ix0,ixe,iy0,iye);
+		}
+		else { /* point sources */
+            ix = ixsrc + ibndx + isrc;
+            iy = iysrc + ibndy + isrc;
             iz = izsrc + ibndz;
 		}
 		time = itime*dt - src.tbeg[isrc];
@@ -111,7 +121,7 @@ long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, l
 		/* delay not reached or no samples left in source wavelet? */
 		if ( (time < 0.0) || ( (itime*dt) >= src.tend[isrc]) ) continue;
 
-//		fprintf(stderr,"isrc=%li ix=%li iz=%li src.x=%li src.z=%li\n", isrc, ix, iz, src.x[isrc], src.z[isrc]);
+		// fprintf(stderr,"isrc=%li ix=%li iy=%li iz=%li src.x=%li src.y=%li src.z=%li\n", isrc, ix, iy, iz, src.x[isrc], src.y[isrc], src.z[isrc]);
 
 		if (!src.multiwav) { /* only one wavelet for all sources */
 			src_ampl = src_nwav[0][id1]*(id2-time/dt) + src_nwav[0][id2]*(time/dt-id1);
@@ -128,15 +138,19 @@ long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, l
 		}
 
 		/* cosine squared windowing to reduce edge effects on shot arrays */
-		if ( (src.n>1) && src.window) {
-            scl = 1.0;
-			if (isrc < src.window) {
-				scl = cos(0.5*M_PI*(src.window - isrc)/src.window);
+		if (src.plane) {
+			if (src.nxwindow > 0){
+				scl = 1.0;
+				if (ix-ix0 < src.nxwindow) scl = cos(0.5*M_PI*(src.nxwindow - (ix-ix0))/src.nxwindow);
+				else if (ixe-ix < src.nxwindow) scl = cos(0.5*M_PI*(src.nxwindow - (ixe-ix))/src.nxwindow);
+				src_ampl *= scl*scl;
 			}
-			else if (isrc > src.n-src.window+1) {
-				scl = cos(0.5*M_PI*(src.window - (src.n-isrc+1))/src.window);
+			if (src.nywindow > 0){
+				scl = 1.0;
+				if (iy-iy0 < src.nywindow) scl = cos(0.5*M_PI*(src.nywindow - (iy-iy0))/src.nywindow);
+				else if (iye-iy < src.nywindow) scl = cos(0.5*M_PI*(src.nywindow - (iye-iy))/src.nywindow);
+				src_ampl *= scl*scl;
 			}
-			src_ampl *= scl*scl;
 		}
 
 		/* source scaling factor to compensate for discretisation */
