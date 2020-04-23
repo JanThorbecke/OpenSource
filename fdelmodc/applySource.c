@@ -92,6 +92,7 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
         else if (src.plane) {/* plane wave sources */
             ix = ixsrc + ibndx + src.x[isrc];
             iz = izsrc + ibndz + src.z[isrc];
+		}
 		else { /* point sources */
             ix = ixsrc + ibndx + is0 + isrc;
             iz = izsrc + ibndz;
@@ -160,9 +161,9 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 			//vz[ix*n1+iz] = 0.5*(vz[ix*n1+iz-1]+vz[ix*n1+iz+1])+src_ampl*roz[ix*n1+iz]/(l2m[ix*n1+iz]);
 			//vz[ix*n1+iz] = 0.25*(vz[ix*n1+iz-2]+vz[ix*n1+iz-1]+vz[ix*n1+iz]+vz[ix*n1+iz+1])+src_ampl*roz[ix*n1+iz]/(l2m[ix*n1+iz]);
         } 
-		else if (src.type == 10) {
-		    tzz[ix*n1+iz-1] -= src_ampl;
-		    tzz[ix*n1+iz+1] += src_ampl;
+		else if (src.type == 10) { /* scale with 1/(ro*2dx) note that roz=dt/(ro*dx) */
+		    tzz[ix*n1+iz-1] -= src_ampl*roz[ix*n1+iz]/(2.0*mod.dt);
+		    tzz[ix*n1+iz+1] += src_ampl*roz[ix*n1+iz]/(2.0*mod.dt);
         } /* src.type */
 
         
