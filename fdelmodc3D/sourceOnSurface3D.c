@@ -90,10 +90,15 @@ long storeSourceOnSurface3D(modPar mod, srcPar src, bndPar bnd,
 			iys = src.y[isrc] + ibndy;
 			izs = src.z[isrc] + ibndz;
 		}
-		else { /* plane wave and point sources */
-			ixs = ixsrc + ibndx + is0 + isrc;
-			iys = iysrc + ibndy + is0 + isrc;
-			izs = izsrc + ibndz;
+		else if (src.plane) {/* plane wave sources */
+            ixs = ixsrc + ibndx + src.x[isrc];
+            iys = iysrc + ibndy + src.y[isrc];
+            izs = izsrc + ibndz + src.z[isrc];
+		}
+		else { /* point sources */
+            ixs = ixsrc + ibndx + isrc;
+            iys = iysrc + ibndy + isrc;
+            izs = izsrc + ibndz;
 		}
 
 /* check if there are source positions placed on the boundaries. 

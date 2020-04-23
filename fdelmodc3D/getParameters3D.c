@@ -42,6 +42,7 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 {
 	long isnapmax1, isnapmax2, isnapmax, sna_nrsna;
 	long n1, n2, n3, nx, ny, nz, nsrc, ix, axis, ioPz, is0, optn;
+	long npxsrc, npysrc, isx0, isy0, isx, isy;
 	long idzshot, idxshot, idyshot, nsrctext;
 	long src_ix0, src_iy0, src_iz0, src_ix1, src_iy1, src_iz1;
 	long disable_check;
@@ -54,7 +55,7 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 	float tsnap1, tsnap2, dtsnap, dxsnap, dysnap, dzsnap, dtrcv;
 	float xsnap1, xsnap2, ysnap1, ysnap2, zsnap1, zsnap2, xmax, ymax, zmax;
 	float xsrc1, xsrc2, ysrc1, ysrc2, zsrc1, zsrc2, tsrc1, tsrc2, tlength, tactive;
-	float src_angle, src_velo, p, grad2rad, rdelay, scaledt;
+	float src_anglex, src_angley, src_velox, src_veloy, px, py, grad2rad, rdelay, scaledt;
 	float *xsrca, *ysrca, *zsrca, rrcv;
 	float rsrc, oxsrc, oysrc, ozsrc, dphisrc, ncsrc;
 	size_t nsamp;
@@ -684,10 +685,13 @@ criteria we have imposed.*/
 
 		
 	/* number of sources per shot modeling */
-
-	if (!getparlong("src_window",&src->window)) src->window=0;
-	if (!getparfloat("src_angle",&src_angle)) src_angle=0.;
-	if (!getparfloat("src_velo",&src_velo)) src_velo=1500.;
+	if (!getparlong("src_nxwindow",&src->nxwindow)) src->nxwindow=0;
+	if (!getparlong("src_nywindow",&src->nywindow)) src->nywindow=0;
+	src->window = 0;
+	if (!getparfloat("src_anglex",&src_anglex)) src_anglex=0.;
+	if (!getparfloat("src_angley",&src_angley)) src_angley=0.;
+	if (!getparfloat("src_velox",&src_velox)) src_velox=1500.;
+	if (!getparfloat("src_veloy",&src_veloy)) src_veloy=1500.;
 	if (!getparlong("distribution",&src->distribution)) src->distribution=0;
 	if (!getparlong("src_multiwav",&src->multiwav)) src->multiwav=0;
 	if (!getparfloat("amplitude", &src->amplitude)) src->amplitude=0.0;
@@ -898,14 +902,26 @@ criteria we have imposed.*/
 		free(selev);
 	}
 	else {
-		if (src->plane) { if (!getparlong("nsrc",&nsrc)) nsrc=1;}
-		else nsrc=1;
-
-		if (nsrc > nx) {
-			vwarn("Number of sources used in plane wave is larger than ");
-			vwarn("number of gridpoints in X. Plane wave will be clipped to the edges of the model");
-			nsrc = mod->nx;
+		if (src->plane) { 
+			if (!getparlong("npxsrc",&npxsrc)) npxsrc=1;
+			if (!getparlong("npysrc",&npysrc)) npysrc=1;
 		}
+		else {
+			npxsrc=1;
+			npysrc=1;
+		}
+
+		if (npxsrc > nx) {
+			vwarn("Number of sources used in plane wave (%li) is larger than ",npxsrc);
+			vwarn("number of gridpoints in X (%li). Plane wave will be clipped to the edges of the model",nx);
+			npxsrc = mod->nx;
+		}
+		if (npysrc > ny) {
+			vwarn("Number of sources used in plane wave (%li) is larger than ",npysrc);
+			vwarn("number of gridpoints in Y (%li). Plane wave will be clipped to the edges of the model",ny);
+			npysrc = mod->ny;
+		}
+		nsrc = npxsrc*npysrc;
 
 	/* for a source defined on mutliple gridpoint calculate p delay factor */
 
@@ -915,25 +931,47 @@ criteria we have imposed.*/
 		src->tbeg = (float *)malloc(nsrc*sizeof(float));
 		src->tend = (float *)malloc(nsrc*sizeof(float));
 		grad2rad = 17.453292e-3;
-		p = sin(src_angle*grad2rad)/src_velo;
-		if (p < 0.0) {
-			for (is=0; is<nsrc; is++) {
-				src->tbeg[is] = fabsf((nsrc-is-1)*dx*p);
+		px = sin(src_anglex*grad2rad)/src_velox;
+		py = sin(src_angley*grad2rad)/src_veloy;
+		if (py < 0.0) {
+			for (isy=0; isy<npysrc; isy++) {
+				if (px < 0.0) {
+					for (isx=0; isx<npxsrc; isx++) {
+						src->tbeg[isy*npxsrc+isx] = fabsf((npysrc-isy-1)*dy*py) + fabsf((npxsrc-isx-1)*dx*px);
+					}
+				}
+				else {
+					for (isx=0; isx<npxsrc; isx++) {
+						src->tbeg[isy*npxsrc+isx] = fabsf((npysrc-isy-1)*dy*py) + isx*dx*px;
+					}
+				}
 			}
 		}
 		else {
-			for (is=0; is<nsrc; is++) {
-				src->tbeg[is] = is*dx*p;
+			for (isy=0; isy<npysrc; isy++) {
+				if (px < 0.0) {
+					for (isx=0; isx<npxsrc; isx++) {
+						src->tbeg[isy*npxsrc+isx] = isy*dy*py + fabsf((npxsrc-isx-1)*dx*px);
+					}
+				}
+				else {
+					for (isx=0; isx<npxsrc; isx++) {
+						src->tbeg[isy*npxsrc+isx] = isy*dy*py + isx*dx*px;
+					}
+				}
 			}
 		}
 		for (is=0; is<nsrc; is++) {
 			src->tend[is] = src->tbeg[is] + (wav->nt-1)*wav->dt;
 		}		
-		is0 = -1*floor((nsrc-1)/2);
-		for (is=0; is<nsrc; is++) {
-			src->x[is] = is0 + is;
-			src->y[is] = 0;
-			src->z[is] = 0;
+		isx0 = -1*floor((npxsrc-1)/2);
+		isy0 = -1*floor((npysrc-1)/2);
+		for (isy=0; isy<npysrc; isy++) {
+			for (isx=0; isx<npxsrc; isx++) {
+				src->x[isy*npxsrc+isx] = isx0 + isx;
+				src->y[isy*npxsrc+isx] = isy0 + isy;
+				src->z[isy*npxsrc+isx] = 0;
+			}
 		}
 		
 		if (wav->random) {
@@ -962,6 +1000,8 @@ criteria we have imposed.*/
 			wav->nsamp[nsrc] = nsamp; /* put total number of samples in last position */
 			wav->nst = nsamp; /* put total number of samples in nst part */
 		}
+		src->nx = npxsrc;
+		src->ny = npysrc;
 	}
 
 	if (src->multiwav) {
@@ -1002,9 +1042,9 @@ criteria we have imposed.*/
 			vmess("*******************************************");
 			vmess("*********** source array info *************");
 			vmess("*******************************************");
-			vmess("Areal source array is defined with %li sources.",nsrc);
+			vmess("Areal source array is defined with %li sources (x=%li, y=%li).",nsrc,npxsrc,npysrc);
 			vmess("Memory requirement for sources = %.2f MB.",sizeof(float)*(nsamp/(1024.0*1024.0)));
-			if (src->plane) vmess("Computed p-value = %f.",p);
+			if (src->plane) vmess("Computed px-value = %f. and py-value = %f",px,py);
 		}
 		if (src->random) {
 		vmess("Sources are placed at random locations in domain: ");

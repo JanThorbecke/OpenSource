@@ -268,7 +268,7 @@ int main (int argc, char **argv)
 				tsynW[i] = NINT(i*dxs*p/dt);
 			}
 		}
-		if (Nfoc!=1) verr("For plave-wave focusing only one function can be computed at the same time");
+		if (Nfoc!=1) verr("For plane-wave focusing only one function can be computed at the same time");
 	}
 	else { /* just fill with zero's */
 		for (i=0; i<nxs*Nfoc; i++) {
