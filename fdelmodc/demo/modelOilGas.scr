@@ -23,12 +23,13 @@ zsrc=0
 
 which fdelmodc
 
+#../../bin/fdelmodc \
 ../fdelmodc \
     file_cp=syncl_cp.su ischeme=1 iorder=4 \
     file_den=syncl_ro.su \
     file_src=wave.su \
     file_rcv=shot_fd.su \
-    src_type=1 \
+    src_type=7 \
 	src_orient=1 \
 	src_injectionrate=0 \
     rec_type_vz=1 \
@@ -37,7 +38,7 @@ which fdelmodc
     dtrcv=0.004 \
 	rec_delay=0.1 \
     verbose=2 \
-    tmod=0.01 \
+    tmod=2.01 \
     dxrcv=10.0 \
     xrcv1=-2250 xrcv2=2250 \
     zrcv1=0 zrcv2=0 \

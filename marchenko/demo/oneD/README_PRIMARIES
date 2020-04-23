@@ -104,7 +104,7 @@ To generate the postscript files for Figure 8:
 This will produce the following files:
 v1plusStrong_max.eps		=> Figure 8
 
-Don't forget to go back to the main directory with the results
+Don't forget to go back to the main directory with the regular contrast results
 cd ../
 
 

@@ -732,23 +732,15 @@ int main (int argc, char **argv)
 			            energyMi = 0.0;
                         for (i = 0; i < npos; i++) {
 						    ix = ixpos[i];
-						    if (recur==0) {
-                                for (j = 0; j < nts; j++) {
-                                    energyMi += RMi[l*nacq*nts+ix*nts+j]*RMi[l*nacq*nts+ix*nts+j];
-					            }
-						    }
-						    else {
-					            mem = RMi[l*nacq*nts+ix*nts+nts-1]+DD[l*nacq*nts+ix*nts];		
-                                energyMi += mem*mem;
-                                for (j = 1; j < nts; j++) {
-					                mem = RMi[l*nacq*nts+ix*nts+nts-j]+DD[l*nacq*nts+ix*nts+j];		
-                                    energyMi += mem*mem;
-					            }
-						    }
+                            for (j = 0; j < nts; j++) {
+                                energyMi += RMi[l*nacq*nts+ix*nts+j]*RMi[l*nacq*nts+ix*nts+j];
+					        }
                         }
-                        if ( (iter==0) && (recur==0) ) energyM0[l] = energyMi;
-                        vmess(" - ii %d: Mi at iteration %d has energy %e; relative to M0 %e", ii, iter, sqrt(energyMi), sqrt(energyMi/energyM0[l]));
-                   }
+                        if ( (iter==0) ) energyM0[l] = energyMi;
+                        if ( (recur==0) ) {
+                        	vmess(" - ii %d: Mi at iteration %d has energy %e; relative to M0 %e", ii, iter, sqrt(energyMi), sqrt(energyMi/energyM0[l]));
+						}
+                    }
                 }
             }
 
@@ -810,11 +802,6 @@ int main (int argc, char **argv)
                             for (j = 1; j < nts; j++) {
                                 k1min[l*nxs*nts+i*nts+j] = -Mi[l*nxs*nts+i*nts+nts-j];
                             }
-                            //j = 0;
-                            //k1min[l*nxs*nts+i*nts+j] -= Mi[l*nxs*nts+i*nts+j];
-                            //for (j = 1; j < nts; j++) {
-                            //    k1min[l*nxs*nts+i*nts+j] -= Mi[l*nxs*nts+i*nts+nts-j];
-                            //}
         		        	if (file_update != NULL) {
 								j=0;
                                 Mup[l*nxs*nts+i*nts+j] += DD[l*nxs*nts+ix*nts+j] - k1min[l*nxs*nts+i*nts+j];

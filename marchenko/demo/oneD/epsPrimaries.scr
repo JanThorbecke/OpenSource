@@ -77,7 +77,7 @@ supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
 	label1="time sample number" label2="lateral distance" \
     f2=-2250 f2num=-2000 d2num=1000 clip=$clipiter > ${file_base}zoom.eps
 
-suflip < fconvN0.su flip=3 | sugain scale=-1 > fconvN0flip.su
+suflip < fconvN0.su flip=3 | sugain scale=1 > fconvN0flip.su
 file=fconvN0flip.su
 file_base=${file%.su}
 supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
@@ -107,7 +107,7 @@ fconv file_in1=shotsx0.su file_in2=N0.su file_out=fconvN1.su verbose=1 fmax=90
 file=fconvN1.su
 sumax < $file mode=abs outpar=nep
 clipiter=`cat nep | awk '{print $1/15}'`
-suflip < fconvN1.su flip=3 | sugain scale=-1 > fconvN1flip.su
+suflip < fconvN1.su flip=3 | sugain scale=1 > fconvN1flip.su
 
 file=fconvN1flip.su
 file_base=${file%.su}
