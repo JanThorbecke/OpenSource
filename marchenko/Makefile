@@ -37,21 +37,6 @@ SRCH	= marchenko.c \
 		docpkge.c \
 		getpars.c
 
-SRCT	= marchenko_tshift.c \
-		getFileInfo.c  \
-		readData.c \
-		readShotData.c \
-		readTinvData.c \
-		applyMute_tshift.c \
-		writeData.c \
-		writeDataIter.c \
-		wallclock_time.c \
-		name_ext.c  \
-		verbosepkg.c  \
-		atopkge.c \
-		docpkge.c \
-		getpars.c
-
 SRCP	= marchenko_primaries.c \
 		synthesis.c  \
 		getFileInfo.c  \
