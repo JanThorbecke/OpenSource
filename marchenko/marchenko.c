@@ -40,6 +40,9 @@ int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, floa
 void name_ext(char *filename, char *extension);
 
 void applyMute(float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *xrcvsyn, int npos, int shift, int *muteW);
+void applyMute_tshift( float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift, int iter, int *tsynW);
+void timeShift(float *data, int nsam, int nrec, float dt, float shift, float fmin, float fmax);
+
 
 int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *ntraces);
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
@@ -83,9 +86,7 @@ char *sdoc[] = {
 "   shift=12 ................. number of points above(positive) / below(negative) travel time for mute",
 "   hw=8 ..................... window in time samples to look for maximum in next trace",
 "   smooth=5 ................. number of points to smooth mute with cosine window",
-"   plane_wave=0 ............. enable plane-wave illumination function"
-"   src_angle=0 .............. angle of plane source array",
-"   src_velo=1500 ............ velocity to use in src_angle definition",
+"   plane_wave=0 ............. enable plane-wave illumination function",
 " REFLECTION RESPONSE CORRECTION ",
 "   tsq=0.0 .................. scale factor n for t^n for true amplitude recovery",
 "   Q=0.0 .......,............ Q correction factor",
@@ -121,17 +122,16 @@ int main (int argc, char **argv)
     int     size, n1, n2, ntap, tap, di, ntraces, pad, rotate;
     int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     int     reci, countmin, mode, n2out, verbose, ntfft;
-    int     iter, niter, tracf, *muteW, *tsynW;
+    int     iter, niter, tracf, *muteW, *tsynW, itmin;
     int     hw, smooth, above, shift, *ixpos, npos, ix, plane_wave;
     int     nshots_r, *isxcount, *reci_xsrc, *reci_xrcv;
     float   fmin, fmax, *tapersh, *tapersy, fxf, dxf, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
     double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, energyNi, *energyN0;
     float   d1, d2, f1, f2, fxsb, fxse, ft, fx, *xsyn, dxsrc;
     float   *green, *f2p, *pmin, *G_d, dt, dx, dxs, scl, mem;
-    float   *f1plus, *f1min, *iRN, *Ni, *Nig, *trace, *Gmin, *Gplus;
+    float   *f1plus, *f1min, *iRN, *Ni, *trace, *Gmin, *Gplus;
     float   xmin, xmax, scale, tsq, Q, f0;
     float   *ixmask;
-    float   grad2rad, p, src_angle, src_velo;
     complex *Refl, *Fop;
     char    *file_tinv, *file_shot, *file_green, *file_iter;
     char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_pmin;
@@ -156,10 +156,7 @@ int main (int argc, char **argv)
     if (!getparint("verbose", &verbose)) verbose = 0;
     if (file_tinv == NULL && file_shot == NULL) 
         verr("file_tinv and file_shot cannot be both input pipe");
-    if (!getparstring("file_green", &file_green)) {
-        if (verbose) vwarn("parameter file_green not found, assume pipe");
-        file_green = NULL;
-    }
+    if (!getparstring("file_green", &file_green)) file_green = NULL;
     if (!getparfloat("fmin", &fmin)) fmin = 0.0;
     if (!getparfloat("fmax", &fmax)) fmax = 70.0;
     if (!getparint("reci", &reci)) reci = 0;
@@ -179,8 +176,6 @@ int main (int argc, char **argv)
     if(!getparint("shift", &shift)) shift=12;
 
     if (!getparint("plane_wave", &plane_wave)) plane_wave = 0;
-	if (!getparfloat("src_angle",&src_angle)) src_angle=0.;
-	if (!getparfloat("src_velo",&src_velo)) src_velo=1500.;
 
     if (reci && ntap) vwarn("tapering influences the reciprocal result");
 
@@ -220,7 +215,6 @@ int main (int argc, char **argv)
     f1min   = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     iRN     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     Ni      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
-    Nig     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     G_d     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     muteW   = (int *)calloc(Nfoc*nxs,sizeof(int));
     tsynW   = (int *)malloc(Nfoc*nxs*sizeof(int)); // time-shift for Giovanni's plane-wave on non-zero times
@@ -255,22 +249,14 @@ int main (int argc, char **argv)
     nts   = ntfft;
                              
 	/* compute time shift for tilted plane waves */
-	if (plane_wave != 0) {
-		grad2rad = 17.453292e-3;
-		p = sin(src_angle*grad2rad)/src_velo;
-		if (p < 0.0) {
-			for (i=0; i<nxs; i++) {
-				tsynW[i] = NINT(fabsf((nxs-1-i)*dxs*p)/dt);
-			}
-		}
-		else {
-			for (i=0; i<nxs; i++) {
-				tsynW[i] = NINT(i*dxs*p/dt);
-			}
-		}
+	if (plane_wave==1) {
+        itmin = nt;
+        for (i=0; i<nxs; i++) itmin = MIN (itmin, muteW[i]);
+        for (i=0; i<nxs; i++) tsynW[i] = muteW[i]-itmin;
 		if (Nfoc!=1) verr("For plane-wave focusing only one function can be computed at the same time");
 	}
 	else { /* just fill with zero's */
+		itmin=0;
 		for (i=0; i<nxs*Nfoc; i++) {
 			tsynW[i] = 0;
 		}
@@ -465,7 +451,7 @@ int main (int argc, char **argv)
         tsyn +=  t3 - t2;
 
         if (file_iter != NULL) {
-            writeDataIter(file_iter, iRN, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 1, iter);
+            writeDataIter(file_iter, iRN, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, iter+1);
         }
         /* N_k(x,t) = -N_(k-1)(x,-t) */
         /* p0^-(x,t) += iRN = (R * T_d^inv)(t) */
@@ -482,49 +468,30 @@ int main (int argc, char **argv)
                     pmin[l*nxs*nts+i*nts+j] += iRN[l*nxs*nts+ix*nts+j];
                     energyNi += iRN[l*nxs*nts+ix*nts+j]*iRN[l*nxs*nts+ix*nts+j];
                 }
-                if (plane_wave!=0) { /* don't reverse in time */
-					Nig[l*nxs*nts+i*nts+j]   = -iRN[l*nxs*nts+ix*nts+j];
-                	for (j = 1; j < nts; j++) {
-                        Nig[l*nxs*nts+i*nts+j]   = -iRN[l*nxs*nts+ix*nts+j];
-					}
-				}
             }
             if (iter==0) energyN0[Nfoc] = energyNi;
-            if (verbose >=2) vmess(" - iSyn %d: Ni at iteration %d has energy %e; relative to N0 %e", l, iter, sqrt(energyNi),
-sqrt(energyNi/energyN0[Nfoc]));
+            if (verbose >=2) vmess(" - iSyn %d: Ni at iteration %d has energy %e; relative to N0 %e", l, iter, sqrt(energyNi), sqrt(energyNi/energyN0[Nfoc]));
         }
 
         /* apply mute window based on times of direct arrival (in muteW) */
-        applyMute(Ni, muteW, smooth, above, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
-        if (plane_wave!=0) applyMute(Nig, muteW, smooth, above, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
+        if ( plane_wave==1 ) { /* use a-symmetric shift for plane waves with non-zero angles */
+            applyMute_tshift(Ni, muteW, smooth, above, Nfoc, nxs, nts, ixpos, npos, shift, iter, tsynW);
+        }
+        else {
+            applyMute(Ni, muteW, smooth, above, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
+        }
 
         if (iter % 2 == 0) { /* even iterations update: => f_1^-(t) */
-			if (plane_wave==0) { /* follow the standard focal point scheme */
-                for (l = 0; l < Nfoc; l++) {
-                    for (i = 0; i < npos; i++) {
-                        j = 0;
-                        f1min[l*nxs*nts+i*nts+j] -= Ni[l*nxs*nts+i*nts+j];
-                        for (j = 1; j < nts; j++) {
-                            f1min[l*nxs*nts+i*nts+j] -= Ni[l*nxs*nts+i*nts+nts-j];
-                        }
+            for (l = 0; l < Nfoc; l++) {
+                for (i = 0; i < npos; i++) {
+                    j = 0;
+                    f1min[l*nxs*nts+i*nts+j] -= Ni[l*nxs*nts+i*nts+j];
+                    for (j = 1; j < nts; j++) {
+                        f1min[l*nxs*nts+i*nts+j] -= Ni[l*nxs*nts+i*nts+nts-j];
                     }
                 }
-                if (above==-2) applyMute(f1min, muteW, smooth, 0, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
-			}
-			else { /* plane wave scheme */
-                for (l = 0; l < Nfoc; l++) {
-                    for (i = 0; i < npos; i++) {
-                        j = 0;
-                        f1min[l*nxs*nts+i*nts+j] -= Nig[l*nxs*nts+i*nts+j];
-                        Ni[l*nxs*nts+i*nts+j]    = Nig[l*nxs*nts+i*nts+j];
-                        for (j = 1; j < nts; j++) {
-                            f1min[l*nxs*nts+i*nts+j] -= Nig[l*nxs*nts+i*nts+j];
-                            Ni[l*nxs*nts+i*nts+j] = Nig[l*nxs*nts+i*nts+nts-j];
-                        }
-                    }
-                }
-                if (above==-2) applyMute(f1min, muteW, smooth, 0, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
-			}
+            }
+            if (above==-2) applyMute(f1min, muteW, smooth, 0, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
         }
         else {/* odd iterations update: => f_1^+(t)  */
             for (l = 0; l < Nfoc; l++) {
@@ -537,6 +504,7 @@ sqrt(energyNi/energyN0[Nfoc]));
                 }
             }
         }
+        //writeDataIter("Ni.su", Ni, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, iter+1);
 
         /* update f2 */
         for (l = 0; l < Nfoc; l++) {
@@ -557,7 +525,6 @@ sqrt(energyNi/energyN0[Nfoc]));
     } /* end of iterations */
 
     free(Ni);
-    free(Nig);
     free(G_d);
 
     /* compute full Green's function G = int R * f2(t) + f2(-t) = Pplus + Pmin */
@@ -579,7 +546,7 @@ sqrt(energyNi/energyN0[Nfoc]));
 
     /* compute upgoing Green's function G^+,- */
     if (file_gmin != NULL) {
-        Gmin    = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
+        Gmin = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
 
         /* use f1+ as operator on R in frequency domain */
         mode=1;
@@ -599,7 +566,25 @@ sqrt(energyNi/energyN0[Nfoc]));
             }
         }
         /* Apply mute with window for Gmin */
-        applyMute(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
+		if ( plane_wave==1 ) {
+            applyMute_tshift(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 0, tsynW);
+            /* for plane wave with angle shift itmin downward */
+            for (l = 0; l < Nfoc; l++) {
+                for (i = 0; i < npos; i++) {
+                    memcpy(&trace[0],&Gmin[l*nxs*nts+i*nts],nts*sizeof(float));
+                    for (j = 0; j < itmin; j++) {
+                        Gmin[l*nxs*nts+i*nts+j] = 0.0;
+                    }
+                    for (j = 0; j < nts-itmin; j++) {
+                        Gmin[l*nxs*nts+i*nts+j+itmin] = trace[j];
+                    }
+                }
+            }
+            //timeShift(Gmin, nts, npos, dt, itmin*dt, fmin, fmax);
+		}
+		else {
+            applyMute(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
+		}
     } /* end if Gmin */
 
     /* compute downgoing Green's function G^+,+ */
@@ -624,7 +609,12 @@ sqrt(energyNi/energyN0[Nfoc]));
             }
         }
         /* Apply mute with window for Gplus */
-        applyMute(Gplus, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
+		if ( plane_wave==1 ) {
+            applyMute_tshift(Gplus, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 1, tsynW);
+        }
+        else {
+            applyMute(Gplus, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
+        }
     } /* end if Gplus */
 
     free(muteW);
@@ -643,8 +633,10 @@ sqrt(energyNi/energyN0[Nfoc]));
 /*================ write output files ================*/
 
 
-    fp_out = fopen(file_green, "w+");
-    if (fp_out==NULL) verr("error on creating output file %s", file_green);
+    if (file_green != NULL) {
+        fp_out = fopen(file_green, "w+");
+        if (fp_out==NULL) verr("error on creating output file %s", file_green);
+    }
     if (file_gmin != NULL) {
         fp_gmin = fopen(file_gmin, "w+");
         if (fp_gmin==NULL) verr("error on creating output file %s", file_gmin);
@@ -686,8 +678,10 @@ sqrt(energyNi/energyN0[Nfoc]));
             hdrs_out[i].f1     = f1;
         }
 
-        ret = writeData(fp_out, (float *)&green[l*size], hdrs_out, n1, n2);
-        if (ret < 0 ) verr("error on writing output file.");
+        if (file_green != NULL) {
+            ret = writeData(fp_out, (float *)&green[l*size], hdrs_out, n1, n2);
+            if (ret < 0 ) verr("error on writing output file.");
+        }
 
         if (file_gmin != NULL) {
             ret = writeData(fp_gmin, (float *)&Gmin[l*size], hdrs_out, n1, n2);
@@ -740,7 +734,8 @@ sqrt(energyNi/energyN0[Nfoc]));
             if (ret < 0 ) verr("error on writing output file.");
         }
     }
-    ret = fclose(fp_out);
+    ret=0;
+    if (file_green != NULL) {ret += fclose(fp_out);}
     if (file_gplus != NULL) {ret += fclose(fp_gplus);}
     if (file_gmin != NULL) {ret += fclose(fp_gmin);}
     if (file_f2 != NULL) {ret += fclose(fp_f2);}

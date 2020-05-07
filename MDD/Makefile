@@ -12,7 +12,7 @@ ALLINC  = -I.
 #General BLAS library
 #LIBS += $(BLAS)
 
-#CFLAGS += -I$(MKLROOT)/include  
+CFLAGS += -I$(MKLROOT)/include
 #LIBS += -lblas -llapack -L$L -lgenfft $(LIBSM) -lc -lm
 
 all: mdd 

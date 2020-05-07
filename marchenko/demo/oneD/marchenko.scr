@@ -8,8 +8,8 @@ export MKL_NUM_THREADS=1
 fmute file_shot=iniFocus_rp.su file_out=p0plus.su above=-1 shift=-8 verbose=1 check=0 hw=8
 
 #apply the Marchenko algorithm
-marchenko file_shot=shotsdx5_rp.su file_tinv=p0plus.su nshots=901 verbose=2 \
-	tap=0 niter=8 hw=8 shift=12 smooth=3 \
+../../marchenko file_shot=shotsdx5_rp.su file_tinv=p0plus.su nshots=901 verbose=2 \
+	tap=0 niter=8 hw=8 shift=12 smooth=3 file_iter=iter.su \
 	file_green=pgreen.su file_gplus=Gplus0.su file_gmin=Gmin0.su  \
 	file_f1plus=f1plus0.su file_f1min=f1min0.su file_f2=f2.su 
 
