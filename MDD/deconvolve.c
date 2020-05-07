@@ -129,11 +129,23 @@ private(iw, iwnA, iwnB, iwAB, iwBB)
 				/* cblas_cgemm(CblasRowMajor,CblasNoTrans, CblasConjTrans, NA, NB, nshots, &alpha.r, 
 				&cA[iwnA].r, NA, 
 				&cB[iwnB].r, NB, &beta.r,
-				&cC[iwAB].r, NC); */
+				ocC[iwAB].r, NC); */
+/*
+			for (i=0; i<nshots; i++) {
+				for (j=0; j<nshots; j++) {
+				    for (k=0; k<nstationB; k++) {
+					cC[iwAB+j*nshots+i].r += cA[iwnA+k*nshots+i].r*cB[iwnB+j*nshots+k].r - cA[iwnA+k*nshots+i].i*cB[iwnB+j*nshots+k].i;
+					cC[iwAB+j*nshots+i].i += cA[iwnA+k*nshots+i].r*cB[iwnB+j*nshots+k].i + cA[iwnA+k*nshots+i].i*cB[iwnB+j*nshots+k].r;
+                    }
+				}
+			}
+*/
+
 			cgemm_(transa, transb, &NA, &NB, &nshots, &alpha.r, 
 				&cA[iwnA].r, &NA, 
 				&cB[iwnB].r, &NB, &beta.r, 
 				&cC[iwAB].r, &NC); 	
+
 //				memcpy(&cC[iwAB].r, &cB[iwnA].r, sizeof(float)*2*nstationA*nshots);
 		}
 		else if (mdd==1) { /* Multi Dimensional deconvolution */

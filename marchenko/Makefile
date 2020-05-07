@@ -7,7 +7,7 @@ include ../Make_include
 #OPTC += -g -traceback #-check-pointers=rw -check-pointers-undimensioned
 
 
-ALL: fmute marchenko marchenko_primaries
+ALL: fmute marchenko marchenko_primaries marchenko_tshift
 
 SRCJ	= fmute.c \
 		getFileInfo.c  \
@@ -27,6 +27,22 @@ SRCH	= marchenko.c \
 		readShotData.c \
 		readTinvData.c \
 		applyMute.c \
+		applyMute_tshift.c \
+		writeData.c \
+		writeDataIter.c \
+		wallclock_time.c \
+		name_ext.c  \
+		verbosepkg.c  \
+		atopkge.c \
+		docpkge.c \
+		getpars.c
+
+SRCT	= marchenko_tshift.c \
+		getFileInfo.c  \
+		readData.c \
+		readShotData.c \
+		readTinvData.c \
+		applyMute_tshift.c \
 		writeData.c \
 		writeDataIter.c \
 		wallclock_time.c \
@@ -61,6 +77,11 @@ OBJH	= $(SRCH:%.c=%.o)
 
 marchenko:	$(OBJH) 
 	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o marchenko $(OBJH) $(LIBS)
+
+OBJT	= $(SRCT:%.c=%.o)
+
+marchenko_tshift:	$(OBJT) 
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o marchenko_tshift $(OBJT) $(LIBS)
 
 OBJP	= $(SRCP:%.c=%.o)
 

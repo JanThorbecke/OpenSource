@@ -170,7 +170,12 @@ int main (int argc, char **argv)
 	if (!getparfloat("cjB", &cjB)) cjB = 1.;
 
 #ifdef _OPENMP
-	npes = atoi(getenv("OMP_NUM_THREADS"));
+    npes   = omp_get_max_threads();
+    /* parallelisation is over number of shot positions (nshots) */
+    if (npes == 0) {
+        vmess("Number of OpenMP threads set to %d (was %d)", 1, npes);
+        omp_set_num_threads(1);
+    }
 	assert(npes != 0);
 	if (verbose) fprintf(stderr,"Number of OpenMP thread's is %d\n", npes);
 #else
