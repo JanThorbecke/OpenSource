@@ -173,6 +173,12 @@ typedef struct _sourcePar { /* Source Array Parameters */
 	long circle;
 	long array;
 	long random;
+	float Mxx;
+	float Mxy;
+	float Mxz;
+	float Myy;
+	float Myz;
+	float Mzz;
 	float *tbeg;
 	float *tend;
 	long multiwav;

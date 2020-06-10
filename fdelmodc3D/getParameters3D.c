@@ -211,6 +211,7 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 	dt = mod->dt;
 
 	if (!getparlong("src_type",&src->type)) src->type=1;
+	if (!getparfloat("src_Mxx",&src->Mxx)) src->Mxx=0.0;
 	if (!getparlong("src_orient",&src->orient)) {
 		src->orient=1;
 		if (getparlong("dipsrc",&src->orient)) src->orient=2; // for compatability with DELPHI's fdacmod
@@ -1035,6 +1036,8 @@ criteria we have imposed.*/
 			case 6 : fprintf(stderr,"Fx "); break;
 			case 7 : fprintf(stderr,"Fz "); break;
 			case 8 : fprintf(stderr,"P-potential"); break;
+			case 9 : fprintf(stderr,"Double-couple"); break;
+			case 10 : fprintf(stderr,"Moment tensor"); break;
 		}
 		fprintf(stderr,"\n");
 		if (wav->random) vmess("Wavelet has a random signature with fmax=%.2f", wav->fmax);

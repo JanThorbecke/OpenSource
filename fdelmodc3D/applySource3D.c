@@ -217,34 +217,43 @@ long applySource3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, l
 			if (src.type == 1) {
 				if (src.orient==1) { /* monopole */
 					txx[iy*n1*n2+ix*n1+iz] += src_ampl;
+					tyy[iy*n1*n2+ix*n1+iz] += src_ampl;
 					tzz[iy*n1*n2+ix*n1+iz] += src_ampl;
 				}
 				else if (src.orient==2) { /* dipole +/- */
 					txx[iy*n1*n2+ix*n1+iz] += src_ampl;
+					tyy[iy*n1*n2+ix*n1+iz] += src_ampl;
 					tzz[iy*n1*n2+ix*n1+iz] += src_ampl;
 					txx[iy*n1*n2+ix*n1+iz+1] -= src_ampl;
+					tyy[iy*n1*n2+ix*n1+iz+1] -= src_ampl;
 					tzz[iy*n1*n2+ix*n1+iz+1] -= src_ampl;
 				}
 				else if (src.orient==3) { /* dipole - + */
 					txx[iy*n1*n2+ix*n1+iz] += src_ampl;
+					tyy[iy*n1*n2+ix*n1+iz] += src_ampl;
 					tzz[iy*n1*n2+ix*n1+iz] += src_ampl;
 					txx[iy*n1*n2+(ix-1)*n1+iz] -= src_ampl;
+					tyy[iy*n1*n2+(ix-1)*n1+iz] -= src_ampl;
 					tzz[iy*n1*n2+(ix-1)*n1+iz] -= src_ampl;
 				}
 				else if (src.orient==4) { /* dipole +/0/- */
 					if (iz > ibndz) {
 						txx[iy*n1*n2+ix*n1+iz-1]+= 0.5*src_ampl;
+						tyy[iy*n1*n2+ix*n1+iz-1]+= 0.5*src_ampl;
 						tzz[iy*n1*n2+ix*n1+iz-1]+= 0.5*src_ampl;
 					}
 					if (iz < mod.nz+ibndz-1) {
 						txx[iy*n1*n2+ix*n1+iz+1] -= 0.5*src_ampl;
+						tyy[iy*n1*n2+ix*n1+iz+1] -= 0.5*src_ampl;
 						tzz[iy*n1*n2+ix*n1+iz+1] -= 0.5*src_ampl;
 					}
 				}
 				else if (src.orient==5) { /* dipole + - */
 					txx[iy*n1*n2+ix*n1+iz] += src_ampl;
+					tyy[iy*n1*n2+ix*n1+iz] += src_ampl;
 					tzz[iy*n1*n2+ix*n1+iz] += src_ampl;
 					txx[iy*n1*n2+(ix+1)*n1+iz] -= src_ampl;
+					tyy[iy*n1*n2+(ix+1)*n1+iz] -= src_ampl;
 					tzz[iy*n1*n2+(ix+1)*n1+iz] -= src_ampl;
 				}
 			}

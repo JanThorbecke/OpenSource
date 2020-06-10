@@ -3084,6 +3084,7 @@ MID 	left 	mid 	mid
 			ize = mod.ieYz;
 			
 			ib = (bnd.ntap+ixo-1);
+
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma ivdep
@@ -3166,7 +3167,7 @@ MID 	left 	mid 	mid
 #pragma ivdep
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
-						vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
+							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
 										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
 											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
 											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
