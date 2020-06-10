@@ -48,14 +48,6 @@ char *sdoc[] = {
 " Optional parameters: ",
 " ",
 "   file_out=out.su .......... Filename of the output",
-"   fmin=0.0 ................. Minimum of the frequency range",
-"   fmax=70.0 ................ Maximum of the frequency range",
-"   src_velox=1500.0 ......... Velocity of the x-angle of the plane wave",
-"   src_veloy=1500.0 ......... Velocity of the y-angle of the plane wave",
-"   src_anglex=0.0 ........... x-angle of the plane wave",
-"   src_angley=0.0 ........... y-angle of the plane wave",
-"   numb=0 ................... Starting number of the level for the image",
-"   dnumb=1 .................. Increment number of the level for the image",
 "   verbose=1 ................ Give detailed information of process",
 NULL};
 
@@ -63,10 +55,10 @@ int main (int argc, char **argv)
 {
 	FILE	*fp_gmin, *fp_ray, *fp_amp, *fp_out;
 	char	*file_gmin, *file_ray, *file_amp, *file_out, fbr[100], fer[100], fba[100], fea[100], fins[100], fin2[100], numb1[100], *ptr;
-	float	*gmin, *conv, *time, *amp, *image, fmin, fmax;
-	float	dt, dy, dx, dz, t0, y0, x0, scl, *shift;
+	float	*gmin, *conv, *time, *amp, *image, fmin, fmax, *delay;
+	float	dt, dy, dx, dz, t0, y0, x0, scl;
 	float	dt_ray, dy_ray, dx_ray, t0_ray, y0_ray, x0_ray, scl_ray, px, py, src_velox, src_veloy, src_anglex, src_angley, grad2rad;
-	long	nshots, nt, ny, nx, ntr, delay;
+	long	nshots, nt, ny, nx, ntr;
 	long	nray, nt_ray, ny_ray, nx_ray, ntr_ray;
     long    verbose, ix, iy, it, iz, is, *gx, *gy, *gz, numb, dnumb, pos, nzs, file_det;
     size_t  ret;
@@ -155,7 +147,6 @@ int main (int argc, char **argv)
         vmess("***********************************************************");
 	}
    
-    nray = 0;
     sprintf(fins,"z%li",0);
     sprintf(file_ray,"%s%s%s",fbr,fins,fer);
     getFileInfo3D(file_ray, &nx_ray, &nt_ray, &ny_ray, &nray, &dx_ray, &dt_ray, &dy_ray, &x0_ray, &t0_ray, &y0_ray, &scl_ray, &ntr_ray);
@@ -179,6 +170,7 @@ int main (int argc, char **argv)
 	hdr_gmin    = (segy *)calloc(nshots*nx*ny,sizeof(segy));	
 	gmin        = (float *)calloc(nshots*nx*ny*nt,sizeof(float));
 	hdr_out     = (segy *)calloc(nray*nshots,sizeof(segy));	
+	delay       = (float *)calloc(nx*ny,sizeof(float));
 
 	image       = (float *)calloc(nray*nshots,sizeof(float));
 	gx          = (long *)calloc(nray*nshots,sizeof(long));
@@ -192,40 +184,38 @@ int main (int argc, char **argv)
     *   Add the delay in case the plane wave is at an angle
     *----------------------------------------------------------------------------*/
 
-    shift = (float *)calloc(nx*ny,sizeof(float));
 	grad2rad = 17.453292e-3;
 	px = sin(src_anglex*grad2rad)/src_velox;
 	py = sin(src_angley*grad2rad)/src_veloy;
-	if (verbose) vmess("px value is %f and py value is %f",px,py);
 
-	// if (py < 0.0) {
-	// 	for (iy=0; iy<ny; iy++) {
-	// 		if (px < 0.0) {
-	// 			for (ix=0; ix<nx; ix++) {
-	// 				shift[iy*nx+ix] = fabsf((nx-1-ix)*dx*px) + fabsf((ny-1-iy)*dy*py);
-	// 			}
-	// 		}
-	// 		else {
-	// 			for (ix=0; ix<nx; ix++) {
-	// 				shift[iy*nx+ix] = ix*dx*px + fabsf((ny-1-iy)*dy*py);
-	// 			}
-	// 		}
-	// 	}
-	// }
-	// else {
-	// 	for (iy=0; iy<ny; iy++) {
-	// 		if (px < 0.0) {
-	// 			for (ix=0; ix<nx; ix++) {
-	// 				shift[iy*nx+ix] = fabsf((nx-1-ix)*dx*px) + iy*dy*py;
-	// 			}
-	// 		}
-	// 		else {
-	// 			for (ix=0; ix<nx; ix++) {
-	// 				shift[iy*nx+ix] = ix*dx*px + iy*dy*py;
-	// 			}
-	// 		}
-	// 	}
-	// }
+	if (py < 0.0) {
+		for (iy=0; iy<ny; iy++) {
+			if (px < 0.0) {
+				for (ix=0; ix<nx; ix++) {
+					delay[iy*nx+ix] = fabsf((nx-1-ix)*dx*px) + fabsf((ny-1-iy)*dy*py);
+				}
+			}
+			else {
+				for (ix=0; ix<nx; ix++) {
+					delay[iy*nx+ix] = ix*dx*px + fabsf((ny-1-iy)*dy*py);
+				}
+			}
+		}
+	}
+	else {
+		for (iy=0; iy<ny; iy++) {
+			if (px < 0.0) {
+				for (ix=0; ix<nx; ix++) {
+					delay[iy*nx+ix] = fabsf((nx-1-ix)*dx*px) + iy*dy*py;
+				}
+			}
+			else {
+				for (ix=0; ix<nx; ix++) {
+					delay[iy*nx+ix] = ix*dx*px + iy*dy*py;
+				}
+			}
+		}
+	}
 
 	/*----------------------------------------------------------------------------*
     *   Apply the imaging condition
@@ -246,40 +236,16 @@ int main (int argc, char **argv)
 		readSnapData3D(fin2, time, hdr_time, nray, 1, ny, nx, 0, 1, 0, ny, 0, nx);
         sprintf(fin2,"%s%s%s",fba,fins,fea);
 		readSnapData3D(file_amp, amp,  hdr_amp,  nray, 1, ny, nx, 0, 1, 0, ny, 0, nx);
-
 		for (is = 0; is < nray; is++) {
 			gx[is*nshots+iy] = hdr_time[is*ny].sx;
 			gy[is*nshots+iy] = hdr_time[is*ny].sy;
 			gz[is*nshots+iy] = hdr_time[is*ny].sdepth;
-
-			x0_ray = ((float)gx[is*nshots+iy])/1000.0;
-			y0_ray = ((float)gy[is*nshots+iy])/1000.0;
-
-			if (py < 0.0) {
-				if (px < 0.0) {
-					delay = NINT(fabsf((x0-x0_ray)*px)/dt) + NINT(fabsf((y0-y0_ray)*py)/dt);
-				}
-				else {
-					delay = NINT((x0_ray-x0)*px/dt) + NINT(fabsf((y0-y0_ray)*py)/dt);
-				}
-			}
-			else {
-				if (px < 0.0) {
-					delay = NINT(fabsf((x0-x0_ray)*px)/dt) + NINT((y0_ray-y0)*py/dt);
-				}
-				else {
-					delay = NINT((x0_ray-x0)*px/dt) + NINT((y0_ray-y0)*py/dt);
-				}
-			}
-
-			if (delay > nt-1) delay = nt-1;
-
 			for (it = 0; it < nx*ny*nt; it++) {
 				conv[it] = gmin[iy*nx*ny*nt+it];
 			}
-			timeShift(&conv[0],nt,nx*ny,dt,&time[is*ny*nx],&amp[is*ny*nx],shift,fmin,fmax);
+			timeShift(&conv[0],nt,nx*ny,dt,&time[is*ny*nx],&amp[is*ny*nx],delay,fmin,fmax);
 			for (ix = 0; ix < ny*nx; ix++) {
-				image[is*nshots+iy] += conv[ix*nt+delay]*dx*dy*dt;
+				image[is*nshots+iy] += conv[ix*nt]*dx*dy*dt;
 			}
 		}
 

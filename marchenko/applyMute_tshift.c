@@ -93,10 +93,10 @@ void applyMute_tshift( float *data, int *mute, int smooth, int above, int Nfoc, 
                 imute = ixpos[i];
                 tmute = mute[isyn*nxs+imute];
 				ts = tsynW[isyn*nxs+imute];
-                for (j = -2*ts+tmute-shift-smooth,l=0; j < -2*ts+tmute-shift; j++,l++) {
+                for (j = MAX(0,-2*ts+tmute-shift-smooth),l=0; j < MAX(0,-2*ts+tmute-shift); j++,l++) {
                     Nig[j] *= costaper[smooth-l-1];
                 }
-                for (j = 0; j < -2*ts+tmute-shift-smooth-1; j++) {
+                for (j = 0; j < MAX(0,-2*ts+tmute-shift-smooth-1); j++) {
                     Nig[j] = 0.0;
                 }
                 for (j = nt+1-tmute+shift+smooth; j < nt; j++) {

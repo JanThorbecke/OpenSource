@@ -108,8 +108,15 @@ long readModel3D(modPar mod, bndPar bnd, float ***rox, float ***roy, float ***ro
    	assert(nread == TRCBYTES);
 
 	//cs = (float *)calloc(nz*ny*nx,sizeof(float));
+	cs = (float ***)alloc3float(mod);
+    for (iy = 0; iy < ny; iy++) {
+        for (ix = 0; ix < nx; ix++) {
+            for (iz = 0; iz < nz; iz++) {
+                cs[iy][ix][iz] = 0.0;
+            }
+        }
+    }
 	if (mod.ischeme>2 && mod.ischeme!=5) {
-		cs = (float ***)alloc3float(mod);
 		fpcs = fopen( mod.file_cs, "r" );
    		assert( fpcs != NULL);
    		nread = fread(&hdr, 1, TRCBYTES, fpcs);
@@ -1727,9 +1734,7 @@ long readModel3D(modPar mod, bndPar bnd, float ***rox, float ***roy, float ***ro
 
 	free3float(cp);
 	free3float(ro);
-	if (mod.ischeme>2 && mod.ischeme!=5) {
-   	    free3float(cs);
-	}
+    free3float(cs);
 
     return 0;
 }
