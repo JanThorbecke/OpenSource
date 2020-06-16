@@ -87,23 +87,34 @@ char *sdoc[] = {
 " Optional parameters: ",
 " ",
 "   file_out= ................ Filename of the output",
+"   direction=z .............. The direction over which the data is stacked, can be x, y or z",
 "   numb= .................... integer number of first snapshot file",
 "   dnumb= ................... integer number of increment in snapshot files",
 "   zmax= .................... Integer number of maximum depth level",
-"   inx= ..................... Number of sources per depth level",
 "   zrcv= .................... z-coordinate of first receiver location",
 "   xrcv= .................... x-coordinate of first receiver location",
 "   zfps=0 ................... virtual source data are in SU format (=0) or zfp compressed (=1)",
 "   zfpr=0 ................... virtual receiver data are in SU format (=0) or zfp compressed (=1)",
-"   shift=0.0 ................ shift per shot",
-"   scheme=0 ................. Scheme used for retrieval. 0=Marchenko,",
-"                              1=Marchenko with multiple sources, 2=classical",
+"   cp=1000.0 ................ Velocity at the top of the medium in m/s",
+"   rho=1000.0 ............... Density at the top of the medium in kg/m^3",
+"   scheme=0 ................. Scheme for the retrieval",
+"   .......................... scheme=0 Marchenko homogeneous Green's function retrieval with G source",
+"   .......................... scheme=1 Marchenko homogeneous Green's function retrieval with f2 source",
+"   .......................... scheme=2 Marchenko Green's function retrieval with source depending on virtual receiver location",
+"   .......................... scheme=3 Marchenko Green's function retrieval with G source",
+"   .......................... scheme=4 Marchenko Green's function retrieval with f2 source",
+"   .......................... scheme=5 Classical homogeneous Green's function retrieval",
+"   .......................... scheme=6 Marchenko homogeneous Green's function retrieval with multiple G sources",
+"   .......................... scheme=7 Marchenko Green's function retrieval with multiple G sources",
+"   .......................... scheme=8 f1+ redatuming",
+"   .......................... scheme=9 f1- redatuming",
+"   .......................... scheme=10 2i IM(f1) redatuming",
 NULL};
 
 int main (int argc, char **argv)
 {
 	FILE    *fp_in, *fp_shot, *fp_out;
-	char    *fin, *fshot, *fout, *ptr, fbegin[100], fend[100], fins[100], fin2[100];
+	char    *fin, *fshot, *fout, *ptr, fbegin[100], fend[100], fins[100], fin2[100], *direction;
 	float   *rcvdata, *Ghom, *shotdata, *shotdata_jkz, rho, fmin, fmax;
 	float   dt, dy, dx, t0, y0, x0, xmin, xmax1, sclsxgx, dxrcv, dyrcv, dzrcv;
 	float   *conv, *conv2, *tmp1, *tmp2, cp, shift;
@@ -132,28 +143,40 @@ int main (int argc, char **argv)
 	if (!getparlong("numb", &numb)) numb=0;
     if (!getparlong("dnumb", &dnumb)) dnumb=1;
 	if (!getparlong("scheme", &scheme)) scheme = 0;
-	if (!getparlong("ntmax", &ntmax)) ntmax = 0;
 	if (!getparlong("verbose", &verbose)) verbose = 0;
 	if (!getparlong("zfps", &zfps)) zfps = 0;
 	if (!getparlong("zfpr", &zfpr)) zfpr = 0;
+    if (!getparstring("direction", &direction)) direction = "z";
 	if (fin == NULL) verr("Incorrect vr input");
 	if (fshot == NULL) verr("Incorrect vs input");
 
     /*----------------------------------------------------------------------------*
     *   Split the filename so the number can be changed
     *----------------------------------------------------------------------------*/
-    count = dignum(numb);
+    // count = dignum(numb);
+	// if (dnumb == 0) dnumb = 1;
+	// sprintf(fins,"z%li",numb);
+	// fp_in = fopen(fin, "r");
+	// if (fp_in == NULL) {
+	// 	verr("error on opening basefile=%s", fin);
+	// }
+	// fclose(fp_in);
+	// ptr  = strstr(fin,fins);
+	// pos1 = ptr - fin;
+   	// sprintf(fbegin,"%*.*s", pos1, pos1, fin);
+   	// sprintf(fend,"%s", fin+pos1+count+1);
+
 	if (dnumb == 0) dnumb = 1;
-	sprintf(fins,"z%li",numb);
+	sprintf(fins,"%s%li",direction,numb);
 	fp_in = fopen(fin, "r");
 	if (fp_in == NULL) {
 		verr("error on opening basefile=%s", fin);
 	}
 	fclose(fp_in);
 	ptr  = strstr(fin,fins);
-	pos1 = ptr - fin;
-   	sprintf(fbegin,"%*.*s", pos1, pos1, fin);
-   	sprintf(fend,"%s", fin+pos1+count+1);
+	pos1 = ptr - fin + 1;
+   	sprintf(fbegin,"%*.*s", pos1-1, pos1-1, fin);
+   	sprintf(fend,"%s", fin+pos1+1);
 
     /*----------------------------------------------------------------------------*
     *   Determine the amount of files to be read
@@ -161,7 +184,7 @@ int main (int argc, char **argv)
 	file_det = 1;
 	nzvr=0;
 	while (file_det) {
-        sprintf(fins,"z%li",nzvr*dnumb+numb);
+        sprintf(fins,"%s%li",direction,nzvr*dnumb+numb);
         sprintf(fin,"%s%s%s",fbegin,fins,fend);
         fp_in = fopen(fin, "r");
         if (fp_in == NULL) {
@@ -189,7 +212,7 @@ int main (int argc, char **argv)
     /*----------------------------------------------------------------------------*
     *   Determine the other sizes of the files
     *----------------------------------------------------------------------------*/
-    sprintf(fins,"z%li",numb);
+    sprintf(fins,"%s%li",direction,numb);
     sprintf(fin,"%s%s%s",fbegin,fins,fend);
     if (zfpr) getVirReczfp(fin, &nxvr, &nyvr, &nxr, &nyr, &ntr);
     else getVirRec(fin, &nxvr, &nyvr, &nxr, &nyr, &ntr);
@@ -227,7 +250,7 @@ int main (int argc, char **argv)
         vmess("Number of samples for each source   : x=%li y=%li t=%li",nxvs,nyvs,ntvs);
         vmess("Sampling distance is                : x=%.3f y=%.3f t=%.3f",dx,dy,dt);
         vmess("Scaling of the transforms           : %.3f",scl);
-        vmess("Transform operators                 : fmin=%.1f fmax=%.1f cp=%.1f",fmin,fmax,cp);
+        vmess("Transform operators                 : fmin=%.1f fmax=%.1f cp=%.1f rho=%.1f",fmin,fmax,cp,rho);
     }
 
     if (ntr!=ntvs) verr("number of t-samples between virtual source (%li) and virtual receivers (%li) is not equal",ntvs,ntr);
@@ -336,7 +359,7 @@ int main (int argc, char **argv)
         }
         if (scheme==6 || scheme==8 || scheme==9 || scheme==10) tmp1 = (float *)calloc(nyr*nxr*ntr,sizeof(float));
 
-        sprintf(fins,"z%li",ir*dnumb+numb);
+        sprintf(fins,"%s%li",,direction,ir*dnumb+numb);
 		sprintf(fin2,"%s%s%s",fbegin,fins,fend);
         fp_in = fopen(fin2, "r");
 		if (fp_in == NULL) {
