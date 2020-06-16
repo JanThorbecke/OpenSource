@@ -1303,13 +1303,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
-						vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+						vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+							c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+								tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+								txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+							c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+								tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+								txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 
 						vz[iy*n1*n2+ix*n1+iz] *= bnd.tapz[ib-iz];
 					}
@@ -1326,13 +1326,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
-							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+								c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+									tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+								c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+									tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 		
 							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.ntap+(ibz-iz)];
 						}
@@ -1348,13 +1348,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
-								vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+								vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+									c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+										tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+									c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+										tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 			
 								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iby-iy)*bnd.ntap*bnd.ntap+(ix-ibx)*bnd.ntap+(ibz-iz)];
 							}
@@ -1371,13 +1371,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
-								vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+								vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+									c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+										tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+									c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+										tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 			
 								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ix-ibx)*bnd.ntap+(ibz-iz)];
 							}
@@ -1404,13 +1404,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
-							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+								vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+									c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+										tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+									c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+										tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 							
 							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.ntap+(ibz-iz)];
 						}
@@ -1426,13 +1426,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
-								vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+								vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+									c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+										tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+									c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+										tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 			
 								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iby-iy)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(ibz-iz)];
 							}
@@ -1449,13 +1449,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
-								vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+								vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+									c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+										tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+									c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+										tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 			
 								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(ibz-iz)];
 							}
@@ -1476,13 +1476,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
-							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+								c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+									tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+								c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+									tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 		
 							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(ibz-iz)];
 						}
@@ -1500,13 +1500,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
-							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+								c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+									tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+								c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+									tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 		
 							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iy-iby)*bnd.ntap+(ibz-iz)];
 						}
@@ -2570,13 +2570,14 @@ MID 	left 	mid 	mid
 #pragma ivdep
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
-						vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+						vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+							c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+								tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+								txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+							c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+								tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+								txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+
 						vz[iy*n1*n2+ix*n1+iz] *= bnd.tapz[iz-ib];
 					}
 				}
@@ -2594,13 +2595,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
-							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+								c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+									tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+								c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+									tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 							
 							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.ntap+(iz-ibz)];
 						}
@@ -2617,13 +2618,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
-								vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+								vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+									c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+										tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+									c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+										tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 			
 								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iby-iy)*bnd.ntap*bnd.ntap+(ix-ibx)*bnd.ntap+(iz-ibz)];
 							}
@@ -2643,13 +2644,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
-								vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+								vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+									c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+										tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+									c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+										tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 			
 								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ix-ibx)*bnd.ntap+(iz-ibz)];
 							}
@@ -2677,13 +2678,13 @@ MID 	left 	mid 	mid
 					for (iy=iyo; iy<iye; iy++) {
 						#pragma ivdep
 						for (iz=izo; iz<ize; iz++) {
-							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+								c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+									tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+								c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+									tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 							
 							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.ntap+(iz-ibz)];
 						}
@@ -2699,13 +2700,13 @@ MID 	left 	mid 	mid
 						for (iy=iyo; iy<iye; iy++) {
 							#pragma ivdep
 							for (iz=izo; iz<ize; iz++) {
-								vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+								vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+									c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+										tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+									c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+										tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 			
 								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iby-iy)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(iz-ibz)];
 							}
@@ -2722,13 +2723,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
-								vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+								vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+									c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+										tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+									c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+										tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+										txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 			
 								vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxyz[(iy-iby)*bnd.ntap*bnd.ntap+(ibx-ix)*bnd.ntap+(iz-ibz)];
 							}
@@ -2749,13 +2750,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
-							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+								c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+									tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+								c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+									tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 		
 							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(iz-ibz)];
 						}
@@ -2773,13 +2774,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
-							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+								c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+									tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+								c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+									tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 		
 							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iy-iby)*bnd.ntap+(iz-ibz)];
 						}
@@ -3113,7 +3114,7 @@ MID 	left 	mid 	mid
 #pragma ivdep
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
-							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
+						vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
 										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
 											tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
 											txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
@@ -3167,13 +3168,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
-							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+						vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+							c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+								tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+								txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+							c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+								tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+								txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 						
 						vz[iy*n1*n2+ix*n1+iz] *= bnd.tapz[ib-ix];
 					}
@@ -3190,13 +3191,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
-							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+								c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+									tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+								c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+									tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 		
 							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(ibx-ix)];
 						}
@@ -3214,13 +3215,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
-							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+								c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+									tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+								c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+									tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 		
 							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iy-iby)*bnd.ntap+(ibx-ix)];
 						}
@@ -3619,13 +3620,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
-						vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+						vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+							c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+								tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+								txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+							c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+								tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+								txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 		
 						vz[iy*n1*n2+ix*n1+iz] *= bnd.tapz[ix-ib]; 
 					}
@@ -3643,13 +3644,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
-							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+								c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+									tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+								c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+									tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 		
 							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iby-iy)*bnd.ntap+(ix-ibx)];
 						}
@@ -3668,13 +3669,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
-							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-										c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-										c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-											tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-											txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+								c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+									tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+								c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+									tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+									txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 		
 							vz[iy*n1*n2+ix*n1+iz]   *= bnd.tapxz[(iy-iby)*bnd.ntap+(ix-ibx)];
 						}
@@ -3839,13 +3840,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
-						vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-									c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-										tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-										txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-									c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-										tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-										txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+						vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+							c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+								tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+								txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+							c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+								tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+								txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 		
 						vz[iy*n1*n2+ix*n1+iz] *= bnd.tapy[iby-iy]; 
 					}
@@ -4008,13 +4009,13 @@ MID 	left 	mid 	mid
 #pragma ivdep
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
-						vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-									c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-										tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-										txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-									c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-										tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-										txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+						vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
+							c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+								tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+								txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+							c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+								tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+								txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
 		
 						vz[iy*n1*n2+ix*n1+iz] *= bnd.tapy[iy-iby];
 					}
