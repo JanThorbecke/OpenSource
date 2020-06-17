@@ -27,8 +27,13 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 	int isrc, ix, iz, n1;
 	int id1, id2;
 	float src_ampl, time, scl, dt, sdx;
-	float Mxx, Mzz, Mxz, rake;
+	float Mxx, Mzz, Mxz, rake, strike;
 	static int first=1;
+
+	if (!getparfloat("strike",&strike)) strike=0.5*M_PI;
+	if (!getparfloat("rake",&rake)) rake=0.5*M_PI;
+	if (strike!=0.5*M_PI) strike = M_PI*(strike/180.0);
+	if (rake!=0.5*M_PI) rake = M_PI*(rake/180.0);
 
 	if (src.type==6) {
     	ibndz = mod.ioXz;
@@ -338,9 +343,8 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
                 }
 			}
             else if(src.type == 9) {
-				rake = 0.5*M_PI;
-				Mxx = -1.0*(sin(src.dip)*cos(rake)*sin(2.0*src.strike)+sin(src.dip*2.0)*sin(rake)*sin(src.strike)*sin(src.strike));
-				Mxz = -1.0*(cos(src.dip)*cos(rake)*cos(src.strike)+cos(src.dip*2.0)*sin(rake)*sin(src.strike));
+				Mxx = -1.0*(sin(src.dip)*cos(rake)*sin(2.0*strike)+sin(src.dip*2.0)*sin(rake)*sin(strike)*sin(strike));
+				Mxz = -1.0*(cos(src.dip)*cos(rake)*cos(strike)+cos(src.dip*2.0)*sin(rake)*sin(strike));
 				Mzz = sin(src.dip*2.0)*sin(rake);
 
 				txx[ix*n1+iz] -= Mxx*src_ampl;
