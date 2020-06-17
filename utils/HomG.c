@@ -119,7 +119,7 @@ int main (int argc, char **argv)
 	float   dt, dy, dx, t0, y0, x0, xmin, xmax1, sclsxgx, dxrcv, dyrcv, dzrcv;
 	float   *conv, *conv2, *tmp1, *tmp2, cp, shift;
 	long    nshots, ntvs, nyvs, nxvs, ntraces, ret, ix, iy, it, is, ir, ig, file_det, verbose;
-    long    ntr, nxr, nyr, nsr, i, l, j, k, nxvr, nyvr, nzvr, count;
+    long    ntr, nxr, nyr, nsr, i, l, j, k, nxvr, nyvr, nzvr, count, num;
     float   dtr, dxr, dyr, ftr, fxr, fyr, sclr, scl;
 	long    pos1, npos, zmax, numb, dnumb, scheme, ntmax, ntshift, shift_num, zfps, zfpr, size;
     long    ixr, iyr, zsrc, zrcv, *xvr, *yvr, *zvr;
@@ -150,6 +150,10 @@ int main (int argc, char **argv)
 	if (fin == NULL) verr("Incorrect vr input");
 	if (fshot == NULL) verr("Incorrect vs input");
 
+    if (strcmp(direction,"x") != 0 && strcmp(direction,"y") != 0 && strcmp(direction,"z") != 0) {
+		verr("Direction needs to be either x, y or z");
+	}
+
     /*----------------------------------------------------------------------------*
     *   Split the filename so the number can be changed
     *----------------------------------------------------------------------------*/
@@ -166,6 +170,13 @@ int main (int argc, char **argv)
    	// sprintf(fbegin,"%*.*s", pos1, pos1, fin);
    	// sprintf(fend,"%s", fin+pos1+count+1);
 
+    num = numb;
+    count = 0;
+    while (num != 0) {
+        count++;
+        num /= 10;
+    }
+
 	if (dnumb == 0) dnumb = 1;
 	sprintf(fins,"%s%li",direction,numb);
 	fp_in = fopen(fin, "r");
@@ -176,7 +187,7 @@ int main (int argc, char **argv)
 	ptr  = strstr(fin,fins);
 	pos1 = ptr - fin + 1;
    	sprintf(fbegin,"%*.*s", pos1-1, pos1-1, fin);
-   	sprintf(fend,"%s", fin+pos1+1);
+   	sprintf(fend,"%s", fin+pos1+count);
 
     /*----------------------------------------------------------------------------*
     *   Determine the amount of files to be read
@@ -220,7 +231,9 @@ int main (int argc, char **argv)
     if (verbose) {
         if (zfpr) vmess("Virtual receiver data are zfp compressed");
         else vmess("Virtual receiver data are in SU format");
-        vmess("Number of virtual receivers         : %li (x=%li) (y=%li) (z=%li)",nxvr*nyvr*nzvr,nxvr,nyvr,nzvr);
+        if (strcmp(direction,"z") == 0) vmess("Number of virtual receivers         : %li (x=%li) (y=%li) (z=%li)",nxvr*nyvr*nzvr,nxvr,nyvr,nzvr);
+        if (strcmp(direction,"x") == 0) vmess("Number of virtual receivers         : %li (x=%li) (y=%li) (z=%li)",nxvr*nyvr*nzvr,nzvr,nyvr,nxvr);
+        if (strcmp(direction,"y") == 0) vmess("Number of virtual receivers         : %li (x=%li) (y=%li) (z=%li)",nxvr*nyvr*nzvr,nxvr,nzvr,nyvr);
         vmess("Number of samples for each receiver : x=%li y=%li t=%li",nxr,nyr,ntr);
     }
 
@@ -262,7 +275,6 @@ int main (int argc, char **argv)
     if (zfps) readzfpdata(fshot, &shotdata[0], size);
 	else readSnapData3D(fshot, &shotdata[0], &hdr_shot[0], nshots, nxvs, nyvs, ntvs, 0, nxvs, 0, nyvs, 0, ntvs);
 
-	hdr_out     = (segy *)calloc(nxvr*nyvr,sizeof(segy));	
 	Ghom		= (float *)calloc(ntr*nxvr*nyvr*nzvr,sizeof(float));
 	xvr		    = (long *)malloc(nxvr*nyvr*nzvr*sizeof(long));
 	yvr		    = (long *)malloc(nxvr*nyvr*nzvr*sizeof(long));
@@ -359,7 +371,7 @@ int main (int argc, char **argv)
         }
         if (scheme==6 || scheme==8 || scheme==9 || scheme==10) tmp1 = (float *)calloc(nyr*nxr*ntr,sizeof(float));
 
-        sprintf(fins,"%s%li",,direction,ir*dnumb+numb);
+        sprintf(fins,"%s%li",direction,ir*dnumb+numb);
 		sprintf(fin2,"%s%s%s",fbegin,fins,fend);
         fp_in = fopen(fin2, "r");
 		if (fp_in == NULL) {
@@ -533,14 +545,67 @@ int main (int argc, char **argv)
 
 	free(shotdata);
 
-    if (nxvr>1) dxrcv = (float)((xvr[nzvr] - xvr[0])/1000.0);
-    else        dxrcv = 1.0;
-    if (nyvr>1) dyrcv = (float)((yvr[nxvr*nzvr] - yvr[0])/1000.0);
-    else        dyrcv = 1.0;
-    if (nzvr>1) dzrcv = (float)((zvr[1] - zvr[0])/1000.0);
-    else        dzrcv = 1.0;
+    if (strcmp(direction,"z") == 0) {
+        if (nxvr>1) dxrcv = (float)((xvr[nzvr] - xvr[0])/1000.0);
+        else        dxrcv = 1.0;
+        if (nyvr>1) dyrcv = (float)((yvr[nxvr*nzvr] - yvr[0])/1000.0);
+        else        dyrcv = 1.0;
+        if (nzvr>1) dzrcv = (float)((zvr[1] - zvr[0])/1000.0);
+        else        dzrcv = 1.0;
+    }
+    if (strcmp(direction,"y") == 0) {
+        ix = nzvr;
+        nzvr = nyvr;
+        nyvr = ix;
+	    tmp1 = (float *)calloc(nxvr*nyvr*nzvr,sizeof(float));
+        for (it=0; it<ntr; it++) {
+            for (iy=0; iy<nyvr*nxvr*nzvr; iy++) {
+                tmp1[iy] = Ghom[it*nyvr*nxvr*nzvr+iy];
+            }
+            for (iy=0; iy<nyvr; iy++) {
+                for (ix=0; ix<nxvr; ix++) {
+                    for (ir=0; ir<nzvr; ir++) {
+                        Ghom[it*nyvr*nxvr*nzvr+iy*nxvr*nzvr+ix*nzvr+ir] = tmp1[ir*nxvr*nyvr+ix*nyvr+iy];
+                    }
+                }
+            }
+        }
+        if (nxvr>1) dxrcv = (float)((xvr[nyvr] - xvr[0])/1000.0);
+        else        dxrcv = 1.0;
+        if (nyvr>1) dyrcv = (float)((yvr[1] - yvr[0])/1000.0);
+        else        dyrcv = 1.0;
+        if (nzvr>1) dzrcv = (float)((zvr[nxvr*nyvr] - zvr[0])/1000.0);
+        else        dzrcv = 1.0;
+        free(tmp1);
+    }
+    if (strcmp(direction,"x") == 0) {
+        ix = nzvr;
+        nzvr = nxvr;
+        nxvr = ix;
+	    tmp1 = (float *)calloc(nxvr*nyvr*nzvr,sizeof(float));
+        for (it=0; it<ntr; it++) {
+            for (iy=0; iy<nyvr*nxvr*nzvr; iy++) {
+                tmp1[iy] = Ghom[it*nyvr*nxvr*nzvr+iy];
+            }
+            for (iy=0; iy<nyvr; iy++) {
+                for (ix=0; ix<nxvr; ix++) {
+                    for (ir=0; ir<nzvr; ir++) {
+                        Ghom[it*nyvr*nxvr*nzvr+iy*nxvr*nzvr+ix*nzvr+ir] = tmp1[iy*nzvr*nxvr+ir*nxvr+ix];
+                    }
+                }
+            }
+        }
+        if (nxvr>1) dxrcv = (float)((xvr[1] - xvr[0])/1000.0);
+        else        dxrcv = 1.0;
+        if (nyvr>1) dyrcv = (float)((yvr[nzvr*nxvr] - yvr[0])/1000.0);
+        else        dyrcv = 1.0;
+        if (nzvr>1) dzrcv = (float)((zvr[nxvr] - zvr[0])/1000.0);
+        else        dzrcv = 1.0;
+        free(tmp1);
+    }
 
 	fp_out = fopen(fout, "w+");
+	hdr_out     = (segy *)calloc(nxvr*nyvr,sizeof(segy));	
 
     for (ir	= 0; ir < ntr; ir++) {
 		for (is = 0; is < nyvr; is++) {
@@ -563,8 +628,8 @@ int main (int argc, char **argv)
             	hdr_out[is*nxvr+ix].d2      = dxrcv;
 				hdr_out[is*nxvr+ix].sx      = hdr_shot[0].sx;
 				hdr_out[is*nxvr+ix].sy      = hdr_shot[0].sy;
-				hdr_out[is*nxvr+ix].gx      = xvr[ix*nzvr];
-				hdr_out[is*nxvr+ix].gy      = yvr[is*nxvr*nzvr];
+				hdr_out[is*nxvr+ix].gx      = 1000.0*((float)(xvr[0]/1000.0)+dxrcv*ix);
+				hdr_out[is*nxvr+ix].gy      = 1000.0*((float)(yvr[0]/1000.0)+dyrcv*is);
             	hdr_out[is*nxvr+ix].offset	= (hdr_out[is*nxvr+ix].gx - hdr_out[is*nxvr+ix].sx)/1000.0;
             }
 		}
