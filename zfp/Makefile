@@ -44,7 +44,7 @@ ifneq ($(BUILD_EXAMPLES),0)
 	@cd examples; $(MAKE) clean all
 endif
 
-install:
+install: all
 	-cp -rp include/* $I
 	-cp -rp lib/* $L
 
