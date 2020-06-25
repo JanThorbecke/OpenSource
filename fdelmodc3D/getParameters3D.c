@@ -57,6 +57,7 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 	float xsrc1, xsrc2, ysrc1, ysrc2, zsrc1, zsrc2, tsrc1, tsrc2, tlength, tactive;
 	float src_anglex, src_angley, src_velox, src_veloy, px, py, grad2rad, rdelay, scaledt;
 	float *xsrca, *ysrca, *zsrca, rrcv;
+	float Mxx, Myy, Mzz, Mxy, Myz, Mxz;
 	float rsrc, oxsrc, oysrc, ozsrc, dphisrc, ncsrc;
 	size_t nsamp;
 	long i, j, l;
@@ -211,6 +212,7 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 	dt = mod->dt;
 
 	if (!getparlong("src_type",&src->type)) src->type=1;
+	if (!getparfloat("src_Mxx",&src->Mxx)) src->Mxx=0.0;
 	if (!getparlong("src_orient",&src->orient)) {
 		src->orient=1;
 		if (getparlong("dipsrc",&src->orient)) src->orient=2; // for compatability with DELPHI's fdacmod
@@ -243,7 +245,7 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 	else {
 		dispfactor = 6;
 		//stabfactor = 0.606; /* courant number */
-		stabfactor = 0.496; //Joeri check: number changes in 3D case. Sei&Simes, 1995.
+		stabfactor = 0.495; //Joeri check: number changes in 3D case. Sei&Simes, 1995.
 		/*However as we will see in the sequel, the stability condition
 has only an indicative role. We will have to choose p = c. A t/Ax much less
 than the maximum allowed by the stability condition to fulfill the precision
@@ -1035,8 +1037,21 @@ criteria we have imposed.*/
 			case 6 : fprintf(stderr,"Fx "); break;
 			case 7 : fprintf(stderr,"Fz "); break;
 			case 8 : fprintf(stderr,"P-potential"); break;
+			case 9 : fprintf(stderr,"Double-couple"); break;
+			case 10 : fprintf(stderr,"Moment tensor"); break;
 		}
 		fprintf(stderr,"\n");
+		if (src->type==9) {
+			Mxx = -1.0*(sin(src->dip)*cos(src->rake)*sin(2.0*src->strike)+sin(src->dip*2.0)*sin(src->rake)*sin(src->strike)*sin(src->strike));
+			Myy = sin(src->dip)*cos(src->rake)*sin(2.0*src->strike)-sin(src->dip*2.0)*sin(src->rake)*cos(src->strike)*cos(src->strike);
+			Mzz = sin(src->dip*2.0)*sin(src->rake);
+			Mxz = -1.0*(cos(src->dip)*cos(src->rake)*cos(src->strike)+cos(src->dip*2.0)*sin(src->rake)*sin(src->strike));
+			Mxy = sin(src->dip)*cos(src->rake)*cos(src->strike*2.0)+0.5*(sin(src->dip*2.0)*sin(src->rake)*sin(src->strike*2.0));
+			Myz = -1.0*(cos(src->dip)*cos(src->rake)*sin(src->strike)-cos(src->dip*2.0)*sin(src->rake)*cos(src->strike));
+			vmess("Strike %.3f (%.2f degrees) Rake %.3f (%.2f degrees) Dip %.3f (%.2f degrees)",src->strike,180.0*src->strike/M_PI,src->rake,180.0*src->rake/M_PI,src->dip,180.0*src->dip/M_PI);
+			vmess("Mxx %.2f Myy %.2f Mzz %.2f",Mxx,Myy,Mzz);
+			vmess("Mxy %.2f Mxz %.2f Myz %.2f",Mxy,Mxz,Myz);
+		}
 		if (wav->random) vmess("Wavelet has a random signature with fmax=%.2f", wav->fmax);
 		if (src->n>1) {
 			vmess("*******************************************");

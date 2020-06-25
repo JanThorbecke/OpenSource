@@ -86,68 +86,71 @@ long elastic4dc_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, l
 
 	/* calculate vx for all grid points except on the virtual boundary*/
 #pragma omp for private (ix, iy, iz) nowait schedule(guided,1)
-    for (iy=mod.ioXy; iy<mod.ieXy; iy++) {
-	    for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
-#pragma ivdep
+	for (iy=mod.ioXy; iy<mod.ieXy; iy++) {
+        for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
+       #pragma ivdep 
             for (iz=mod.ioXz; iz<mod.ieXz; iz++) {
                 vx[iy*n2*n1+ix*n1+iz] -= rox[iy][ix][iz]*(
-                            c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
-                                txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
-                                txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
-                            c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
-                                txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
-                                txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
+                    c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
+                        txy[(iy+1)*n2*n1+ix*n1+iz] - txy[iy*n2*n1+ix*n1+iz] +
+                        txz[iy*n2*n1+ix*n1+iz+1]   - txz[iy*n2*n1+ix*n1+iz])    +
+                    c2*(txx[iy*n2*n1+(ix+1)*n1+iz] - txx[iy*n2*n1+(ix-2)*n1+iz] +
+                        txy[(iy+2)*n2*n1+ix*n1+iz] - txy[(iy-1)*n2*n1+ix*n1+iz] +
+                        txz[iy*n2*n1+ix*n1+iz+2]   - txz[iy*n2*n1+ix*n1+iz-1])  );
             }
         }
-	}
+    }
 
     /* calculate vy for all grid points except on the virtual boundary */
-#pragma omp for private (ix, iy, iz)  schedule(guided,1)
+#pragma omp for private (ix, iy, iz) nowait schedule(guided,1)
 	for (iy=mod.ioYy; iy<mod.ieYy; iy++) {
-	    for (ix=mod.ioYx; ix<mod.ieYx; ix++) {
-#pragma ivdep
+        for (ix=mod.ioYx; ix<mod.ieYx; ix++) {
+            #pragma ivdep
             for (iz=mod.ioYz; iz<mod.ieYz; iz++) {
                 vy[iy*n2*n1+ix*n1+iz] -= roy[iy][ix][iz]*(
-                            c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
-                                tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
-                                txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
-                            c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
-                                tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
-                                txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
+                    c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
+                        tyz[iy*n2*n1+ix*n1+iz+1]   - tyz[iy*n2*n1+ix*n1+iz] +
+                        txy[iy*n2*n1+(ix+1)*n1+iz] - txy[iy*n2*n1+ix*n1+iz])  +
+                    c2*(tyy[(iy+1)*n2*n1+ix*n1+iz] - tyy[(iy-2)*n2*n1+ix*n1+iz] +
+                        tyz[iy*n2*n1+ix*n1+iz+2]   - tyz[iy*n2*n1+ix*n1+iz-1] +
+                        txy[iy*n2*n1+(ix+2)*n1+iz] - txy[iy*n2*n1+(ix-1)*n1+iz])  );
             }
         }
-	}
+    }
 
 	/* calculate vz for all grid points except on the virtual boundary */
-#pragma omp for private (ix, iy, iz)  schedule(guided,1)
+#pragma omp for private (ix, iy, iz) schedule(guided,1) 
 	for (iy=mod.ioZy; iy<mod.ieZy; iy++) {
-	    for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
-#pragma ivdep
+        for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
+            #pragma ivdep 
             for (iz=mod.ioZz; iz<mod.ieZz; iz++) {
                 vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
-                            c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
-                                tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-                                txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
-                            c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
-                                tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
-                                txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
+                    c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
+                        tyz[(iy+1)*n2*n1+ix*n1+iz] - tyz[iy*n2*n1+ix*n1+iz] +
+                        txz[iy*n2*n1+(ix+1)*n1+iz] - txz[iy*n2*n1+ix*n1+iz])  +
+                    c2*(tzz[iy*n2*n1+ix*n1+iz+1]   - tzz[iy*n2*n1+ix*n1+iz-2] +
+                        tyz[(iy+2)*n2*n1+ix*n1+iz] - tyz[(iy-1)*n2*n1+ix*n1+iz] +
+                        txz[iy*n2*n1+(ix+2)*n1+iz] - txz[iy*n2*n1+(ix-1)*n1+iz])  );
             }
-        }
-	}
+        } 
+    }
 
     /* Add force source */
 	if (src.type > 5) {
          applySource3D(mod, src, wav, bnd, itime, ixsrc, iysrc, izsrc, vx, vy, vz, tzz, tyy, txx, txz, txy, tyz, rox, roy, roz, l2m, src_nwav, verbose);
 	}
-    
+
 	/* boundary condition clears velocities on boundaries */
+    // mod.ischeme=1;
     boundariesP3D(mod, bnd, vx, vy, vz, tzz, tyy, txx, txz, txy, tyz, rox, roy, roz, l2m, lam, mul, itime, verbose);
+    // mod.ischeme=5;
 
 	/* calculate Txx/tzz for all grid points except on the virtual boundary */
-#pragma omp	for private (ix, iy, iz, dvx, dvy, dvz) nowait schedule(guided,1)
-	for (iy=mod.ioPy; iy<mod.iePy; iy++) {
-	    for (ix=mod.ioPx; ix<mod.iePx; ix++) {
+#pragma omp for private (ix, iy, iz) schedule(guided,1) 
 #pragma ivdep
+	for (ix=mod.ioPx; ix<mod.iePx; ix++) {
+		for (iy=mod.ioPy; iy<mod.iePy; iy++) {
+            #pragma ivdep
             for (iz=mod.ioPz; iz<mod.iePz; iz++) {
                 dvx =   c1*(vx[iy*n2*n1+(ix+1)*n1+iz] - vx[iy*n2*n1+ix*n1+iz]) +
                         c2*(vx[iy*n2*n1+(ix+2)*n1+iz] - vx[iy*n2*n1+(ix-1)*n1+iz]);

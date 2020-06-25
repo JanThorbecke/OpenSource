@@ -7,7 +7,7 @@ void dfti_status_print(MKL_LONG status);
 /**
 *   NAME:     ccmfft
 *
-*   DESCRIPTION: Multipple vector complex to complex FFT
+*   DESCRIPTION: Multiple vector complex to complex FFT
 *
 *   USAGE:
 *	      void ccmfft(complex *data, int n1, int n2, int ld1, int sign)
