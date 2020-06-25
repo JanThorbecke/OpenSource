@@ -180,6 +180,17 @@ Other make commands which can be useful:
 make clean : removes all object files, but leaves libraries and executables
 make realclean: removes also object files, libraries and executables.
 
+COMPILATION PROBLEMS
+--------------------
+If you encounter missing trigometric / mathematical functions during compilation, for example;
+
+defineSource.c:(.text+0x2356): undefined reference to sin getParameters.o: In function getParameters:
+
+add  '-lm -lc' around line 109 in Make_include:
+
+LIBS= -L$L -lgenfft $(BLAS) -lm -lc
+
+
 
 UPDATES AND LATEST VERSION
 --------------------------
