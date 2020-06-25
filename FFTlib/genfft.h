@@ -107,6 +107,9 @@ void xt2wkx(REAL *rdata, complex *cdata, int nt, int nx, int ldr, int ldc, int x
 void wx2xt(complex *cdata, REAL *rdata, int nt, int nx, int ldc, int ldr);
 void wkx2xt(complex *cdata, REAL *rdata, int nt, int nx, int ldc, int ldr, int xorig);
 
+void yxt2wkykx(REAL *rdata, complex *cdata, long nt, long nx, long ny, long ldt, long ldx, long ldy, long xorig, long yorig);
+void wkykx2yxt(complex *cdata, REAL *rdata, long nt, long nx, long ny, long ldt, long ldx, long ldy, long xorig, long yorig);
+
 /*
 void dc1_fft(double *rdata, dcomplex *cdata, int n, int sign);
 void cd1_fft(dcomplex *cdata, double *rdata, int n, int sign);

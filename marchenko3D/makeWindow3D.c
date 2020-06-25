@@ -22,6 +22,7 @@ typedef struct _complexStruct { /* complex number */
 
 void findShotInMute(float *xrcvMute, float xrcvShot, long nxs, long *imute);
 long readData3D(FILE *fp, float *data, segy *hdrs, long n1);
+void timeDiff(float *data, long nsam, long nrec, float dt, float fmin, float fmax, long opt);
 long readSnapData3D(char *filename, float *data, segy *hdrs, long nsnaps, long nx, long ny, long nz, long sx, long ex, long sy, long ey, long sz, long ez);
 
 void makeWindow3D(char *file_ray, char *file_amp, char *file_wav, float dt, float *xrcv, float *yrcv, float *xsrc, float *ysrc, float *zsrc, 
@@ -31,8 +32,12 @@ void makeWindow3D(char *file_ray, char *file_amp, char *file_wav, float dt, floa
 	segy hdr, *hdrs_mute, *hdrs_amp;
 	size_t nread;
 	long ig, is, i, iy, ix, j, l, nfreq, ntwav;
-	float *wavelet, *wavtmp, scl, *timeval, dw, *amp;
+	float *wavelet, *wavtmp, scl, *timeval, dw, *amp, fmin, fmax;
 	complex *cmute, *cwav;
+
+
+    if (!getparfloat("fmin", &fmin)) fmin = 0.0;
+    if (!getparfloat("fmax", &fmax)) fmax = 70.0;
 
 	/*Define parameters*/
 	nfreq   = ntfft/2+1;	
@@ -58,9 +63,10 @@ void makeWindow3D(char *file_ray, char *file_amp, char *file_wav, float dt, floa
         readData3D(fp, wavtmp, &hdr, ntwav);
         //Fit the wavelet into the same time-axis as the Marchenko scheme
         for (i=0; i<(ntfft/2); i++) {
-            wavelet[i] = wavtmp[i];
-            wavelet[ntfft-1-i] = wavtmp[ntwav-1-i];
+            wavelet[i] = -1.0*wavtmp[i];
+            wavelet[ntfft-1-i] = -1.0*wavtmp[ntwav-1-i];
         }
+        timeDiff(wavelet, ntfft, 1, dt, fmin, fmax, 1);
         rc1fft(wavelet,cwav,ntfft,-1);
         free(wavtmp);
         free(wavelet);
@@ -129,21 +135,27 @@ void makeWindow3D(char *file_ray, char *file_amp, char *file_wav, float dt, floa
                 if (file_wav!=NULL) { /*Apply the wavelet to create a first arrival*/
                     if (file_amp != NULL) {
                         for (ig=0; ig<nfreq; ig++) {
-                            cmute[ig].r = (dt/sqrtf((float)ntfft))*(cwav[ig].r*cos(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0)-cwav[ig].i*sin(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0))/(amp[j*ny*nx+l*nx+i]);
-                            cmute[ig].i = (dt/sqrtf((float)ntfft))*(cwav[ig].i*cos(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0)+cwav[ig].r*sin(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0))/(amp[j*ny*nx+l*nx+i]);
+                            // cmute[ig].r = (dt/sqrtf((float)ntfft))*(cwav[ig].r*cos(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0)-cwav[ig].i*sin(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0))/(amp[j*ny*nx+l*nx+i]);
+                            // cmute[ig].i = (dt/sqrtf((float)ntfft))*(cwav[ig].i*cos(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0)+cwav[ig].r*sin(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0))/(amp[j*ny*nx+l*nx+i]);
+                            cmute[ig].r = (dt/sqrtf((float)ntfft))*(cwav[ig].r*cos(ig*dw*timeval[j*ny*nx+l*nx+i])-cwav[ig].i*sin(ig*dw*timeval[j*ny*nx+l*nx+i]))/((amp[j*ny*nx+l*nx+i]*amp[j*ny*nx+l*nx+i]));
+                            cmute[ig].i = (dt/sqrtf((float)ntfft))*(cwav[ig].i*cos(ig*dw*timeval[j*ny*nx+l*nx+i])+cwav[ig].r*sin(ig*dw*timeval[j*ny*nx+l*nx+i]))/((amp[j*ny*nx+l*nx+i]*amp[j*ny*nx+l*nx+i]));
                         }
                     }
                     else { /*Use the raytime only to determine the mutewindow*/
                         for (ig=0; ig<nfreq; ig++) {
-                            cmute[ig].r = (dt/sqrtf((float)ntfft))*(cwav[ig].r*cos(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0)-cwav[ig].i*sin(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0));
-                            cmute[ig].i = (dt/sqrtf((float)ntfft))*(cwav[ig].i*cos(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0)+cwav[ig].r*sin(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0));
+                            // cmute[ig].r = (dt/sqrtf((float)ntfft))*(cwav[ig].r*cos(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0)-cwav[ig].i*sin(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0));
+                            // cmute[ig].i = (dt/sqrtf((float)ntfft))*(cwav[ig].i*cos(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0)+cwav[ig].r*sin(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0));
+                            cmute[ig].r = (dt/sqrtf((float)ntfft))*(cwav[ig].r*cos(ig*dw*timeval[j*ny*nx+l*nx+i])-cwav[ig].i*sin(ig*dw*timeval[j*ny*nx+l*nx+i]));
+                            cmute[ig].i = (dt/sqrtf((float)ntfft))*(cwav[ig].i*cos(ig*dw*timeval[j*ny*nx+l*nx+i])+cwav[ig].r*sin(ig*dw*timeval[j*ny*nx+l*nx+i]));
                         }
                     }
                 }
                 else {
                     for (ig=0; ig<nfreq; ig++) {
-                        cmute[ig].r = (1.0/sqrtf((float)ntfft))*cos(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0);
-                        cmute[ig].i = (1.0/sqrtf((float)ntfft))*sin(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0);
+                        // cmute[ig].r = (1.0/sqrtf((float)ntfft))*cos(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0);
+                        // cmute[ig].i = (1.0/sqrtf((float)ntfft))*sin(ig*dw*timeval[j*ny*nx+l*nx+i]-M_PI/4.0);
+                        cmute[ig].r = (1.0/sqrtf((float)ntfft))*cos(ig*dw*timeval[j*ny*nx+l*nx+i]);
+                        cmute[ig].i = (1.0/sqrtf((float)ntfft))*sin(ig*dw*timeval[j*ny*nx+l*nx+i]);
                     }
                 }
                 cr1fft(cmute,&tinv[j*ny*nx*ntfft+l*nx*ntfft+i*ntfft],ntfft,1);
@@ -158,4 +170,3 @@ void makeWindow3D(char *file_ray, char *file_amp, char *file_wav, float dt, floa
 
 	return;
 }
-

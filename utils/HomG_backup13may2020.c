@@ -87,39 +87,28 @@ char *sdoc[] = {
 " Optional parameters: ",
 " ",
 "   file_out= ................ Filename of the output",
-"   direction=z .............. The direction over which the data is stacked, can be x, y or z",
 "   numb= .................... integer number of first snapshot file",
 "   dnumb= ................... integer number of increment in snapshot files",
 "   zmax= .................... Integer number of maximum depth level",
+"   inx= ..................... Number of sources per depth level",
 "   zrcv= .................... z-coordinate of first receiver location",
 "   xrcv= .................... x-coordinate of first receiver location",
 "   zfps=0 ................... virtual source data are in SU format (=0) or zfp compressed (=1)",
 "   zfpr=0 ................... virtual receiver data are in SU format (=0) or zfp compressed (=1)",
-"   cp=1000.0 ................ Velocity at the top of the medium in m/s",
-"   rho=1000.0 ............... Density at the top of the medium in kg/m^3",
-"   scheme=0 ................. Scheme for the retrieval",
-"   .......................... scheme=0 Marchenko homogeneous Green's function retrieval with G source",
-"   .......................... scheme=1 Marchenko homogeneous Green's function retrieval with f2 source",
-"   .......................... scheme=2 Marchenko Green's function retrieval with source depending on virtual receiver location",
-"   .......................... scheme=3 Marchenko Green's function retrieval with G source",
-"   .......................... scheme=4 Marchenko Green's function retrieval with f2 source",
-"   .......................... scheme=5 Classical homogeneous Green's function retrieval",
-"   .......................... scheme=6 Marchenko homogeneous Green's function retrieval with multiple G sources",
-"   .......................... scheme=7 Marchenko Green's function retrieval with multiple G sources",
-"   .......................... scheme=8 f1+ redatuming",
-"   .......................... scheme=9 f1- redatuming",
-"   .......................... scheme=10 2i IM(f1) redatuming",
+"   shift=0.0 ................ shift per shot",
+"   scheme=0 ................. Scheme used for retrieval. 0=Marchenko,",
+"                              1=Marchenko with multiple sources, 2=classical",
 NULL};
 
 int main (int argc, char **argv)
 {
 	FILE    *fp_in, *fp_shot, *fp_out;
-	char    *fin, *fshot, *fout, *ptr, fbegin[100], fend[100], fins[100], fin2[100], *direction;
+	char    *fin, *fshot, *fout, *ptr, fbegin[100], fend[100], fins[100], fin2[100];
 	float   *rcvdata, *Ghom, *shotdata, *shotdata_jkz, rho, fmin, fmax;
 	float   dt, dy, dx, t0, y0, x0, xmin, xmax1, sclsxgx, dxrcv, dyrcv, dzrcv;
 	float   *conv, *conv2, *tmp1, *tmp2, cp, shift;
 	long    nshots, ntvs, nyvs, nxvs, ntraces, ret, ix, iy, it, is, ir, ig, file_det, verbose;
-    long    ntr, nxr, nyr, nsr, i, l, j, k, nxvr, nyvr, nzvr, count, num;
+    long    ntr, nxr, nyr, nsr, i, l, j, k, nxvr, nyvr, nzvr, count;
     float   dtr, dxr, dyr, ftr, fxr, fyr, sclr, scl;
 	long    pos1, npos, zmax, numb, dnumb, scheme, ntmax, ntshift, shift_num, zfps, zfpr, size;
     long    ixr, iyr, zsrc, zrcv, *xvr, *yvr, *zvr;
@@ -143,51 +132,28 @@ int main (int argc, char **argv)
 	if (!getparlong("numb", &numb)) numb=0;
     if (!getparlong("dnumb", &dnumb)) dnumb=1;
 	if (!getparlong("scheme", &scheme)) scheme = 0;
+	if (!getparlong("ntmax", &ntmax)) ntmax = 0;
 	if (!getparlong("verbose", &verbose)) verbose = 0;
 	if (!getparlong("zfps", &zfps)) zfps = 0;
 	if (!getparlong("zfpr", &zfpr)) zfpr = 0;
-    if (!getparstring("direction", &direction)) direction = "z";
 	if (fin == NULL) verr("Incorrect vr input");
 	if (fshot == NULL) verr("Incorrect vs input");
-
-    if (strcmp(direction,"x") != 0 && strcmp(direction,"y") != 0 && strcmp(direction,"z") != 0) {
-		verr("Direction needs to be either x, y or z");
-	}
 
     /*----------------------------------------------------------------------------*
     *   Split the filename so the number can be changed
     *----------------------------------------------------------------------------*/
-    // count = dignum(numb);
-	// if (dnumb == 0) dnumb = 1;
-	// sprintf(fins,"z%li",numb);
-	// fp_in = fopen(fin, "r");
-	// if (fp_in == NULL) {
-	// 	verr("error on opening basefile=%s", fin);
-	// }
-	// fclose(fp_in);
-	// ptr  = strstr(fin,fins);
-	// pos1 = ptr - fin;
-   	// sprintf(fbegin,"%*.*s", pos1, pos1, fin);
-   	// sprintf(fend,"%s", fin+pos1+count+1);
-
-    num = numb;
-    count = 0;
-    while (num != 0) {
-        count++;
-        num /= 10;
-    }
-
+    count = dignum(numb);
 	if (dnumb == 0) dnumb = 1;
-	sprintf(fins,"%s%li",direction,numb);
+	sprintf(fins,"z%li",numb);
 	fp_in = fopen(fin, "r");
 	if (fp_in == NULL) {
 		verr("error on opening basefile=%s", fin);
 	}
 	fclose(fp_in);
 	ptr  = strstr(fin,fins);
-	pos1 = ptr - fin + 1;
-   	sprintf(fbegin,"%*.*s", pos1-1, pos1-1, fin);
-   	sprintf(fend,"%s", fin+pos1+count);
+	pos1 = ptr - fin;
+   	sprintf(fbegin,"%*.*s", pos1, pos1, fin);
+   	sprintf(fend,"%s", fin+pos1+count+1);
 
     /*----------------------------------------------------------------------------*
     *   Determine the amount of files to be read
@@ -195,7 +161,7 @@ int main (int argc, char **argv)
 	file_det = 1;
 	nzvr=0;
 	while (file_det) {
-        sprintf(fins,"%s%li",direction,nzvr*dnumb+numb);
+        sprintf(fins,"z%li",nzvr*dnumb+numb);
         sprintf(fin,"%s%s%s",fbegin,fins,fend);
         fp_in = fopen(fin, "r");
         if (fp_in == NULL) {
@@ -223,7 +189,7 @@ int main (int argc, char **argv)
     /*----------------------------------------------------------------------------*
     *   Determine the other sizes of the files
     *----------------------------------------------------------------------------*/
-    sprintf(fins,"%s%li",direction,numb);
+    sprintf(fins,"z%li",numb);
     sprintf(fin,"%s%s%s",fbegin,fins,fend);
     if (zfpr) getVirReczfp(fin, &nxvr, &nyvr, &nxr, &nyr, &ntr);
     else getVirRec(fin, &nxvr, &nyvr, &nxr, &nyr, &ntr);
@@ -231,9 +197,7 @@ int main (int argc, char **argv)
     if (verbose) {
         if (zfpr) vmess("Virtual receiver data are zfp compressed");
         else vmess("Virtual receiver data are in SU format");
-        if (strcmp(direction,"z") == 0) vmess("Number of virtual receivers         : %li (x=%li) (y=%li) (z=%li)",nxvr*nyvr*nzvr,nxvr,nyvr,nzvr);
-        if (strcmp(direction,"x") == 0) vmess("Number of virtual receivers         : %li (x=%li) (y=%li) (z=%li)",nxvr*nyvr*nzvr,nzvr,nyvr,nxvr);
-        if (strcmp(direction,"y") == 0) vmess("Number of virtual receivers         : %li (x=%li) (y=%li) (z=%li)",nxvr*nyvr*nzvr,nxvr,nzvr,nyvr);
+        vmess("Number of virtual receivers         : %li (x=%li) (y=%li) (z=%li)",nxvr*nyvr*nzvr,nxvr,nyvr,nzvr);
         vmess("Number of samples for each receiver : x=%li y=%li t=%li",nxr,nyr,ntr);
     }
 
@@ -261,9 +225,8 @@ int main (int argc, char **argv)
         else vmess("Virtual source data are in SU format");
         vmess("Number of virtual sources           : %li ",nshots);
         vmess("Number of samples for each source   : x=%li y=%li t=%li",nxvs,nyvs,ntvs);
-        vmess("Sampling distance is                : x=%.3f y=%.3f t=%.3f",dx,dy,dt);
-        vmess("Scaling of the transforms           : %.3f",scl);
-        vmess("Transform operators                 : fmin=%.1f fmax=%.1f cp=%.1f rho=%.1f",fmin,fmax,cp,rho);
+        vmess("Sampling distance is                : x=%.3e y=%.3e t=%.3e",dx,dy,dt);
+        vmess("Scaling of the transforms           : %.3e",scl);
     }
 
     if (ntr!=ntvs) verr("number of t-samples between virtual source (%li) and virtual receivers (%li) is not equal",ntvs,ntr);
@@ -275,6 +238,7 @@ int main (int argc, char **argv)
     if (zfps) readzfpdata(fshot, &shotdata[0], size);
 	else readSnapData3D(fshot, &shotdata[0], &hdr_shot[0], nshots, nxvs, nyvs, ntvs, 0, nxvs, 0, nyvs, 0, ntvs);
 
+	hdr_out     = (segy *)calloc(nxvr*nyvr,sizeof(segy));	
 	Ghom		= (float *)calloc(ntr*nxvr*nyvr*nzvr,sizeof(float));
 	xvr		    = (long *)malloc(nxvr*nyvr*nzvr*sizeof(long));
 	yvr		    = (long *)malloc(nxvr*nyvr*nzvr*sizeof(long));
@@ -289,14 +253,16 @@ int main (int argc, char **argv)
 	}
     else if (scheme==1) {
 		if (verbose) vmess("Marchenko Homogeneous Green's function retrieval with f2 source");
-        if (nyvs>1) depthDiff3D(&shotdata[0], ntvs, nxvs, nyvs, dt, dx, dy, fmin, fmax, cp, 1);
-        else        depthDiff(&shotdata[k*nxvs*ntvs], ntvs, nxvs, dt, dx, fmin, fmax, cp, 1);
+        for (k = 0; k < nyvs; k++) {
+            depthDiff(&shotdata[k*nxvs*ntvs], ntvs, nxvs, dt, dx, fmin, fmax, cp, 1);
+        }
 	}
     else if (scheme==2) {
 		if (verbose) vmess("Marchenko Green's function retrieval with source depending on position");
         if (nshots<2) verr("Number of shots required is 2 (1=G, 2=f_2)");
-        if (nyvs>1) depthDiff3D(&shotdata[ntvs*nxvs*nyvs], ntvs, nxvs, nyvs, dt, dx, dy, fmin, fmax, cp, 1);
-        else        depthDiff(&shotdata[ntvs*nxvs*nyvs], ntvs, nxvs, dt, dx, fmin, fmax, cp, 1);
+        for (k = 0; k < nyvs; k++) {
+            depthDiff(&shotdata[ntvs*nxvs*nyvs+k*nxvs*ntvs], ntvs, nxvs, dt, dx, fmin, fmax, cp, 1);
+        }
         zsrc = labs(hdr_shot[0].sdepth);
 	}
 	else if (scheme==3) {
@@ -314,8 +280,9 @@ int main (int argc, char **argv)
             }
             conjugate(&shotdata_jkz[l*nyvs*nxvs*ntvs], ntvs, nxvs*nyvs, dt);
             conjugate(&shotdata[l*nyvs*nxvs*ntvs], ntvs, nxvs*nyvs, dt);
-            if (nyvs>1) depthDiff3D(&shotdata_jkz[l*nyvs*nxvs*ntvs], ntvs, nxvs, nyvs, dt, dx, dy, fmin, fmax, cp, 1);
-            else        depthDiff(&shotdata_jkz[l*nyvs*nxvs*ntvs], ntvs, nxvs, dt, dx, fmin, fmax, cp, 1);
+            for (k = 0; k < nyvs; k++) {
+                depthDiff(&shotdata_jkz[l*nyvs*nxvs*ntvs+k*nxvs*ntvs], ntvs, nxvs, dt, dx, fmin, fmax, cp, 1);
+            }
         }
 	}
 	else if (scheme==6) {
@@ -329,30 +296,31 @@ int main (int argc, char **argv)
 	else if (scheme==8) { // 0=f1p 1=f1m
 		if (verbose) vmess("f1+ redatuming");
         if (nshots<2) verr("Not enough input for the homogeneous Green's function");
-        if (nyvs>1) depthDiff3D(&shotdata[0*nyvs*nxvs*ntvs], ntvs, nxvs, nyvs, dt, dx, dy, fmin, fmax, cp, 1);
-        else        depthDiff(&shotdata[0*nyvs*nxvs*ntvs], ntvs, nxvs, dt, dx, fmin, fmax, cp, 1);
-        conjugate(&shotdata[0*nyvs*nxvs*ntvs], ntvs, nxvs*nyvs, dt);
-        if (nyvs>1) depthDiff3D(&shotdata[1*nyvs*nxvs*ntvs], ntvs, nxvs, nyvs, dt, dx, dy, fmin, fmax, cp, 1);
-        else        depthDiff(&shotdata[1*nyvs*nxvs*ntvs], ntvs, nxvs, dt, dx, fmin, fmax, cp, 1);
-        conjugate(&shotdata[1*nyvs*nxvs*ntvs], ntvs, nxvs*nyvs, dt);
+        for (k = 0; k < nyvs; k++) {
+            depthDiff(&shotdata[0*nyvs*nxvs*ntvs+k*nxvs*ntvs], ntvs, nxvs, dt, dx, fmin, fmax, cp, 1);
+            conjugate(&shotdata[0*nyvs*nxvs*ntvs+k*nxvs*ntvs], ntvs, nxvs, dt);
+            depthDiff(&shotdata[1*nyvs*nxvs*ntvs+k*nxvs*ntvs], ntvs, nxvs, dt, dx, fmin, fmax, cp, 1);
+            conjugate(&shotdata[1*nyvs*nxvs*ntvs+k*nxvs*ntvs], ntvs, nxvs, dt);
+        }
 	}
 	else if (scheme==9) { // 0=f1p 1=f1m
 		if (verbose) vmess("f1- redatuming");
         if (nshots<2) verr("Not enough input for the homogeneous Green's function");
-        if (nyvs>1) depthDiff3D(&shotdata[0*nyvs*nxvs*ntvs], ntvs, nxvs, nyvs, dt, dx, dy, fmin, fmax, cp, 1);
-        else        depthDiff(&shotdata[0*nyvs*nxvs*ntvs], ntvs, nxvs, dt, dx, fmin, fmax, cp, 1);
-        if (nyvs>1) depthDiff3D(&shotdata[1*nyvs*nxvs*ntvs], ntvs, nxvs, nyvs, dt, dx, dy, fmin, fmax, cp, 1);
-        else        depthDiff(&shotdata[1*nyvs*nxvs*ntvs], ntvs, nxvs, dt, dx, fmin, fmax, cp, 1);
+        for (k = 0; k < nyvs; k++) {
+            depthDiff(&shotdata[0*nyvs*nxvs*ntvs+k*nxvs*ntvs], ntvs, nxvs, dt, dx, fmin, fmax, cp, 1);
+            depthDiff(&shotdata[1*nyvs*nxvs*ntvs+k*nxvs*ntvs], ntvs, nxvs, dt, dx, fmin, fmax, cp, 1);
+        }
 	}
 	else if (scheme==10) { 
 		if (verbose) vmess("2i IM(f1) redatuming");
 		shotdata_jkz	= (float *)calloc(nshots*nxvs*nyvs*ntvs,sizeof(float));
-        if (nyvs>1) depthDiff3D(&shotdata[0], ntvs, nxvs, nyvs, dt, dx, dy, fmin, fmax, cp, 1);
-        else        depthDiff(&shotdata[0],   ntvs, nxvs, dt, dx, fmin, fmax, cp, 1);
-        for (l = 0; l < nyvs*nxvs*ntvs; l++) {
-            shotdata_jkz[l] = shotdata[l];
+        for (k = 0; k < nyvs; k++) {
+            depthDiff(&shotdata[k*nxvs*ntvs]   , ntvs, nxvs, dt, dx, fmin, fmax, cp, 1);
+            for (l = 0; l < nxvs*ntvs; l++) {
+                shotdata_jkz[k*nxvs*ntvs+l] = shotdata[k*nxvs*ntvs+l];
+            }
+            conjugate(&shotdata_jkz[k*nxvs*ntvs], ntvs, nxvs, dt);
         }
-        conjugate(&shotdata_jkz[0], ntvs, nxvs*nyvs, dt);
 	}
 	else {
 		if (verbose) vmess("Marchenko Homogeneous Green's function retrieval with G source");
@@ -364,14 +332,14 @@ int main (int argc, char **argv)
 
         rcvdata		= (float *)malloc(ntr*nxvr*nyvr*nxr*nyr*sizeof(float));
         hdr_rcv 	= (segy *)calloc(nxvr*nyvr*nxr*nyr,sizeof(segy));
-        conv	    = (float *)calloc(nyr*nxr*ntr,sizeof(float));
+        conv	    = (float *)calloc(nxr*ntr,sizeof(float));
         if (scheme==5) {
-            tmp1	= (float *)calloc(nyr*nxr*ntr,sizeof(float));
-            tmp2	= (float *)calloc(nyr*nxr*ntr,sizeof(float));
+            tmp1	= (float *)calloc(nxr*ntr,sizeof(float));
+            tmp2	= (float *)calloc(nxr*ntr,sizeof(float));
         }
-        if (scheme==6 || scheme==8 || scheme==9 || scheme==10) tmp1 = (float *)calloc(nyr*nxr*ntr,sizeof(float));
+        if (scheme==6 || scheme==8 || scheme==9 || scheme==10) tmp1 = (float *)calloc(nxr*ntr,sizeof(float));
 
-        sprintf(fins,"%s%li",direction,ir*dnumb+numb);
+        sprintf(fins,"z%li",ir*dnumb+numb);
 		sprintf(fin2,"%s%s%s",fbegin,fins,fend);
         fp_in = fopen(fin2, "r");
 		if (fp_in == NULL) {
@@ -395,142 +363,157 @@ int main (int argc, char **argv)
             }
 
             if (scheme==0) { //Marchenko representation with G source
-                if (nyr > 1) depthDiff3D(&rcvdata[l*nyr*nxr*ntr], ntr, nxr, nyr, dt, dx, dy, fmin, fmax, cp, 1);
-                else         depthDiff(&rcvdata[l*nxr*ntr], ntr, nxr, dt, dx, fmin, fmax, cp, 1);
-                convol(&shotdata[0], &rcvdata[l*nyr*nxr*ntr], conv, nyr*nxr, ntr, dt, 0);
-                timeDiff(conv, ntr, nyr*nxr, dt, fmin, fmax, -3);
-                for (i=0; i<nyr*nxr; i++) {
-                    for (j=0; j<ntr/2; j++) {
-                        Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += 2.0*scl*conv[i*ntr+j]/rho;
-                        Ghom[j*nxvr*nyvr*nzvr+l*nzvr+ir] += 2.0*scl*conv[i*ntr+(j+ntr/2)]/rho;
+                for (k = 0; k < nyr; k++) {
+                    depthDiff(&rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], ntr, nxr, dt, dx, fmin, fmax, cp, 1);
+                    convol(&shotdata[k*nxr*ntr], &rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], conv, nxr, ntr, dt, 0);
+                    timeDiff(conv, ntr, nxr, dt, fmin, fmax, -3);
+                    for (i=0; i<nxr; i++) {
+                        for (j=0; j<ntr/2; j++) {
+                            Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += scl*conv[i*ntr+j]/rho;
+                            Ghom[j*nxvr*nyvr*nzvr+l*nzvr+ir] += scl*conv[i*ntr+(j+ntr/2)]/rho;
+                        }
                     }
                 }
             }
             else if (scheme==1) { //Marchenko representation with f2 source
-                convol(&shotdata[0], &rcvdata[l*nyr*nxr*ntr], conv, nxr*nyr, ntr, dt, 0);
-                timeDiff(conv, ntr, nyr*nxr, dt, fmin, fmax, -3);
-                for (i=0; i<nyr*nxr; i++) {
-                    for (j=0; j<ntr/2; j++) {
-                        Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += 2.0*scl*conv[i*ntr+j]/rho;
-                        Ghom[j*nxvr*nyvr*nzvr+l*nzvr+ir] += 2.0*scl*conv[i*ntr+(j+ntr/2)]/rho;
+                for (k = 0; k < nyr; k++) {
+                    convol(&shotdata[k*nxr*ntr], &rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], conv, nxr, ntr, dt, 0);
+                    timeDiff(conv, ntr, nxr, dt, fmin, fmax, -3);
+                    for (i=0; i<nxr; i++) {
+                        for (j=0; j<ntr/2; j++) {
+                            Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += scl*conv[i*ntr+j]/rho;
+                            Ghom[j*nxvr*nyvr*nzvr+l*nzvr+ir] += scl*conv[i*ntr+(j+ntr/2)]/rho;
+                        }
                     }
                 }
             }
             else if (scheme==2) { //Marchenko representation without time-reversal using varying sources
-                if (zsrc > zrcv) {
-                    if (verbose > 1) vmess("Homogeneous Green's function at %li uses G source (zsrc=%li)",zrcv,zsrc);
-                    if (nyr>1) depthDiff3D(&rcvdata[l*nyr*nxr*ntr], ntr, nxr, nyr, dt, dx, dy, fmin, fmax, cp, 1);
-                    else       depthDiff(&rcvdata[l*nyr*nxr*ntr], ntr, nxr, dt, dx, fmin, fmax, cp, 1);
-                    convol(&shotdata[0], &rcvdata[l*nyr*nxr*ntr], conv, nyr*nxr, ntr, dt, 0);
-                }
-                else {
-                    if (verbose > 1) vmess("Homogeneous Green's function at %li uses f_2 source (zsrc=%li)",zrcv,zsrc);
-                    convol(&shotdata[ntvs*nxvs*nyvs], &rcvdata[l*nyr*nxr*ntr], conv, nyr*nxr, ntr, dt, 0);
-                }
-                timeDiff(conv, ntr, nyr*nxr, dt, fmin, fmax, -1);
-                for (i=0; i<nyr*nxr; i++) {
-                    for (j=0; j<ntr/2; j++) {
-                        Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += 2.0*scl*conv[i*ntr+j]/rho;
-                        Ghom[j*nxvr*nyvr*nzvr+l*nzvr+ir] += 2.0*scl*conv[i*ntr+(j+ntr/2)]/rho;
+                for (k = 0; k < nyr; k++) {
+                    if (zsrc > zrcv) {
+                        if (verbose > 1) vmess("Homogeneous Green's function at %li uses G source (zsrc=%li)",zrcv);
+                        depthDiff(&rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], ntr, nxr, dt, dx, fmin, fmax, cp, 1);
+                        convol(&shotdata[k*nxr*ntr], &rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], conv, nxr, ntr, dt, 0);
+                    }
+                    else {
+                        if (verbose > 1) vmess("Homogeneous Green's function at %li uses f_2 source (zsrc=%li)",zrcv);
+                        convol(&shotdata[ntvs*nxvs*nyvs+k*nxr*ntr], &rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], conv, nxr, ntr, dt, 0);
+                    }
+                    timeDiff(conv, ntr, nxr, dt, fmin, fmax, -1);
+                    for (i=0; i<nxr; i++) {
+                        for (j=0; j<ntr/2; j++) {
+                            Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += scl*conv[i*ntr+j]/rho;
+                            Ghom[j*nxvr*nyvr*nzvr+l*nzvr+ir] += scl*conv[i*ntr+(j+ntr/2)]/rho;
+                        }
                     }
                 }
             }
             else if (scheme==3) { //Marchenko representation without time-reversal G source
-                if (nyr>1) depthDiff3D(&rcvdata[l*nyr*nxr*ntr], ntr, nxr, nyr, dt, dx, dy, fmin, fmax, cp, 1);
-                else       depthDiff(&rcvdata[l*nyr*nxr*ntr], ntr, nxr, dt, dx, fmin, fmax, cp, 1);
-                convol2(&shotdata[0], &rcvdata[l*nyr*nxr*ntr], conv, nyr*nxr, ntr, dt, fmin, fmax, 1);
-                for (i=0; i<nyr*nxr; i++) {
-                    for (j=0; j<ntr/2; j++) {
-                        Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += 2.0*scl*conv[i*ntr+j]/rho;
-                        Ghom[j*nxvr*nyvr*nzvr+l*nzvr+ir] += 2.0*scl*conv[i*ntr+(j+ntr/2)]/rho;
+                for (k = 0; k < nyr; k++) {
+                    depthDiff(&rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], ntr, nxr, dt, dx, fmin, fmax, cp, 1);
+                    convol2(&shotdata[k*nxr*ntr], &rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], conv, nxr, ntr, dt, fmin, fmax, 1);
+                    for (i=0; i<nxr; i++) {
+                        for (j=0; j<ntr/2; j++) {
+                            Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += scl*conv[i*ntr+j]/rho;
+                            Ghom[j*nxvr*nyvr*nzvr+l*nzvr+ir] += scl*conv[i*ntr+(j+ntr/2)]/rho;
+                        }
                     }
                 }
             }
             else if (scheme==4) { //Marchenko representation without time-reversal f2 source
-                if (nyr>1) depthDiff3D(&rcvdata[l*nyr*nxr*ntr], ntr, nxr, nyr, dt, dx, dy, fmin, fmax, cp, 1);
-                else       depthDiff(&rcvdata[l*nyr*nxr*ntr], ntr, nxr, dt, dx, fmin, fmax, cp, 1);
-                convol(&shotdata[0], &rcvdata[l*nyr*nxr*ntr], conv, nyr*nxr, ntr, dt, 0);
-                timeDiff(conv, ntr, nyr*nxr, dt, fmin, fmax, -1);
-                for (i=0; i<nyr*nxr; i++) {
-                    for (j=0; j<ntr/2; j++) {
-                        Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += 2.0*scl*conv[i*ntr+j]/rho;
-                        Ghom[j*nxvr*nyvr*nzvr+l*nzvr+ir] += 2.0*scl*conv[i*ntr+(j+ntr/2)]/rho;
+                for (k = 0; k < nyr; k++) {
+                    depthDiff(&rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], ntr, nxr, dt, dx, fmin, fmax, cp, 1);
+                    convol(&shotdata[k*nxr*ntr], &rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], conv, nxr, ntr, dt, 0);
+                    timeDiff(conv, ntr, nxr, dt, fmin, fmax, -1);
+                    for (i=0; i<nxr; i++) {
+                        for (j=0; j<ntr/2; j++) {
+                            Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += scl*conv[i*ntr+j]/rho;
+                            Ghom[j*nxvr*nyvr*nzvr+l*nzvr+ir] += scl*conv[i*ntr+(j+ntr/2)]/rho;
+                        }
                     }
                 }
             }
             else if (scheme==5) { //classical representation
-                convol(&rcvdata[l*nyr*nxr*ntr], &shotdata_jkz[0], tmp2, nyr*nxr, ntr, dt, 0);
-                if (nyr>1) depthDiff3D(&rcvdata[l*nyr*nxr*ntr], ntr, nxr, nyr, dt, dx, dy, fmin, fmax, cp, 1);
-                else       depthDiff(&rcvdata[l*nyr*nxr*ntr], ntr, nxr, dt, dx, fmin, fmax, cp, 1);
-                convol(&rcvdata[l*nyr*nxr*ntr], &shotdata[0], tmp1, nyr*nxr, ntr, dt, 0);
-                for (i = 0; i < nyr*nxr; i++) {
-                    for (j = 0; j < ntr; j++) {
-                        conv[i*ntr+j] = tmp1[i*ntr+j]+tmp2[i*ntr+j];
+                for (k = 0; k < nyr; k++) {
+                    convol(&rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], &shotdata_jkz[k*nxr*ntr], tmp2, nxr, ntr, dt, 0);
+                    depthDiff(&rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], ntr, nxr, dt, dx, fmin, fmax, cp, 1);
+                    convol(&rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], &shotdata[k*nxr*ntr], tmp1, nxr, ntr, dt, 0);
+                    for (i = 0; i < nxr; i++) {
+                        for (j = 0; j < ntr; j++) {
+                            conv[i*ntr+j] = tmp1[i*ntr+j]+tmp2[i*ntr+j];
+                        }
                     }
-                }
-                timeDiff(conv, ntr, nyr*nxr, dt, fmin, fmax, -1);
-                for (i=0; i<nyr*nxr; i++) {
-                    for (j=0; j<ntr/2; j++) {
-                        Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += 1.0*scl*conv[i*ntr+j]/rho;
-                        Ghom[j*nxvr*nyvr*nzvr+l*nzvr+ir] += 1.0*scl*conv[i*ntr+(j+ntr/2)]/rho;
+                    timeDiff(conv, ntr, nxr, dt, fmin, fmax, -1);
+                    for (i=0; i<nxr; i++) {
+                        for (j=0; j<ntr/2; j++) {
+                            Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += scl*conv[i*ntr+j]/rho;
+                            Ghom[j*nxvr*nyvr*nzvr+l*nzvr+ir] += scl*conv[i*ntr+(j+ntr/2)]/rho;
+                        }
                     }
                 }
             }
             else if (scheme==6) { //Marchenko representation with multiple shot gathers
-                if (nyr>1) depthDiff3D(&rcvdata[l*nyr*nxr*ntr], ntr, nxr, nyr, dt, dx, dy, fmin, fmax, cp, 1); 
-                else       depthDiff(&rcvdata[l*nyr*nxr*ntr], ntr, nxr, dt, dx, fmin, fmax, cp, 1); 
-                for (is=0; is<nshots; is++) {
-                    convol(&shotdata[is*nyr*nxr*ntr], &rcvdata[l*nyr*nxr*ntr], conv, nyr*nxr, ntr, dt, 0);
-                    timeDiff(conv, ntr, nyr*nxr, dt, fmin, fmax, -3);
-                    for (i=0; i<nyr*nxr; i++) {
-                        for (j=0; j<ntr/2; j++) {
-                            Ghom[is*ntr*nxvr*nyvr*nzvr+(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += 2.0*scl*conv[i*ntr+j]/rho;
-                            Ghom[is*ntr*nxvr*nyvr*nzvr+j*nxvr*nyvr*nzvr+l*nzvr+ir] += 2.0*scl*conv[i*ntr+(j+ntr/2)]/rho;
+                for (k = 0; k < nyr; k++) {
+                    depthDiff(&rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], ntr, nxr, dt, dx, fmin, fmax, cp, 1); 
+                    for (is=0; is<nshots; is++) {
+                        convol(&shotdata[is*nyr*nxr*ntr+k*nxr*ntr], &rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], conv, nxr, ntr, dt, 0);
+                        timeDiff(conv, ntr, nxr, dt, fmin, fmax, -3);
+                        for (i=0; i<nxr; i++) {
+                            for (j=0; j<ntr/2; j++) {
+                                Ghom[is*ntr*nxvr*nyvr*nzvr+(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += scl*conv[i*ntr+j]/rho;
+                                Ghom[is*ntr*nxvr*nyvr*nzvr+j*nxvr*nyvr*nzvr+l*nzvr+ir] += scl*conv[i*ntr+(j+ntr/2)]/rho;
+                            }
                         }
                     }
                 }
             }
             else if (scheme==7) { //Marchenko representation with multiple shot gathers without time-reversal
-                if (nyr>1) depthDiff3D(&rcvdata[l*nyr*nxr*ntr], ntr, nxr, nyr, dt, dx, dy, fmin, fmax, cp, 1);
-                else       depthDiff(&rcvdata[l*nyr*nxr*ntr], ntr, nxr, dt, dx, fmin, fmax, cp, 1);
-                for (is=0; is<nshots; is++) {
-                    convol(&shotdata[is*nyr*nxr*ntr], &rcvdata[l*nyr*nxr*ntr], conv, nyr*nxr, ntr, dt, 0);
-                    timeDiff(conv, ntr, nyr*nxr, dt, fmin, fmax, -1);
-                    for (i=0; i<nyr*nxr; i++) {
-                        for (j=0; j<ntr/2; j++) {
-                            Ghom[is*ntr*nxvr*nyvr*nzvr+(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += 2.0*scl*conv[i*ntr+j]/rho;
-                            Ghom[is*ntr*nxvr*nyvr*nzvr+j*nxvr*nyvr*nzvr+l*nzvr+ir] += 2.0*scl*conv[i*ntr+(j+ntr/2)]/rho;
+                for (k = 0; k < nyr; k++) {
+                    depthDiff(&rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], ntr, nxr, dt, dx, fmin, fmax, cp, 1);
+                    for (is=0; is<nshots; is++) {
+                        convol(&shotdata[is*nyr*nxr*ntr+k*nxr*ntr], &rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], conv, nxr, ntr, dt, 0);
+                        timeDiff(conv, ntr, nxr, dt, fmin, fmax, -1);
+                        for (i=0; i<nxr; i++) {
+                            for (j=0; j<ntr/2; j++) {
+                                Ghom[is*ntr*nxvr*nyvr*nzvr+(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += scl*conv[i*ntr+j]/rho;
+                                Ghom[is*ntr*nxvr*nyvr*nzvr+j*nxvr*nyvr*nzvr+l*nzvr+ir] += scl*conv[i*ntr+(j+ntr/2)]/rho;
+                            }
                         }
                     }
                 }
             }
             else if (scheme==8) { // f1+ redatuming 0=f1p 1=f1m
-                convol2(&shotdata[0*nyr*nxr*ntr], &rcvdata[l*nyr*nxr*ntr], conv, nyr*nxr, ntr, dt, fmin, fmax, 1);
-                convol2(&shotdata[1*nyr*nxr*ntr], &rcvdata[(l+1)*nyr*nxr*ntr], tmp1, nyr*nxr, ntr, dt, fmin, fmax, 1);
-                for (i=0; i<nyr*nxr; i++) {
-                    for (j=0; j<ntr/2; j++) {
-                        Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] -= 2.0*scl*(conv[i*ntr+j]         + tmp1[i*ntr+j])/rho;
-                        Ghom[j*nxvr*nyvr*nzvr+l*nzvr+ir]         -= 2.0*scl*(conv[i*ntr+(j+ntr/2)] + tmp1[i*ntr+(j+ntr/2)])/rho;
+                for (k = 0; k < nyr; k++) {
+                    convol2(&shotdata[0*nyr*nxr*ntr+k*nxr*ntr], &rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], conv, nxr, ntr, dt, fmin, fmax, 1);
+                    convol2(&shotdata[1*nyr*nxr*ntr+k*nxr*ntr], &rcvdata[(l+1)*nyr*nxr*ntr+k*nxr*ntr], tmp1, nxr, ntr, dt, fmin, fmax, 1);
+                    for (i=0; i<nxr; i++) {
+                        for (j=0; j<ntr/2; j++) {
+                            Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] -= 2.0*scl*(conv[i*ntr+j]         + tmp1[i*ntr+j])/rho;
+                            Ghom[j*nxvr*nyvr*nzvr+l*nzvr+ir]         -= 2.0*scl*(conv[i*ntr+(j+ntr/2)] + tmp1[i*ntr+(j+ntr/2)])/rho;
+                        }
                     }
                 }
             }
             else if (scheme==9) { // f1- redatuming 0=f1p 1=f1m
-                convol2(&shotdata[0*nyr*nxr*ntr], &rcvdata[(l+1)*nyr*nxr*ntr], conv, nyr*nxr, ntr, dt, fmin, fmax, 1);
-                convol2(&shotdata[1*nyr*nxr*ntr], &rcvdata[l*nyr*nxr*ntr], tmp1, nyr*nxr, ntr, dt, fmin, fmax, 1);
-                for (i=0; i<nyr*nxr; i++) {
-                    for (j=0; j<ntr/2; j++) {
-                        Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] -= 2.0*scl*(conv[i*ntr+j]         + tmp1[i*ntr+j])/rho;
-                        Ghom[j*nxvr*nyvr*nzvr+l*nzvr+ir]         -= 2.0*scl*(conv[i*ntr+(j+ntr/2)] + tmp1[i*ntr+(j+ntr/2)])/rho;
+                for (k = 0; k < nyr; k++) {
+                    convol2(&shotdata[0*nyr*nxr*ntr+k*nxr*ntr], &rcvdata[(l+1)*nyr*nxr*ntr+k*nxr*ntr], conv, nxr, ntr, dt, fmin, fmax, 1);
+                    convol2(&shotdata[1*nyr*nxr*ntr+k*nxr*ntr], &rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], tmp1, nxr, ntr, dt, fmin, fmax, 1);
+                    for (i=0; i<nxr; i++) {
+                        for (j=0; j<ntr/2; j++) {
+                            Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] -= 2.0*scl*(conv[i*ntr+j]         + tmp1[i*ntr+j])/rho;
+                            Ghom[j*nxvr*nyvr*nzvr+l*nzvr+ir]         -= 2.0*scl*(conv[i*ntr+(j+ntr/2)] + tmp1[i*ntr+(j+ntr/2)])/rho;
+                        }
                     }
                 }
             }
             else if (scheme==10) { // 2i IM(f1) redatuming
-                convol2(&shotdata[0], &rcvdata[(l+1)*nyr*nxr*ntr], conv, nyr*nxr, ntr, dt, fmin, fmax, 2);
-                convol2(&shotdata_jkz[0], &rcvdata[l*nyr*nxr*ntr], tmp1, nyr*nxr, ntr, dt, fmin, fmax, 2);
-                for (i=0; i<nxr; i++) {
-                    for (j=0; j<ntr/2; j++) {
-                        Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += 4.0*scl*(conv[i*ntr+j]         - tmp1[i*ntr+j])/rho;
-                        Ghom[j*nxvr*nyvr*nzvr+l*nzvr+ir]         += 4.0*scl*(conv[i*ntr+(j+ntr/2)] - tmp1[i*ntr+(j+ntr/2)])/rho;
+                for (k = 0; k < nyr; k++) {
+                    convol2(&shotdata[k*nxr*ntr], &rcvdata[(l+1)*nyr*nxr*ntr+k*nxr*ntr], conv, nxr, ntr, dt, fmin, fmax, 2);
+                    convol2(&shotdata_jkz[k*nxr*ntr], &rcvdata[l*nyr*nxr*ntr+k*nxr*ntr], tmp1, nxr, ntr, dt, fmin, fmax, 2);
+                    for (i=0; i<nxr; i++) {
+                        for (j=0; j<ntr/2; j++) {
+                            Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += 4.0*scl*(conv[i*ntr+j]         - tmp1[i*ntr+j])/rho;
+                            Ghom[j*nxvr*nyvr*nzvr+l*nzvr+ir]         += 4.0*scl*(conv[i*ntr+(j+ntr/2)] - tmp1[i*ntr+(j+ntr/2)])/rho;
+                        }
                     }
                 }
             }
@@ -545,67 +528,14 @@ int main (int argc, char **argv)
 
 	free(shotdata);
 
-    if (strcmp(direction,"z") == 0) {
-        if (nxvr>1) dxrcv = (float)((xvr[nzvr] - xvr[0])/1000.0);
-        else        dxrcv = 1.0;
-        if (nyvr>1) dyrcv = (float)((yvr[nxvr*nzvr] - yvr[0])/1000.0);
-        else        dyrcv = 1.0;
-        if (nzvr>1) dzrcv = (float)((zvr[1] - zvr[0])/1000.0);
-        else        dzrcv = 1.0;
-    }
-    if (strcmp(direction,"y") == 0) {
-        ix = nzvr;
-        nzvr = nyvr;
-        nyvr = ix;
-	    tmp1 = (float *)calloc(nxvr*nyvr*nzvr,sizeof(float));
-        for (it=0; it<ntr; it++) {
-            for (iy=0; iy<nyvr*nxvr*nzvr; iy++) {
-                tmp1[iy] = Ghom[it*nyvr*nxvr*nzvr+iy];
-            }
-            for (iy=0; iy<nyvr; iy++) {
-                for (ix=0; ix<nxvr; ix++) {
-                    for (ir=0; ir<nzvr; ir++) {
-                        Ghom[it*nyvr*nxvr*nzvr+iy*nxvr*nzvr+ix*nzvr+ir] = tmp1[ir*nxvr*nyvr+ix*nyvr+iy];
-                    }
-                }
-            }
-        }
-        if (nxvr>1) dxrcv = (float)((xvr[nyvr] - xvr[0])/1000.0);
-        else        dxrcv = 1.0;
-        if (nyvr>1) dyrcv = (float)((yvr[1] - yvr[0])/1000.0);
-        else        dyrcv = 1.0;
-        if (nzvr>1) dzrcv = (float)((zvr[nxvr*nyvr] - zvr[0])/1000.0);
-        else        dzrcv = 1.0;
-        free(tmp1);
-    }
-    if (strcmp(direction,"x") == 0) {
-        ix = nzvr;
-        nzvr = nxvr;
-        nxvr = ix;
-	    tmp1 = (float *)calloc(nxvr*nyvr*nzvr,sizeof(float));
-        for (it=0; it<ntr; it++) {
-            for (iy=0; iy<nyvr*nxvr*nzvr; iy++) {
-                tmp1[iy] = Ghom[it*nyvr*nxvr*nzvr+iy];
-            }
-            for (iy=0; iy<nyvr; iy++) {
-                for (ix=0; ix<nxvr; ix++) {
-                    for (ir=0; ir<nzvr; ir++) {
-                        Ghom[it*nyvr*nxvr*nzvr+iy*nxvr*nzvr+ix*nzvr+ir] = tmp1[iy*nzvr*nxvr+ir*nxvr+ix];
-                    }
-                }
-            }
-        }
-        if (nxvr>1) dxrcv = (float)((xvr[1] - xvr[0])/1000.0);
-        else        dxrcv = 1.0;
-        if (nyvr>1) dyrcv = (float)((yvr[nzvr*nxvr] - yvr[0])/1000.0);
-        else        dyrcv = 1.0;
-        if (nzvr>1) dzrcv = (float)((zvr[nxvr] - zvr[0])/1000.0);
-        else        dzrcv = 1.0;
-        free(tmp1);
-    }
+    if (nxvr>1) dxrcv = (float)((xvr[nzvr] - xvr[0])/1000.0);
+    else        dxrcv = 1.0;
+    if (nyvr>1) dyrcv = (float)((yvr[nxvr*nzvr] - yvr[0])/1000.0);
+    else        dyrcv = 1.0;
+    if (nzvr>1) dzrcv = (float)((zvr[1] - zvr[0])/1000.0);
+    else        dzrcv = 1.0;
 
 	fp_out = fopen(fout, "w+");
-	hdr_out     = (segy *)calloc(nxvr*nyvr,sizeof(segy));	
 
     for (ir	= 0; ir < ntr; ir++) {
 		for (is = 0; is < nyvr; is++) {
@@ -628,8 +558,8 @@ int main (int argc, char **argv)
             	hdr_out[is*nxvr+ix].d2      = dxrcv;
 				hdr_out[is*nxvr+ix].sx      = hdr_shot[0].sx;
 				hdr_out[is*nxvr+ix].sy      = hdr_shot[0].sy;
-				hdr_out[is*nxvr+ix].gx      = 1000.0*((float)(xvr[0]/1000.0)+dxrcv*ix);
-				hdr_out[is*nxvr+ix].gy      = 1000.0*((float)(yvr[0]/1000.0)+dyrcv*is);
+				hdr_out[is*nxvr+ix].gx      = xvr[ix*nzvr];
+				hdr_out[is*nxvr+ix].gy      = yvr[is*nxvr*nzvr];
             	hdr_out[is*nxvr+ix].offset	= (hdr_out[is*nxvr+ix].gx - hdr_out[is*nxvr+ix].sx)/1000.0;
             }
 		}
@@ -1455,8 +1385,7 @@ void depthDiff3D(float *data, long nt, long nx, long ny, float dt, float dx, flo
     nky   = optncc(ny);
 	dkx   = 2.0*PI/(nkx*dx);
 	dky   = 2.0*PI/(nky*dy);
-
-	cdata = (complex *)calloc(nfreq*nkx*nky,sizeof(complex));
+	cdata = (complex *)malloc(nfreq*nkx*nky*sizeof(complex));
 	if (cdata == NULL) verr("memory allocation error for cdata");
 
 	rdata = (float *)malloc(optn*nkx*nky*sizeof(float));
@@ -1472,19 +1401,35 @@ void depthDiff3D(float *data, long nt, long nx, long ny, float dt, float dx, flo
 	omin   = 2.*PI*fmin;
 	omax   = 2.*PI*fmax;
 
-	iomin  = (long)MIN((omin/deltom), nfreq);
+	iomin  = (int)MIN((omin/deltom), nfreq);
 	iomin  = MAX(iomin, 0);
-	iomax  = MIN((long)(omax/deltom), nfreq);
+	iomax  = MIN((int)(omax/deltom), nfreq);
 
-	cdatascl = (complex *)calloc(nfreq*nkx*nky,sizeof(complex));
+	cdatascl = (complex *)malloc(nfreq*nkx*nky*sizeof(complex));
 	if (cdatascl == NULL) verr("memory allocation error for cdatascl");
 
+	for (iom = 0; iom < iomin; iom++) {
+		for (iy = 0; iy < nky; iy++) {
+            for (ix = 0; ix < nkx; ix++) {
+                cdatascl[iom*nky*nkx+iy*nkx+ix].r = 0.0;
+                cdatascl[iom*nky*nkx+iy*nkx+ix].i = 0.0;
+            }
+        }
+	}
+	for (iom = iomax; iom < nfreq; iom++) {
+		for (iy = 0; iy < nky; iy++) {
+            for (ix = 0; ix < nkx; ix++) {
+                cdatascl[iom*nky*nkx+iy*nkx+ix].r = 0.0;
+                cdatascl[iom*nky*nkx+iy*nkx+ix].i = 0.0;
+            }
+        }
+	}
 	if (opt > 0) {
 		for (iom = iomin ; iom <= iomax ; iom++) {
 			kp = (iom*deltom)/c;
 			kp2 = kp*kp;
-            ikxmax = nkx/2;
-            ikymax = nky/2;
+			ikxmax = MIN((int)(kp/dkx), nkx/2);
+			ikymax = MIN((int)(kp/dky), nky/2);
 
             for (iky = 0; iky < ikymax; iky++) {
                 ky  = iky*dky;
@@ -1493,21 +1438,29 @@ void depthDiff3D(float *data, long nt, long nx, long ny, float dt, float dx, flo
                     kx  = ikx*dkx;
                     kx2 = kx*kx;
                     kz2 = kp2 - kx2 - ky2;
-                    if (kz2<0.0) continue;
                     kz.r  = 0.0;
                     kz.i  = sqrt(kz2);
-                    cdatascl[iom*nky*nkx+iky*nkx+ikx].r = cdata[iom*nky*nkx+iky*nkx+ikx].r*kz.r-cdata[iom*nky*nkx+iky*nkx+ikx].i*kz.i;
-                    cdatascl[iom*nky*nkx+iky*nkx+ikx].i = cdata[iom*nky*nkx+iky*nkx+ikx].i*kz.r+cdata[iom*nky*nkx+iky*nkx+ikx].r*kz.i;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].r = cdata[iom*nky*nkx+iy*nkx+ix].r*kz.r-cdata[iom*nky*nkx+iy*nkx+ix].i*kz.i;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].i = cdata[iom*nky*nkx+iy*nkx+ix].i*kz.r+cdata[iom*nky*nkx+iy*nkx+ix].r*kz.i;
+                }
+                for (ikx = ikxmax; ikx <= nkx-ikxmax+1; ikx++) {
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].r = 0.0;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].i = 0.0;
                 }
                 for (ikx = nkx-ikxmax+1; ikx < nkx; ikx++) {
                     kx  = (ikx-nkx)*dkx;
                     kx2 = kx*kx;
                     kz2 = kp2 - kx2 - ky2;
-                    if (kz2<0.0) continue;
                     kz.r  = 0.0;
                     kz.i  = sqrt(kz2);
-                    cdatascl[iom*nky*nkx+iky*nkx+ikx].r = cdata[iom*nky*nkx+iky*nkx+ikx].r*kz.r-cdata[iom*nky*nkx+iky*nkx+ikx].i*kz.i;
-                    cdatascl[iom*nky*nkx+iky*nkx+ikx].i = cdata[iom*nky*nkx+iky*nkx+ikx].i*kz.r+cdata[iom*nky*nkx+iky*nkx+ikx].r*kz.i;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].r = cdata[iom*nky*nkx+iy*nkx+ix].r*kz.r-cdata[iom*nky*nkx+iy*nkx+ix].i*kz.i;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].i = cdata[iom*nky*nkx+iy*nkx+ix].i*kz.r+cdata[iom*nky*nkx+iy*nkx+ix].r*kz.i;
+                }
+            }
+            for (iky = ikymax; iky <= nky-ikymax+1; iky++) {
+                for (ikx = 0; ikx <= nkx; ikx++) {
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].r = 0.0;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].i = 0.0;
                 }
             }
             for (iky = nky-ikymax+1; iky < nky; iky++) {
@@ -1517,21 +1470,23 @@ void depthDiff3D(float *data, long nt, long nx, long ny, float dt, float dx, flo
                     kx  = ikx*dkx;
                     kx2 = kx*kx;
                     kz2 = kp2 - kx2 - ky2;
-                    if (kz2<0.0) continue;
                     kz.r  = 0.0;
                     kz.i  = sqrt(kz2);
-                    cdatascl[iom*nky*nkx+iky*nkx+ikx].r = cdata[iom*nky*nkx+iky*nkx+ikx].r*kz.r-cdata[iom*nky*nkx+iky*nkx+ikx].i*kz.i;
-                    cdatascl[iom*nky*nkx+iky*nkx+ikx].i = cdata[iom*nky*nkx+iky*nkx+ikx].i*kz.r+cdata[iom*nky*nkx+iky*nkx+ikx].r*kz.i;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].r = cdata[iom*nky*nkx+iy*nkx+ix].r*kz.r-cdata[iom*nky*nkx+iy*nkx+ix].i*kz.i;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].i = cdata[iom*nky*nkx+iy*nkx+ix].i*kz.r+cdata[iom*nky*nkx+iy*nkx+ix].r*kz.i;
+                }
+                for (ikx = ikxmax; ikx <= nkx-ikxmax+1; ikx++) {
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].r = 0.0;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].i = 0.0;
                 }
                 for (ikx = nkx-ikxmax+1; ikx < nkx; ikx++) {
                     kx  = (ikx-nkx)*dkx;
                     kx2 = kx*kx;
                     kz2 = kp2 - kx2 - ky2;
-                    if (kz2<0.0) continue;
                     kz.r  = 0.0;
                     kz.i  = sqrt(kz2);
-                    cdatascl[iom*nky*nkx+iky*nkx+ikx].r = cdata[iom*nky*nkx+iky*nkx+ikx].r*kz.r-cdata[iom*nky*nkx+iky*nkx+ikx].i*kz.i;
-                    cdatascl[iom*nky*nkx+iky*nkx+ikx].i = cdata[iom*nky*nkx+iky*nkx+ikx].i*kz.r+cdata[iom*nky*nkx+iky*nkx+ikx].r*kz.i;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].r = cdata[iom*nky*nkx+iy*nkx+ix].r*kz.r-cdata[iom*nky*nkx+iy*nkx+ix].i*kz.i;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].i = cdata[iom*nky*nkx+iy*nkx+ix].i*kz.r+cdata[iom*nky*nkx+iy*nkx+ix].r*kz.i;
                 }
             }
 
@@ -1541,8 +1496,8 @@ void depthDiff3D(float *data, long nt, long nx, long ny, float dt, float dx, flo
 		for (iom = iomin ; iom < iomax ; iom++) {
 			kp = iom*deltom/c;
 			kp2 = kp*kp;
-            ikxmax = nkx/2;
-            ikymax = nky/2;
+			ikxmax = MIN((int)(kp/dkx), nkx/2);
+			ikymax = MIN((int)(kp/dky), nky/2);
 
             for (iky = 0; iky < ikymax; iky++) {
                 ky  = iky*dky;
@@ -1551,21 +1506,29 @@ void depthDiff3D(float *data, long nt, long nx, long ny, float dt, float dx, flo
                     kx = ikx*dkx;
                     kx2  = kx*kx;
                     kz2 = kp2 - kx2 - ky2;
-                    if (kz2<0.0) continue;
                     kzinv.r  = 0.0;
                     kzinv.i  = -sqrt(kz2)/kz2;
-                    cdatascl[iom*nky*nkx+iky*nkx+ikx].r = cdata[iom*nky*nkx+iky*nkx+ikx].r*kzinv.r-cdata[iom*nky*nkx+iky*nkx+ikx].i*kzinv.i;
-                    cdatascl[iom*nky*nkx+iky*nkx+ikx].i = cdata[iom*nky*nkx+iky*nkx+ikx].i*kzinv.r+cdata[iom*nky*nkx+iky*nkx+ikx].r*kzinv.i;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].r = cdata[iom*nky*nkx+iy*nkx+ix].r*kzinv.r-cdata[iom*nky*nkx+iy*nkx+ix].i*kzinv.i;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].i = cdata[iom*nky*nkx+iy*nkx+ix].i*kzinv.r+cdata[iom*nky*nkx+iy*nkx+ix].r*kzinv.i;
+                }
+                for (ikx = ikxmax; ikx <= nkx-ikxmax+1; ikx++) {
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].r = 0.0;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].i = 0.0;
                 }
                 for (ikx = nkx-ikxmax+1; ikx < nkx; ikx++) {
                     kx = (ikx-nkx)*dkx;
                     kx2  = kx*kx;
                     kz2 = kp2 - kx2 - ky2;
-                    if (kz2<0.0) continue;
                     kzinv.r  = 0.0;
                     kzinv.i  = -sqrt(kz2)/kz2;
-                    cdatascl[iom*nky*nkx+iky*nkx+ikx].r = cdata[iom*nky*nkx+iky*nkx+ikx].r*kzinv.r-cdata[iom*nky*nkx+iky*nkx+ikx].i*kzinv.i;
-                    cdatascl[iom*nky*nkx+iky*nkx+ikx].i = cdata[iom*nky*nkx+iky*nkx+ikx].i*kzinv.r+cdata[iom*nky*nkx+iky*nkx+ikx].r*kzinv.i;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].r = cdata[iom*nky*nkx+iy*nkx+ix].r*kzinv.r-cdata[iom*nky*nkx+iy*nkx+ix].i*kzinv.i;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].i = cdata[iom*nky*nkx+iy*nkx+ix].i*kzinv.r+cdata[iom*nky*nkx+iy*nkx+ix].r*kzinv.i;
+                }
+            }
+            for (iky = ikymax; iky <= nky-ikymax+1; iky++) {
+                for (ikx = 0; ikx <= nkx; ikx++) {
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].r = 0.0;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].i = 0.0;
                 }
             }
             for (iky = nky-ikymax+1; iky < nky; iky++) {
@@ -1575,21 +1538,23 @@ void depthDiff3D(float *data, long nt, long nx, long ny, float dt, float dx, flo
                     kx = ikx*dkx;
                     kx2  = kx*kx;
                     kz2 = kp2 - kx2 - ky2;
-                    if (kz2<0.0) continue;
                     kzinv.r  = 0.0;
                     kzinv.i  = -sqrt(kz2)/kz2;
-                    cdatascl[iom*nky*nkx+iky*nkx+ikx].r = cdata[iom*nky*nkx+iky*nkx+ikx].r*kzinv.r-cdata[iom*nky*nkx+iky*nkx+ikx].i*kzinv.i;
-                    cdatascl[iom*nky*nkx+iky*nkx+ikx].i = cdata[iom*nky*nkx+iky*nkx+ikx].i*kzinv.r+cdata[iom*nky*nkx+iky*nkx+ikx].r*kzinv.i;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].r = cdata[iom*nky*nkx+iy*nkx+ix].r*kzinv.r-cdata[iom*nky*nkx+iy*nkx+ix].i*kzinv.i;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].i = cdata[iom*nky*nkx+iy*nkx+ix].i*kzinv.r+cdata[iom*nky*nkx+iy*nkx+ix].r*kzinv.i;
+                }
+                for (ikx = ikxmax; ikx <= nkx-ikxmax+1; ikx++) {
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].r = 0.0;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].i = 0.0;
                 }
                 for (ikx = nkx-ikxmax+1; ikx < nkx; ikx++) {
                     kx = (ikx-nkx)*dkx;
                     kx2  = kx*kx;
                     kz2 = kp2 - kx2 - ky2;
-                    if (kz2<0.0) continue;
                     kzinv.r  = 0.0;
                     kzinv.i  = -sqrt(kz2)/kz2;
-                    cdatascl[iom*nky*nkx+iky*nkx+ikx].r = cdata[iom*nky*nkx+iky*nkx+ikx].r*kzinv.r-cdata[iom*nky*nkx+iky*nkx+ikx].i*kzinv.i;
-                    cdatascl[iom*nky*nkx+iky*nkx+ikx].i = cdata[iom*nky*nkx+iky*nkx+ikx].i*kzinv.r+cdata[iom*nky*nkx+iky*nkx+ikx].r*kzinv.i;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].r = cdata[iom*nky*nkx+iy*nkx+ix].r*kzinv.r-cdata[iom*nky*nkx+iy*nkx+ix].i*kzinv.i;
+                    cdatascl[iom*nky*nkx+iy*nkx+ix].i = cdata[iom*nky*nkx+iy*nkx+ix].i*kzinv.r+cdata[iom*nky*nkx+iy*nkx+ix].r*kzinv.i;
                 }
             }
 
@@ -1601,7 +1566,7 @@ void depthDiff3D(float *data, long nt, long nx, long ny, float dt, float dx, flo
     wkykx2yxt(&cdatascl[0], &rdata[0], optn, nkx, nky, optn, nkx, nky, 0, 0);
 	/* select original samples and traces */
 	scl = 1.0;
-    scl_data3D(rdata, nt, nx, ny, scl, data, optn, nkx);
+    scl_data3D(rdata, optn, nx, ny, scl, data, nt, nx);
 
 	free(cdatascl);
 	free(rdata);
@@ -1615,19 +1580,19 @@ void pad3d_data(float *data, long nt, long nx, long ny, long ntout, long nxout, 
     for (iy=0;iy<ny;iy++) {
         for (ix=0;ix<nx;ix++) {
             for (it=0;it<nt;it++)
-                datout[iy*nxout*ntout+ix*ntout+it]=data[iy*nx*nt+ix*nt+it];
+                datout[iy*nx*nt+ix*nt+it]=data[iy*nx*nt+ix*nt+it];
             for (it=nt;it<ntout;it++)
-                datout[iy*nxout*ntout+ix*ntout+it]=0.0;
+                datout[iy*nx*nt+ix*nt+it]=0.0;
         }
         for (ix=nx;ix<nxout;ix++) {
             for (it=0;it<ntout;it++)
-                datout[iy*nxout*ntout+ix*ntout+it]=0.0;
+                datout[iy*nx*nt+ix*nt+it]=0.0;
         }
     }
     for (iy=ny;iy<nyout;iy++) {
         for (ix=0;ix<nxout;ix++) {
             for (it=0;it<ntout;it++)
-                datout[iy*nxout*ntout+ix*ntout+it]=0.0;
+                datout[iy*nx*nt+ix*nt+it]=0.0;
         }
     }
 }
@@ -1637,8 +1602,8 @@ void scl_data3D(float *data, long nt, long nx, long ny, float scl, float *datout
 	int it,ix,iy;
     for (iy = 0; iy < ny; iy++) {
         for (ix = 0; ix < nx; ix++) {
-            for (it = 0 ; it < nt ; it++) {
-                datout[iy*nx*nt+ix*nt+it] = scl*data[iy*nxout*ntout+ix*ntout+it];
+            for (it = 0 ; it < ntout ; it++) {
+                datout[iy*nxout*ntout+ix*ntout+it] = scl*data[iy*nx*nt+ix*nt+it];
             }
         }
     }

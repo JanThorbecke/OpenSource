@@ -17,12 +17,14 @@ CSRC =			\
 	crmfft.c	\
 	rc2dfft.c	\
 	cr2dfft.c	\
-	xt2wx.c	\
+	xt2wx.c	    \
 	xt2wkx.c	\
+	yxt2wkykx.c	\
 	wkx2xt.c	\
-	wx2xt.c	\
-	pfafft.c \
-	kiss_fft.c \
+	wkykx2yxt.c	\
+	wx2xt.c	    \
+	pfafft.c    \
+	kiss_fft.c  \
 	fft_mayer.c \
 	wallclock_time.c \
 	optnumber.c \

@@ -293,6 +293,7 @@ int main(int argc, char **argv)
 	srcPar src;
 	bndPar bnd;
 	shotPar shot;
+	FILE 	*fp;
 	float **src_nwav;
 	float ***rox, ***roy, ***roz, ***l2m, ***lam, ***mul;
 	float *tss, *tes, *tep, *p, *q, *r;
@@ -364,6 +365,43 @@ int main(int argc, char **argv)
 	/* read velocity and density files */
 
 	readModel3D(mod, bnd, rox, roy, roz, l2m, lam, mul, tss, tes, tep);
+
+	// tss = (float *)calloc(sizem,sizeof(float));
+	// for (iz=0; iz<mod.naz; iz++) {
+	// 	for (iy=0; iy<mod.nay; iy++) {
+	// 		for (ix=0; ix<mod.nax; ix++) {
+	// 			tss[iy*n2*n1+ix*n1+iz] = roy[iy][ix][iz];
+	// 		}
+	// 	}
+	// }
+	// vmess("nax:%li nay:%li naz:%li",mod.nax,mod.nay,mod.naz);
+	// fp = fopen("roy.bin","w+");
+	// fwrite(tss,sizem,sizeof(float),fp);
+	// fclose(fp);
+	// for (iz=0; iz<mod.naz; iz++) {
+	// 	for (iy=0; iy<mod.nay; iy++) {
+	// 		for (ix=0; ix<mod.nax; ix++) {
+	// 			tss[iy*n2*n1+ix*n1+iz] = rox[iy][ix][iz];
+	// 		}
+	// 	}
+	// }
+	// vmess("nax:%li nay:%li naz:%li",mod.nax,mod.nay,mod.naz);
+	// fp = fopen("rox.bin","w+");
+	// fwrite(tss,sizem,sizeof(float),fp);
+	// fclose(fp);
+	// for (iz=0; iz<mod.naz; iz++) {
+	// 	for (iy=0; iy<mod.nay; iy++) {
+	// 		for (ix=0; ix<mod.nax; ix++) {
+	// 			tss[iy*n2*n1+ix*n1+iz] = roz[iy][ix][iz];
+	// 		}
+	// 	}
+	// }
+	// vmess("nax:%li nay:%li naz:%li",mod.nax,mod.nay,mod.naz);
+	// fp = fopen("roz.bin","w+");
+	// fwrite(tss,sizem,sizeof(float),fp);
+	// fclose(fp);
+	// free(tss);
+	// return 0;
 
 	/* read and/or define source wavelet(s) */
 

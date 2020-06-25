@@ -107,8 +107,15 @@ BLAS = -L${MKLROOT}/lib/ -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread -lm
 #OPTC += -DACML440 -I$(AMDROOT)/include
 #BLAS = -L$(AMDROOT)/lib -lacml -lfortran -lffio -lrt -lm
 
+# FOR ZFP LIBRARIES
+ZFPROOT = ${ROOT}/zfp
+ZFP = -L${ZFPROOT}/lib -lzfp
+ZFPINCL = ${ZFPROOT}/include
+OPTC += -I${ZFPINCL}
+
 #LIBARIES
-LIBS= -L$L -lgenfft $(BLAS)
+LIBS= -L$L -lgenfft $(FFT) $(BLAS) $(ZFP)
+
 
 
 ########################################################################

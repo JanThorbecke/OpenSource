@@ -44,12 +44,15 @@ long readTinvData3D(char *filename, float *xrcv, float *yrcv, float *xsrc, float
     long *xnx, long Nfoc, long nx, long ny, long ntfft, long mode, long *maxval, float *tinv, long hw, long verbose);
 long unique_elements(float *arr, long len);
 
+void timeShift(float *data, long nsam, long nrec, float dt, float shift, float fmin, float fmax);
 void name_ext(char *filename, char *extension);
 
 void convol(float *data1, float *data2, float *con, long nrec, long nsam, float dt, long shift);
 
 void applyMute3D( float *data, long *mute, long smooth, long above, long Nfoc, long nxs, long nys, long nt, 
     long *ixpos, long *iypos, long npos, long shift, long *tsynW);
+void applyMute3D_tshift( float *data, long *mute, long smooth, long above, long Nfoc, long nxs, long nys, long nt,
+    long *ixpos, long *iypos, long npos, long shift, long iter, long *tsynW);
 
 long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath,
     float *d1, float *d2, float *d3, float *f1, float *f2, float *f3,
@@ -181,7 +184,7 @@ int main (int argc, char **argv)
 {
     FILE    *fp_out, *fp_f1plus, *fp_f1min, *fp_imag, *fp_homg;
     FILE    *fp_gmin, *fp_gplus, *fp_f2, *fp_amp;
-    long    i, j, l, k, ret, nshots, nxshot, nyshot, Nfoc, nt, nx, ny, nts, nxs, nys, ngath;
+    long    i, j, l, k, ret, nshots, nxshot, nyshot, Nfoc, nt, nx, ny, nts, nxs, nys, ngath, *itmin;
     long    size, n1, n2, n3, ntap, ntapx, ntapy, tap, dxi, dyi, ntraces, pad, *sx, *sy, *sz;
     long    nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     long    reci, mode, n2out, n3out, verbose, ntfft, zfp;
@@ -192,8 +195,8 @@ int main (int argc, char **argv)
     double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, energyNi, *energyN0, tolerance;
     float   d1, d2, d3, f1, f2, f3, fxsb, fxse, fysb, fyse, ft, fx, fy, *xsyn, *ysyn, dxsrc, dysrc;
     float   *green, *f2p, *G_d, dt, dx, dy, dxs, dys, scl, mem;
-    float   *f1plus, *f1min, *iRN, *Ni, *Nig, *trace, *Gmin, *Gplus, *HomG;
-    float   scale, *tmpdata;
+    float   *f1plus, *f1min, *iRN, *Ni, *trace, *Gmin, *Gplus, *HomG;
+    float   scale, *tmpdata, tplmax;
     float   *ixmask, *iymask, *ampscl, *Gd, *Image, dzim;
     float   grad2rad, px, py, src_anglex, src_angley, src_velox, src_veloy, *mutetest;
     complex *Refl, *Fop;
@@ -334,10 +337,10 @@ int main (int argc, char **argv)
     f1min   = (float *)calloc(Nfoc*nys*nxs*ntfft,sizeof(float));
     iRN     = (float *)calloc(Nfoc*nys*nxs*ntfft,sizeof(float));
     Ni      = (float *)calloc(Nfoc*nys*nxs*ntfft,sizeof(float));
-    Nig     = (float *)calloc(Nfoc*nys*nxs*ntfft,sizeof(float));
     G_d     = (float *)calloc(Nfoc*nys*nxs*ntfft,sizeof(float));
     muteW   = (long *)calloc(Nfoc*nys*nxs,sizeof(long));
     tsynW   = (long *)malloc(Nfoc*nys*nxs*sizeof(long)); // time-shift for Giovanni's plane-wave on non-zero times
+    itmin   = (long *)malloc(Nfoc*sizeof(long));
     trace   = (float *)malloc(ntfft*sizeof(float));
     tapersx = (float *)malloc(nxs*sizeof(float));
     tapersy = (float *)malloc(nys*sizeof(float));
@@ -389,43 +392,19 @@ int main (int argc, char **argv)
     else dzim = 1.0;
                              
     /* compute time shift for tilted plane waves */
-    if (plane_wave != 0) {
-        grad2rad = 17.453292e-3;
-        px = sin(src_anglex*grad2rad)/src_velox;
-        py = sin(src_angley*grad2rad)/src_veloy;
-		if (py < 0.0) {
-			for (j=0; j<nys; j++) {
-				if (px < 0.0) {
-					for (i=0; i<nxs; i++) {
-						tsynW[j*nxs+i] = NINT(fabsf((nxs-1-i)*dxs*px)/dt) + NINT(fabsf((nys-1-j)*dys*py)/dt);
-					}
-				}
-				else {
-					for (i=0; i<nxs; i++) {
-						tsynW[j*nxs+i] = NINT(i*dxs*px/dt) + NINT(fabsf((nys-1-j)*dys*py)/dt);
-					}
-				}
-			}
-		}
-		else {
-			for (j=0; j<nys; j++) {
-				if (px < 0.0) {
-					for (i=0; i<nxs; i++) {
-						tsynW[j*nxs+i] = NINT(fabsf((nxs-1-i)*dxs*px)/dt) + NINT(j*dys*py/dt);
-					}
-				}
-				else {
-					for (i=0; i<nxs; i++) {
-						tsynW[j*nxs+i] = NINT(i*dxs*px/dt) + NINT(j*dys*py/dt);
-					}
-				}
-			}
-		}
-        // if (Nfoc!=1) verr("For plane-wave focusing only one function can be computed at the same time");
-    }
-    else { /* just fill with zero's */
-        for (i=0; i<nys*nxs*Nfoc; i++) {
-            tsynW[i] = 0;
+	if (plane_wave==1) {
+        for (j = 0; j < Nfoc; j++) {
+            itmin[j] = nt;
+            for (i=0; i<nys*nxs; i++) itmin[j] = MIN (itmin[j], muteW[j*nxs*nys+i]);
+            for (i=0; i<nys*nxs; i++) tsynW[j*nxs*nys+i] = muteW[j*nxs*nys+i]-itmin[j];
+        }
+	}
+	else { /* just fill with zero's */
+        for (j = 0; j < Nfoc; j++) {
+            itmin[j]=0;
+            for (i=0; i<nxs*nys; i++) {
+                tsynW[j*nxs*nys+i] = 0;
+            }
         }
     }
 
@@ -436,13 +415,13 @@ int main (int argc, char **argv)
         for (j = ntapx; j < nxs-ntapx; j++)
             tapersx[j] = 1.0;
         for (j = nxs-ntapx; j < nxs; j++)
-            tapersx[j] =(cos(PI*(j-(nxs-ntapx))/ntapx)+1)/2.0;
+            tapersx[j] = (cos(PI*(j-(nxs-ntapx))/ntapx)+1)/2.0;
         for (j = 0; j < ntapy; j++)
             tapersy[j] = (cos(PI*(j-ntapy)/ntapy)+1)/2.0;
         for (j = ntapy; j < nys-ntapy; j++)
             tapersy[j] = 1.0;
         for (j = nys-ntapy; j < nys; j++)
-            tapersy[j] =(cos(PI*(j-(nys-ntapy))/ntapy)+1)/2.0;
+            tapersy[j] = (cos(PI*(j-(nys-ntapy))/ntapy)+1)/2.0;
     }
     else {
         for (j = 0; j < nxs; j++) tapersx[j] = 1.0;
@@ -772,12 +751,6 @@ int main (int argc, char **argv)
                     Ni[l*nys*nxs*nts+i*nts+j]    = -iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+nts-j];
                     energyNi += iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j]*iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
                 }
-                if (plane_wave!=0) { /* don't reverse in time */
-                    Nig[l*nys*nxs*nts+i*nts+j]   = -iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
-                    for (j = 1; j < nts; j++) {
-                        Nig[l*nys*nxs*nts+i*nts+j]   = -iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
-                    }
-                }
             }
             if (iter==0) energyN0[l] = energyNi;
             if (verbose >=2) vmess(" - iSyn %li: Ni at iteration %li has energy %e; relative to N0 %e",
@@ -785,37 +758,24 @@ int main (int argc, char **argv)
         }
 
         /* apply mute window based on times of direct arrival (in muteW) */
-        applyMute3D(Ni, muteW, smooth, above, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);
-        if (plane_wave!=0) applyMute3D(Nig, muteW, smooth, above, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW); // ToDo add tsynW taper for tilted plane-waves
-
+        if (plane_wave==1) {
+            applyMute3D_tshift(Ni,  muteW, smooth, above, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, iter, tsynW);
+        }
+        else {
+            applyMute3D(Ni, muteW, smooth, above, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);
+        }
 
         if (iter % 2 == 0) { /* even iterations update: => f_1^-(t) */
-            if (plane_wave==0) { /* follow the standard focal point scheme */
-                for (l = 0; l < Nfoc; l++) {
-                    for (i = 0; i < npos; i++) {
-                        j = 0;
-                        f1min[l*nys*nxs*nts+i*nts+j] -= Ni[l*nys*nxs*nts+i*nts+j];
-                        for (j = 1; j < nts; j++) {
-                            f1min[l*nys*nxs*nts+i*nts+j] -= Ni[l*nys*nxs*nts+i*nts+nts-j];
-                        }
+            for (l = 0; l < Nfoc; l++) {
+                for (i = 0; i < npos; i++) {
+                    j = 0;
+                    f1min[l*nys*nxs*nts+i*nts+j] -= Ni[l*nys*nxs*nts+i*nts+j];
+                    for (j = 1; j < nts; j++) {
+                        f1min[l*nys*nxs*nts+i*nts+j] -= Ni[l*nys*nxs*nts+i*nts+nts-j];
                     }
                 }
-                if (above==-2) applyMute3D(f1min, muteW, smooth, 0, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);
             }
-            else { /* plane wave scheme */
-                for (l = 0; l < Nfoc; l++) {
-                    for (i = 0; i < npos; i++) {
-                        j = 0;
-                        f1min[l*nys*nxs*nts+i*nts+j] -= Nig[l*nys*nxs*nts+i*nts+j];
-                        Ni[l*nys*nxs*nts+i*nts+j]     = Nig[l*nys*nxs*nts+i*nts+j];
-                        for (j = 1; j < nts; j++) {
-                            f1min[l*nys*nxs*nts+i*nts+j] -= Nig[l*nys*nxs*nts+i*nts+j];
-                            Ni[l*nys*nxs*nts+i*nts+j]     = Nig[l*nys*nxs*nts+i*nts+nts-j];
-                        }
-                    }
-                }
-                if (above==-2) applyMute3D(f1min, muteW, smooth, 0, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);
-            }
+            if (above==-2) applyMute3D(f1min, muteW, smooth, 0, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);
         }
         else {/* odd iterations update: => f_1^+(t)  */
             for (l = 0; l < Nfoc; l++) {
@@ -848,7 +808,6 @@ int main (int argc, char **argv)
     } /* end of iterations */
 
     free(Ni);
-    free(Nig);
 
     /* compute full Green's function G = int R * f2(t) + f2(-t) */
     /* use f2 as operator on R in frequency domain */
@@ -883,7 +842,7 @@ int main (int argc, char **argv)
             }
         }
     }
-    if (!plane_wave) applyMute3D(green, muteW, smooth, 4, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);
+    if (plane_wave!=1) applyMute3D(green, muteW, smooth, 4, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);
 
     /* compute upgoing Green's function G^+,- */
     if (file_gmin != NULL || file_imag!= NULL) {
@@ -910,7 +869,24 @@ int main (int argc, char **argv)
             }
         }
         /* Apply mute with window for Gmin */
-        if (!plane_wave) applyMute3D(Gmin, muteW, smooth, 4, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);
+        if (plane_wave==1) {
+            applyMute3D_tshift(Gmin, muteW, smooth, 4, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, 0, tsynW);
+            /* for plane wave with angle shift itmin downward */
+            for (l = 0; l < Nfoc; l++) {
+                for (i = 0; i < npos; i++) {
+                    memcpy(&trace[0],&Gmin[l*nys*nxs*nts+i*nts],nts*sizeof(float));
+                    for (j = 0; j < itmin[l]; j++) {
+                        Gmin[l*nys*nxs*nts+i*nts+j] = 0.0;
+                    }
+                    for (j = 0; j < nts-itmin[l]; j++) {
+                        Gmin[l*nys*nxs*nts+i*nts+j+itmin[l]] = trace[j];
+                    }
+                }
+            }
+        }
+        else {
+            applyMute3D(Gmin, muteW, smooth, 4, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);
+        }
     } /* end if Gmin */
 
     /* compute downgoing Green's function G^+,+ */
@@ -938,7 +914,12 @@ int main (int argc, char **argv)
             }
         }
         /* Apply mute with window for Gplus */
-        if (!plane_wave) applyMute3D(Gplus, muteW, smooth, 4, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);
+        if (plane_wave) {
+            applyMute3D_tshift(Gplus, muteW, smooth, 4, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, iter, tsynW);
+        }
+        else {
+            applyMute3D(Gplus, muteW, smooth, 4, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);
+        }
     } /* end if Gplus */
 
     /* Estimate the amplitude of the Marchenko Redatuming */
@@ -1339,7 +1320,6 @@ int main (int argc, char **argv)
 /*================ free memory ================*/
 
     free(hdrs_out);
-    free(tapersy);
 
     exit(0);
 }
