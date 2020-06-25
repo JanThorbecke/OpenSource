@@ -29,11 +29,12 @@ which fdelmodc
     file_den=syncl_ro.su \
     file_src=wave.su \
     file_rcv=shot_fd.su \
-    src_type=7 \
+    src_type=10 \
 	src_orient=1 \
 	src_injectionrate=0 \
-    rec_type_vz=1 \
+    rec_type_vz=2 \
     rec_type_p=1 \
+    rec_type_ud=3 \
     rec_int_vz=2 \
     dtrcv=0.004 \
 	rec_delay=0.1 \

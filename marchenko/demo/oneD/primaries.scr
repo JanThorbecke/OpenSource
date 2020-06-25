@@ -19,7 +19,7 @@ select=451
 
 makewave fp=20 dt=0.004 file_out=wave.su nt=2048 t0=0.0 scale=0 scfft=1
 
-../../marchenko_primaries file_shot=$R ishot=$select file_src=wave.su \
+../../marchenko_primaries1 file_shot=$R ishot=$select file_src=wave.su \
 	nshots=901 verbose=2 istart=40 iend=500 fmax=90 pad=1024 \
 	niter=31 shift=20 smooth=10 niterec=2 niterskip=50 file_rr=pred_rr.su T=0 file_update=update.su
 

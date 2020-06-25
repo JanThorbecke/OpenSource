@@ -230,6 +230,7 @@ char *sdoc[] = {
 "   rec_type_ss=0 ..... S (curl) registration _rS",
 "   rec_type_ud=0 ..... 1:pressure normalized decomposition in up and downgoing waves _ru, _rd",
 "   ................... 2:particle velocity normalized decomposition in up and downgoing waves _ru, _rd",
+"   ................... 3:flux normalized decomposition in up and downgoing waves _flup, _flip",
 "   kangle= ........... maximum wavenumber angle for decomposition",
 "   rec_int_vx=0  ..... interpolation of Vx receivers",
 "                     - 0=Vx->Vx (no interpolation)",
