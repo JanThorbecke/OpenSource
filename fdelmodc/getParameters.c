@@ -935,6 +935,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		}
 	}
     if (src->type==7) { /* set also src_injectionrate=1  */
+		vwarn("For src_type=7 injectionrate is always set to 1");
         src->injectionrate=1;
     }
 
@@ -1233,7 +1234,9 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			if (rec->type.vz) fprintf(stderr,"Vz ");
 			if (rec->type.vx) fprintf(stderr,"Vx ");
 			if (rec->type.p) fprintf(stderr,"p ");
-    		if (rec->type.ud) fprintf(stderr,"P+ P- ");
+    		if (rec->type.ud==1) fprintf(stderr,"P+ P- Pressure normalized");
+    		if (rec->type.ud==2) fprintf(stderr,"P+ P- Particle Velocity normalized");
+    		if (rec->type.ud==3) fprintf(stderr,"P+ P- Flux normalized");
 			if (mod->ischeme>2) {
 				if (rec->type.txx) fprintf(stderr,"Txx ");
 				if (rec->type.tzz) fprintf(stderr,"Tzz ");

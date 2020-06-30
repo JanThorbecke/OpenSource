@@ -122,8 +122,9 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
         if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
         cp  = rec.cp;
         rho = rec.rho;
-		if (rec.type.ud==2) vznorm=1;
-		else vznorm=0;
+		if (rec.type.ud==1) vznorm=0;
+		else if (rec.type.ud==2) vznorm=1;
+		else if (rec.type.ud==3) vznorm=-1;
         if (verbose) vmess("Decomposition array at z=%.2f with cp=%.2f rho=%.2f", rec.zr[0]+mod.z0, cp, rho);
         rec_up  = (float *)calloc(ntfft*nkx,sizeof(float));
         rec_down= (float *)calloc(ntfft*nkx,sizeof(float));
@@ -167,6 +168,7 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
         free(crec_dw);
     }
     if (rec.type.ud && (mod.ischeme==3 || mod.ischeme==4) )  {
+// Not yet implemented
     }
 
     for (irec=0; irec<rec.n; irec++) {
