@@ -87,6 +87,8 @@ char *sdoc[] = {
 "   hw=8 ..................... window in time samples to look for maximum in next trace",
 "   smooth=5 ................. number of points to smooth mute with cosine window",
 "   plane_wave=0 ............. enable plane-wave illumination function",
+"   src_angle=0 .............. angle of plane source array",
+"   src_velo=1500 ............ velocity to use in src_angle definition",
 " REFLECTION RESPONSE CORRECTION ",
 "   tsq=0.0 .................. scale factor n for t^n for true amplitude recovery",
 "   Q=0.0 .......,............ Q correction factor",
@@ -132,6 +134,7 @@ int main (int argc, char **argv)
     float   *f1plus, *f1min, *iRN, *Ni, *trace, *Gmin, *Gplus;
     float   xmin, xmax, scale, tsq, Q, f0;
     float   *ixmask;
+    float   grad2rad, p, src_angle, src_velo, tshift;
     complex *Refl, *Fop;
     char    *file_tinv, *file_shot, *file_green, *file_iter;
     char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_pmin;
@@ -176,6 +179,8 @@ int main (int argc, char **argv)
     if(!getparint("shift", &shift)) shift=12;
 
     if (!getparint("plane_wave", &plane_wave)) plane_wave = 0;
+    if (!getparfloat("src_angle",&src_angle)) src_angle=0.;
+    if (!getparfloat("src_velo",&src_velo)) src_velo=1500.;
 
     if (reci && ntap) vwarn("tapering influences the reciprocal result");
 
@@ -251,9 +256,18 @@ int main (int argc, char **argv)
 	/* compute time shift for tilted plane waves */
 	if (plane_wave==1) {
         itmin = nt;
+	    /* compute time shift for shifted plane waves */
+        grad2rad = 17.453292e-3;
+        p = sin(src_angle*grad2rad)/src_velo;
+		tshift = fabs((nxs-1)*dxs*p);
+
+		/* compute mute window for plane waves */
+		//for (i=0; i<nxs; i++) fprintf(stderr,"i=%d window=%d\n", i, muteW[i]);
         for (i=0; i<nxs; i++) itmin = MIN (itmin, muteW[i]);
         for (i=0; i<nxs; i++) tsynW[i] = muteW[i]-itmin;
 		if (Nfoc!=1) verr("For plane-wave focusing only one function can be computed at the same time");
+	    //fprintf(stderr,"itmin=%d\n", itmin);	
+		//for (i=0; i<nxs; i++) fprintf(stderr,"i=%d window=%f\n", i, tsynW[i]*dt);
 	}
 	else { /* just fill with zero's */
 		itmin=0;
@@ -568,19 +582,20 @@ int main (int argc, char **argv)
         /* Apply mute with window for Gmin */
 		if ( plane_wave==1 ) {
             applyMute_tshift(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 0, tsynW);
-            /* for plane wave with angle shift itmin downward */
+			itmin = 0;
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < npos; i++) {
                     memcpy(&trace[0],&Gmin[l*nxs*nts+i*nts],nts*sizeof(float));
                     for (j = 0; j < itmin; j++) {
                         Gmin[l*nxs*nts+i*nts+j] = 0.0;
                     }
-                    for (j = 0; j < nts-itmin; j++) {
-                        Gmin[l*nxs*nts+i*nts+j+itmin] = trace[j];
+                    for (j = 0; j < nts; j++) {
+                        Gmin[l*nxs*nts+i*nts+j] = trace[j];
                     }
                 }
             }
-            //timeShift(Gmin, nts, npos, dt, itmin*dt, fmin, fmax);
+            /* for plane wave with angle shift itmin downward */
+            timeShift(Gmin, nts, npos, dt, tshift, fmin, fmax);
 		}
 		else {
             applyMute(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);

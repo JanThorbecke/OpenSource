@@ -639,12 +639,33 @@ int main (int argc, char **argv)
 	}
 	free(SRC);
 
+/* For testing different window functions */
+
+/*
+    char filename[1024];
+    int A, W;
+    A=shift*3; W=10;
+	sprintf(filename,"windowA%dW%d.txt",A, W);
+	fp_up = fopen(filename, "w+");
+    ii=250;
+    for (i = 0; i < npos; i++) {
+		twplane[i] = dt*A*sin(2*M_PI*i*W/npos);
+        fprintf(fp_up,"time-shift= %d %d %f\n", i, NINT(twplane[i]/dt), twplane[i]);
+	}
+	fclose(fp_up);
+*/
+
 /*================ start loop over number of time-samples ================*/
 
     for (ii=istart; ii<iend; ii++) {
 
 /*================ initialization ================*/
 
+/*
+    for (i = 0; i < npos; i++) {
+		twplane[i] = sqrt(dxs*dxs*(i-npos/2)*(i-npos/2)+ii*ii*dt*dt*2200*2200)/2200-ii*dt;
+	}
+*/
         t5 = wallclock_time();
         memset(M0, 0, Nfoc*nxs*ntfft*sizeof(float));
         memset(v1plus, 0, Nfoc*nxs*ntfft*sizeof(float));
