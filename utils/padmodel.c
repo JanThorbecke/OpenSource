@@ -44,9 +44,9 @@ char *sdoc[] = {
 " Optional parameters: ",
 " ",
 "   file_out=out.su .......... Filename of the output",
-"   nx=0 ..................... Number of samples to pad on both the left and right",
-"   ny=0 ..................... Number of samples to pad on both the front and back",
-"   nz=0 ..................... Number of samples to pad on only the bottom",
+"   nxpad=0 .................. Number of samples to pad on both the left and right",
+"   nypad=0 .................. Number of samples to pad on both the front and back",
+"   nzpad=0 .................. Number of samples to pad on both the bottom and top",
 "   pad=0 .................... Pad option, (=0) pad with the value at the edge, (=1) pad with a constant value",
 "   value=0.0 ................ Padding value if pad=1",
 "   verbose=1 ................ Give detailed information of process",
@@ -88,11 +88,11 @@ int main (int argc, char **argv)
 	
     nxout = nx + 2*nxpad;
     nyout = ny + 2*nypad;
-    nzout = nz + nzpad;
+    nzout = nz + 2*nzpad;
 
     x0out = x0 - ((float)nxpad)*dx;
-    y0out = y0 - ((float)nypad)*dx;
-    z0out = z0;
+    y0out = y0 - ((float)nypad)*dy;
+    z0out = z0 - ((float)nzpad)*dz;
 
 	if (verbose) {
         vmess("******************** INPUT DATA ********************");
@@ -103,7 +103,7 @@ int main (int argc, char **argv)
         vmess("******************** PADDING ********************");
         if (!pad) vmess("Model is padded using the edge values");
         else vmess("model is padded using constant value %.3f",value);
-		vmess("Number of padding samples: x: %li,  y: %li,  z: %li",2*nxpad,2*nypad,nzpad);
+		vmess("Number of padding samples: x: %li,  y: %li,  z: %li",2*nxpad,2*nypad,2*nzpad);
         vmess("******************** OUTPUT DATA ********************");
 		vmess("Number of samples: %li, x: %li,  y: %li,  z: %li",nxout*nyout*nzout,nxout,nyout,nzout);
 		vmess("Sampling distance for   x: %.3f, y: %.3f, z: %.3f",dx,dy,dz);
@@ -130,7 +130,7 @@ int main (int argc, char **argv)
     for (iy = 0; iy < ny; iy++) {
         for (ix = 0; ix < nx; ix++) {
             for (iz = 0; iz < nz; iz++) {
-                outdata[(iy+nypad)*nxout*nzout+(ix+nxpad)*nzout+iz] = indata[iy*nx*nz+ix*nz+iz];
+                outdata[(iy+nypad)*nxout*nzout+(ix+nxpad)*nzout+iz+nzpad] = indata[iy*nx*nz+ix*nz+iz];
             }
         }
     }
@@ -177,7 +177,7 @@ int main (int argc, char **argv)
 
     if (!pad) {
         if (verbose) vmess("Padding with edge value");
-        for (iz = 0; iz < nz; iz++) {
+        for (iz = nzpad; iz < nz+nzpad; iz++) {
             for (iy = nypad; iy < ny+nypad; iy++) {
                 for (ix = nxpad-1; ix >= 0; ix--) {
                     outdata[iy*nxout*nzout+ix*nzout+iz] = outdata[iy*nxout*nzout+nxpad*nzout+iz];
@@ -192,6 +192,13 @@ int main (int argc, char **argv)
                 }
                 for (iy = nypad+ny; iy < nyout; iy++) {
                     outdata[iy*nxout*nzout+ix*nzout+iz] = outdata[(nypad+ny-1)*nxout*nzout+ix*nzout+iz];
+                }
+            }
+        }
+        for (iz = 0; iz < nzpad; iz++) {
+            for (iy = 0; iy < nyout; iy++) {
+                for (ix = 0; ix < nxout; ix++) {
+                    outdata[iy*nxout*nzout+ix*nzout+iz] = outdata[iy*nxout*nzout+ix*nzout+nzpad];
                 }
             }
         }

@@ -52,7 +52,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	float xsnap1, xsnap2, zsnap1, zsnap2, xmax, zmax;
 	float xsrc1, xsrc2, zsrc1, zsrc2, tsrc1, tsrc2, tlength, tactive;
 	float src_angle, src_velo, p, grad2rad, rdelay, scaledt;
-	float *xsrca, *zsrca, rrcv;
+	float *xsrca, *zsrca, rrcv, strike, rake, dip;
 	float rsrc, oxsrc, ozsrc, dphisrc, ncsrc;
 	size_t nsamp;
 	int i, j;
@@ -552,11 +552,21 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparint("nshot",&shot->n)) shot->n=1;
 	if (!getparfloat("dxshot",&dxshot)) dxshot=dx;
 	if (!getparfloat("dzshot",&dzshot)) dzshot=0.0;
+	if (!getparfloat("Mxx",&src->Mxx)) src->Mxx=1.0;
+	if (!getparfloat("Mzz",&src->Mzz)) src->Mzz=1.0;
+	if (!getparfloat("Mxz",&src->Mxz)) src->Mxz=1.0;
 	if (!getparfloat("dip",&src->dip)) src->dip=0.0;
-	if (!getparfloat("strike",&src->strike)) src->strike=1.0;
-	if (src->strike>=0) src->strike=0.5*M_PI;
-	else src->strike = -0.5*M_PI;
-	src->dip = M_PI*(src->dip/180.0);
+	if (!getparfloat("strike",&strike)) strike=90.0;
+	if (!getparfloat("rake",&rake)) rake=90.0;
+	strike = M_PI*(strike/180.0);
+	rake   = M_PI*(rake/180.0);
+	dip    = M_PI*(dip/180.0);
+
+	if (src->type==9) {
+		src->Mxx = -1.0*(sin(dip)*cos(rake)*sin(2.0*strike)+sin(dip*2.0)*sin(rake)*sin(strike)*sin(strike));
+		src->Mxz = -1.0*(cos(dip)*cos(rake)*cos(strike)+cos(dip*2.0)*sin(rake)*sin(strike));
+		src->Mzz = sin(dip*2.0)*sin(rake);
+	}
 
 	if (shot->n>1) {
 		idxshot=MAX(0,NINT(dxshot/dx));
@@ -960,8 +970,11 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			case 8 : fprintf(stderr,"P-potential"); break;
 			case 9 : fprintf(stderr,"double-couple"); break;
 			case 10 : fprintf(stderr,"Fz on P grid with +/-"); break;
+			case 11 : fprintf(stderr,"moment tensor"); break;
 		}
 		fprintf(stderr,"\n");
+		if (src->type==9) vmess("strike %.2f rake %.2f dip %.2f",180.0*strike/M_PI,180.0*rake/M_PI,180.0*dip/M_PI);
+		if (src->type==9 || src->type==11) vmess("Mxx %.2f Mzz %.2f Mxz %.2f",src->Mxx,src->Mzz,src->Mxz);
 		if (wav->random) vmess("Wavelet has a random signature with fmax=%.2f", wav->fmax);
 		if (src->n>1) {
 			vmess("*******************************************");

@@ -50,6 +50,8 @@ char *sdoc[] = {
 "   mode=0 ................... Determine first arrival by maximum (mode=0), first event above tol (mode=1) or by raytime (mode=2)",
 "   tol=1 .................... Tolerance for the determination of first arrival if mode=1",
 "   fray ..................... File containing the raytimes of the first arrivals",
+"   opt=0 .................... Mute the file in the center (=0) or at the beginning (=1)",
+"   verbose=1 ................ Give detailed information about the process (=1) or remain silent (=0)",
 NULL};
 
 int main (int argc, char **argv)
@@ -60,7 +62,7 @@ int main (int argc, char **argv)
 	float   dxs, dys, dzs, scls, fzs, fxs, fys;
 	float   dxh, dyh, dzh, sclh, fzh, fxh, fyh;
     float   dxrcv, dyrcv, dzrcv, dxpos, offset;
-	long    nts, nxs, nys, nzs, ntrs, nth, nxh, nyh, nzh, ntrh; 
+	long    nts, nxs, nys, nzs, ntrs, nth, nxh, nyh, nzh, ntrh, opt; 
     long    nxyz, nxy, ret, ix, iy, iz, it, ht, indrcv, shift, rmt, mode, smooth, verbose;
 	segy    *hdr_hom, *hdr_snap, *hdrs_mute;
 
@@ -78,6 +80,7 @@ int main (int argc, char **argv)
 	if (!getparlong("smooth", &smooth)) smooth = 5;
 	if (!getparlong("mode", &mode)) mode = 0;
 	if (!getparlong("verbose", &verbose)) verbose = 1;
+	if (!getparlong("opt", &opt)) opt = 0;
 	if (!getparfloat("tol", &tol)) tol = 5;
 	if (fhom == NULL) verr("Incorrect G_hom input");
     if (mode != 2) {
@@ -163,38 +166,72 @@ int main (int argc, char **argv)
     /*----------------------------------------------------------------------------*
     *   Apply the muting to the data
     *----------------------------------------------------------------------------*/
-    for (iz = 0; iz < nzh; iz++) {
-        for (iy = 0; iy < nyh; iy++) {
-            for (ix = 0; ix < nxh; ix++) {
-                if (mode != 2) {
-                    for (it = 0; it < nth; it++) {
-                        rtrace[it] = snapdata[it*nxyz+iy*nxh*nzh+ix*nzh+iz];
+    if (opt==0) {
+        if (verbose) vmess("muting around the center");
+        for (iz = 0; iz < nzh; iz++) {
+            for (iy = 0; iy < nyh; iy++) {
+                for (ix = 0; ix < nxh; ix++) {
+                    if (mode != 2) {
+                        for (it = 0; it < nth; it++) {
+                            rtrace[it] = snapdata[it*nxyz+iy*nxh*nzh+ix*nzh+iz];
+                        }
                     }
-                }
-                if (mode == 0) {
-                    indrcv = ht - topdet(rtrace,nth);
-                }
-                else if (mode == 1) {
-                    indrcv = ht - farrdet(rtrace,nth,tol);
-                }
-                else if (mode == 2) {
-                    indrcv = (long)roundf(timeval[iz*nxh*nyh+iy*nxh+ix]/dt);
-                }
-                rmt = MAX(MIN(nth-indrcv,indrcv)-shift-smooth,0);
-                for (it = ht-rmt+1; it < ht+1; it++) {
-                    if (it-(ht-rmt+1) < smooth) {
-                        homdata[it*nyh*nxh*nzh+iy*nxh*nzh+ix*nzh+iz] *= costaper[it-(ht-rmt+1)];
-                        homdata[(nth-it)*nyh*nxh*nzh+iy*nxh*nzh+ix*nzh+iz] *= costaper[it-(ht-rmt+1)];
+                    if (mode == 0) {
+                        indrcv = ht - topdet(rtrace,nth);
                     }
-                    else{
-                        homdata[it*nyh*nxh*nzh+iy*nxh*nzh+ix*nzh+iz] = 0.0;
-                        homdata[(nth-it)*nyh*nxh*nzh+iy*nxh*nzh+ix*nzh+iz] = 0.0;
+                    else if (mode == 1) {
+                        indrcv = ht - farrdet(rtrace,nth,tol);
+                    }
+                    else if (mode == 2) {
+                        indrcv = (long)roundf(timeval[iz*nxh*nyh+iy*nxh+ix]/dt);
+                    }
+                    rmt = MAX(MIN(nth-indrcv,indrcv)-shift-smooth,0);
+                    for (it = ht-rmt+1; it < ht+1; it++) {
+                        if (it-(ht-rmt+1) < smooth) {
+                            homdata[it*nyh*nxh*nzh+iy*nxh*nzh+ix*nzh+iz] *= costaper[it-(ht-rmt+1)];
+                            homdata[(nth-it)*nyh*nxh*nzh+iy*nxh*nzh+ix*nzh+iz] *= costaper[it-(ht-rmt+1)];
+                        }
+                        else{
+                            homdata[it*nyh*nxh*nzh+iy*nxh*nzh+ix*nzh+iz] = 0.0;
+                            homdata[(nth-it)*nyh*nxh*nzh+iy*nxh*nzh+ix*nzh+iz] = 0.0;
+                        }
                     }
                 }
             }
+            if (verbose) vmess("Muting Homogeneous Green's function at depth %li from %li depths",iz+1,nzh);
         }
-        if (verbose) vmess("Muting Homogeneous Green's function at depth %li from %li depths",iz+1,nzh);
     }
+    else if (opt==1) {
+        if (verbose) vmess("muting at the start");
+        for (iz = 0; iz < nzh; iz++) {
+            for (iy = 0; iy < nyh; iy++) {
+                for (ix = 0; ix < nxh; ix++) {
+                    if (mode != 2) {
+                        for (it = 0; it < nth; it++) {
+                            rtrace[it] = snapdata[it*nxyz+iy*nxh*nzh+ix*nzh+iz];
+                        }
+                    }
+                    if (mode == 0) {
+                        indrcv = topdet(rtrace,nth);
+                    }
+                    else if (mode == 1) {
+                        indrcv = farrdet(rtrace,nth,tol);
+                    }
+                    else if (mode == 2) {
+                        indrcv = (long)roundf(timeval[iz*nxh*nyh+iy*nxh+ix]/dt);
+                    }
+                    for (it = MAX(indrcv-shift-smooth,0); it < MAX(indrcv-shift,0); it++) {
+                        homdata[it*nyh*nxh*nzh+iy*nxh*nzh+ix*nzh+iz] *= costaper[it-(indrcv-shift)-1];
+                    }
+                    for (it = 0; it < MAX(indrcv-shift-smooth,0); it++) {
+                        homdata[it*nyh*nxh*nzh+iy*nxh*nzh+ix*nzh+iz] = 0.0;
+                    }
+                }
+            }
+            if (verbose) vmess("Muting Homogeneous Green's function at depth %li from %li depths",iz+1,nzh);
+        }
+    }
+
     free(rtrace);
     if (smooth) free(costaper); 
     if (mode == 2) {
