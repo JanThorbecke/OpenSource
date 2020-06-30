@@ -132,6 +132,9 @@ typedef struct _sourcePar { /* Source Array Parameters */
 	int orient;
 	int *z;
 	int *x;
+	float Mxx;
+	float Mzz;
+	float Mxz;
 	int single;	
 	int plane;
 	int circle;

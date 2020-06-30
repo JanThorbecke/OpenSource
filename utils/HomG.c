@@ -119,7 +119,7 @@ int main (int argc, char **argv)
 	float   dt, dy, dx, t0, y0, x0, xmin, xmax1, sclsxgx, dxrcv, dyrcv, dzrcv;
 	float   *conv, *conv2, *tmp1, *tmp2, cp, shift;
 	long    nshots, ntvs, nyvs, nxvs, ntraces, ret, ix, iy, it, is, ir, ig, file_det, verbose;
-    long    ntr, nxr, nyr, nsr, i, l, j, k, nxvr, nyvr, nzvr, count, num;
+    long    ntr, nxr, nyr, nsr, i, l, j, k, nxvr, nyvr, nzvr, count, num, isn;
     float   dtr, dxr, dyr, ftr, fxr, fyr, sclr, scl;
 	long    pos1, npos, zmax, numb, dnumb, scheme, ntmax, ntshift, shift_num, zfps, zfpr, size;
     long    ixr, iyr, zsrc, zrcv, *xvr, *yvr, *zvr;
@@ -172,6 +172,7 @@ int main (int argc, char **argv)
 
     num = numb;
     count = 0;
+    if (num==0) count=1;
     while (num != 0) {
         count++;
         num /= 10;
@@ -607,35 +608,38 @@ int main (int argc, char **argv)
 	fp_out = fopen(fout, "w+");
 	hdr_out     = (segy *)calloc(nxvr*nyvr,sizeof(segy));	
 
-    for (ir	= 0; ir < ntr; ir++) {
-		for (is = 0; is < nyvr; is++) {
-		    for (ix = 0; ix < nxvr; ix++) {
-            	hdr_out[is*nxvr+ix].fldr	= ir-ntr/2;
-            	hdr_out[is*nxvr+ix].tracl	= ir*nyvr*nxvr+is*nxvr+ix+1;
-            	hdr_out[is*nxvr+ix].tracf	= is*nxvr+ix+1;
-				hdr_out[is*nxvr+ix].scalco  = -1000;
-    			hdr_out[is*nxvr+ix].scalel	= -1000;
-				hdr_out[is*nxvr+ix].sdepth	= hdr_shot[0].sdepth;
-				hdr_out[is*nxvr+ix].selev	= -hdr_shot[0].sdepth;
-				hdr_out[is*nxvr+ix].trid	= 1;
-				hdr_out[is*nxvr+ix].ns		= nzvr;
-				hdr_out[is*nxvr+ix].trwf	= nxvr*nyvr;
-				hdr_out[is*nxvr+ix].ntr		= (ir+1)*hdr_out[is*nxvr+ix].trwf;
-				hdr_out[is*nxvr+ix].f1		= ((float)(zvr[0]/1000.0));
-				hdr_out[is*nxvr+ix].f2		= ((float)(xvr[0]/1000.0));
-				hdr_out[is*nxvr+ix].dt      = dt*(1E6);
-				hdr_out[is*nxvr+ix].d1      = dzrcv;
-            	hdr_out[is*nxvr+ix].d2      = dxrcv;
-				hdr_out[is*nxvr+ix].sx      = hdr_shot[0].sx;
-				hdr_out[is*nxvr+ix].sy      = hdr_shot[0].sy;
-				hdr_out[is*nxvr+ix].gx      = 1000.0*((float)(xvr[0]/1000.0)+dxrcv*ix);
-				hdr_out[is*nxvr+ix].gy      = 1000.0*((float)(yvr[0]/1000.0)+dyrcv*is);
-            	hdr_out[is*nxvr+ix].offset	= (hdr_out[is*nxvr+ix].gx - hdr_out[is*nxvr+ix].sx)/1000.0;
+    for (isn = 0; isn < nshots; isn++) {
+        for (ir	= 0; ir < ntr; ir++) {
+            for (is = 0; is < nyvr; is++) {
+                for (ix = 0; ix < nxvr; ix++) {
+                    hdr_out[is*nxvr+ix].fldr	= ir-ntr/2;
+                    hdr_out[is*nxvr+ix].tracl	= ir*nyvr*nxvr+is*nxvr+ix+1;
+                    hdr_out[is*nxvr+ix].tracf	= is*nxvr+ix+1;
+                    hdr_out[is*nxvr+ix].tracr	= isn;
+                    hdr_out[is*nxvr+ix].scalco  = -1000;
+                    hdr_out[is*nxvr+ix].scalel	= -1000;
+                    hdr_out[is*nxvr+ix].sdepth	= hdr_shot[isn*nxvs*nyvs].sdepth;
+                    hdr_out[is*nxvr+ix].selev	= hdr_shot[isn*nxvs*nyvs].selev;
+                    hdr_out[is*nxvr+ix].trid	= 1;
+                    hdr_out[is*nxvr+ix].ns		= nzvr;
+                    hdr_out[is*nxvr+ix].trwf	= nxvr*nyvr;
+                    hdr_out[is*nxvr+ix].ntr		= (ir+1)*hdr_out[is*nxvr+ix].trwf;
+                    hdr_out[is*nxvr+ix].f1		= ((float)(zvr[0]/1000.0));
+                    hdr_out[is*nxvr+ix].f2		= ((float)(xvr[0]/1000.0));
+                    hdr_out[is*nxvr+ix].dt      = dt*(1E6);
+                    hdr_out[is*nxvr+ix].d1      = dzrcv;
+                    hdr_out[is*nxvr+ix].d2      = dxrcv;
+                    hdr_out[is*nxvr+ix].sx      = hdr_shot[isn*nxvs*nyvs].sx;
+                    hdr_out[is*nxvr+ix].sy      = hdr_shot[isn*nxvs*nyvs].sy;
+                    hdr_out[is*nxvr+ix].gx      = 1000.0*((float)(xvr[0]/1000.0)+dxrcv*ix);
+                    hdr_out[is*nxvr+ix].gy      = 1000.0*((float)(yvr[0]/1000.0)+dyrcv*is);
+                    hdr_out[is*nxvr+ix].offset	= (hdr_out[is*nxvr+ix].gx - hdr_out[is*nxvr+ix].sx)/1000.0;
+                }
             }
-		}
-		ret = writeData3D(fp_out, &Ghom[ir*nyvr*nxvr*nzvr], hdr_out, nzvr, nxvr*nyvr);
-		if (ret < 0 ) verr("error on writing output file.");
-	}
+            ret = writeData3D(fp_out, &Ghom[isn*ntr*nyvr*nxvr*nzvr+ir*nyvr*nxvr*nzvr], hdr_out, nzvr, nxvr*nyvr);
+            if (ret < 0 ) verr("error on writing output file.");
+        }
+    }
 	
 	fclose(fp_out);
     free(hdr_shot);
