@@ -61,7 +61,7 @@ fmute:	$(OBJJ)
 OBJH	= $(SRCH:%.c=%.o)
 
 marchenko:	$(OBJH) 
-	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o marchenko $(OBJH) $(LIBS)
+	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o marchenko1 $(OBJH) $(LIBS)
 
 OBJP	= $(SRCP:%.c=%.o)
 

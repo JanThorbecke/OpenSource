@@ -376,7 +376,7 @@ int main(int argc, char *argv[])
 			vwarn("number of depth steps set to maximum");
 			ndepth = nzm;
 		}
-		if(nx > nxm) verr("number of x position in model to small");
+		if(nx > nxm) verr("number of x position in model(%d) to small (data has %d)", nxm, nx);
 
 		velmod1 = (float *)malloc(nxm*ndepth*sizeof(float));
 		velmod2 = (float *)malloc(nxm*ndepth*sizeof(float));
