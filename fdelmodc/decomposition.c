@@ -429,6 +429,7 @@ void decudF(float om, float rho, float cp, float dx, int nkx, float kangle, floa
 	return;
 }
 
+/*
 void findMatch(complex *A, complex *B, int nx, float om, float trange, float arange, float *topt, float *aopt) 
 {
 	int ix, it, ia;
@@ -463,6 +464,7 @@ void findMatch(complex *A, complex *B, int nx, float om, float trange, float ara
 	free(shifted);
 	return;
 }
+*/
 
 complex froot(float x)
 {
