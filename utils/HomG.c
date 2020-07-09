@@ -276,7 +276,7 @@ int main (int argc, char **argv)
     if (zfps) readzfpdata(fshot, &shotdata[0], size);
 	else readSnapData3D(fshot, &shotdata[0], &hdr_shot[0], nshots, nxvs, nyvs, ntvs, 0, nxvs, 0, nyvs, 0, ntvs);
 
-	Ghom		= (float *)calloc(ntr*nxvr*nyvr*nzvr,sizeof(float));
+	Ghom		= (float *)calloc(nshots*ntr*nxvr*nyvr*nzvr,sizeof(float));
 	xvr		    = (long *)malloc(nxvr*nyvr*nzvr*sizeof(long));
 	yvr		    = (long *)malloc(nxvr*nyvr*nzvr*sizeof(long));
 	zvr		    = (long *)malloc(nxvr*nyvr*nzvr*sizeof(long));
@@ -370,7 +370,7 @@ int main (int argc, char **argv)
             tmp1	= (float *)calloc(nyr*nxr*ntr,sizeof(float));
             tmp2	= (float *)calloc(nyr*nxr*ntr,sizeof(float));
         }
-        if (scheme==6 || scheme==8 || scheme==9 || scheme==10) tmp1 = (float *)calloc(nyr*nxr*ntr,sizeof(float));
+        if (scheme==8 || scheme==9 || scheme==10) tmp1 = (float *)calloc(nyr*nxr*ntr,sizeof(float));
 
         sprintf(fins,"%s%li",direction,ir*dnumb+numb);
 		sprintf(fin2,"%s%s%s",fbegin,fins,fend);
@@ -541,7 +541,7 @@ int main (int argc, char **argv)
         if (scheme==5) {
             free(tmp1); free(tmp2);
         }
-        if (scheme==6 || scheme==8 || scheme==9 || scheme==10) free(tmp1);
+        if (scheme==8 || scheme==9 || scheme==10) free(tmp1);
 	}
 
 	free(shotdata);
@@ -620,6 +620,8 @@ int main (int argc, char **argv)
                     hdr_out[is*nxvr+ix].scalel	= -1000;
                     hdr_out[is*nxvr+ix].sdepth	= hdr_shot[isn*nxvs*nyvs].sdepth;
                     hdr_out[is*nxvr+ix].selev	= hdr_shot[isn*nxvs*nyvs].selev;
+                    hdr_out[is*nxvr+ix].sx      = hdr_shot[isn*nxvs*nyvs].sx;
+                    hdr_out[is*nxvr+ix].sy	    = hdr_shot[isn*nxvs*nyvs].sy;
                     hdr_out[is*nxvr+ix].trid	= 1;
                     hdr_out[is*nxvr+ix].ns		= nzvr;
                     hdr_out[is*nxvr+ix].trwf	= nxvr*nyvr;
@@ -643,6 +645,9 @@ int main (int argc, char **argv)
 	
 	fclose(fp_out);
     free(hdr_shot);
+    free(hdr_out);
+    free(Ghom);
+
 	return 0;
 }
 
