@@ -22,7 +22,7 @@ export OMP_NUM_THREADS=1
 ../fdelmodc \
 	file_cp=$filecp file_den=$filero \
 	ischeme=5 \
-	src_type=11 Mxx=0.0 Mzz=0.0 Mxz=-1.0  tmod=2.0  \
+	src_type=11 Mxx=1.0 Mzz=0.2 Mxz=-1.0  tmod=2.0  \
 	file_src=wavelet.su verbose=2 \
 	file_rcv=rec4S.su \
 	file_snap=snap4S0.su \
