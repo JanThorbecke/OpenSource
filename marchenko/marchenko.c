@@ -286,8 +286,6 @@ int main (int argc, char **argv)
         for (j = nxs-ntap-1; j < nxs; j++)
             tapersy[j] =(cos(PI*(j+1-(nxs-ntap))/ntap)+1)/2.0;
         if (verbose) vmess("Taper for operator applied ntap=%d", ntap);
-        for (j = 0; j < nxs; j++)
-            fprintf(stderr,"taper [%d] = %f \n", j, tapersy[j]);
         for (l = 0; l < Nfoc; l++) {
             for (i = 0; i < nxs; i++) {
                 for (j = 0; j < nts; j++) {
