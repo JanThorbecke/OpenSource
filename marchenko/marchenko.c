@@ -581,24 +581,9 @@ int main (int argc, char **argv)
         }
         /* Apply mute with window for Gmin */
 		if ( plane_wave==1 ) {
-            /* for plane wave with angle shift itmin downward */
-			int *tsynSW;
-    		tsynSW = (int *)malloc(Nfoc*nxs*sizeof(int));
-			itmin = NINT(tshift/dt);
-            for (i = 0; i < nxs; i++) tsynSW[i] = tsynW[i] + itmin;
-            //timeShift(Gmin, nts, npos, dt, tshift, fmin, fmax);
-
-            /* applyMute_tshift(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 0, tsynSW);
-            for (l = 0; l < Nfoc; l++) {
-                for (i = 0; i < npos; i++) {
-                    memcpy(&trace[0],&Gmin[l*nxs*nts+i*nts],nts*sizeof(float));
-                    for (j = 0; j < nts; j++) {
-                        Gmin[l*nxs*nts+i*nts+j] = trace[j];
-                    }
-                }
-            } */
-            /* for plane wave with angle shift itmin downward */
-            //timeShift(Gmin, nts, npos, dt, tshift, fmin, fmax);
+            applyMute_tshift(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 0, tsynW);
+            /* for plane wave with angle tshift downward */
+            timeShift(Gmin, nts, npos, dt, tshift, fmin, fmax);
 		}
 		else {
             applyMute(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
