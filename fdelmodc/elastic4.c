@@ -17,8 +17,6 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 
 int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, int itime, int verbose);
 
-void applyRupture(modPar mod, int itime, float *vx, float *txz, int verbose);
-
 int elastic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx,
 float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float
 *l2m, float *lam, float *mul, int verbose)
@@ -145,11 +143,6 @@ float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float
 	/* Add stress source */
 	if (src.type < 6) {
 		 applySource(mod, src, wav, bnd, itime, ixsrc, izsrc, vx, vz, tzz, txx, txz, rox, roz, l2m, src_nwav, verbose);
-	}
-
-	/* Add rupture */
-	if (src.type==20) {
-		applyRupture(mod, itime, vx, txz, verbose);
 	}
     
 	/* check if there are sources placed on the boundaries */
