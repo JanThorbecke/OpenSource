@@ -283,9 +283,11 @@ int main (int argc, char **argv)
             tapersy[j] = (cos(PI*(j-ntap)/ntap)+1)/2.0;
         for (j = ntap; j < nxs-ntap; j++)
             tapersy[j] = 1.0;
-        for (j = nxs-ntap; j < nxs; j++)
-            tapersy[j] =(cos(PI*(j-(nxs-ntap))/ntap)+1)/2.0;
+        for (j = nxs-ntap-1; j < nxs; j++)
+            tapersy[j] =(cos(PI*(j+1-(nxs-ntap))/ntap)+1)/2.0;
         if (verbose) vmess("Taper for operator applied ntap=%d", ntap);
+        for (j = 0; j < nxs; j++)
+            fprintf(stderr,"taper [%d] = %f \n", j, tapersy[j]);
         for (l = 0; l < Nfoc; l++) {
             for (i = 0; i < nxs; i++) {
                 for (j = 0; j < nts; j++) {
@@ -318,8 +320,8 @@ int main (int argc, char **argv)
             tapersh[j] = (cos(PI*(j-ntap)/ntap)+1)/2.0;
         for (j = ntap; j < nx-ntap; j++)
             tapersh[j] = 1.0;
-        for (j = nx-ntap; j < nx; j++)
-            tapersh[j] =(cos(PI*(j-(nx-ntap))/ntap)+1)/2.0;
+        for (j = nx-ntap-1; j < nx; j++)
+            tapersh[j] =(cos(PI*(j+1-(nx-ntap))/ntap)+1)/2.0;
         if (verbose) vmess("Taper for shots applied ntap=%d", ntap);
         for (l = 0; l < nshots; l++) {
             for (j = 1; j < nw; j++) {
