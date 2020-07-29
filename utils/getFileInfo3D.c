@@ -53,7 +53,7 @@ long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, fl
     else scl = hdr.scalco;
 
     *n1 = hdr.ns;
-    if ( (hdr.trid == 1) && (hdr.dt != 0) ) {
+    if ( (hdr.trid == 101) && (hdr.dt != 0) ) {
         *d1 = ((float) hdr.dt)*1.e-6;
         *f1 = ((float) hdr.delrt)/1000.;
     }

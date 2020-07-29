@@ -64,7 +64,7 @@ int main (int argc, char **argv)
 	FILE	*fp_gmin, *fp_ray, *fp_amp, *fp_out;
 	char	*file_gmin, *file_ray, *file_amp, *file_out, fbr[100], fer[100], fba[100], fea[100], fins[100], fin2[100], numb1[100], *ptr;
 	float	*gmin, *conv, *time, *amp, *image, fmin, fmax;
-	float	dt, dy, dx, dz, t0, y0, x0, scl, *shift;
+	float	dt, dy, dx, dz, t0, y0, x0, scl, *shift, *block;
 	float	dt_ray, dy_ray, dx_ray, t0_ray, y0_ray, x0_ray, scl_ray, px, py, src_velox, src_veloy, src_anglex, src_angley, grad2rad;
 	long	nshots, nt, ny, nx, ntr, delay;
 	long	nray, nt_ray, ny_ray, nx_ray, ntr_ray;
@@ -185,6 +185,8 @@ int main (int argc, char **argv)
 	gy       	= (long *)calloc(nray*nshots,sizeof(long));
 	gz       	= (long *)calloc(nray*nshots,sizeof(long));
 
+	block       = (float *)calloc(nray*nshots*nt,sizeof(float));
+
 	readSnapData3D(file_gmin, gmin, hdr_gmin, nshots, nx, ny, nt, 0, nx, 0, ny, 0, nt);
 	if (verbose) vmess("Read in Gmin data");
 
@@ -279,7 +281,10 @@ int main (int argc, char **argv)
 			}
 			timeShift(&conv[0],nt,nx*ny,dt,&time[is*ny*nx],&amp[is*ny*nx],shift,fmin,fmax);
 			for (ix = 0; ix < ny*nx; ix++) {
-				image[is*nshots+iy] += conv[ix*nt+delay]*dx*dy*dt;
+				image[is*nshots+iy] += conv[ix*nt+delay+2]*dx*dy*dt;
+				for (it=0; it<nt; it++) {
+					block[is*nshots*nt+iy*nt+it] += conv[ix*nt+it];
+				}
 			}
 		}
 
@@ -319,7 +324,39 @@ int main (int argc, char **argv)
 
 	fclose(fp_out);
 
-	free(image); free(hdr_out);
+	fp_out = fopen("block.su", "w+");
+
+	if (nshots>1) dz = ((float)(gz[1] - gz[0]))/1000.0;
+	else dz = 1.0;
+
+	for (is = 0; is < nshots; is++) {
+		for (it = 0; it < nray; it++) {
+			hdr_out[it*nshots+is].fldr		= it+1;
+			hdr_out[it*nshots+is].tracl		= it+1;
+			hdr_out[it*nshots+is].tracf		= it+1;
+			hdr_out[it*nshots+is].scalco	= -1000;
+			hdr_out[it*nshots+is].scalel	= -1000;
+			hdr_out[it*nshots+is].trid		= 1;
+			hdr_out[it*nshots+is].ns		= nt;
+			hdr_out[it*nshots+is].trwf		= nray;
+			hdr_out[it*nshots+is].ntr		= nray;
+			hdr_out[it*nshots+is].f1		= (((float)gz[0])/1000.0);
+			hdr_out[it*nshots+is].f2		= (((float)gx[0])/1000.0);
+			hdr_out[it*nshots+is].dt		= ((int)(dt*1E6));
+			hdr_out[it*nshots+is].d1		= roundf(dz*1000.0)/1000.0;
+			hdr_out[it*nshots+is].d2		= roundf(dx*1000.0)/1000.0;
+			hdr_out[it*nshots+is].gx		= gx[it*nshots+is];
+			hdr_out[it*nshots+is].gy		= gy[it*nshots+is];
+			hdr_out[it*nshots+is].sdepth	= gz[it*nshots+is];
+		}
+	}
+
+	ret = writeData3D(fp_out, &block[0], hdr_out, nt, nray*nshots);
+	if (ret < 0 ) verr("error on writing output file.");
+
+	fclose(fp_out);
+
+	free(image); free(hdr_out); free(block);
 
 	vmess("Wrote data");
 

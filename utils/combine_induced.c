@@ -41,21 +41,25 @@ char *sdoc[] = {
 " ",
 " Optional parameters: ",
 " ",
-"   file_out= ................ Filename of the output",
-"   numb= .................... integer number of first file",
-"   dnumb= ................... integer number of increment in files",
-"	nzmax= ................... Maximum number of files read",
+"   file_out=out.su .......... Filename of the output",
+"   numb=1 ................... integer number of first file",
+"   dnumb=1 .................. integer number of increment in files",
+"   nzmax=0 .................. Maximum number of files read, 0 is no limit",
+"   nshift=0 ................. Sample number shift",
+"   shift=0.0 ................ Base shift in seconds for the data",
+"   dtshift=0.0 .............. Shift per gather in seconds",
+"   verbose=1 ................ Give information about the process (=1) or not (=0)",
 NULL};
 
 int main (int argc, char **argv)
 {
 	FILE    *fp_in, *fp_out;
 	char    *fin, *fout, *ptr, fbegin[100], fend[100], fins[100], fin2[100], numb1[100];
-	float   *indata, *outdata, shift, dtshift, dt_time;
+	float   *indata, *outdata, *loopdata, shift, dtshift;
 	float   dt, dz, dy, dx, t0, x0, y0, z0, scl, dxrcv, dyrcv, dzrcv;
 	long    nt, nz, ny, nx, nxyz, ntr, ix, iy, it, is, iz, pos, file_det, nxs, nys, nzs;
 	long    numb, dnumb, ret, nzmax, verbose, nt_out, ishift, nshift, *sx, *sy, *sz;
-	segy    *hdr_in, *hdr_bin, *hdr_out;
+	segy    *hdr_in, *hdr_loop, *hdr_out;
 
 	initargs(argc, argv);
 	requestdoc(1);
@@ -72,7 +76,6 @@ int main (int argc, char **argv)
 	if (!getparlong("nshift", &nshift)) nshift=0;
 	if (!getparfloat("shift", &shift)) shift=0.0;
 	if (!getparfloat("dtshift", &dtshift)) dtshift=0.0;
-	if (!getparfloat("dt_time", &dt_time)) dt_time=0.004;
 	if (fin == NULL) verr("Incorrect downgoing input");
 
     /*----------------------------------------------------------------------------*
@@ -140,15 +143,15 @@ int main (int argc, char **argv)
     *   Read in a single file to determine if the header values match
     *   and allocate the data
     *----------------------------------------------------------------------------*/
-	hdr_in      = (segy *)calloc(nx*ny,sizeof(segy));
+	hdr_in      = (segy *)calloc(nx*ny*nt,sizeof(segy));
     indata    	= (float *)calloc(nxyz*nt,sizeof(float));
 
 	readSnapData3D(fin2, indata, hdr_in, nt, nx, ny, nz, 0, nx, 0, ny, 0, nz);
 
 	dt 		= ((float)hdr_in[0].dt)/1E6;
-    sx    	= (long *)calloc(nx*ny,sizeof(float));
-    sy    	= (long *)calloc(nx*ny,sizeof(float));
-    sz    	= (long *)calloc(nx*ny,sizeof(float));
+    sx    	= (long *)calloc(nx*ny,sizeof(long));
+    sy    	= (long *)calloc(nx*ny,sizeof(long));
+    sz    	= (long *)calloc(nx*ny,sizeof(long));
 
 	for (ix = 0; ix < nx*ny; ix++) {
 		sx[ix] = hdr_in[0].sx;
@@ -165,14 +168,13 @@ int main (int argc, char **argv)
     /*----------------------------------------------------------------------------*
     *   Parallel loop for reading in and combining the various shots
     *----------------------------------------------------------------------------*/
-#pragma omp parallel default(shared) \
-  private(indata,hdr_in,fins,fin2,fp_in,is,ix,iy,iz,it,ishift)
-{
-	indata     = (float *)calloc(nxyz*nt,sizeof(float));
-	hdr_in      = (segy *)calloc(nx*ny*nt,sizeof(segy));
+#pragma omp parallel for schedule(static,1) default(shared) \
+  private(loopdata,hdr_loop,fins,fin2,fp_in,is,ix,iy,iz,it,ishift)
 
-#pragma omp for
 	for (is = 0; is < nzs; is++) {
+		loopdata	= (float *)calloc(nxyz*nt,sizeof(float));
+		hdr_loop	= (segy *)calloc(nx*ny*nt,sizeof(segy));
+
 		if (verbose) vmess("Depth:%li out of %li",is+1,nzs);
 		sprintf(fins,"%li",is*dnumb+numb);
        	sprintf(fin2,"%s%s%s",fbegin,fins,fend);
@@ -181,10 +183,10 @@ int main (int argc, char **argv)
 			verr("Error opening file");
 		}
 		fclose(fp_in);
-		readSnapData3D(fin2, indata, hdr_in, nt, nx, ny, nz, 0, nx, 0, ny, 0, nz);
-		sx[is] = hdr_in[0].sx;
-		sy[is] = hdr_in[0].sy;
-		sz[is] = hdr_in[0].sdepth;
+		readSnapData3D(fin2, loopdata, hdr_loop, nt, nx, ny, nz, 0, nx, 0, ny, 0, nz);
+		sx[is] = hdr_loop[0].sx;
+		sy[is] = hdr_loop[0].sy;
+		sz[is] = hdr_loop[0].sdepth;
 		
 		ishift = nshift*is;
 		if (verbose) vmess("Shifting %li timesteps for a total of %.3f seconds",ishift,shift+(dtshift*((float)iz)));
@@ -192,14 +194,14 @@ int main (int argc, char **argv)
 			for (iy = 0; iy < ny; iy++) {
 				for (ix = 0; ix < nx; ix++) {
 					for (iz = 0; iz < nz; iz++) {
-						outdata[it*nxyz+iy*nx*nz+ix*nz+iz] += indata[(it-ishift+(nt/2))*nxyz+iy*nx*nz+ix*nz+iz];
+						outdata[it*nxyz+iy*nx*nz+ix*nz+iz] += loopdata[(it-ishift+(nt/2))*nxyz+iy*nx*nz+ix*nz+iz];
 					}
 				}
 			}
 		}
+		free(loopdata);free(hdr_loop);
 	}
-	free(indata);free(hdr_in);
-}
+
 
     /*----------------------------------------------------------------------------*
     *   Write out the data to file
@@ -232,7 +234,7 @@ int main (int argc, char **argv)
 				hdr_out[iy*nx+ix].offset	= (hdr_out[iy*nx+ix].gx - hdr_out[iy*nx+ix].sx)/1000.0;
 			}
 		}
-		ret = writeData3D(fp_out, &outdata[is*nxs*nt], hdr_out, nt, nxs);
+		ret = writeData3D(fp_out, &outdata[it*ny*nx*nz], hdr_out, nz, nx*ny);
 		if (ret < 0 ) verr("error on writing output file.");
 	}
 	
