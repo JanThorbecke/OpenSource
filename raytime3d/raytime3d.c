@@ -35,6 +35,8 @@ void vidale3d(float *slow0, float *time0, long nz, long nx, long ny, float h, lo
 
 void src3D(float *time0, float *slow0, long nz, long nx, long ny, float h, float ox, float oy, float oz, long xs, long ys, long zs, long *cube);
 
+int writeData3D(FILE *fp, float *data, segy *hdrs, long n1, long n2);
+
 
 /*********************** self documentation **********************/
 char *sdoc[] = {
@@ -287,45 +289,45 @@ private (is,time0,ampl,nrx,nry,nrz,nr,cp_average,i,j,k,ix,iy,iz,hdrs,tmpdata,nwr
 		if (verbose) vmess("Writing src %li of %li sources",is+1,shot.n);
 		if (verbose>1) vmess("xsrc[%li]=%f ysrc[%li]=%f zsrc[%li]=%f",shot.x[is],shot.xs[is],shot.y[is],shot.ys[is],shot.z[is],shot.zs[is]);
 
-		hdrs = (segy *) calloc(1,sizeof(segy));
-		tmpdata = (float *)malloc((rec.nx)*sizeof(float));
+		hdrs = (segy *) calloc(rec.nz*rec.ny,sizeof(segy));
+		tmpdata = (float *)malloc((rec.n)*sizeof(float));
 		
-		for (i = 0; i < rec.ny; i++) {
-			hdrs[0].fldr	= is+1;
-			hdrs[0].tracl	= i+1;
-			hdrs[0].tracf	= i+1;
-			hdrs[0].scalco	= -1000;
-			hdrs[0].scalel	= -1000;
-			hdrs[0].sx		= (long)(f2+(shot.x[is]-1)*d2)*1000;
-			hdrs[0].sy		= (long)(f3+(shot.y[is]-1)*d3)*1000;
-			hdrs[0].sdepth	= (long)(f1+(shot.z[is]-1)*d1)*1000;
-			hdrs[0].selev	= -(long)(f1+(shot.z[is]-1)*d1)*1000;
-			hdrs[0].gy		= (long)(mod.y0+rec.yr[i*rec.nx])*1000;
-			hdrs[0].ns 		= rec.nx;
-			hdrs[0].ntr		= rec.ny*shot.n;
-			hdrs[0].trwf	= rec.ny*shot.n;
-			hdrs[0].f1		= mod.x0+rec.xr[0];
-			hdrs[0].f2		= mod.y0+rec.yr[0];
-			hdrs[0].dt 		= (long)(d2*1e6);
-			hdrs[0].d1 		= rec.xr[1]-rec.xr[0];
-			hdrs[0].d2 		= rec.yr[rec.nx]-rec.yr[0];
+        for (j = 0; j < rec.nz; j++) {
+            for (i = 0; i < rec.ny; i++) {
+                hdrs[j*rec.ny+i].fldr	= is+1;
+                hdrs[j*rec.ny+i].tracl	= i+1;
+                hdrs[j*rec.ny+i].tracf	= i+1;
+                hdrs[j*rec.ny+i].scalco	= -1000;
+                hdrs[j*rec.ny+i].scalel	= -1000;
+                hdrs[j*rec.ny+i].sx		= (long)(f2+(shot.x[is]-1)*d2)*1000;
+                hdrs[j*rec.ny+i].sy		= (long)(f3+(shot.y[is]-1)*d3)*1000;
+                hdrs[j*rec.ny+i].sdepth	= (long)(f1+(shot.z[is]-1)*d1)*1000;
+                hdrs[j*rec.ny+i].selev	= -(long)(f1+(shot.z[is]-1)*d1)*1000;
+                hdrs[j*rec.ny+i].gy		= (long)(mod.y0+rec.yr[j*rec.ny*rec.nx+i*rec.nx])*1000;
+                hdrs[j*rec.ny+i].gx		= (long)(mod.z0+rec.zr[j*rec.ny*rec.nx])*1000;
+                hdrs[j*rec.ny+i].ns 	= rec.nx;
+                hdrs[j*rec.ny+i].ntr	= rec.ny*shot.n;
+                hdrs[j*rec.ny+i].trwf	= rec.ny*shot.n;
+                hdrs[j*rec.ny+i].f1		= mod.x0+rec.xr[0];
+                hdrs[j*rec.ny+i].f2		= mod.y0+rec.yr[0];
+                hdrs[j*rec.ny+i].dt 	= (long)(d2*1e6);
+                hdrs[j*rec.ny+i].d1 	= rec.xr[1]-rec.xr[0];
+                hdrs[j*rec.ny+i].d2 	= rec.yr[rec.nx]-rec.yr[0];
 
-			for (k = 0; k < rec.nx; k++) {
-				tmpdata[k] = time0[(rec.z[i*rec.nx+k]+1)*nxy+(rec.y[i*rec.nx+k]+1)*(nx+2)+rec.x[i*rec.nx+k]+1];
-			}
+				for (k = 0; k < rec.nx; k++) {
+            		tmpdata[j*rec.ny*rec.nx+i*rec.nx+k] = time0[(rec.z[j*rec.ny*rec.nx+i*rec.nx+k]+1)*nxy+(rec.y[j*rec.ny*rec.nx+i*rec.nx+k]+1)*(nx+2)+rec.x[j*rec.ny*rec.nx+i*rec.nx+k]+1];
+        		}
+            }
+        }
 
-			nwrite = fwrite( &hdrs[0], 1, TRCBYTES, fpt);
-			assert(nwrite == TRCBYTES);
-			nwrite = fwrite( tmpdata, sizeof(float), rec.nx, fpt );
-			assert(nwrite == rec.nx);
+		ret = writeData3D(fpt, &tmpdata[0], hdrs, rec.nx, rec.nz*rec.ny);
+		if (ret < 0 ) verr("error on writing output file.");
 
-			if (ray.geomspread==1) {
-				nwrite = fwrite( &hdrs[0], 1, TRCBYTES, fpa);
-				assert(nwrite == TRCBYTES);
-				nwrite = fwrite( &ampl[i*rec.nx], sizeof(float), rec.nx, fpa );
-				assert(nwrite == rec.nx);
-			}
-		}
+        if (ray.geomspread==1) {
+			ret = writeData3D(fpt, &ampl[0], hdrs, rec.nx, rec.nz*rec.ny);
+			if (ret < 0 ) verr("error on writing output file.");
+        }
+		
 		writer++;
 		free(time0);
 		free(hdrs);

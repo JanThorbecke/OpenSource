@@ -559,14 +559,16 @@ int main (int argc, char **argv)
         nzvr = nyvr;
         nyvr = ix;
 	    tmp1 = (float *)calloc(nxvr*nyvr*nzvr,sizeof(float));
-        for (it=0; it<ntr; it++) {
-            for (iy=0; iy<nyvr*nxvr*nzvr; iy++) {
-                tmp1[iy] = Ghom[it*nyvr*nxvr*nzvr+iy];
-            }
-            for (iy=0; iy<nyvr; iy++) {
-                for (ix=0; ix<nxvr; ix++) {
-                    for (ir=0; ir<nzvr; ir++) {
-                        Ghom[it*nyvr*nxvr*nzvr+iy*nxvr*nzvr+ix*nzvr+ir] = tmp1[ir*nxvr*nyvr+ix*nyvr+iy];
+        for (isn=0; isn<nshots; isn++) {
+            for (it=0; it<ntr; it++) {
+                for (iy=0; iy<nyvr*nxvr*nzvr; iy++) {
+                    tmp1[iy] = Ghom[isn*ntr*nyvr*nxvr*nzvr+it*nyvr*nxvr*nzvr+iy];
+                }
+                for (iy=0; iy<nyvr; iy++) {
+                    for (ix=0; ix<nxvr; ix++) {
+                        for (ir=0; ir<nzvr; ir++) {
+                            Ghom[isn*ntr*nyvr*nxvr*nzvr+it*nyvr*nxvr*nzvr+iy*nxvr*nzvr+ix*nzvr+ir] = tmp1[ir*nxvr*nyvr+ix*nyvr+iy];
+                        }
                     }
                 }
             }
@@ -584,14 +586,16 @@ int main (int argc, char **argv)
         nzvr = nxvr;
         nxvr = ix;
 	    tmp1 = (float *)calloc(nxvr*nyvr*nzvr,sizeof(float));
-        for (it=0; it<ntr; it++) {
-            for (iy=0; iy<nyvr*nxvr*nzvr; iy++) {
-                tmp1[iy] = Ghom[it*nyvr*nxvr*nzvr+iy];
-            }
-            for (iy=0; iy<nyvr; iy++) {
-                for (ix=0; ix<nxvr; ix++) {
-                    for (ir=0; ir<nzvr; ir++) {
-                        Ghom[it*nyvr*nxvr*nzvr+iy*nxvr*nzvr+ix*nzvr+ir] = tmp1[iy*nzvr*nxvr+ir*nxvr+ix];
+        for (isn=0; isn<nshots; isn++) {
+            for (it=0; it<ntr; it++) {
+                for (iy=0; iy<nyvr*nxvr*nzvr; iy++) {
+                    tmp1[iy] = Ghom[isn*ntr*nyvr*nxvr*nzvr+it*nyvr*nxvr*nzvr+iy];
+                }
+                for (iy=0; iy<nyvr; iy++) {
+                    for (ix=0; ix<nxvr; ix++) {
+                        for (ir=0; ir<nzvr; ir++) {
+                            Ghom[isn*ntr*nyvr*nxvr*nzvr+it*nyvr*nxvr*nzvr+iy*nxvr*nzvr+ix*nzvr+ir] = tmp1[iy*nzvr*nxvr+ir*nxvr+ix];
+                        }
                     }
                 }
             }

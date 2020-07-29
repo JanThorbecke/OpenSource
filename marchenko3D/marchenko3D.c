@@ -196,7 +196,7 @@ int main (int argc, char **argv)
     float   d1, d2, d3, f1, f2, f3, fxsb, fxse, fysb, fyse, ft, fx, fy, *xsyn, *ysyn, dxsrc, dysrc;
     float   *green, *f2p, *G_d, dt, dx, dy, dxs, dys, scl, mem;
     float   *f1plus, *f1min, *iRN, *Ni, *trace, *Gmin, *Gplus, *HomG;
-    float   scale, *tmpdata, tplmax;
+    float   scale, *tmpdata, tplmax, tshift;
     float   *ixmask, *iymask, *ampscl, *Gd, *Image, dzim;
     float   grad2rad, px, py, src_anglex, src_angley, src_velox, src_veloy, *mutetest;
     complex *Refl, *Fop;
@@ -393,6 +393,12 @@ int main (int argc, char **argv)
                              
     /* compute time shift for tilted plane waves */
 	if (plane_wave==1) {
+		grad2rad = 17.453292e-3;
+		px = sin(src_anglex*grad2rad)/src_velox;
+		py = sin(src_angley*grad2rad)/src_veloy;
+		
+		tshift = fabs((nys-1)*dys*py) + fabs((nxs-1)*dxs*px);
+
         for (j = 0; j < Nfoc; j++) {
             itmin[j] = nt;
             for (i=0; i<nys*nxs; i++) itmin[j] = MIN (itmin[j], muteW[j*nxs*nys+i]);
@@ -415,13 +421,13 @@ int main (int argc, char **argv)
         for (j = ntapx; j < nxs-ntapx; j++)
             tapersx[j] = 1.0;
         for (j = nxs-ntapx; j < nxs; j++)
-            tapersx[j] = (cos(PI*(j-(nxs-ntapx))/ntapx)+1)/2.0;
+            tapersx[j] = (cos(PI*(j+1-(nxs-ntapx))/ntapx)+1)/2.0;
         for (j = 0; j < ntapy; j++)
             tapersy[j] = (cos(PI*(j-ntapy)/ntapy)+1)/2.0;
         for (j = ntapy; j < nys-ntapy; j++)
             tapersy[j] = 1.0;
         for (j = nys-ntapy; j < nys; j++)
-            tapersy[j] = (cos(PI*(j-(nys-ntapy))/ntapy)+1)/2.0;
+            tapersy[j] = (cos(PI*(j+1-(nys-ntapy))/ntapy)+1)/2.0;
     }
     else {
         for (j = 0; j < nxs; j++) tapersx[j] = 1.0;
@@ -883,6 +889,7 @@ int main (int argc, char **argv)
                     }
                 }
             }
+            timeShift(Gmin, nts, npos*Nfoc, dt, tshift, fmin, fmax);
         }
         else {
             applyMute3D(Gmin, muteW, smooth, 4, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);

@@ -41,7 +41,8 @@ SRCC	= $(PRG).c \
 		atopkge.c \
 		docpkge.c \
 		threadAffinity.c \
-		getpars.c
+		getpars.c \
+		writeData3D.c
 
 OBJC	= $(SRCC:%.c=%.o)
 
