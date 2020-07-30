@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "WARNING! The data size of the 3D reflection data is very large!!!"
+echo "WARNING! The data size of the 3D reflection data is very large (>200 GB)!!!"
 echo "When you are positive your machine has enough memory,"
 echo "delete the exit; statement from makeR.sh"
 
