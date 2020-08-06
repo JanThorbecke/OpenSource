@@ -342,7 +342,7 @@ void computeMatrixInverse(complex *matrix, int nxm, int rthm, float eps_a, float
 			/*S[i]=1.0/(S[i]+eps_r*S[0]);*/
 /*			fprintf(stderr,"S^-1[%d] = %e\n",i,S[i]);*/
 		}
-		if(verbose) fprintf(stderr,"fraction of eigenvalues used = %.3f\n",(float)(neig/((float)N)));
+		if(verbose>1) fprintf(stderr,"fraction of eigenvalues used = %.3f\n",(float)(neig/((float)N)));
 
 		for (j=0; j<N; j++) {
 			for (i=0; i<N; i++) {

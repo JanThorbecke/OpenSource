@@ -46,7 +46,9 @@ int getModelInfo(char *file_name, int *n1, int *n2, float *d1, float *d2, float 
     *f2 = hdr.f2;
 
     if ( NINT(100.0*((*d1)/(*d2)))!=100 ) {
-        verr("dx and dz are different in the model !");
+        vwarn("dx and dz are different in the model !");
+        vwarn("setting dx=%e to dz=%e ", *d2, *d1);
+        *d2 = *d1;
     }
     if ( NINT(1000.0*(*d1))==0 ) {
         if(!getparfloat("dx",d1)) {

@@ -12,7 +12,8 @@ ALLINC  = -I.
 #General BLAS library
 #LIBS += $(BLAS)
 
-CFLAGS += -I$(MKLROOT)/include
+#CFLAGS += -g # -I$(MKLROOT)/include  
+#FFLAGS += -g -mcmodel=medium
 #LIBS += -lblas -llapack -L$L -lgenfft $(LIBSM) -lc -lm
 
 all: mdd 
@@ -30,21 +31,28 @@ SRCC =  $(PRG).c \
 	getFileInfo.c \
 	verbosepkg.c \
 	name_ext.c \
-	wallclock_time.c
+	wallclock_time.c 
+
+SRCF =  lsqrDataModule.F90 \
+        zlsqrDataModule.F90 \
+        zlsqrblasInterface.F90 \
+        zlsqrModule.F90
 
 OBJC	= $(SRCC:%.c=%.o)
 
-$(PRG):	$(OBJC) 
-	$(CC) $(LDFLAGS) $(CFLAGS) $(OPTC) -o $(PRG) $(OBJC) $(LIBS)
+OBJF    = $(SRCF:%.F90=%.o)
+
+$(PRG):	$(OBJC) $(OBJF)
+	$(FC) $(LDFLAGS) -nofor-main $(CFLAGS) $(OPTC) -o $(PRG) $(OBJC) $(OBJF) $(LIBS) 
 
 install: $(PRG) 
 	cp $(PRG) $B
 
 clean:
-		rm -f core $(OBJC) $(OBJM) $(PRG) 
+		rm -f core $(OBJC) $(OBJF) $(OBJM) *.mod $(PRG) 
 
 realclean:
-		rm -f core $(OBJC) $(OBJM) $(PRG) $B/$(PRG) 
+		rm -f core $(OBJC) $(OBJF) $(OBJM) *.mod $(PRG) $B/$(PRG) 
 
 
 print:	Makefile $(SRC)
@@ -56,6 +64,5 @@ count:
 
 tar:
 	@tar cf $(PRG).tar Makefile $(SRC) && compress $(PRG).tar
-
 
 
