@@ -1,18 +1,29 @@
 #master makefile for OpenSource 
 
+include Make_include
+
 all: mkdirs 
 	cd FFTlib		; $(MAKE)
-	cd zfp			; $(MAKE) install
 	cd fdelmodc		; $(MAKE) install
-	cd fdelmodc3D	; $(MAKE) install
 	cd utils		; $(MAKE) install
 	cd marchenko	; $(MAKE) install
-	cd marchenko3D	; $(MAKE) install
 	cd corrvir		; $(MAKE) install
 	cd raytime		; $(MAKE) install
-	cd MDD			; $(MAKE) install
+ifneq ($(strip $(MKLROOT)),)
 	cd fdacrtmc		; $(MAKE) install
-
+else
+	@echo "***************************************************************************";
+	@echo "**** There is no MKL or other library for the FFTW calls in use by fdacrtmc";
+endif
+	cd zfp			; $(MAKE) install
+	cd fdelmodc3D	; $(MAKE) install
+	cd marchenko3D	; $(MAKE) install
+ifneq ($(strip $(FC)),)
+	cd MDD			; $(MAKE) install
+else
+	@echo "***************************************************************************";
+	@echo "**** There is no Fortran compiler (FC) defined in Make_include to make MDD";
+endif
 
 mkdirs:
 	-mkdir -p lib
@@ -21,30 +32,29 @@ mkdirs:
 
 clean:
 	cd FFTlib 		; $(MAKE) $@
-	cd zfp			; $(MAKE) $@
 	cd fdelmodc		; $(MAKE) $@
-	cd fdelmodc3D	; $(MAKE) $@
 	cd utils		; $(MAKE) $@
 	cd marchenko	; $(MAKE) $@
-	cd marchenko3D	; $(MAKE) $@
 	cd corrvir		; $(MAKE) $@
 	cd raytime		; $(MAKE) $@
-	cd MDD			; $(MAKE) $@
 	cd fdacrtmc		; $(MAKE) $@
+	cd zfp			; $(MAKE) $@
+	cd fdelmodc3D	; $(MAKE) $@
+	cd marchenko3D	; $(MAKE) $@
+	cd MDD			; $(MAKE) $@
 
 realclean:
 	cd FFTlib 		; $(MAKE) $@
-	cd zfp			; $(MAKE) $@
 	cd fdelmodc		; $(MAKE) $@
-	cd fdelmodc3D	; $(MAKE) $@
-	cd fdelrtmc		; $(MAKE) $@
 	cd utils		; $(MAKE) $@
 	cd marchenko	; $(MAKE) $@
-	cd marchenko3D	; $(MAKE) $@
 	cd corrvir		; $(MAKE) $@
 	cd raytime		; $(MAKE) $@
-	cd MDD			; $(MAKE) $@
 	cd fdacrtmc		; $(MAKE) $@
+	cd zfp			; $(MAKE) $@
+	cd fdelmodc3D	; $(MAKE) $@
+	cd marchenko3D	; $(MAKE) $@
+	cd MDD			; $(MAKE) $@
 	rm -f lib/*
 	rm -f include/*
 	rm -f bin/*

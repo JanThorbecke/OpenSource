@@ -5,7 +5,7 @@
 #define SGN(x) ((x) < 0 ? -1.0 : 1.0)
 
 /**
-* compute sinus shaped interface used in makemod
+* compute sinuous shaped interface used in makemod
 *
 *   AUTHOR:
 *           Jan Thorbecke (janth@xs4all.nl)
@@ -13,7 +13,7 @@
 **/
 
 
-void sinusint(int *zp, int minx, int maxx, float dz, float *interface, float dx, float ampl, float wavel)
+void sinuousint(int *zp, int minx, int maxx, float dz, float *interface, float dx, float ampl, float wavel)
 {
 	int     j, i;
 

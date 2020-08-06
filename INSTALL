@@ -1,0 +1,139 @@
+INSTALLATION
+-------------
+
+1) To compile and link the code you first have to set the ROOT variable in the Make_include file which can be found in the directory where you have found this INSTALL file.
+You can use Make_include_template as a first start: 
+
+```
+cp Make_include_template Make_include
+```
+
+2) Check the compiler and CFLAGS options in the file Make_include and adapt to the system you are using. The default options are set for a the GNU C-compiler on a Linux system. A Fortran compiler is only needed for the MDD package. A C++ compiler is not needed to compile the code. The Makefile has been tested with GNU make. 
+If the fortran compiler (FC=) is not set the MDD package will not be build.
+
+3) If the compiler options are set in the Make_include file you can type 
+```
+make clean
+make 
+```
+and the Makefile will make:
+
+    cd FFTlib       ; $(MAKE)
+    cd zfp          ; $(MAKE) install
+    cd fdelmodc     ; $(MAKE) install
+    cd fdelmodc3D   ; $(MAKE) install
+    cd utils        ; $(MAKE) install
+    cd marchenko    ; $(MAKE) install
+    cd marchenko3D  ; $(MAKE) install
+    cd corrvir      ; $(MAKE) install
+    cd raytime      ; $(MAKE) install
+    cd MDD          ; $(MAKE) install
+    cd fdacrtmc     ; $(MAKE) install
+
+- FFT library 
+- fdelmodc / 3D
+- marchenko / 3D
+- utils
+
+The libraries will be placed in the lib/ directory and the executables in the bin/ directory.
+
+To use the executables don't forget to include the pathname in your PATH:
+
+```
+bash/sh:
+export PATH='path_to_this_directory'/bin:$PATH:
+csh:
+setenv PATH 'path_to_this_directory'/bin:$PATH:
+```
+
+
+MKL libraries
+-------------
+If you are running on x64_86 processors you can download (for free) Intel's highly optimised MKL package:
+
+https://software.intel.com/en-us/mkl/choose-download
+ 
+These Libraries include highly optimised libraries of BLAS, LAPACK, and FFT(W). 
+Usually the MKL libraries are installed in $MKLROOT. If that variable is not set, you can try to find the correct path by searching for one of the libraries:
+
+find /opt/intel -name libmkl_gf_lp64.so
+
+and adjust MKLROOT in Make_include accordingly. 
+If MKLROOT is not set in your environment and also not set in Make_include then MKL will not be used and default options for BLAS, LAPACK, and FFT are chosen. 
+
+
+SEISMIC UNIX
+-----------
+If you want to use the .su files with SU from CWP:
+git clone https://github.com/JohnWStockwellJr/SeisUnix
+
+==> Please make sure that SU is compiled without XDR (in $CWPROOT/Makefile.config make sure that XDRFLAG is NOT enabled). The SU output files of fdelmodc are all based on local IEEE data.
+To exclude the XDRFLAG in SU you have to use the following line in $CWPROOT/src/Makefile.config around line 35:
+
+XDRFLAG =
+
+so the XDRFLAG is empty. If you have made that change you have to remake SU with the commands:
+make remake
+make xtremake
+
+
+ZFP
+---
+The fdacrtmc and the 3D Marchenko code makes use of ZFP compression to store snaphots in CPU memory or do effient IO. This package is included in this repository for your convenience. The latest package and detailed explanation can be found on:
+
+https://github.com/LLNL/zfp
+
+MDD
+---
+The MDD kernels depend on BLAS and LAPACK calls. These libraries are part of Intel's MKL. Free downloads of the source code of these libraries can be found on 
+
+https://www.netlib.org/blas/index.html
+https://www.netlib.org/lapack/index.html
+
+
+FDACRTMC
+--------
+fdacrtmc uses FFTW and the wisdom computations are stored on disk for re-usage.  This directory is defined in fdacrtmc.h
+
+#ifndef WISDOMDIR
+#define WISDOMDIR "/tmp/fftw/"
+#endif
+
+For the code to run properly the directory /tmp/fftw/ must exist. It is also possible to compile the fdacrtmc code that defines
+WISDOMDIR. In fdacrtmc/Makefile add:
+
+CFLAGS  += -DWISDOMDIR="/directory/that/exists"
+
+or you can change the name of WISDOMDIR in fdacrtmc.h
+
+
+MISC
+----
+Other make commands which can be useful:
+
+make clean : removes all object files, but leaves libraries and executables
+make realclean: removes also object files, libraries and executables.
+
+COMPILATION PROBLEMS
+--------------------
+If you encounter missing trigometric / mathematical functions during compilation, for example;
+
+defineSource.c:(.text+0x2356): undefined reference to sin getParameters.o: In function getParameters:
+
+add  '-lm -lc' around line 109 in Make_include:
+
+LIBS= -L$L -lgenfft $(BLAS) -lm -lc
+
+UPDATES AND LATEST VERSION
+--------------------------
+The latest version of the source code and manual can be found at:
+
+http://www.xs4all.nl/~janth/Software/Software.html
+
+or at github:
+
+git clone https://github.com/JanThorbecke/OpenSource.git
+git clone git://github.com/JanThorbecke/OpenSource.git
+
+The code is used by many different people and if there is a request for a new option in the code, then I will try to implement, test and make it available. 
+
