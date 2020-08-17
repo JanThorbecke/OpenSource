@@ -84,6 +84,7 @@ The demo directory contains many scripts which demonstrate the different possibi
 
 To reproduce the Figures shown in the GEOPHYICS manuscript "Finite-difference modeling experiments for seismic interferometry" the scripts in FiguresPaper directory can be used. Please read the README in the FiguresPaper directory for more instructions and guidelines. 
 
+An extensive manual of fdelmodc can be found in doc/fdelmodcManual.pdf
 
 Marchenko method : MARCHENKO
 ----------------------------
@@ -94,6 +95,8 @@ To reproduce the Figures shown in the GEOPHYICS paper "Implementation of the Mar
 To reproduce the Figures shown in the Scientific Reports paper "Virtual acoustics in inhomogeneous media with single-sided access" the scripts in marchenko/demo/ScientificReports directory can be used. The README in this directory gives more instructions and guidelines. 
 
 To reproduce the Figures shown in the GEOPHYICS paper "Implementation of the Marchenko Multiple Elimination algorithm" the scripts in marchenko/demo/mme directory can be used. The README_PRIMARIES in this directory gives more instructions and guidelines. 
+A bried manual about the MME program 'marchencko_primaries' can be found in doc/MMEmanual.pdf
+
 
 MDD
 ---
