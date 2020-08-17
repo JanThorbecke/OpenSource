@@ -97,7 +97,7 @@ void Aprod2_(int *m, int *n, float *x, float *y, size_t *indw);
 
 void computeMatrixInverse(complex *matrix, int nxm, int rthm, float eps_a, float eps_r, float numacc, int eigenvalues, float *eigen, int iw, int verbose);
 
-extern complex *cB;
+complex *cB;
 
 int deconvolve(complex *cA, complex *cB, complex *cC, complex *oBB, int nfreq, int nblock, size_t nstationA, size_t nstationB, float eps_a, float eps_r, float numacc, int eigenvalues, float *eigen, int rthm, int mdd, int conjgA, int conjgB, int lsqr_iter, float lsqr_damp, int k_iter, float TCscl, int verbose)
 {

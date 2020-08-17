@@ -1,0 +1,52 @@
+
+REFERENCES
+---------
+-0- DOI reference of this software release 
+https://zenodo.org/badge/latestdoi/23060862
+
+-1- If the Finite Difference code has helped you in your research please refer to the following paper in your publications:
+
+Finite-difference modeling experiments for seismic interferometry
+Jan Thorbecke and Deyan Draganov
+2011, Geophysics, Vol. 76, no. 6 (November-December); p H1--H18, doi: 10.1190/GEO2010-0039.1
+Download: https://janth.home.xs4all.nl/Publications/Articles/ThorbeckeDraganov2012.pdf
+
+*** To reproduce the Figures shown in the GEOPHYICS manuscript "Finite-difference modeling experiments for seismic interferometry" the scripts in fdelmodc/FiguresPaper directory can be used. Please read the README in the FiguresPaper directory for more instructions and guidelines. 
+
+
+-2- If the Machenko code has helped you in your research please refer to this paper in your publications:
+
+Implementation of the Marchenko method
+Jan Thorbecke, Evert Slob, Joeri Brackenhoff, Joost van der Neut, and Kees Wapenaar
+2017, Geophysics, Vol. 82, no. 6 (November-December); p. WB29--WB45, doi: 10.1190/GEO2017-0108.1
+Download: https://janth.home.xs4all.nl/Publications/Articles/ThorbeckeGPY2017.pdf
+
+*** To reproduce the Figures shown in the GEOPHYICS paper "Implementation of the Marchenko method" the scripts in marchenko/demo/oneD directory can be used. The README in this directory gives more instructions and guidelines. 
+
+
+-3- If you used the code to construct homogenoeus Green's functions, please refeer to this paper in your related publications:
+
+Virtual acoustics in inhomogeneous media with single-sided access:
+ Wapenaar, K., Brackenhoff, J., Thorbecke, J., van der Neut, J., Slob, E., and Verschuur, E., 
+2018, Scientific Reports, Vol. 8, 2497. 
+Download: http://homepage.tudelft.nl/t4n4v/4_Journals/Nature/SR_18.pdf
+
+*** To reproduce the Figures shown in the Scientific Reports paper "Virtual acoustics in inhomogeneous media with single-sided access" the scripts in marchenko/demo/ScientificReports directory can be used. The README in this directory gives more instructions and guidelines. 
+
+-4- When you are using the marchenko_primaries algorithm developed by Lele Zhang please refer to the following paper
+
+Free-surface and internal multiple elimination in one step without adaptive subtraction
+Lele Zhang and Evert Slob
+2019, Geophysics, Vol. 84, no. 1 (January-February); p. A7-A11, doi: 10.1190/GEO2018-0548.1
+Download: http://homepage.tudelft.nl/t4n4v/BeyondInterferometry/geo_19h.pdf
+
+*** To reproduce the Figures shown in the GEOPHYICS paper "Implementation of the Marchenko Multiple Elimination algorithm" the scripts in marchenko/demo/mme directory can be used. The README_PRIMARIES in this directory gives more instructions and guidelines. 
+
+
+-5- If you use the fdacrtmc code of Max Holicki please refer to the following paper:
+
+Acoustic directional snapshot wavefield decomposition
+Holicki, M., Drijkoningen, G., and Wapenaar, K., 2019, Acoustic directional snapshot wavefield decomposition: Geophysical
+Prospecting, Vol. 67, 32-51
+Download: http://homepage.tudelft.nl/t4n4v/4_Journals/Geophys.Prosp/GP_19a.pdf
+
