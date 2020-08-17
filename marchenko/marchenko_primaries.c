@@ -60,7 +60,7 @@ char *sdoc[] = {
 " ",
 " INTEGRATION ",
 "   ishot=nshots/2 ........... shot number(s) to remove internal multiples ",
-"   file_tinv= ............... shot-record (from R) to remove internal multiples",
+"   file_tinv= ............... shot-record to remove internal multiples",
 "   file_src= ................ optional source wavelet to convolve selected ishot(s)",
 " COMPUTATION",
 "   tap=0 .................... lateral taper R_ishot(1), file_shot(2), or both(3)",
@@ -187,6 +187,8 @@ int main (int argc, char **argv)
 
     if (reci && ntap) vwarn("tapering influences the reciprocal result");
 
+/* defines the smooth transition zone of the time-window */
+
 	smooth = MIN(smooth, shift);
     if (smooth) {
         costaper = (float *)malloc(smooth*sizeof(float));
@@ -297,6 +299,7 @@ int main (int argc, char **argv)
     }
 
 /*================ Read focusing operator(s) ================*/
+/* this is an optional functionality, typically one uses one of the shots from R */
 
     if (file_tinv != NULL) {  /*  M0 is named DD */
         muteW   = (int *)calloc(Nfoc*nxs,sizeof(int));
@@ -504,7 +507,7 @@ int main (int argc, char **argv)
         dxs = dx;
     }
 
-    /* define tapers to taper edges of acquisition */
+    /* define optional tapers to taper edges of acquisition */
     if (tap == 1 || tap == 3) {
     	tapersy = (float *)malloc(nxs*sizeof(float));
         for (j = 0; j < ntap; j++)
@@ -619,6 +622,7 @@ int main (int argc, char **argv)
 	}
     perc=(iend-istart)/100;if(!perc)perc=1;
 
+    /* for the plane-wave option write the constructed plane wave to disk */
     if (plane_wave) {
 		writeDataIter("SRCplane.su", SRC, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixp, npos, 0, NINT(src_angle));
 	}
@@ -656,6 +660,7 @@ int main (int argc, char **argv)
 */
 
 /*================ start loop over number of time-samples ================*/
+/* for each time sample in this loop the Marchenko equations are solved */
 
     for (ii=istart; ii<iend; ii++) {
 
@@ -669,6 +674,8 @@ int main (int argc, char **argv)
         t5 = wallclock_time();
         memset(M0, 0, Nfoc*nxs*ntfft*sizeof(float));
         memset(v1plus, 0, Nfoc*nxs*ntfft*sizeof(float));
+
+        /* M0 equation (3) in the Geophysics implementation paper */
         /* once every 'niterskip' time-steps start from fresh M0 and do niter (~20) iterations */
 		if ( ((ii-istart)%niterskip==0) || (ii==istart) ) {
 			niterrun=niter;
@@ -733,12 +740,13 @@ int main (int argc, char **argv)
 
 /*================ number of Marchenko iterations ================*/
 
+        /* niterrun is m in equation (1) in the Geophysics implementation paper */
         for (iter=0; iter<niterrun; iter++) {
 
             t2    = wallclock_time();
     
 /*================ construction of Mi(-t) = - \int R(x,t) Mi(t)  ================*/
-
+            /* synthesis process is the compute kernel in equations (4) and (5) in the Geophysics implementation paper */
             synthesisp(Refl, Fop, Mi, RMi, nx, nt, nacq, nts, dt, xsyn, Nfoc,
                 xrcv, xsrc, xnx, fxse, fxsb, dxs, dxsrc, dx, ntfft, nw, nw_low, nw_high, mode,
                 reci, nshots, ixpos, npos, &tfft, isxcount, reci_xsrc, reci_xrcv, ixmask, verbose);

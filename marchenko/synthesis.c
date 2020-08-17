@@ -41,10 +41,14 @@ float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos
 int linearsearch(int *array, size_t N, int value);
 
 /*================ Convolution and Integration ================*/
-/* Refl has the full acquisition grid R(x_r, x_s) 
+/* The synthesis process is the compute kernel in equations (4) and (5) in the Geophysics implementation paper 
+ * It computes M_{2m}(x'_0,x''_0,t,t_2) = \int_{t'=0}^{+\infty} \int_{\partial \setD_0} R(x'''_0, x'_0,t')
+ *                                        & M_{2m-1}(x'''_0,x''_0,t-t',t_2) d x'''_0 dt'
+ *
+ * Refl has the full acquisition grid R(x_r, x_s) 
  * Fop has the acquisition grid of the operator, ideally this should be equal to the acquisition grid of Refl, 
- *   so all traces can be used to compute R*Fop.
- * The output RNi has the traces in the grid of Fop, these are the x_s positions of R(x_r,x_s) */
+ * so all traces can be used to compute R*Fop.
+ * The output RNi has the traces in the grid of Fop, these are the x_s positions of R(x_r,x_s)  */
 
 void synthesis(complex *Refl, complex *Fop, float *Top, float *RNi, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int
 Nfoc, float *xrcv, float *xsrc, int *xnx, float fxse, float fxsb, float dxs, float dxsrc, float dx, int ntfft, int
