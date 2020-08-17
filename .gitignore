@@ -38,6 +38,8 @@ utils/pwshift
 utils/truncate
 fdelmodc/fdelmodc
 include/genfft.h
+include/zfp.h
+include/zfp/
 Make_include
 marchenko_applications/fmute
 marchenko_applications/marchenko
