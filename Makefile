@@ -5,6 +5,7 @@ include Make_include
 all: mkdirs 
 	cd FFTlib		; $(MAKE)
 	cd fdelmodc		; $(MAKE) install
+	cd zfp			; $(MAKE) install
 	cd utils		; $(MAKE) install
 	cd marchenko	; $(MAKE) install
 	cd corrvir		; $(MAKE) install
@@ -15,7 +16,6 @@ else
 	@echo "***************************************************************************";
 	@echo "**** There is no MKL or other library for the FFTW calls in use by fdacrtmc";
 endif
-	cd zfp			; $(MAKE) install
 	cd fdelmodc3D	; $(MAKE) install
 	cd marchenko3D	; $(MAKE) install
 ifneq ($(strip $(FC)),)

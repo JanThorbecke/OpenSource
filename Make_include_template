@@ -6,7 +6,7 @@
 #   -3- on Solaris system use RANLIB=ranlib which is defined below
 
 # the current directory (in vi ":r!pwd")
-ROOT=/vardim/home/thorbcke/src/OpenSource
+ROOT=REPLACE_WITH_PWD
 
 #############################################################################
 # Some convenient abbreviations
@@ -20,7 +20,8 @@ L = $(ROOT)/lib
 #GNU 
 #CC = gcc-mp-5 
 CC = gcc
-FC = gfortran
+FC = 
+#FC = gfortran
 # Linux gcc version 4.x
 OPTC = -O3 -ffast-math
 ##to include parallelisation with OpenMP
@@ -74,7 +75,7 @@ OPTC += -fopenmp
 #############################################################################
 # BLAS and LAPACK libraries 
 #MKLROOT=/opt/intel/mkl/
-MKLROOT=
+#MKLROOT=
 ifneq ($(strip $(MKLROOT)),)
     ifeq ($(CC),icc)
         #for intel compilers
