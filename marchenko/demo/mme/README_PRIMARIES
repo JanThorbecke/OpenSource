@@ -52,7 +52,7 @@ This will take 15 seconds. The generated files are:
 	- pred_rr_276.su (not used)
 	- DDshot_450.su (not used): selected shot record convolved with file_src=wave.su
 
-	where ## ranges from 01 to 33
+	where ## ranges from 01 to 34
 
 To generate the postscript files for Figure 3:
 

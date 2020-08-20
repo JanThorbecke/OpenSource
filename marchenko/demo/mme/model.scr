@@ -5,8 +5,9 @@
 #SBATCH --time=0:15:00
 
 
-#adjust this PATH to where the code is installed
-export PATH=$HOME/src/OpenSource/bin:$PATH:
+export ROOT=`grep ROOT= ../../../Make_include | head -1 | sed 's/ROOT=//' `
+#adjust the PATH to where the code is installed
+export PATH=$ROOT/bin:$PATH:
 
 dx=2.5
 dt=0.0005

@@ -1,6 +1,8 @@
 #!/bin/bash
 
-export PATH=$HOME/src/OpenSource/bin/:$PATH:
+export ROOT=`grep ROOT= ../../../Make_include | head -1 | sed 's/ROOT=//' `
+#adjust the PATH to where the code is installed
+export PATH=$ROOT/bin:$PATH:
 
 # Add interface line to postscript file of model 
 cat << EOF1 > line1
