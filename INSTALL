@@ -4,10 +4,9 @@ INSTALLATION
 1) To compile and link the code you first have to set the ROOT variable in the Make_include file which can be found in the directory where you have found this INSTALL file.
 You can use Make_include_template as a first start: 
 
-```
 cp Make_include_template Make_include
-```
-and set the ROOT directory to the current path with the following command:
+
+and set the ROOT directory Make_include to the current path with the following command:
 
 sed -i 's,REPLACE_WITH_PWD,'"$PWD"',' Make_include
 
@@ -18,10 +17,10 @@ The Make_include file contains example settings for GNU, Intel, AMD, PGI and Cra
 forget to comment the compilers you do not want to use. 
 
 3) If the compiler options are set in the Make_include file you can type 
-```
+
 make clean
 make 
-```
+
 and the Makefile will make:
 
     cd FFTlib       ; $(MAKE)
@@ -45,12 +44,10 @@ The libraries will be placed in the lib/ directory and the executables in the bi
 
 To use the executables don't forget to include the pathname in your PATH:
 
-```
 bash/sh:
 export PATH='path_to_this_directory'/bin:$PATH:
 csh:
 setenv PATH 'path_to_this_directory'/bin:$PATH:
-```
 
 
 MKL libraries
