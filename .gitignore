@@ -39,6 +39,7 @@ utils/truncate
 fdelmodc/fdelmodc
 include/genfft.h
 include/zfp.h
+include/bitstream.h
 include/zfp/
 Make_include
 marchenko_applications/fmute
