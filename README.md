@@ -39,7 +39,7 @@ Jan Thorbecke, Evert Slob, Joeri Brackenhoff, Joost van der Neut, and Kees Wapen
 2017, Geophysics, Vol. 82, no. 6 (November-December); p. WB29--WB45, doi: 10.1190/GEO2017-0108.1
 Download: https://janth.home.xs4all.nl/Publications/Articles/ThorbeckeGPY2017.pdf
 
--3- If you used the code to construct homogenoeus Green's functions, please refeer to this paper in your related publications:
+-3- If you used the code to construct homogenoeus Green's functions, please refer to this paper in your related publications:
 
 Virtual acoustics in inhomogeneous media with single-sided access:
  Wapenaar, K., Brackenhoff, J., Thorbecke, J., van der Neut, J., Slob, E., and Verschuur, E., 
