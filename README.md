@@ -167,12 +167,8 @@ UPDATES AND LATEST VERSION
 --------------------------
 The latest version of the source code and manual can be found at:
 
-http://www.xs4all.nl/~janth/Software/Software.html
-
-or at github:
-
 git clone https://github.com/JanThorbecke/OpenSource.git
 git clone git://github.com/JanThorbecke/OpenSource.git
 
-The code is used by many different people and if there is a request for a new option in the code, then I will try to implement, test and make it available. 
+The code is used by many different people and if there is a request for a new option in the code, then we will try to implement, test and make it available. 
 
