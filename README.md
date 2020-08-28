@@ -144,6 +144,8 @@ The fdacrtmc and the 3D Marchenko code makes use of ZFP compression to store sna
 
 https://github.com/LLNL/zfp
 
+and written by Peter Lindstrom
+
 FDACRTMC
 --------
 fdacrtmc uses FFTW and the wisdom computations are stored on disk for re-usage.  This directory is defined in fdacrtmc.h
