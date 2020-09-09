@@ -48,6 +48,7 @@ double wallclock_time(void);
 void pad_data(float *data, int nsam, int nrec, int nsamout, float *datout);
 void scl_data(float *data, int nsam, int nrec, float scl, float *datout, int nsamout);
 void pad2d_data(float *data, int nsam, int nrec, int nsamout, int nrecout, float *datout);
+void kill_traces(float *data, int nrec, int nsam, int fldr, int dim, char *file_t2k);
 float rcabs(complex z);
 complex froot(float x);
 
@@ -80,6 +81,8 @@ char *sdoc[] = {
 "   nxmax=512 ................ maximum number of traces in input files",
 "   ntmax=1024 ............... maximum number of samples/trace in input files",
 "   verbose=0 ................ silent option; >0 display info",
+"   file_t2k= ................ input file with traces to kill",
+"   dim=1 .................... dimension of killing traces (1 = src, 0 = rcv)",
 "   ",
 "   Options for choice:",
 "         - 1 -  shift  = time shift",
@@ -108,6 +111,7 @@ char *sdoc[] = {
 "         - 24 - deca1  = acoustic decompostion multiply with sqrt(2 kz/(w rho)) in kx-w domain",
 "         - 25 - deca2  = acoustic decompostion multiply with sqrt((2 w rho)/(kz)) in kx-w domain",
 "         - 26 - kfilt  = dipfilter in the kx-w domain given alpha and cp",
+"         - 27 - kill   = kill multiple traces",
 "  ",
 " author  : Jan Thorbecke : 12-12-1994 (janth@xs4all.nl)",
 "           Alexander Koek (E.A.Koek@CTG.TuDelft.NL)",
@@ -121,17 +125,18 @@ NULL};
 int main(int argc, char **argv)
 {
 	FILE	*fp_in, *fp_out;
-	int     nrec, nsam, ntmax, nxmax, error, ret, verbose, i, j;
-	int     opt, size, n1, n2, first, nrot;
+	int     nrec, nsam, ntmax, nxmax, error, ret, verbose, i, j, is;
+	int     opt, size, n1, n2, first, nrot; 
 	int     ntraces, ngath;
 	float   dt, dx, dy, c, rho, d1, d2, f1, f2; 
 	float   scl, xmin, xmax, trot;
 	double  t0, t1, t2;
 	float	fmin, fmax, *data, shift, rot, alpha, perc, dz, eps, *tmpdata;
-	char  	*file_in, *file_out;
+	char  	*file_in, *file_out, *file_t2k;
 	char  	choice[10], *choicepar;
+	int		dim;
 	segy	*hdrs;
-
+	
 	initargs(argc, argv);
 	requestdoc(1);
 
@@ -147,7 +152,11 @@ int main(int argc, char **argv)
 		file_out = NULL;
 	}
 	if(!getparstring("choice", &choicepar)) verr("choice unknown.");
-
+	
+	if(!getparstring("file_t2k", &file_t2k)){
+		file_t2k = NULL;
+	}
+	
 	if(!getparfloat("fmin", &fmin)) fmin = 0.0;
 	if(!getparfloat("shift", &shift)) shift = 0.0;
 	if(!getparfloat("c", &c)) c = 1500.0;
@@ -160,6 +169,7 @@ int main(int argc, char **argv)
 	if(!getparint("nrot", &nrot)) nrot = 0;
 	if(!getparint("ntmax", &ntmax)) ntmax = 1024;
 	if(!getparint("nxmax", &nxmax)) nxmax = 512;
+	if(!getparint("dim", &dim)) dim = 1;
 	n1 = 0;
 
 /* Opening input file */
@@ -388,7 +398,50 @@ int main(int argc, char **argv)
 			perc=0.15;
 			kxwfilter(data, nsam, nrec, dt, dx, fmin, fmax, alpha, c, perc);
 		}
-		
+		else if (!strcmp(choice, "kill") || !strcmp(choice, "27")) {
+			if (verbose) vmess("Muting shot: %d in %d",hdrs[0].fldr,dim);
+			kill_traces(data, nrec, nsam, hdrs[0].fldr, dim, file_t2k);			
+		}
+		else if (!strcmp(choice, "scaletraces") || !strcmp(choice, "28")) {
+			
+			FILE	*fp_dx;
+			char	ch, buffer[32];
+			int 	*newdx;
+			
+			newdx = (int *)malloc(nrec*sizeof(int)); 
+			//memset(t2k,1,nrec*sizeof(int));
+			
+
+			fp_dx = fopen("dx.txt", "r");
+			if (fp_dx == NULL) verr("Could not open dx file");
+			i=0;
+			j=0; 
+			while(1){
+				ch = fgetc(fp_dx);
+				if (ch == EOF) break; 
+				else if (!isdigit(ch)) {
+					newdx[i] = atoi(buffer);
+					bzero(buffer,32);
+					i++;
+					j=0;
+					continue;
+				}
+				else {
+					buffer[j] = ch; 
+					j++;
+				}
+			}
+			fclose(fp_dx);
+			
+			int it,ix;
+			for (ix=0;ix<nrec;ix++) { //Loop over receivers
+				//vmess("Trace %d, scale = %d",ix,t2k[ix]);
+				for (it=0;it<nsam;it++) { //Loop over time samples
+					data[ix*nsam+it] *= (float)newdx[ix]; 
+				}
+			}
+			
+		}
 
 		t2 = wallclock_time();
 		if (verbose) vmess("CPU-time basop = %.3f", t2-t1);
@@ -1581,5 +1634,54 @@ complex froot(float x)
         z.i = -sqrt(-x);
         return z;
     }
+}
+
+void kill_traces(float *data, int nrec, int nsam, int fldr, int dim, char *file_t2k)
+{
+	char	ch, buffer[32];
+	int 	i, *t2k;
+	FILE  	*fp_t2k;
+	
+	t2k = (int *)malloc(nrec*sizeof(int)); 
+	//memset(t2k,1,nrec*sizeof(int));
+	for (i=0; i<nrec; i++) {
+		t2k[i] = 1;
+	}
+	fp_t2k = fopen(file_t2k, "r");
+	if (fp_t2k == NULL) verr("Could not open trace 2 kill file");
+	i=0;
+	while(1){
+		ch = fgetc(fp_t2k);
+		if (ch == EOF) break; 
+		else if (!isdigit(ch)) {
+			t2k[atoi(buffer)] = 0;
+			bzero(buffer,32);
+			i=0;
+			continue;
+		}
+		else {
+			buffer[i] = ch;
+			i++;
+		}
+	}
+	fclose(fp_t2k);
+
+	int it,ix;
+	if (dim == 0) {
+		for (ix=0;ix<nrec;ix++) { //Loop over receivers
+			//vmess("Trace %d, scale = %d",ix,t2k[ix]);
+			for (it=0;it<nsam;it++) { //Loop over time samples
+				data[ix*nsam+it] *= (float)t2k[ix]; 
+			}
+		}
+	}
+	else if (dim == 1) {
+		for (ix=0;ix<nrec;ix++) { //Loop over receivers
+			//vmess("Trace %d, scale = %d",ix,t2k[ix]);
+			for (it=0;it<nsam;it++) { //Loop over time samples
+				data[ix*nsam+it] *= (float)t2k[fldr]; 
+			}
+		}
+	}
 }
 
