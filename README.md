@@ -39,7 +39,7 @@ Jan Thorbecke, Evert Slob, Joeri Brackenhoff, Joost van der Neut, and Kees Wapen
 2017, Geophysics, Vol. 82, no. 6 (November-December); p. WB29--WB45, doi: 10.1190/GEO2017-0108.1
 Download: https://janth.home.xs4all.nl/Publications/Articles/ThorbeckeGPY2017.pdf
 
--3- If you used the code to construct homogenoeus Green's functions, please refeer to this paper in your related publications:
+-3- If you used the code to construct homogenoeus Green's functions, please refer to this paper in your related publications:
 
 Virtual acoustics in inhomogeneous media with single-sided access:
  Wapenaar, K., Brackenhoff, J., Thorbecke, J., van der Neut, J., Slob, E., and Verschuur, E., 
@@ -144,6 +144,8 @@ The fdacrtmc and the 3D Marchenko code makes use of ZFP compression to store sna
 
 https://github.com/LLNL/zfp
 
+and written by Peter Lindstrom
+
 FDACRTMC
 --------
 fdacrtmc uses FFTW and the wisdom computations are stored on disk for re-usage.  This directory is defined in fdacrtmc.h
@@ -167,12 +169,8 @@ UPDATES AND LATEST VERSION
 --------------------------
 The latest version of the source code and manual can be found at:
 
-http://www.xs4all.nl/~janth/Software/Software.html
-
-or at github:
-
 git clone https://github.com/JanThorbecke/OpenSource.git
 git clone git://github.com/JanThorbecke/OpenSource.git
 
-The code is used by many different people and if there is a request for a new option in the code, then I will try to implement, test and make it available. 
+The code is used by many different people and if there is a request for a new option in the code, then we will try to implement, test and make it available. 
 
