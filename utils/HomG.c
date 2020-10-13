@@ -65,6 +65,8 @@ void scl_data3D(float *data, long nt, long nx, long ny, float scl, float *datout
 void scl_data(float *data, long nsam, long nrec, float scl, float *datout, long nsamout);
 void pad_data(float *data, long nsam, long nrec, long nsamout, float *datout);
 void convol(float *data1, float *data2, float *con, long nrec, long nsam, float dt, long shift);
+void deconv(float *data1, float *data2, float *decon, long nrec, long nsam, 
+		 float dt, float eps, float reps, long shift);
 void corr(float *data1, float *data2, float *cov, long nrec, long nsam, float dt, long shift);
 void timeDiff(float *data, long nsam, long nrec, float dt, float fmin, float fmax, long opt);
 void depthDiff(float *data, long nsam, long nrec, float dt, float dx, float fmin, float fmax, float c, long opt);
@@ -97,6 +99,9 @@ char *sdoc[] = {
 "   zfpr=0 ................... virtual receiver data are in SU format (=0) or zfp compressed (=1)",
 "   cp=1000.0 ................ Velocity at the top of the medium in m/s",
 "   rho=1000.0 ............... Density at the top of the medium in kg/m^3",
+"   file_wav= ................ Wavelet that is deconvolved from the virtual receiver data",
+"   eps=0.0 .................. Absolute stabilization factor for deconvolution",
+"   reps=0.01 ................ Relative stabilization factor for deconvolution (is multiplied by the maximum of the data)",
 "   scheme=0 ................. Scheme for the retrieval",
 "   .......................... scheme=0 Marchenko homogeneous Green's function retrieval with G source",
 "   .......................... scheme=1 Marchenko homogeneous Green's function retrieval with f2 source",
@@ -113,17 +118,17 @@ NULL};
 
 int main (int argc, char **argv)
 {
-	FILE    *fp_in, *fp_shot, *fp_out;
-	char    *fin, *fshot, *fout, *ptr, fbegin[100], fend[100], fins[100], fin2[100], *direction;
+	FILE    *fp_in, *fp_shot, *fp_out, *fp_wav;
+	char    *fin, *fshot, *fout, *ptr, fbegin[100], fend[100], fins[100], fin2[100], *direction, *file_wav;
 	float   *rcvdata, *Ghom, *shotdata, *shotdata_jkz, rho, fmin, fmax;
 	float   dt, dy, dx, t0, y0, x0, xmin, xmax1, sclsxgx, dxrcv, dyrcv, dzrcv;
-	float   *conv, *conv2, *tmp1, *tmp2, cp, shift;
+	float   *conv, *conv2, *decon, *tmp1, *tmp2, cp, shift, eps, reps;
 	long    nshots, ntvs, nyvs, nxvs, ntraces, ret, ix, iy, it, is, ir, ig, file_det, verbose;
     long    ntr, nxr, nyr, nsr, i, l, j, k, nxvr, nyvr, nzvr, count, num, isn;
-    float   dtr, dxr, dyr, ftr, fxr, fyr, sclr, scl;
+    float   dtr, dxr, dyr, ftr, fxr, fyr, sclr, scl, *wavelet;
 	long    pos1, npos, zmax, numb, dnumb, scheme, ntmax, ntshift, shift_num, zfps, zfpr, size;
     long    ixr, iyr, zsrc, zrcv, *xvr, *yvr, *zvr;
-	segy    *hdr_rcv, *hdr_out, *hdr_shot;
+	segy    *hdr_rcv, *hdr_out, *hdr_shot, *hdr_wav;
 
 	initargs(argc, argv);
 	requestdoc(1);
@@ -144,6 +149,9 @@ int main (int argc, char **argv)
     if (!getparlong("dnumb", &dnumb)) dnumb=1;
 	if (!getparlong("scheme", &scheme)) scheme = 0;
 	if (!getparlong("verbose", &verbose)) verbose = 0;
+    if (!getparstring("file_wav", &file_wav)) file_wav = NULL;
+	if(!getparfloat("eps", &eps)) eps=0.00;
+	if(!getparfloat("reps", &reps)) reps=0.01;
 	if (!getparlong("zfps", &zfps)) zfps = 0;
 	if (!getparlong("zfpr", &zfpr)) zfpr = 0;
     if (!getparstring("direction", &direction)) direction = "z";
@@ -282,6 +290,24 @@ int main (int argc, char **argv)
 	zvr		    = (long *)malloc(nxvr*nyvr*nzvr*sizeof(long));
 
     /*----------------------------------------------------------------------------*
+    *   Read in the wavelet and create the gather
+    *----------------------------------------------------------------------------*/
+
+    if (file_wav) {
+        if (verbose) vmess("Reading in wavelet for deconvolution");
+        wavelet	= (float *)calloc(ntvs*nxvs*nyvs,sizeof(float));
+	    hdr_wav	= (segy *)calloc(nxvs*nyvs,sizeof(segy));
+        readSnapData3D(file_wav, &wavelet[0], &hdr_wav[0], 1, 1, 1, ntvs, 0, 1, 0, 1, 0, ntvs);
+        for (i = 1; i < nxvs*nyvs; i++){
+            for (j = 0; j < ntvs; j++) {
+                wavelet[i*ntvs+j] = wavelet[j];
+                hdr_wav[i] = hdr_wav[0];
+            }
+        }
+        free(hdr_wav);
+    }
+
+    /*----------------------------------------------------------------------------*
     *   Get the file info for the source position
     *----------------------------------------------------------------------------*/
 
@@ -371,6 +397,7 @@ int main (int argc, char **argv)
             tmp2	= (float *)calloc(nyr*nxr*ntr,sizeof(float));
         }
         if (scheme==8 || scheme==9 || scheme==10) tmp1 = (float *)calloc(nyr*nxr*ntr,sizeof(float));
+        if (file_wav!=NULL) decon = (float *)calloc(nyr*nxr*ntr,sizeof(float));
 
         sprintf(fins,"%s%li",direction,ir*dnumb+numb);
 		sprintf(fin2,"%s%s%s",fbegin,fins,fend);
@@ -439,7 +466,13 @@ int main (int argc, char **argv)
             else if (scheme==3) { //Marchenko representation without time-reversal G source
                 if (nyr>1) depthDiff3D(&rcvdata[l*nyr*nxr*ntr], ntr, nxr, nyr, dt, dx, dy, fmin, fmax, cp, 1);
                 else       depthDiff(&rcvdata[l*nyr*nxr*ntr], ntr, nxr, dt, dx, fmin, fmax, cp, 1);
-                convol2(&shotdata[0], &rcvdata[l*nyr*nxr*ntr], conv, nyr*nxr, ntr, dt, fmin, fmax, 1);
+                if (file_wav!=NULL){
+                    deconv(&rcvdata[l*nyr*nxr*ntr], wavelet, decon, nyr*nxr, ntr, dt, eps, reps, 0);
+                    convol2(&shotdata[0], decon, conv, nyr*nxr, ntr, dt, fmin, fmax, 1);
+                }
+                else {
+                    convol2(&shotdata[0], &rcvdata[l*nyr*nxr*ntr], conv, nyr*nxr, ntr, dt, fmin, fmax, 1);
+                }
                 for (i=0; i<nyr*nxr; i++) {
                     for (j=0; j<ntr/2; j++) {
                         Ghom[(j+ntr/2)*nxvr*nyvr*nzvr+l*nzvr+ir] += 2.0*scl*conv[i*ntr+j]/rho;
@@ -542,9 +575,11 @@ int main (int argc, char **argv)
             free(tmp1); free(tmp2);
         }
         if (scheme==8 || scheme==9 || scheme==10) free(tmp1);
+        if (file_wav!=NULL) free(decon);
 	}
 
 	free(shotdata);
+    if (file_wav!=NULL) free(wavelet);
 
     if (strcmp(direction,"z") == 0) {
         if (nxvr>1) dxrcv = (float)((xvr[nzvr] - xvr[0])/1000.0);
@@ -1203,7 +1238,7 @@ void getVirRec(char *filename, long *nxs, long *nys, long *nxr, long *nyr, long 
 	fp = fopen( filename, "r" );
 	if ( fp == NULL ) verr("Could not open %s",filename);
 	nread = fread(&hdr, 1, TRCBYTES, fp);
-	if (nread != TRCBYTES) verr("Could not read the header of the input file");
+	if (nread != TRCBYTES) verr("Could not read the header of the VR file");
 
 	*nxs	= 1;
 	*nys	= 1;
@@ -1655,4 +1690,105 @@ void scl_data3D(float *data, long nt, long nx, long ny, float scl, float *datout
             }
         }
     }
+}
+
+void deconv(float *data1, float *data2, float *decon, long nrec, long nsam, 
+		 float dt, float eps, float reps, long shift)
+{
+	long 	i, j, n, optn, nfreq, sign;
+	float  	df, dw, om, tau, *den, scl;
+	float 	*qr, *qi, *p1r, *p1i, *p2r, *p2i, *rdata1, *rdata2, maxden, leps;
+	complex *cdata1, *cdata2, *cdec, tmp;
+	
+	optn = optncr(nsam);
+	nfreq = optn/2+1;
+
+	cdata1 = (complex *)malloc(nfreq*nrec*sizeof(complex));
+	if (cdata1 == NULL) verr("memory allocation error for cdata1");
+	cdata2 = (complex *)malloc(nfreq*nrec*sizeof(complex));
+	if (cdata2 == NULL) verr("memory allocation error for cdata2");
+	cdec = (complex *)malloc(nfreq*nrec*sizeof(complex));
+	if (cdec == NULL) verr("memory allocation error for ccov");
+	
+	rdata1 = (float *)malloc(optn*nrec*sizeof(float));
+	if (rdata1 == NULL) verr("memory allocation error for rdata1");
+	rdata2 = (float *)malloc(optn*nrec*sizeof(float));
+	if (rdata2 == NULL) verr("memory allocation error for rdata2");
+	den = (float *)malloc(nfreq*nrec*sizeof(float));
+	if (den == NULL) verr("memory allocation error for rdata1");
+	
+	/* pad zeroes until Fourier length is reached */
+	pad_data(data1, nsam, nrec, optn, rdata1);
+	pad_data(data2, nsam, nrec, optn, rdata2);
+
+	/* forward time-frequency FFT */
+	sign = -1;
+	rcmfft(&rdata1[0], &cdata1[0], optn, nrec, optn, nfreq, sign);
+	rcmfft(&rdata2[0], &cdata2[0], optn, nrec, optn, nfreq, sign);
+
+	/* apply deconvolution */
+	p1r = (float *) &cdata1[0];
+	p2r = (float *) &cdata2[0];
+	p1i = p1r + 1;
+	p2i = p2r + 1;
+	n = nrec*nfreq;
+	maxden=0.0;
+	for (j = 0; j < n; j++) {
+		den[j] = *p2r**p2r + *p2i**p2i;
+		maxden = MAX(den[j], maxden);
+		p2r += 2;
+		p2i += 2;
+	}
+	p1r = (float *) &cdata1[0];
+	p2r = (float *) &cdata2[0];
+	qr = (float *) &cdec[0].r;
+	p1i = p1r + 1;
+	p2i = p2r + 1;
+    qi = qr + 1;
+	leps = reps*maxden+eps;
+	for (j = 0; j < n; j++) {
+
+		if (fabs(*p2r)>=fabs(*p2i)) {
+			*qr = (*p2r**p1r+*p2i**p1i)/(den[j]+leps);
+			*qi = (*p2r**p1i-*p2i**p1r)/(den[j]+leps);
+		} else {
+			*qr = (*p1r**p2r+*p1i**p2i)/(den[j]+leps);
+			*qi = (*p1i**p2r-*p1r**p2i)/(den[j]+leps);
+		}
+		qr += 2;
+		qi += 2;
+		p1r += 2;
+		p1i += 2;
+		p2r += 2;
+		p2i += 2;
+	}
+	free(cdata1);
+	free(cdata2);
+	free(den);
+
+	if (shift) {
+		df = 1.0/(dt*optn);
+		dw = 2*PI*df;
+		tau = dt*(nsam/2);
+		for (j = 0; j < nrec; j++) {
+			om = 0.0;
+			for (i = 0; i < nfreq; i++) {
+				tmp.r = cdec[j*nfreq+i].r*cos(om*tau) + cdec[j*nfreq+i].i*sin(om*tau);
+				tmp.i = cdec[j*nfreq+i].i*cos(om*tau) - cdec[j*nfreq+i].r*sin(om*tau);
+				cdec[j*nfreq+i] = tmp;
+				om += dw;
+			}
+		}
+	}
+
+	/* inverse frequency-time FFT and scale result */
+	sign = 1;
+	scl = dt/(float)optn;
+	crmfft(&cdec[0], &rdata1[0], optn, nrec, nfreq, optn, sign);
+	scl_data(rdata1,optn,nrec,scl,decon,nsam);
+
+	free(cdec);
+	free(rdata1);
+	free(rdata2);
+	return;
 }

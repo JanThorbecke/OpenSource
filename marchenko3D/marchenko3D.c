@@ -878,17 +878,6 @@ int main (int argc, char **argv)
         if (plane_wave==1) {
             applyMute3D_tshift(Gmin, muteW, smooth, 4, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, 0, tsynW);
             /* for plane wave with angle shift itmin downward */
-            for (l = 0; l < Nfoc; l++) {
-                for (i = 0; i < npos; i++) {
-                    memcpy(&trace[0],&Gmin[l*nys*nxs*nts+i*nts],nts*sizeof(float));
-                    for (j = 0; j < itmin[l]; j++) {
-                        Gmin[l*nys*nxs*nts+i*nts+j] = 0.0;
-                    }
-                    for (j = 0; j < nts-itmin[l]; j++) {
-                        Gmin[l*nys*nxs*nts+i*nts+j+itmin[l]] = trace[j];
-                    }
-                }
-            }
             timeShift(Gmin, nts, npos*Nfoc, dt, tshift, fmin, fmax);
         }
         else {

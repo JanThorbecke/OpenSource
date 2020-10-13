@@ -324,7 +324,7 @@ private (is,time0,ampl,nrx,nry,nrz,nr,cp_average,i,j,k,ix,iy,iz,hdrs,tmpdata,nwr
 		if (ret < 0 ) verr("error on writing output file.");
 
         if (ray.geomspread==1) {
-			ret = writeData3D(fpt, &ampl[0], hdrs, rec.nx, rec.nz*rec.ny);
+			ret = writeData3D(fpa, &ampl[0], hdrs, rec.nx, rec.nz*rec.ny);
 			if (ret < 0 ) verr("error on writing output file.");
         }
 		
