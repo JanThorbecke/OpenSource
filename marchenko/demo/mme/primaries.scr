@@ -1,0 +1,43 @@
+#!/bin/bash -x
+#SBATCH -J marchenko_primaries
+#SBATCH --cpus-per-task=20
+#SBATCH --ntasks=1
+##SBATCH --time=1:29:00
+#SBATCH -p max2h
+
+# Generate the model and Reflection data
+#modelpm.scr 
+
+#cd $SLURM_SUBMIT_DIR
+
+export ROOT=`grep ROOT= ../../../Make_include | head -1 | sed 's/ROOT=//' `
+#adjust the PATH to where the code is installed
+export PATH=$ROOT/bin:$PATH:
+
+export OMP_NUM_THREADS=20
+
+#shot record to remove internal multiples
+R=shotsdx5_rp.su
+select=451
+
+makewave fp=20 dt=0.004 file_out=wave.su nt=2048 t0=0.0 scale=0 scfft=1
+
+../../marchenko_primaries1 file_shot=$R ishot=$select file_src=wave.su \
+	nshots=901 verbose=2 istart=40 iend=500 fmax=90 pad=1024 \
+	niter=31 shift=20 smooth=10 niterec=2 niterskip=50 file_rr=pred_rr.su T=0 file_update=update.su
+
+exit;
+
+#for reference original shot record from Reflection matrix
+suwind key=fldr min=$select max=$select < $R itmax=2047 > shotsx0.su
+fconv file_in1=shotsx0.su file_in2=wave.su file_out=shotw.su
+
+# for displaying results
+
+(suwind key=offset min=0 max=0 < pred_rr.su ; suwind key=offset min=0 max=0 < shotw.su) | suxgraph &
+
+sudiff shotw.su pred_rr.su > diff.su
+suximage < shotw.su  x1end=2.5 clip=1 title="original shot"&
+suximage < pred_rr.su  x1end=2.5 clip=1 title="shot with multiples removed"&
+suximage < diff.su   x1end=2.5 clip=1 title="removed multiples"&
+

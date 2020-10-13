@@ -42,7 +42,8 @@ int readShotData(char *filename, float xmin, float dx, float *xrcv, float *xsrc,
 	fseek(fp, 0, SEEK_SET);
 	nread = fread( &hdr, 1, TRCBYTES, fp );
 	assert(nread == TRCBYTES);
-	if (hdr.scalco < 0) scl = 1.0/fabs((float)hdr.scalco);
+ 	if (hdr.scalco < 0) scl = 1.0/fabs((float)hdr.scalco);
+
 	else if (hdr.scalco == 0) scl = 1.0;
 	else scl = hdr.scalco;
 	fseek(fp, 0, SEEK_SET);
@@ -104,13 +105,13 @@ int readShotData(char *filename, float xmin, float dx, float *xrcv, float *xsrc,
         	rc1fft(&trace[i*ntfft],ctrace,ntfft,-1);
 
 			if (transpose == 0) {
-        		for (iw=0; iw<nw; iw++) {
+        		for (iw=0; iw<nw; iw++) { // FREQUENCY - SHOTS - RECEIVERS
         			cdata[iw*ngath*nx+igath*nx+i].r = scale*ctrace[nw_low+iw].r;
         			cdata[iw*ngath*nx+igath*nx+i].i = conjg*scale*ctrace[nw_low+iw].i;
         		}
 			}
 			else {
-        		for (iw=0; iw<nw; iw++) {
+        		for (iw=0; iw<nw; iw++) { // FREQUENCY - RECEIVERS - SHOTS
         			cdata[iw*ngath*nx+i*ngath+igath].r = scale*ctrace[nw_low+iw].r;
         			cdata[iw*ngath*nx+i*ngath+igath].i = conjg*scale*ctrace[nw_low+iw].i;
         		}

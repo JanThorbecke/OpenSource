@@ -39,56 +39,38 @@ Jan Thorbecke, Evert Slob, Joeri Brackenhoff, Joost van der Neut, and Kees Wapen
 2017, Geophysics, Vol. 82, no. 6 (November-December); p. WB29--WB45, doi: 10.1190/GEO2017-0108.1
 Download: https://janth.home.xs4all.nl/Publications/Articles/ThorbeckeGPY2017.pdf
 
--3- When you are using the marchenko_primaries algorithm developed by Lele Zhang please refer to the following paper
+-3- If you used the code to construct homogenoeus Green's functions, please refer to this paper in your related publications:
+
+Virtual acoustics in inhomogeneous media with single-sided access:
+ Wapenaar, K., Brackenhoff, J., Thorbecke, J., van der Neut, J., Slob, E., and Verschuur, E., 
+2018, Scientific Reports, Vol. 8, 2497. 
+Download: http://homepage.tudelft.nl/t4n4v/4_Journals/Nature/SR_18.pdf
+
+-4- When you are using the marchenko_primaries algorithm developed by Lele Zhang please refer to the following paper
 
 Free-surface and internal multiple elimination in one step without adaptive subtraction
 Lele Zhang and Evert Slob
 2019, Geophysics, Vol. 84, no. 1 (January-February); p. A7-A11, doi: 10.1190/GEO2018-0548.1
 Download: http://homepage.tudelft.nl/t4n4v/BeyondInterferometry/geo_19h.pdf
 
--4- If you use the fdacrtmc code of Max Holicki please refer to the following paper:
+-5- If you use the fdacrtmc code of Max Holicki please refer to the following paper:
 
 Acoustic directional snapshot wavefield decomposition
 Holicki, M., Drijkoningen, G., and Wapenaar, K., 2019, Acoustic directional snapshot wavefield decomposition: Geophysical
 Prospecting, Vol. 67, 32-51
 Download: http://homepage.tudelft.nl/t4n4v/4_Journals/Geophys.Prosp/GP_19a.pdf
 
--5- 
 
 INSTALLATION
 -------------
+See the seperate INSTALL file.
 
-1) To compile and link the code you first have to set the ROOT variable in the Make_include file which can be found in the directory where you have found this README.
-You can use Make_include_template as a first start: 
 
-```
-cp Make_include_template Make_include
-```
+REPRODUCING
+----------
+Almost all Figures in the papers mentioned above can be reproduced with the sofwtare in this repository. Please see the file REPRODUCE for further instructions
 
-2) Check the compiler and CFLAGS options in the file Make_include and adapt to the system you are using. The default options are set for a the GNU C-compiler on a Linux system. A Fortran or C++ compiler are not needed to compile the code. The Makefile has been tested with GNU make. 
 
-3) If the compiler options are set in the Make_include file you can type 
-```
-make clean
-make 
-```
-and the Makefile will make:
-
-- FFT library 
-- fdelmodc / 3D
-- marchenko / 3D
-- utils
-
-The libraries will be placed in the lib/ directory and the executables in the bin/ directory.
-
-To use the executables don't forget to include the pathname in your PATH:
-
-```
-bash/sh:
-export PATH='path_to_this_directory'/bin:$PATH:
-csh:
-setenv PATH 'path_to_this_directory'/bin:$PATH:
-```
 
 Finite Difference Modeling: FDELMODC
 ------------------------------------
@@ -102,6 +84,7 @@ The demo directory contains many scripts which demonstrate the different possibi
 
 To reproduce the Figures shown in the GEOPHYICS manuscript "Finite-difference modeling experiments for seismic interferometry" the scripts in FiguresPaper directory can be used. Please read the README in the FiguresPaper directory for more instructions and guidelines. 
 
+An extensive manual of fdelmodc can be found in doc/fdelmodcManual.pdf
 
 Marchenko method : MARCHENKO
 ----------------------------
@@ -111,7 +94,9 @@ To reproduce the Figures shown in the GEOPHYICS paper "Implementation of the Mar
 
 To reproduce the Figures shown in the Scientific Reports paper "Virtual acoustics in inhomogeneous media with single-sided access" the scripts in marchenko/demo/ScientificReports directory can be used. The README in this directory gives more instructions and guidelines. 
 
-To reproduce the Figures shown in the GEOPHYICS paper "Implementation of the Marchenko Multiple Elimination algorithm" the scripts in marchenko/demo/oneD directory can be used. The README_PRIMARIES in this directory gives more instructions and guidelines. 
+To reproduce the Figures shown in the GEOPHYICS paper "Implementation of the Marchenko Multiple Elimination algorithm" the scripts in marchenko/demo/mme directory can be used. The README_PRIMARIES in this directory gives more instructions and guidelines. 
+A bried manual about the MME program 'marchencko_primaries' can be found in doc/MMEmanual.pdf
+
 
 MDD
 ---
@@ -135,6 +120,8 @@ find /opt/intel -name libmkl_gf_lp64.so
 and adjust MKLROOT in Make_include accordingly. 
 You can also completely disable the use of MKL by commenting out the MKL parts in Make_include. 
 
+In case MKL is installed on your system there is no need to install the netlib packages mentioned for MDD. 
+
 
 SEISMIC UNIX
 -----------
@@ -157,6 +144,8 @@ The fdacrtmc and the 3D Marchenko code makes use of ZFP compression to store sna
 
 https://github.com/LLNL/zfp
 
+and written by Peter Lindstrom
+
 FDACRTMC
 --------
 fdacrtmc uses FFTW and the wisdom computations are stored on disk for re-usage.  This directory is defined in fdacrtmc.h
@@ -172,36 +161,16 @@ CFLAGS  += -DWISDOMDIR="/directory/that/exists"
 
 or you can change the name of WISDOMDIR in fdacrtmc.h
 
-
-MISC
-----
-Other make commands which can be useful:
-
-make clean : removes all object files, but leaves libraries and executables
-make realclean: removes also object files, libraries and executables.
-
-COMPILATION PROBLEMS
---------------------
-If you encounter missing trigometric / mathematical functions during compilation, for example;
-
-defineSource.c:(.text+0x2356): undefined reference to sin getParameters.o: In function getParameters:
-
-add  '-lm -lc' around line 109 in Make_include:
-
-LIBS= -L$L -lgenfft $(BLAS) -lm -lc
-
-
+The Finite Different based RTM code (FDACRTMC) will not be installed if MKL is not available. This code depends on FFTW and we do want to
+include the full FFTW source code package to this. Our aim is to keep the compilation of the code in the GitHub repository
+as simple as possible with the smallest number of external libraries.
 
 UPDATES AND LATEST VERSION
 --------------------------
 The latest version of the source code and manual can be found at:
 
-http://www.xs4all.nl/~janth/Software/Software.html
-
-or at github:
-
 git clone https://github.com/JanThorbecke/OpenSource.git
 git clone git://github.com/JanThorbecke/OpenSource.git
 
-The code is used by many different people and if there is a request for a new option in the code, then I will try to implement, test and make it available. 
+The code is used by many different people and if there is a request for a new option in the code, then we will try to implement, test and make it available. 
 

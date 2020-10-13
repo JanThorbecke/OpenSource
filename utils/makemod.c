@@ -32,7 +32,7 @@ void interpolation(float *x, float *z, int nxp, int nx, int poly, int *pminx, in
 
 void linearint(int *zp, int minx, int maxx, float dz, float *interface);
 
-void sinusint(int *zp, int minx, int maxx, float dz, float *interface, float dx, float ampl, float wavel);
+void sinuousint(int *zp, int minx, int maxx, float dz, float *interface, float dx, float ampl, float wavel);
 
 void roughint(int *zp, int minx, int maxx, float dz, float *interface, float ampl, float beta, float seed);
 
@@ -96,9 +96,9 @@ char *sdoc[] = {
   " ",
   "   Options for intt:",
   "         - def       = default interface through the points(Xi, Zi)",
-  "         - sin       = sinus shaped interface",
+  "         - sin       = sinuous shaped interface",
   "         - rough     = rough interface with beta(smoothness)",
-  "         - fract     = cosinus fractal shaped interface",
+  "         - fract     = cosinuous fractal shaped interface",
   "         - random    = define random velocities in layer",
   "         - elipse    = define elipse shaped body",
   "         - diffr     = point diffractions",
@@ -106,7 +106,7 @@ char *sdoc[] = {
   "   Options for var in case of intt =:",
   "         - sin(2)    = wavelength,amplitude",
   "         - rough(3)  = amplitude,beta,seed",
-  "         - fract(6)  = Nsinus,amplitude,dim,k0,freqscale,seed",
+  "         - fract(6)  = Nsin,amplitude,dim,k0,freqscale,seed",
   "         - random(1) = min-max variation around cp",
   "         - elipse(2) = r1, r2: vertical and horizontal radius",
   "         - diffr(1)  = width of each point, type(optional)",
@@ -555,7 +555,7 @@ int main(int argc, char **argv)
       Nv = countnparval(Nvi,"var");
       if (Nv != 2) verr("Sinus interface must have 2 variables.");
       getnparfloat(Nvi,"var", var);
-      sinusint(zp, nminx, nmaxx, dz, interface, dx, var[0], var[1]);
+      sinuousint(zp, nminx, nmaxx, dz, interface, dx, var[0], var[1]);
       if (above == 0) Noi++; else Noi--;
       if (above == 0) Nvi++; else Nvi--;
     }
