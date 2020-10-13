@@ -61,7 +61,7 @@ int main (int argc, char **argv)
 	float   *homdata, *snapdata, *outdata, *rtrace, *costaper, scl, tol, *timeval, dt;
 	float   dxs, dys, dzs, scls, fzs, fxs, fys;
 	float   dxh, dyh, dzh, sclh, fzh, fxh, fyh;
-    float   dxrcv, dyrcv, dzrcv, dxpos, offset;
+    float   dxrcv, dyrcv, dzrcv, dxpos, offset, maxz;
 	long    nts, nxs, nys, nzs, ntrs, nth, nxh, nyh, nzh, ntrh, opt; 
     long    nxyz, nxy, ret, ix, iy, iz, it, ht, indrcv, shift, rmt, mode, smooth, verbose;
 	segy    *hdr_hom, *hdr_snap, *hdrs_mute;
@@ -82,6 +82,7 @@ int main (int argc, char **argv)
 	if (!getparlong("verbose", &verbose)) verbose = 1;
 	if (!getparlong("opt", &opt)) opt = 0;
 	if (!getparfloat("tol", &tol)) tol = 5;
+	if (!getparfloat("maxz", &maxz)) maxz = 0;
 	if (fhom == NULL) verr("Incorrect G_hom input");
     if (mode != 2) {
 	    if (fsnap == NULL) verr("Incorrect snapshot input");
@@ -104,7 +105,7 @@ int main (int argc, char **argv)
     /*----------------------------------------------------------------------------*
     *   Determine the parameters of the files and determine if they match
     *----------------------------------------------------------------------------*/
-    getFileInfo3D(fhom, &nzh, &nxh, &nyh, &nth, &dzh, &dxh, &dyh, &fzh, &fxh, &fyh, &sclh, &ntrh);
+    getFileInfo3D(fhom, &nzh, &nyh, &nxh, &nth, &dzh, &dxh, &dyh, &fzh, &fxh, &fyh, &sclh, &ntrh);
 
     if (mode != 2) {
         getFileInfo3D(fsnap, &nzs, &nxs, &nys, &nts, &dzs, &dxs, &dys, &fzs, &fxs, &fys, &scls, &ntrs);
@@ -122,6 +123,7 @@ int main (int argc, char **argv)
     if (verbose) {
         vmess("Number of virtual receivers: %li, nz: %li, nx: %li, ny: %li",nxyz,nzh,nxh,nyh);
         vmess("Sampling distance in direction of z: %.3f, x: %.3f, y: %.3f",dzh,dxh,dyh);
+        vmess("Starting distance in direction of z: %.3f, x: %.3f, y: %.3f",fzh,fxh,fyh);
         vmess("Number of time samples: %li",nth);
     }
 
@@ -159,7 +161,7 @@ int main (int argc, char **argv)
 		fclose(fp_snap);
 		hdrs_mute = (segy *) calloc(nzh*nyh,sizeof(segy));
         timeval = (float *)calloc(nxyz,sizeof(float));
-        readSnapData3D(fray, timeval, hdrs_mute, nzh, 1, nyh, nxh, 0, 1, 0, nyh, 0, nxh);
+        readSnapData3D(fray, timeval, hdrs_mute, 1, nzh, nyh, nxh, 0, nzh, 0, nyh, 0, nxh);
 		dt = hdr_hom[0].dt/1E6;
 	}
 

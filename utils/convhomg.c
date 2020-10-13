@@ -31,6 +31,7 @@ long readSnapData3D(char *filename, float *data, segy *hdrs, long nsnaps, long n
     long sx, long ex, long sy, long ey, long sz, long ez);
 void scl_data(float *data, long nsam, long nrec, float scl, float *datout, long nsamout);
 void convol(float *data1, float *data2, float *con, long ntfft);
+void deconv(float *data1, float *data2, float *con, long ntfft, float eps, float reps);
 
 char *sdoc[] = {
 " ",
@@ -41,22 +42,25 @@ char *sdoc[] = {
 " ",
 " Required parameters: ",
 "",
-"   file_hom= ................. First file of the array of virtual receivers",
-"   file_wav= ................. File containing the virtual source",
+"   file_hom= ................. File containing the homogeneous Green's function",
+"   file_wavcon= .............. File containing the wavelet that will be used for convolution",
 " ",
 " Optional parameters: ",
 " ",
+"   file_wavdecon= ........... File containing the wavelet that will be used for deconvolution",
+"   eps=0.0 .................. Absolute stabilization factor for deconvolution",
+"   reps=0.01 ................ Relative stabilization factor for deconvolution (is multiplied by the maximum of the data)",
 "   file_out= ................ Filename of the output",
 NULL};
 
 int main (int argc, char **argv)
 {
 	FILE    *fp_hom, *fp_wav, *fp_out;
-	char    *file_hom, *file_wav, *file_out;
+	char    *file_hom, *file_wavcon, *file_wavdecon, *file_out;
     long    nt, nx, ny, nz, ntwav, ntfft, ntr, verbose;
     long    nt_wav, it, ipos;
     float   dt, dx, dy, dz, x0, y0, z0, scl, *Ghom, *wav, *wavelet, dt_wav;
-    float   *trace, *conv;
+    float   *trace, *conv, *decon, *tmp, eps, reps;
     segy    *hdr_hom, hdr_wav;
     size_t  nread;
 
@@ -67,12 +71,15 @@ int main (int argc, char **argv)
     *   Get the parameters passed to the function 
     *----------------------------------------------------------------------------*/
 	if (!getparstring("file_hom", &file_hom)) file_hom = NULL;
-	if (!getparstring("file_wav", &file_wav)) file_wav = NULL;
+	if (!getparstring("file_wavcon", &file_wavcon)) file_wavcon = NULL;
+	if (!getparstring("file_wavdecon", &file_wavdecon)) file_wavdecon = NULL;
 	if (!getparstring("file_out", &file_out)) file_out = "out.su";
+	if (!getparfloat("eps", &eps)) eps = 0.00;
+	if (!getparfloat("reps", &reps)) reps = 0.01;
 	if (!getparlong("verbose", &verbose)) verbose = 1;
 
     if (file_hom==NULL) verr("Error file_hom is not given");
-    if (file_wav==NULL) verr("Error file_wav is not given");
+    if (file_wavcon==NULL) verr("Error file_wav is not given");
 
     /*----------------------------------------------------------------------------*
     *   Get the file info of the data and determine the indez of the truncation
@@ -91,8 +98,8 @@ int main (int argc, char **argv)
     *   Allocate and read in the data
     *----------------------------------------------------------------------------*/
 
-    fp_wav = fopen( file_wav, "r" );
-	if (fp_wav == NULL) verr("File %s does not exist or cannot be opened", file_wav);
+    fp_wav = fopen( file_wavcon, "r" );
+	if (fp_wav == NULL) verr("File %s does not exist or cannot be opened", file_wavcon);
     nread = fread( &hdr_wav, 1, TRCBYTES, fp_wav );
     assert(nread == TRCBYTES);
     nt_wav = hdr_wav.ns;
@@ -121,18 +128,51 @@ int main (int argc, char **argv)
 
     wavelet = (float *)calloc(ntfft,sizeof(float));
     trace   = (float *)calloc(ntfft,sizeof(float));
+    tmp     = (float *)calloc(ntfft,sizeof(float));
     conv    = (float *)calloc(ntfft,sizeof(float));
 
     for (it = 0; it < nt_wav/2; it++) {
         wavelet[it] = wav[it];
         wavelet[ntfft-1-it] = wav[nt_wav-1-it];
     }
-    free(wav);
+
+	if (file_wavdecon!=NULL) {
+		if (verbose) vmess("Reading in deconvolution wavelet");
+		fp_wav = fopen( file_wavdecon, "r" );
+		if (fp_wav == NULL) verr("File %s does not exist or cannot be opened", file_wavdecon);
+		nread = fread( &hdr_wav, 1, TRCBYTES, fp_wav );
+		assert(nread == TRCBYTES);
+		nt_wav = hdr_wav.ns;
+		dt_wav = (float)(hdr_wav.dt/1E6);
+		wav    = (float *)calloc(nt_wav,sizeof(float));
+		nread = fread(&wav[0], sizeof(float), nt_wav, fp_wav);
+		assert(nread==nt_wav);
+		fclose(fp_wav);
+
+		decon	= (float *)calloc(ntfft,sizeof(float));
+
+		for (it = 0; it < nt_wav/2; it++) {
+			decon[it] = wav[it];
+			decon[ntfft-1-it] = wav[nt_wav-1-it];
+    	}
+		vmess("Time sampling wavelet decon   : %.3f",dt_wav);
+		if (dt_wav!=dt) vmess("WARNING! dt of HomG (%f) and deconvolution wavelet (%f) do not match.",dt,dt_wav);
+	}
+	free(wav);
+
     for (ipos = 0; ipos<nx*ny*nz; ipos++) {
-        for (it = 0; it < nt; it++) {
-            trace[it] = Ghom[it*nx*ny*nz+ipos];
-        }
-        convol(trace,wavelet,conv,ntfft);
+		if (file_wavdecon!=NULL) {
+			for (it = 0; it < nt; it++) {
+				tmp[it] = Ghom[it*nx*ny*nz+ipos];
+			}
+			deconv(tmp,decon,trace,ntfft,eps,reps);
+		}
+		else{
+			for (it = 0; it < nt; it++) {
+				trace[it] = Ghom[it*nx*ny*nz+ipos];
+			}
+		}
+		convol(trace,wavelet,conv,ntfft);
         for (it = 0; it < nt; it++) {
             Ghom[it*nx*ny*nz+ipos] = conv[it];
         }
@@ -143,6 +183,7 @@ int main (int argc, char **argv)
     }
 
     free(wavelet); free(trace); free(conv);
+	if (file_wavdecon!=NULL) free(decon);
 
     fp_out = fopen(file_out, "w+");
 
@@ -158,7 +199,7 @@ int main (int argc, char **argv)
 
 void convol(float *data1, float *data2, float *con, long ntfft)
 {
-	long 	i, j, n, nfreq, sign;
+	long 	i, j, nfreq, sign;
 	float  	scl;
 	float 	*qr, *qi, *p1r, *p1i, *p2r, *p2i, *rdata1;
 	complex *cdata1, *cdata2, *ccon;
@@ -187,10 +228,84 @@ void convol(float *data1, float *data2, float *con, long ntfft)
 	p1i = p1r + 1;
 	p2i = p2r + 1;
 	qi = qr + 1;
-	n = nfreq;
-	for (j = 0; j < n; j++) {
+	for (j = 0; j < nfreq; j++) {
 		*qr = (*p2r**p1r-*p2i**p1i);
 		*qi = (*p2r**p1i+*p2i**p1r);
+		qr += 2;
+		qi += 2;
+		p1r += 2;
+		p1i += 2;
+		p2r += 2;
+		p2i += 2;
+	}
+	free(cdata1);
+	free(cdata2);
+
+    /* inverse frequency-time FFT and scale result */
+	sign = 1;
+	scl = 1.0/((float)(ntfft));
+	crmfft(&ccon[0], &rdata1[0], (int)ntfft, 1, (int)nfreq, (int)ntfft, (int)sign);
+	scl_data(rdata1,ntfft,1,scl,con,ntfft);
+
+	free(ccon);
+	free(rdata1);
+	return;
+}
+
+void deconv(float *data1, float *data2, float *con, long ntfft, float eps, float reps)
+{
+	long 	i, j, nfreq, sign;
+	float  	scl, maxden, *den, leps;
+	float 	*qr, *qi, *p1r, *p1i, *p2r, *p2i, *rdata1;
+	complex *cdata1, *cdata2, *ccon;
+
+	nfreq = ntfft/2+1;
+
+	den = (float *)malloc(nfreq*sizeof(float));
+	
+	cdata1 = (complex *)malloc(nfreq*sizeof(complex));
+	if (cdata1 == NULL) verr("memory allocation error for cdata1");
+	cdata2 = (complex *)malloc(nfreq*sizeof(complex));
+	if (cdata2 == NULL) verr("memory allocation error for cdata2");
+	ccon = (complex *)malloc(nfreq*sizeof(complex));
+	if (ccon == NULL) verr("memory allocation error for ccov");
+	
+	rdata1 = (float *)malloc(ntfft*sizeof(float));
+	if (rdata1 == NULL) verr("memory allocation error for rdata1");
+
+	/* forward time-frequency FFT */
+	sign = -1;
+	rcmfft(&data1[0], &cdata1[0], (int)ntfft, 1, (int)ntfft, (int)nfreq, (int)sign);
+	rcmfft(&data2[0], &cdata2[0], (int)ntfft, 1, (int)ntfft, (int)nfreq, (int)sign);
+
+	/* apply deconvolution */
+	p1r = (float *) &cdata1[0];
+	p2r = (float *) &cdata2[0];
+	p1i = p1r + 1;
+	p2i = p2r + 1;
+	maxden=0.0;
+	for (j = 0; j < nfreq; j++) {
+		den[j] = *p2r**p2r + *p2i**p2i;
+		maxden = MAX(den[j], maxden);
+		p2r += 2;
+		p2i += 2;
+	}
+	p1r = (float *) &cdata1[0];
+	p2r = (float *) &cdata2[0];
+	qr = (float *) &ccon[0].r;
+	p1i = p1r + 1;
+	p2i = p2r + 1;
+    qi = qr + 1;
+	leps = reps*maxden+eps;
+	for (j = 0; j < nfreq; j++) {
+
+		if (fabs(*p2r)>=fabs(*p2i)) {
+			*qr = (*p2r**p1r+*p2i**p1i)/(den[j]+leps);
+			*qi = (*p2r**p1i-*p2i**p1r)/(den[j]+leps);
+		} else {
+			*qr = (*p1r**p2r+*p1i**p2i)/(den[j]+leps);
+			*qi = (*p1i**p2r-*p1r**p2i)/(den[j]+leps);
+		}
 		qr += 2;
 		qi += 2;
 		p1r += 2;
