@@ -23,7 +23,7 @@ SRCM	= \
 		plotexample.c \
 		polint.c \
 		roughint.c \
-		sinusint.c \
+		sinuousint.c \
 		spline.c \
 		name_ext.c  \
 		allocs.c  \

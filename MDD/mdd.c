@@ -26,7 +26,9 @@ int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *
 
 int readShotData(char *filename, float xmin, float dx, float *xrcv, float *xsrc, int *xnx, complex *cdata, int nw, int nw_low, int ngath, int nx, int nxm, int ntfft, float alpha, float scl, float conjg, int transpose, int verbose);
 
-int deconvolve(complex *cA, complex *cB, complex *cC, complex *oBB, int nfreq, int nblock, size_t nstationA, size_t nstationB, float eps_a, float eps_r, float numacc, int eigenvalues, float *eigen, int rthm, int mdd, int conjgA, int conjgB, int verbose);
+//int deconvolve(complex *cA, complex *cB, complex *cC, complex *oBB, int nfreq, int nblock, size_t nstationA, size_t nstationB, float eps_a, float eps_r, float numacc, int eigenvalues, float *eigen, int rthm, int mdd, int conjgA, int conjgB, int verbose);
+int deconvolve(complex *cA, complex *cB, complex *cC, complex *oBB, int nfreq, int nblock, size_t nstationA, size_t nstationB, float eps_a, float eps_r, float numacc, int eigenvalues, float *eigen, int rthm, int mdd, int conjgA, int conjgB, int lsqr_iter, float lsqr_damp, int k_iter, float TCscl, int verbose);
+
 
 void writeEigen(char *file_out, float df, int nw_low, int nw_high, int nw, float *eigen, int nx, float dx, float xmin);
 void writeDatamatrix(char *file_out, complex *P, int ntfft, int ntc, int Nrec, int Nshot, int nfreq, int nw_low, float dt, int verbose);
@@ -50,6 +52,7 @@ char *sdoc[] = {
 " ",
 "   file_A= .................. name of file(s) which store the data in location A",
 "   file_B= .................. name of file(s) which store the data in location B",
+"   file_C= .................. name of file(s) which store the data in location C",
 " ",
 " Optional parameters: ",
 " ",
@@ -58,24 +61,27 @@ char *sdoc[] = {
 "   fmin=0 ................... minimum frequency",
 "   fmax=70 .................. maximum frequency to use in deconvolution",
 " INPUT DEFINITION ",
-"   cjA=1 .................... -1 => apply complex conjugate to A",
-"   sclA=1 ................... apply scaling factor to A",
-"   tranposeA=0 .............. apply transpose to A",
-"   cjB=1 .................... -1 => apply complex conjugate to B",
-"   sclB=1 ................... apply scaling factor to B",
-"   tranposeB=0 .............. apply transpose to B",
+"   cjA/B/C=1 ................ -1 => apply complex conjugate to A/B/C",
+"   sclA/B/C=1 ............... apply scaling factor to A/B/C",
+"   tranposeA/B/C=0 .......... 1 => apply transpose to A/B/C",
+"   k_iter=5 ................. Iterations for MDD=6",
 " MATRIX INVERSION CALCULATION ",
 "   conjgA=0 ................. apply complex conjugate-transpose to A",
 "   conjgB=1 ................. apply complex conjugate-transpose to B",
+"   conjgC=0 ................. apply complex conjugate-transpose to C",
 "   rthm=0 ................... see below for options",
 "   eps_a=1e-5 ............... absolute stabilization factor for LS",
 "   eps_r=1e-4 ............... relative stabilization factor for LS",
 "   numacc=1e-6 .............. numerical accurary for SVD",
-"   ntap=0 ................... number of taper points matrix",
+"   ntapA/B=0 ................ number of taper points matrix",
 "   ftap=0 ................... percentage for tapering",
 "   tap=0 .................... type of taper: 0=cos 1=exp",
 "   eigenvalues= ............. write SVD eigenvalues to file ",
 "   mdd=1 .................... mdd=0 => computes correlation ",
+"                              mdd=3 => LSQR solver ",
+" LSQR PARAMETERS ",
+"   lsqr_iter=25 ............. number of iterations for LSQR solver",
+"   lsqr_damp=1e-4 ........... damping for LSQR solver",
 " OUTPUT DEFINITION ",
 "   file_out= ................ output base name ",
 "   causal=1 ................. output causal(1), non-causal(2), both(3), or summed(4)",
@@ -88,6 +94,8 @@ char *sdoc[] = {
 "    nt (the number of samples read by the IO routine)",
 " ",
 " Options for mdd= ",
+"	  6 = Iterative Transmission Response (based on Vd Neut et al. 2018, EAGE)",
+"     3 = LSQR based solver A = Bx",
 "     2 = A/(B + eps) ",
 "     1 = A*B^H/(B*B^H + eps) ",
 "     0 = A*B^H ",
@@ -106,34 +114,40 @@ char *sdoc[] = {
 NULL};
 /**************** end self doc ***********************************/
 
+complex *cB;
+
 int main (int argc, char **argv)
 {
 	FILE    *fpin, *fpout;
 	int		i, j, k, ret, nshots, ntraces;
 	int		size, n1, n2, ntfft, nf, causal;
 	int     verbose, fullcorr, ncorstat, err;
-	int     nt, nc, ncc, ntc, nshotA, nshotB;
-	size_t  nstationA, nstationB, nfreq, istation, jstation, iw;
+ 	int     nt, nc, ncc, ntc, nshotA, nshotB, nshotC;
+ 	size_t  nstationA, nstationB, nstationC, nfreq, istation, jstation, iw;
 	int     pgsz, istep,jstep;
 	int     mdd;
-	int		conjgA, conjgB;
-	int 	ntap, nxm, ngath, nw, nw_low, nw_high, eigenvalues, rthm, combine, distance;
+	int	    conjgA, conjgB, conjgC;
+ 	int     ntapA, ntapB, nxm, ngath, nw, nw_low, nw_high, eigenvalues, rthm, combine, distance;
 	size_t  nwrite, cdatainSize, datainSize, cdataoutSize, stationSize, is;
 	float	dx, dt, fmin, fmax, df, eps_r, eps_a, ftap, numacc;
 	float	*rC, scl, *rl, *eigen;
 	float   f1, f2, d1, d2, sclsxgx, xmin, xmax, alpha, wshot, wpi, wrec;
- 	float   *xrcvA, *xsrcA, *xrcvB, *xsrcB;
+  	float   *xrcvA, *xsrcA, *xrcvB, *xsrcB, *xsrcC, *xrcvC;
 	float	*taper;
     int     *xnx;
-	float sclA,sclB, cjA, cjB;
-	int  transposeA, transposeB;
+ 	float 	sclA,sclB, cjA, cjB, sclC, cjC;
+ 	int  	transposeA, transposeB, transposeC;
+ 	float	scaling;
+ 	int  	npad;
+ 	int     k_iter, lsqr_iter;
+ 	float   TCscl, lsqr_damp;
 
+ 	complex *cdataout, *cTemp;
 
-	complex *cdataout;
 	double  t0, t1, t2, t3, tinit, twrite, tread, tdec, tfft;
-	char	*file_A, *file_B, *file_out, *file_dmat, filename[1024], number[128], *rthmName;
+ 	char	*file_A, *file_B, *file_C, *file_out, *file_dmat, filename[1024], number[128], *rthmName;
 	int     pe=0, root_pe=0, npes=1, ipe, size_s, one_file;
-	complex *cA, *cB, *oBB;
+	complex *cA, *cC, *oBB;
 	segy *hdr;
 
 	t0 = wallclock_time();
@@ -145,6 +159,7 @@ int main (int argc, char **argv)
 	assert(file_A != NULL);
 	if (!getparstring("file_B", &file_B)) file_B=NULL;
 	assert(file_B != NULL);
+ 	if (!getparstring("file_C", &file_C)) file_C=NULL;
 	if (!getparstring("file_out", &file_out)) file_out=NULL;
  	assert(file_out != NULL);
 	if (!getparstring("file_dmat", &file_dmat)) file_dmat=NULL;
@@ -154,13 +169,18 @@ int main (int argc, char **argv)
 	if (!getparint("rthm", &rthm)) rthm = 0;
 	if (!getparint("combine", &combine)) combine = 0;
 	if (!getparint("causal", &causal)) causal = 1;
-	if (!getparint("ntap", &ntap)) ntap = 0;
-	if (!getparfloat("ftap", &ftap)) ftap = 0.;
+    if (!getparint("ntapA", &ntapA)) ntapA = 0;
+    if (!getparint("ntapB", &ntapB)) ntapB = 0;
+    if (!getparfloat("ftap", &ftap)) ftap = 0.;
+    if (!getparfloat("scaling", &scaling)) scaling = 1.;
 	if (!getparfloat("eps_r", &eps_r)) eps_r = 1e-4;
 	if (!getparfloat("eps_a", &eps_a)) eps_a = 1e-5;
 	if (!getparfloat("numacc", &numacc)) numacc = 1e-6;
 	if (!getparint("eigenvalues", &eigenvalues)) eigenvalues = 0;
 	if (!getparint("mdd", &mdd)) mdd = 1;
+
+    if (!getparint("lsqr_iter", &lsqr_iter)) lsqr_iter = 25;
+    if (!getparfloat("lsqr_damp", &lsqr_damp)) lsqr_damp = 1e-4;
 
 	if (!getparint("transposeA", &transposeA)) transposeA = 0;
 	if (!getparfloat("sclA", &sclA)) sclA = 1.;
@@ -168,6 +188,15 @@ int main (int argc, char **argv)
 	if (!getparint("transposeB", &transposeB)) transposeB = 0;
 	if (!getparfloat("sclB", &sclB)) sclB = 1.;
 	if (!getparfloat("cjB", &cjB)) cjB = 1.;
+    if (file_C != NULL) {
+        if (!getparint("transposeC", &transposeC)) transposeC = 0;
+        if (!getparfloat("sclC", &sclC)) sclC = 1.;
+        if (!getparfloat("cjC", &cjC)) cjC = 1.;
+        if (!getparint("conjgC", &conjgC)) conjgC = 0;
+    }
+
+    if (!getparint("npad", &npad)) npad = 0;
+    if (!getparint("k_iter", &k_iter)) k_iter= 5;
 
 #ifdef _OPENMP
     npes   = omp_get_max_threads();
@@ -200,7 +229,23 @@ int main (int argc, char **argv)
 	getFileInfo(file_B, &n1, &n2, &nshotB, &d1, &d2, &f1, &f2, &xmin, &xmax, &sclsxgx, &nxm);
 	assert( n1 == nt);
 	nstationB = n2;
-	assert( nshotA == nshotB);
+    if (!((mdd == 5) || (mdd == 3))) assert( nshotA == nshotB);
+
+    if (file_C != NULL && mdd != 3) {
+        nshotC = 0;
+        getFileInfo(file_C, &n1, &n2, &nshotC, &d1, &d2, &f1, &f2, &xmin, &xmax, &sclsxgx, &nxm);
+        assert( n1 == nt);
+        nstationC = n2;
+        assert( nshotA == nshotC);
+    } else if (file_C != NULL) {
+        nshotC = 0;
+        getFileInfo(file_C, &n1, &n2, &nshotC, &d1, &d2, &f1, &f2, &xmin, &xmax, &sclsxgx, &nxm);
+        assert( n1 == nt);
+        nstationC = n2;
+    }
+
+    if (ntapB != 0) ftap = (float)ntapB / (float)nstationA;
+    else if (ftap != 0) ntapB = NINT(ftap*nstationA);
 
 /*================ initializations ================*/
 
@@ -218,11 +263,26 @@ int main (int argc, char **argv)
     nw       = nw_high - nw_low + 1;
 	nfreq = MIN(nf,nw);
 
-/* scaling of the results by Johno van IJsseldijk */ 
-    if (mdd == 0) scl = dx*dt/((float)ntfft); //correlation
-    else if (mdd==1) scl = 1/((float)ntfft)/dx/dt; // MDD
-    else if (mdd==2) scl = 1/((float)ntfft)/dx/dt; // MDD with A and B already computed (NOT TESTED)
-    else scl = 1.0/((float)ntfft); // Passing A or B through
+/* scaling of the results by Johno van IJsseldijk */
+    if (scaling==1) {
+        if (mdd == 0) scl = dx*dt/((float)ntfft); //correlation
+        else if (mdd==1) scl = 1/((float)ntfft)/dx/dt; // MDD
+        else if (mdd==3) scl = 1/((float)ntfft)/dx/dt; // MDD LSQR
+        else if (mdd==2) scl = 1/((float)ntfft)/dx/dt; // MDD with A and B already computed (NOT TESTED)
+        else scl = 1.0/((float)ntfft); // Passing A or B through
+
+        if (file_C != NULL && mdd != 3) scl *= dx*dt; // 
+
+        TCscl=dx*dt;
+    }
+    else if (scaling==0) {
+        scl = 1/((float)ntfft);
+        TCscl=1;
+    }
+    else {
+        scl = scaling/((float)ntfft);
+        TCscl=1;
+    }
 
 /* allocate in shared memory the in- and output data */
 
@@ -232,13 +292,18 @@ int main (int argc, char **argv)
 	cdataout     = (complex *)malloc(cdataoutSize);
 	cA           = (complex *)malloc(nstationA*cdatainSize);
 	cB           = (complex *)malloc(nstationB*cdatainSize);
-	taper        = (float *)malloc(2*nstationB*sizeof(float));
 	if (file_dmat!=NULL) oBB = (complex *)malloc(nstationB*nstationB*nfreq*sizeof(complex));
 	else oBB = NULL;
 	assert(cdataout != NULL);
 	assert(cA != NULL);
 	assert(cB != NULL);
 
+    if (file_C != NULL && mdd != 3) {
+        cC = (complex *)malloc(nstationC*cdatainSize);
+        assert(cC != NULL);
+        cTemp = (complex *)malloc(cdataoutSize);
+        assert(cTemp != NULL);
+    }
 
 /* for first touch binding of allocated memory */
 #pragma omp parallel for schedule(static) private(jstation,is) default(shared)
@@ -254,8 +319,16 @@ int main (int argc, char **argv)
 		memset(&cA[jstation*jstep],0,jstep*sizeof(complex));
 	}
 
+    if (file_C != NULL && mdd != 3) {
+#pragma omp parallel for schedule(static) private(jstation) default(shared)
+        for (jstation=0; jstation<nstationC; jstation++) {
+            memset(&cC[jstation*jstep],0,jstep*sizeof(complex));
+        }
+    }
+
     if (verbose) {
-        if (rthm==0) rthmName="Cholesky";
+		if (mdd==3) rthmName="LSQR";
+        else if (rthm==0) rthmName="Cholesky";
         else if (rthm==1) rthmName="LU";
         else if (rthm==2) rthmName="SVD single precision";
         else if (rthm==3) rthmName="SVD divide-and-conquer";
@@ -269,18 +342,31 @@ int main (int argc, char **argv)
         fprintf(stderr,"  nstationA ........ : %ld\n", nstationA );
         fprintf(stderr,"  nshotB ........... : %d\n", nshotB );
         fprintf(stderr,"  nstationB ........ : %ld\n", nstationB );
+        if (file_C != NULL) {
+            fprintf(stderr,"  nshotC ........... : %d\n", nshotC );
+            fprintf(stderr,"  nstationC ........ : %ld\n", nstationC );
+        }
+        fprintf(stderr,"  Scaling .......... : %e\n", scl);
+
         fprintf(stderr,"  number t-fft ..... : %d\n", ntfft);
-		fprintf(stderr,"  Input  size ...... : %ld MB\n", (nstationA+nstationB)*cdatainSize/(1024*1024));
+        fprintf(stderr,"  Input  size ...... : %ld MB\n", ((file_C != NULL) ? (nstationA+nstationB+nstationC)*cdatainSize/(1024*1024) : (nstationA+nstationB)*cdatainSize/(1024*1024)));
+
 		fprintf(stderr,"  Output size ...... : %ld MB\n", (cdataoutSize/((size_t)1024*1024)));
-        fprintf(stderr,"  taper points ..... : %d (%.2f %%)\n", ntap, ftap*100.0);
+        if (ntapB != 0) fprintf(stderr,"  taper points ..... : %d (%.0f %%)\n", ntapB, ftap*100.0);
+        if (ntapA != 0) fprintf(stderr,"  taper points ..... : %d \n", ntapA);
         fprintf(stderr,"  process number ... : %d\n", pe);
         fprintf(stderr,"  fmin ............. : %.3f (%d)\n", fmin, nw_low);
         fprintf(stderr,"  fmax ............. : %.3f (%d)\n", fmax, nw_high);
         fprintf(stderr,"  nfreq  ........... : %ld\n", nfreq);
         if (mdd) fprintf(stderr,"  Matrix inversion . : %s\n", rthmName);
         else  fprintf(stderr,"  Correlation ...... : \n");
-        fprintf(stderr,"  eps_r ............ : %e\n", eps_r);
-        fprintf(stderr,"  eps_a ............ : %e\n", eps_a);
+        if (mdd==1) {
+            fprintf(stderr,"  eps_r ............ : %e\n", eps_r);
+            fprintf(stderr,"  eps_a ............ : %e\n", eps_a);
+        } else if (mdd==3) {
+            fprintf(stderr,"  iterations........ : %d\n", lsqr_iter);
+            fprintf(stderr,"  damping........... : %e\n", lsqr_damp);
+        }
         fprintf(stderr,"  mdd .............. : %d\n", mdd);
     }
 
@@ -300,7 +386,54 @@ int main (int argc, char **argv)
 	alpha = 0.0;
     readShotData(file_B, xmin, dx, xrcvB, xsrcB, xnx, cB, nw, nw_low, nshotB, nstationB, nstationB, ntfft, alpha, sclB, cjB, transposeB, verbose);
 
-	//cB = cA;
+    if (file_C != NULL && mdd != 3) {
+        xsrcC     = (float *)calloc(nshotC,sizeof(float));
+        xrcvC     = (float *)calloc(nshotC*nstationC,sizeof(float));
+        alpha = 0.0;
+        readShotData(file_C, xmin, dx, xrcvC, xsrcC, xnx, cC, nw, nw_low, nshotC, nstationC, nstationC, ntfft, alpha, sclC, cjC, transposeC, verbose);
+    } else if (file_C != NULL) {
+        xsrcC     = (float *)calloc(nshotC,sizeof(float));
+        xrcvC     = (float *)calloc(nshotC*nstationC,sizeof(float));
+        alpha = 0.0;
+        readShotData(file_C, xmin, dx, xrcvC, xsrcC, xnx, cdataout, nw, nw_low, nshotC, nstationC, nstationC, ntfft, alpha, sclC, cjC, transposeC, verbose);
+    }
+
+    if (ntapA != 0) {
+        taper = (float *)malloc(nstationA*sizeof(float));
+        for (j = 0; j < ntapA; j++)
+            taper[j] = (cos(M_PI*(j-ntapA)/ntapA)+1)/2.0;//(exp(j/ntap*8)-1)/(exp(8)-1);//
+        for (j = ntapA; j < nstationA-ntapA; j++)
+            taper[j] = 1.0;
+        for (j = nstationA-ntapA; j < nstationA; j++)
+            taper[j] = taper[abs(j-nstationA)-1];//(cos(M_PI*(j-(nstationA-ntap))/ntap)+1)/2.0;
+        for (istation = 0; istation < nstationA; istation++) {  // Swap for jstation?
+            for (jstation = 0; jstation < nshotA; jstation++) {
+                for (iw=0; iw<nw; iw++) {
+                    cA[iw*nstationA*nshotA+jstation*nstationA+istation].r *= taper[istation];
+                    cA[iw*nstationA*nshotA+jstation*nstationA+istation].i *= taper[istation];
+                }
+            }
+        }
+        free(taper);
+    }
+    if (ntapB != 0) {
+        taper = (float *)malloc(nstationA*sizeof(float));
+        for (j = 0; j < ntapB; j++)
+            taper[j] = (cos(M_PI*(j-ntapB)/ntapB)+1)/2.0;//(exp(j/ntap*8)-1)/(exp(8)-1);//
+        for (j = ntapB; j < nstationA-ntapB; j++)
+            taper[j] = 1.0;
+        for (j = nstationA-ntapB; j < nstationA; j++)
+            taper[j] = taper[abs(j-nstationA)-1];//(cos(M_PI*(j-(nstationA-ntap))/ntap)+1)/2.0;
+        for (jstation = 0; jstation < nstationA; jstation++) {  // Swap for jstation?
+            for (istation = 0; istation < nshotA; istation++) {
+                for (iw=0; iw<nw; iw++) {
+                    cB[iw*nstationA*nshotA+istation*nshotA+jstation].r *= taper[istation];
+                    cB[iw*nstationA*nshotA+istation*nshotA+jstation].i *= taper[istation];
+                }
+            }
+        }
+        free(taper);
+    }
 
 	eigen = (float *)malloc(nfreq*nstationB*sizeof(float));
 
@@ -309,12 +442,11 @@ int main (int argc, char **argv)
 
 #pragma omp parallel default(none) \
 	private(t1,t2,pe) \
-	shared(cA,cB,eigen,eigenvalues,numacc,eps_r,eps_a) \
-	shared(nstationA,nstationB,verbose,cdatainSize) \
-	shared(rthm,mdd,nfreq,nshotA,conjgA,conjgB) \
-	shared(cdataout,oBB)
+ 	shared(cA,cB,cC,eigen,eigenvalues,numacc,eps_r,eps_a) \
+ 	shared(nstationA,nstationB,nstationC,verbose,cdatainSize) \
+    shared(rthm,mdd,nfreq,nshotA,conjgA,conjgB,conjgC) \
+    shared(cdataout,cTemp,oBB,file_C,cdataoutSize,k_iter,stderr, lsqr_iter, lsqr_damp, TCscl)
 { /* start of OpenMP parallel part */
-
 
 #ifdef _OPENMP
 	pe = omp_get_thread_num();
@@ -322,7 +454,13 @@ int main (int argc, char **argv)
 
 	/* compute deconvolution */
 	deconvolve(cA, cB, cdataout, oBB, nfreq, nshotA, nstationA, nstationB, 
-		eps_a, eps_r, numacc, eigenvalues, eigen, rthm, mdd, conjgA, conjgB, verbose);
+        eps_a, eps_r, numacc, eigenvalues, eigen, rthm, mdd, conjgA, conjgB, lsqr_iter, lsqr_damp, k_iter, TCscl, verbose);
+
+    if (file_C != NULL && mdd != 3) {
+        deconvolve(cdataout, cC, cTemp, oBB, nfreq, nshotA, nstationA, nstationC,
+            eps_a, eps_r, numacc, eigenvalues, eigen, rthm, mdd, conjgA, conjgC, lsqr_iter, lsqr_damp, k_iter, TCscl, verbose);
+        memcpy(&cdataout[0].r, &cTemp[0].r, cdataoutSize);
+    }
 
 } /*end of parallel OpenMP part */
 
@@ -340,6 +478,8 @@ int main (int argc, char **argv)
 /* for writing out combined shots cA */
 	free(cA);
 	free(cB);
+    if (file_C != NULL && mdd != 3) free(cC);
+    if (file_C != NULL && mdd != 3) free(cTemp);
 
 /* Inverse FFT of deconvolution results */
 /* This is done for every deconvolution component seperately */

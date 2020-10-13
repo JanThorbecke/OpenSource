@@ -1,5 +1,6 @@
 *.[oa]
 *.eps
+*.mod
 bin/*
 *.su
 *.bin
@@ -30,8 +31,16 @@ utils/Snap2Shot
 utils/combine
 utils/combine_induced
 utils/reshape_su
+utils/convhomg
+utils/makeR1D
+utils/padmodel
+utils/pwshift
+utils/truncate
 fdelmodc/fdelmodc
 include/genfft.h
+include/zfp.h
+include/bitstream.h
+include/zfp/
 Make_include
 marchenko_applications/fmute
 marchenko_applications/marchenko

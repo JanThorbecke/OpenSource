@@ -9,7 +9,7 @@
 
 typedef struct { /* complex number */
 	float r,i;
-} complex;
+}complex;  
 
 /*
 cblas interface
@@ -88,18 +88,33 @@ On entry, LDC specifies the first dimension of C as declared in the calling (sub
 
 */
 
+// zLSQR implementation
+void zLSQR_(int *m, int *n, size_t *indw, void (*Aprod1)(int *,int *, complex *, complex *, size_t *), void (*Aprod2)(int *,int *, complex *, complex *, size_t *), complex *b, float *damp, int *wantse, complex *x, float *se, float *atol, float *btol, float* conlim,  int* itnlim, int *nout, int *istop, int *itn, float *Anorm, float *Acond, float *rnorm, float *Arnorm, float *xnorm); //, complex *w, complex *v);
+
+// C funcs as input for Fortran subroutines in zLSQR
+void Aprod1_(int *m, int *n, float *x, float *y, size_t *indw);
+void Aprod2_(int *m, int *n, float *x, float *y, size_t *indw);
+
 void computeMatrixInverse(complex *matrix, int nxm, int rthm, float eps_a, float eps_r, float numacc, int eigenvalues, float *eigen, int iw, int verbose);
 
-int deconvolve(complex *cA, complex *cB, complex *cC, complex *oBB, int nfreq, int nblock, size_t nstationA, size_t nstationB, float eps_a, float eps_r, float numacc, int eigenvalues, float *eigen, int rthm, int mdd, int conjgA, int conjgB, int verbose)
+complex *cB;
+
+int deconvolve(complex *cA, complex *cB, complex *cC, complex *oBB, int nfreq, int nblock, size_t nstationA, size_t nstationB, float eps_a, float eps_r, float numacc, int eigenvalues, float *eigen, int rthm, int mdd, int conjgA, int conjgB, int lsqr_iter, float lsqr_damp, int k_iter, float TCscl, int verbose)
 {
 	int istation, jstation, i, j, k, icc, ibb, NA, NB, NC, nshots;
 	size_t  iwnA, iw, iwnB, iwAB, iwBB;
 	complex *AB, *BB;
 	char *transa, *transb,*transN;
 	complex beta, alpha, tmp, a, b;
+	
 
 	AB = (complex *)calloc(nstationA*nstationB,sizeof(complex));
 	BB = (complex *)calloc(nstationB*nstationB,sizeof(complex));
+
+	complex *T0Fm, *Temp; // remember to free this stuff
+
+	T0Fm = (complex *)calloc(nstationA*nstationB*nfreq,sizeof(complex));
+	Temp = (complex *)calloc(nstationB*nstationB*nfreq,sizeof(complex));
 
 	if (conjgA == 1) transa = "C";
 	else if (conjgA == 0) transa = "N";
@@ -129,23 +144,11 @@ private(iw, iwnA, iwnB, iwAB, iwBB)
 				/* cblas_cgemm(CblasRowMajor,CblasNoTrans, CblasConjTrans, NA, NB, nshots, &alpha.r, 
 				&cA[iwnA].r, NA, 
 				&cB[iwnB].r, NB, &beta.r,
-				ocC[iwAB].r, NC); */
-/*
-			for (i=0; i<nshots; i++) {
-				for (j=0; j<nshots; j++) {
-				    for (k=0; k<nstationB; k++) {
-					cC[iwAB+j*nshots+i].r += cA[iwnA+k*nshots+i].r*cB[iwnB+j*nshots+k].r - cA[iwnA+k*nshots+i].i*cB[iwnB+j*nshots+k].i;
-					cC[iwAB+j*nshots+i].i += cA[iwnA+k*nshots+i].r*cB[iwnB+j*nshots+k].i + cA[iwnA+k*nshots+i].i*cB[iwnB+j*nshots+k].r;
-                    }
-				}
-			}
-*/
-
+				&cC[iwAB].r, NC); */
 			cgemm_(transa, transb, &NA, &NB, &nshots, &alpha.r, 
 				&cA[iwnA].r, &NA, 
 				&cB[iwnB].r, &NB, &beta.r, 
 				&cC[iwAB].r, &NC); 	
-
 //				memcpy(&cC[iwAB].r, &cB[iwnA].r, sizeof(float)*2*nstationA*nshots);
 		}
 		else if (mdd==1) { /* Multi Dimensional deconvolution */
@@ -186,21 +189,152 @@ private(iw, iwnA, iwnB, iwAB, iwBB)
 				&BB[0].r, &NB, &beta.r, 
 				&cC[iwAB].r, &NA);
 		}
-		else if (mdd==3) { /* Copy matrix A or B to memory for testing purposes */
-			memcpy(&cC[iwAB].r, &cA[iwnA].r, sizeof(complex)*nstationA*nshots);
+		else if (mdd==3) { /* LSQR solver */
+			// INPUT LSQR
+			int wantse, itnlim, inc, nout, mn;
+			float damp, atol, btol, conlim;
+			float *n;
+			
+			damp = lsqr_damp;
+			atol = 0;
+			btol = 0;
+			conlim = 0; 
+			wantse = 0;
+			itnlim = lsqr_iter;
+			nout = 0;
+			inc = 1;	
+			
+			mn = NA*NB;
+			
+			// OUTPUT zLSQR
+			int itn, istop;
+			float Anorm, Acond, rnorm, Arnorm, xnorm, se;
+		
+			zLSQR_(&mn, &mn, &iwnB, Aprod1_, Aprod2_, 
+						&cA[iwnA], &damp, 
+						&wantse, &cC[iwAB], &se,
+						&atol, &btol, &conlim, &itnlim, &nout,
+						&istop, &itn, &Anorm, &Acond, &rnorm, &Arnorm, &xnorm);
+		
+			//memcpy(&cC[iwAB].r, &cA[iwnA].r, sizeof(complex)*nstationA*nshots);
 		}
 		else if (mdd==4) {
-			memcpy(&cC[iwAB].r, &cB[iwnB].r, sizeof(complex)*nstationB*nshots);
+			memcpy(&cC[iwAB].r, &cA[iwnA].r, sizeof(complex)*nstationA*nshots);
 		}
-		else if (mdd==5) {
-			cblas_cdotu_sub(nshots, &cA[iwnA].r, NA, &cB[iwnB].r, NB, &cC[iwnA].r);
+		else if (mdd==5) { //Matrix with Single shot attempt (doesn't work)
+			cgemv_(transa, &NA, &NA, &alpha.r, 
+				&cA[iwnA].r, &NA, 
+				&cB[iwnB].r, 1, &beta.r,
+				&cC[iwnA].r, 1);
+		}
+		
+		if (mdd==6) { /* Transmission Calculations */
+			
+			cgemm_(transa, transb, &NA, &NB, &nshots, &alpha.r, 
+				&cA[iwnA].r, &NA, 
+				&cB[iwnB].r, &NB, &beta.r, 
+				&T0Fm[iwnA].r, &NA); // construct T_0 F+m
+			
+			for (jstation = 0; jstation < nstationA; jstation++) {
+				for (istation = 0; istation < nshots; istation++) {	
+					T0Fm[iw*nstationA*nshots+jstation*nshots+istation].r *= TCscl;
+					T0Fm[iw*nstationA*nshots+jstation*nshots+istation].i *= TCscl;
+				}   
+			}
+
+
+			memcpy(&cC[iwAB].r, &cA[iwnA].r, sizeof(complex)*nstationA*nshots); // copy T_0
+			
+			for (k=1; k< k_iter; k++) {
+				cgemm_(transa, transb, &NA, &NB, &nshots, &alpha.r, 
+					&T0Fm[iwnA].r, &NA, 
+					&cA[iwnB].r, &NB, &beta.r, 
+					&Temp[iwnA].r, &NA); // construct T_0 F+m T_0 (k=1)
+					
+				for (jstation = 0; jstation < nstationA; jstation++) {
+					for (istation = 0; istation < nshots; istation++) {
+						Temp[iw*nstationA*nshots+jstation*nshots+istation].r *= TCscl;
+						Temp[iw*nstationA*nshots+jstation*nshots+istation].i *= TCscl;						
+						if (k_iter % 2 == 1) {
+							
+							cC[iw*nstationA*nshots+jstation*nshots+istation].r -= Temp[iw*nstationA*nshots+jstation*nshots+istation].r; //pow(TCscl,k_iter+2);
+							cC[iw*nstationA*nshots+jstation*nshots+istation].i -= Temp[iw*nstationA*nshots+jstation*nshots+istation].i; //pow(TCscl,k_iter+2);
+						} else {
+							cC[iw*nstationA*nshots+jstation*nshots+istation].r += Temp[iw*nstationA*nshots+jstation*nshots+istation].r; //pow(TCscl,k_iter+2);
+							cC[iw*nstationA*nshots+jstation*nshots+istation].i += Temp[iw*nstationA*nshots+jstation*nshots+istation].i; //pow(TCscl,k_iter+2);
+							
+						}
+					}   
+				}
+				memcpy(&cA[iwnA].r,&Temp[iwnA].r,sizeof(complex)*nstationA*nshots);
+			}
+			
 		}
 
 	}
 
 	free(AB);
 	free(BB);
+	free(T0Fm);
+	free(Temp);
 
 	return 0;
+}
+
+
+void Aprod1_(int *m, int *n, float *x, float *y, size_t *indw) {
+	int ldc;
+	complex beta, alpha;
+	char *transa, *transb;
+
+	transa = "N";
+	transb = "N";
+	alpha.r = 1.0; alpha.i = 0.0;
+	beta.r = 1.0; beta.i = 0.0;
+	
+	ldc = sqrt(*m);	
+	
+//	fprintf(stderr,"Aprod1 \n");
+	
+	cgemm_(transa, transb, &ldc, &ldc, &ldc, &alpha.r, 
+		&x[0], &ldc, 
+		&cB[*indw].r, &ldc, &beta.r, 
+		&y[0], &ldc); 	
+	
+	/*
+	cgemv_(transa, m, n, &alpha.r, 
+		&cA[*indw].r, m, 
+		&x[0].r, &incx, &beta.r,
+		&y[0].r, &incy);
+	*/
+}
+
+void Aprod2_(int *m, int* n, float *x, float *y, size_t *indw) {
+	int ldc;
+	complex beta, alpha;
+	char *transa, *transb;
+	
+	transa = "C";
+	transb = "N";
+	alpha.r = 1.0; alpha.i = 0.0;
+	beta.r = 1.0; beta.i = 0.0;
+	
+	ldc = sqrt(*m);
+	
+//	fprintf(stderr,"Aprod2 \n");
+	
+	memset(x,0,1*(*m)*sizeof(complex));
+	
+	cgemm_(transb, transa, &ldc, &ldc, &ldc, &alpha.r, 
+		&y[0], &ldc, 
+		&cB[*indw].r, &ldc, &beta.r, 
+		&x[0], &ldc); 
+	
+	/*
+	cgemv_(transa, m, n, &alpha.r, 
+		&cA[*indw].r, m, 
+		&y[0].r, &incx, &beta.r,
+		&x[0].r, &incy);
+	*/	
 }
 
