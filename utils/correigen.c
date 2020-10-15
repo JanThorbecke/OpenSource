@@ -302,7 +302,7 @@ int main (int argc, char **argv)
 	if (file_out==NULL) fp_out = stdout;
 	else {
 		fp_out = fopen(file_out, "w+");
-		if (fp_out==NULL) verr("error on ceating output file");
+		if (fp_out==NULL) verr("error on creating output file");
     	strcpy(filename, file_out);
     	name_ext(filename, "_sort_eig");
     	fp_oute = fopen(filename,"w");
