@@ -483,8 +483,8 @@ int main (int argc, char **argv)
                     energyNi += iRN[l*nxs*nts+ix*nts+j]*iRN[l*nxs*nts+ix*nts+j];
                 }
             }
-            if (iter==0) energyN0[Nfoc] = energyNi;
-            if (verbose >=2) vmess(" - iSyn %d: Ni at iteration %d has energy %e; relative to N0 %e", l, iter, sqrt(energyNi), sqrt(energyNi/energyN0[Nfoc]));
+            if (iter==0) energyN0[l] = energyNi;
+            if (verbose >=2) vmess(" - iSyn %d: Ni at iteration %d has energy %e; relative to N0 %e", l, iter, sqrt(energyNi), sqrt(energyNi/energyN0[l]));
         }
 
         /* apply mute window based on times of direct arrival (in muteW) */
