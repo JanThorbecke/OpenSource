@@ -492,7 +492,7 @@ int main (int argc, char **argv)
             applyMute_tshift(Ni, muteW, smooth, above, Nfoc, nxs, nts, ixpos, npos, shift, iter, tsynW);
         }
         else {
-            applyMute(Ni, muteW, smooth, above, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
+            applyMute(Ni, muteW, smooth, -above, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
         }
 
         if (iter % 2 == 0) { /* even iterations update: => f_1^-(t) */
