@@ -95,6 +95,10 @@ char *sdoc[] = {
 "              ............... M0.su=M0 : initialisation of algorithm",
 "              ............... RMi: iterative terms ",
 "              ............... k1min.su: k1min terms ",
+"   file_vplus= .............. output file with v+",
+"   file_vmin= ............... output file with v-",
+"   file_uplus= .............. output file with u+",
+"   file_umin= ............... output file with u-",
 "   file_update= ............. output file with updates only => removed internal multiples",
 "   T=0 ...................... :1 compute transmission-losses compensated primaries ",
 "   verbose=0 ................ silent option; >0 displays info",
@@ -107,14 +111,15 @@ NULL};
 
 int main (int argc, char **argv)
 {
-    FILE    *fp_out, *fp_rr, *fp_w, *fp_up;
+    FILE    *fp_out, *fp_rr, *fp_w, *fp_ud;
+    FILE    *fp_um, *fp_up, *fp_vm, *fp_vp;
 	size_t  nread, size;
     int     i, j, k, l, ret, nshots, Nfoc, nt, nx, nts, nxs, ngath, nacq;
     int     n1, n2, ntap, tap, di, ntraces, tr;
     int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     int     reci, countmin, mode, n2out, verbose, ntfft;
     int     iter, niter, niterec, recur, niterskip, niterrun, tracf, *muteW;
-    int     hw, ii, iw, ishot, istart, iend;
+    int     hw, ii, iw, iw0, ishot, istart, iend;
     int     smooth, *ixpos, *ixp, npos, ix, ixrcv, m, pad, T, isms, isme, perc;
     int     nshots_r, *isxcount, *reci_xsrc, *reci_xrcv, shift, plane_wave;
     float   fmin, fmax, tom, deltom, *tapersh, *tapersy, fxf, dxf, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
@@ -122,13 +127,14 @@ int main (int argc, char **argv)
 	double  energyMi, *energyM0;
     float   tt0, d1, d2, f1, f2, fxsb, fxse, ft, fx, *xsyn, dxsrc;
     float   *M0, *DD, *RR, *SRC, dt, dx, dxs, scl, mem, scltap;
-    float   *rtrace, *tmpdata, *k1min, *v1plus, *RMi, *Mi, *trace;
+    float   *rtrace, *tmpdata, *k1min, *k1plus, *v1plus, *uv, *RMi, *Mi, *trace;
 	float   *Mup, *Msp, *maxval;
     float   xmin, xmax, scale, tsq;
 	float   Q, f0, *ixmask, *costaper;
 	float   src_velo, src_angle, grad2rad, p, *twplane;
     complex *Refl, *Fop, *ctrace, *cwave, csum, cwav;
     char    *file_tinv, *file_shot, *file_rr, *file_src, *file_iter, *file_update;
+    char    *file_umin, *file_uplus, *file_vmin, *file_vplus;
 	char    *file_dd;
     segy    *hdrs_out, hdr;
 
@@ -145,6 +151,10 @@ int main (int argc, char **argv)
     if (!getparstring("file_dd", &file_rr)) file_dd = NULL;
     if (!getparstring("file_iter", &file_iter)) file_iter = NULL;
     if (!getparstring("file_update", &file_update)) file_update = NULL;
+    if (!getparstring("file_umin", &file_umin)) file_umin = NULL;
+    if (!getparstring("file_uplus", &file_uplus)) file_uplus = NULL;
+    if (!getparstring("file_vmin", &file_vmin)) file_vmin = NULL;
+    if (!getparstring("file_vplus", &file_vplus)) file_vplus = NULL;
     
     if (!getparint("verbose", &verbose)) verbose = 0;
     if (!getparfloat("fmin", &fmin)) fmin = 0.0;
@@ -272,7 +282,9 @@ int main (int argc, char **argv)
     Mi      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     M0      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     k1min   = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
+    k1plus  = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     v1plus  = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
+    uv      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     SRC     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     RR      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     Mup     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
@@ -650,13 +662,13 @@ int main (int argc, char **argv)
     int A, W;
     A=shift*3; W=10;
 	sprintf(filename,"windowA%dW%d.txt",A, W);
-	fp_up = fopen(filename, "w+");
+	fp_ud = fopen(filename, "w+");
     ii=250;
     for (i = 0; i < npos; i++) {
 		twplane[i] = dt*A*sin(2*M_PI*i*W/npos);
-        fprintf(fp_up,"time-shift= %d %d %f\n", i, NINT(twplane[i]/dt), twplane[i]);
+        fprintf(fp_ud,"time-shift= %d %d %f\n", i, NINT(twplane[i]/dt), twplane[i]);
 	}
-	fclose(fp_up);
+	fclose(fp_ud);
 */
 
 /*================ start loop over number of time-samples ================*/
@@ -673,7 +685,9 @@ int main (int argc, char **argv)
 */
         t5 = wallclock_time();
         memset(M0, 0, Nfoc*nxs*ntfft*sizeof(float));
+        memset(k1plus, 0, Nfoc*nxs*ntfft*sizeof(float));
         memset(v1plus, 0, Nfoc*nxs*ntfft*sizeof(float));
+        memset(uv, 0, Nfoc*nxs*ntfft*sizeof(float));
 
         /* M0 equation (3) in the Geophysics implementation paper */
         /* once every 'niterskip' time-steps start from fresh M0 and do niter (~20) iterations */
@@ -794,6 +808,10 @@ int main (int argc, char **argv)
                     for (i = 0; i < npos; i++) {
 						ix = ixpos[i];
 						iw = NINT((ii*dt+twplane[ix])/dt);
+						/* store results in kplus */
+                        for (j = 0; j < nts; j++) {
+                            k1plus[l*nxs*nts+i*nts+j] += Mi[l*nxs*nts+i*nts+j];
+                        }
 						/* apply mute window for samples after ii */
                         for (j = MAX(0,iw-isme); j < nts; j++) {
                             Mi[l*nxs*nts+i*nts+j] = 0.0;
@@ -889,6 +907,96 @@ int main (int argc, char **argv)
             }
         }
 
+        /* write optional u- u+ v- v+ to disk */
+        if (file_vmin != NULL) {
+            for (l = 0; l < Nfoc; l++) {
+                for (i = 0; i < npos; i++) {
+					/* apply mute window for delta function at t=0*/
+					iw0 = NINT((twplane[ix])/dt);
+            		for (j = 0; j < MAX(0,iw0+shift-smooth); j++) {
+                		uv[l*nxs*nts+i*nts+j] = 0.0;
+            		}
+            		for (j = MAX(0,iw0+shift-smooth), k=1; j < MAX(0,iw0+shift); j++, k++) {
+                		uv[l*nxs*nts+i*nts+j] = k1min[l*nxs*nts+i*nts+j]*costaper[smooth-k];
+ 					}
+					iw = NINT((ii*dt+twplane[ix])/dt);
+            		for (j = MAX(0,iw0+shift); j < iw-isme; j++, k++) {
+                		uv[l*nxs*nts+i*nts+j] = k1min[l*nxs*nts+i*nts+j];
+					}
+            		for (j = iw-isme, k=0; j < iw-isms; j++, k++) {
+                		uv[l*nxs*nts+i*nts+j] = k1min[l*nxs*nts+i*nts+j]*costaper[k];
+            		}
+            		for (j = MAX(0,iw-isms); j < nts; j++) {
+                		uv[l*nxs*nts+i*nts+j] = 0.0;
+            		}
+
+				}
+			}
+          	writeDataIter(file_vmin, uv, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixp, npos, 0, ii);
+	    }
+        if (file_umin != NULL) {
+            for (l = 0; l < Nfoc; l++) {
+                for (i = 0; i < npos; i++) {
+					iw = NINT((ii*dt+twplane[ix])/dt);
+					/* apply mute window for samples before ii */
+            		for (j = 0; j < MAX(0,iw-isme); j++) {
+                		uv[l*nxs*nts+i*nts+j] = 0.0;
+            		}
+            		for (j = MAX(0,iw-isme), k=1; j < iw-isms; j++, k++) {
+                		uv[l*nxs*nts+i*nts+j] = k1min[l*nxs*nts+i*nts+j]*costaper[smooth-k];
+            		}
+            		for (j = MAX(0,iw-isms); j < nts; j++) {
+                		uv[l*nxs*nts+i*nts+j] = k1min[l*nxs*nts+i*nts+j];
+            		}
+				}
+			}
+          	writeDataIter(file_umin, uv, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixp, npos, 0, ii);
+	    }
+        if (file_vplus != NULL) {
+            for (l = 0; l < Nfoc; l++) {
+                for (i = 0; i < npos; i++) {
+					/* apply mute window for delta function at t=0*/
+					iw0 = NINT((twplane[ix])/dt);
+            		for (j = 0; j < MAX(0,iw0+shift-smooth); j++) {
+                		uv[l*nxs*nts+i*nts+j] = 0.0;
+            		}
+            		for (j = MAX(0,iw0+shift-smooth), k=1; j < MAX(0,iw0+shift); j++, k++) {
+                		uv[l*nxs*nts+i*nts+j] = k1plus[l*nxs*nts+i*nts+j]*costaper[smooth-k];
+ 					}
+					iw = NINT((ii*dt+twplane[ix])/dt);
+            		for (j = MAX(0,iw0+shift); j < iw-isme; j++, k++) {
+                		uv[l*nxs*nts+i*nts+j] = k1plus[l*nxs*nts+i*nts+j];
+					}
+            		for (j = iw-isme, k=0; j < iw-isms; j++, k++) {
+                		uv[l*nxs*nts+i*nts+j] = k1plus[l*nxs*nts+i*nts+j]*costaper[k];
+            		}
+            		for (j = MAX(0,iw-isms); j < nts; j++) {
+                		uv[l*nxs*nts+i*nts+j] = 0.0;
+            		}
+
+				}
+			}
+          	writeDataIter(file_vplus, uv, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixp, npos, 0, ii);
+	    }
+        if (file_uplus != NULL) {
+            for (l = 0; l < Nfoc; l++) {
+                for (i = 0; i < npos; i++) {
+					iw = NINT((ii*dt+twplane[ix])/dt);
+					/* apply mute window for samples before ii */
+            		for (j = 0; j < MAX(0,iw-isme); j++) {
+                		uv[l*nxs*nts+i*nts+j] = 0.0;
+            		}
+            		for (j = MAX(0,iw-isme), k=1; j < iw-isms; j++, k++) {
+                		uv[l*nxs*nts+i*nts+j] = k1plus[l*nxs*nts+i*nts+j]*costaper[smooth-k];
+            		}
+            		for (j = MAX(0,iw-isms); j < nts; j++) {
+                		uv[l*nxs*nts+i*nts+j] = k1plus[l*nxs*nts+i*nts+j];
+            		}
+				}
+			}
+          	writeDataIter(file_uplus, uv, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixp, npos, 0, ii);
+	    }
+
         /* To Do? optional write intermediate RR results to file */
 
         if (verbose) {
@@ -911,7 +1019,9 @@ int main (int argc, char **argv)
     free(Mi);
     free(energyM0);
     free(M0);
+    free(uv);
     free(k1min);
+    free(k1plus);
     free(v1plus);
 
     t2 = wallclock_time();
@@ -927,8 +1037,8 @@ int main (int argc, char **argv)
 /*================ write output files ================*/
 
     if (file_update != NULL) {
-		fp_up = fopen(file_update, "w+");
-    	if (fp_up==NULL) verr("error on creating output file %s", file_update);
+		fp_ud = fopen(file_update, "w+");
+    	if (fp_ud==NULL) verr("error on creating output file %s", file_update);
 	}
     fp_rr = fopen(file_rr, "w+");
     if (fp_rr==NULL) verr("error on creating output file %s", file_rr);
@@ -950,14 +1060,14 @@ int main (int argc, char **argv)
         ret = writeData(fp_rr, (float *)&RR[l*size], hdrs_out, n1, n2);
         if (ret < 0 ) verr("error on writing output file.");
     	if (file_update != NULL) {
-        	ret = writeData(fp_up, (float *)&Msp[l*size], hdrs_out, n1, n2);
+        	ret = writeData(fp_ud, (float *)&Msp[l*size], hdrs_out, n1, n2);
         	if (ret < 0 ) verr("error on writing output file.");
 		} 
     }
     ret = fclose(fp_rr);
     if (ret < 0) verr("err %d on closing output file %s",ret, file_rr);
 	if (file_update != NULL) {
-		ret = fclose(fp_up);
+		ret = fclose(fp_ud);
     	if (ret < 0) verr("err %d on closing output file %s",ret, file_update);
 	}
 
