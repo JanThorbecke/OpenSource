@@ -316,6 +316,7 @@ int main (int argc, char **argv)
             if (ret < 0 ) verr("error on writing check file.");
             for (i=0; i<nx1; i++) {
                 jmax = maxval[i]-shift;
+                if (above==6) jmax = maxval[i]+shift;
                 ret = fprintf(fp_psline1, "%.5f %.5f \n",jmax*dt,hdrs_in1[i].gx*sclshot);
                 jmax =-maxval[i]+shift;
                 ret = fprintf(fp_psline2, "%.5f %.5f \n",jmax*dt,hdrs_in1[i].gx*sclshot);

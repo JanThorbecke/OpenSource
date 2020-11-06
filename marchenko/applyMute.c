@@ -14,7 +14,7 @@
 
 void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift, int *tsynW)
 {
-     int i, j, l, isyn;
+    int i, j, l, isyn;
     float *costaper, scl;
     int imute, tmute, ts;
 
