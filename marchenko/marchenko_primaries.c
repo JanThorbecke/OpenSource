@@ -109,6 +109,13 @@ char *sdoc[] = {
 NULL};
 /**************** end self doc ***********************************/
 
+/*
+ * The equation and Figure numbers mentioned in the comments refer to the paper:
+ *  "Implementation of the Marchenko Multiple Elimination algorithm", 
+ *  Thorbecke, Jan; Zhang, Lele; Wapenaar, Kees; Slob, Evert,
+ *  Accepted for publication, todo add full reference after publication 
+ */
+
 int main (int argc, char **argv)
 {
     FILE    *fp_out, *fp_rr, *fp_w, *fp_ud;
@@ -197,7 +204,7 @@ int main (int argc, char **argv)
 
     if (reci && ntap) vwarn("tapering influences the reciprocal result");
 
-/* defines the smooth transition zone of the time-window */
+/* defines the smooth transition zone of the time-window (Figure 5) */
 
 	smooth = MIN(smooth, shift);
     if (smooth) {
@@ -431,7 +438,7 @@ int main (int argc, char **argv)
     }
 
 /*================ Defining focusing operator(s) from R ================*/
-/* M0 = -R(ishot,-t) */
+/* M0 = -R(ishot,-t)  equation (3) */
 
     /* use ishot from Refl, complex-conjugate(time reverse), scale with -1 and convolve with wavelet */
     if (file_tinv == NULL) {
@@ -702,7 +709,7 @@ int main (int argc, char **argv)
                     for (j = 0; j < nts; j++) {
                         M0[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts+j];
                     }
-                    /* apply mute window for samples above nts-ii */
+                    /* apply mute window for samples above nts-ii : the Heaviside function in equation (3) */
                     for (j = 0; j < MIN(nts, nts-iw+isms); j++) {
                         M0[l*nxs*nts+i*nts+j] = 0.0;
                     }
@@ -710,6 +717,7 @@ int main (int argc, char **argv)
                         M0[l*nxs*nts+i*nts+j] *= costaper[smooth-k];
                     }
                 }
+				/* Initilisation of k1min: the first term (R) in the right hand side of equation(6) */
                 for (i = 0; i < npos; i++) {
                     ix = ixpos[i];
                     j = 0;
@@ -743,6 +751,7 @@ int main (int argc, char **argv)
                 }
             }
         }
+        /* If enabled this write the result of equation(3) to disk */
         if (file_iter != NULL) {
        	    writeDataIter("M0.su", M0, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixp, npos, 0, 1000*ii);
         }
@@ -760,15 +769,17 @@ int main (int argc, char **argv)
             t2    = wallclock_time();
     
 /*================ construction of Mi(-t) = - \int R(x,t) Mi(t)  ================*/
-            /* synthesis process is the compute kernel in equations (4) and (5) in the Geophysics implementation paper */
+            /* synthesis process is the compute kernel in equations (4) and (5) (rewritten from equation (2)) */
             synthesisp(Refl, Fop, Mi, RMi, nx, nt, nacq, nts, dt, xsyn, Nfoc,
                 xrcv, xsrc, xnx, fxse, fxsb, dxs, dxsrc, dx, ntfft, nw, nw_low, nw_high, mode,
                 reci, nshots, ixpos, npos, &tfft, isxcount, reci_xsrc, reci_xrcv, ixmask, verbose);
 
+			/* If enbled the result of equation(4) or (5) (depending on odd/even) is written to disk */
         	if (file_iter != NULL) {
             	writeDataIter(file_iter, RMi, hdrs_out, ntfft, nacq, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, 1000*ii+iter+1);
         	}
 
+            /* The Energy is computed to check the convergence of the scheme see Figure 6c and Figure 8 */
 			if (verbose >=2) {
                 for (l = 0; l < Nfoc; l++) {
                     if (iter % 2 == 0) {
@@ -790,7 +801,8 @@ int main (int argc, char **argv)
             t3 = wallclock_time();
             tsyn +=  t3 - t2;
     
-            /* N_k(x,t) = -N_(k-1)(x,-t) */
+            /* M_i(x,t) = RMi_(i-1)(x,-t) : time-reversal of the outcome of the synthesis process */
+            /* see equation(3) where the time reversal of R is taken as input */
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < npos; i++) {
                     j = 0;
@@ -808,18 +820,19 @@ int main (int argc, char **argv)
                     for (i = 0; i < npos; i++) {
 						ix = ixpos[i];
 						iw = NINT((ii*dt+twplane[ix])/dt);
-						/* store results in kplus */
+						/* store results in kplus the 'plus-part' of equation (6) */
                         for (j = 0; j < nts; j++) {
                             k1plus[l*nxs*nts+i*nts+j] += Mi[l*nxs*nts+i*nts+j];
                         }
-						/* apply mute window for samples after ii */
+						/* Apply mute window for samples after ii : the Heaviside function in equation (5) */
+                        /* This also defines v1_plus in equation (8) */
                         for (j = MAX(0,iw-isme); j < nts; j++) {
                             Mi[l*nxs*nts+i*nts+j] = 0.0;
                         }
                         for (j = MAX(0,iw-isme), k=0; j < iw-isms; j++, k++) {
                             Mi[l*nxs*nts+i*nts+j] *= costaper[k];
                         }
-						/* apply mute window for delta function at t=0*/
+						/* Apply mute window for delta function at t=0*/
 						iw = NINT((twplane[ix])/dt);
                         for (j = 0; j < MAX(0,iw+shift-smooth); j++) {
                             Mi[l*nxs*nts+i*nts+j] = 0.0;
@@ -827,6 +840,7 @@ int main (int argc, char **argv)
                         for (j = MAX(0,iw+shift-smooth), k=1; j < MAX(0,iw+shift); j++, k++) {
                             Mi[l*nxs*nts+i*nts+j] *= costaper[smooth-k];
                         }
+                        /* This defines v1_plus in equation (8) */
                         for (j = 0; j < nts; j++) {
                             v1plus[l*nxs*nts+i*nts+j] += Mi[l*nxs*nts+i*nts+j];
                         }
@@ -844,11 +858,13 @@ int main (int argc, char **argv)
                             for (j = 0; j < nts; j++) {
                                 Mi[l*nxs*nts+i*nts+j] += -DD[l*nxs*nts+ix*nts+j];
 						    }
+						    /* store results in kmin as defined in equation (6) */
                             j = 0;
                             k1min[l*nxs*nts+i*nts+j] = -Mi[l*nxs*nts+i*nts+j];
                             for (j = 1; j < nts; j++) {
                                 k1min[l*nxs*nts+i*nts+j] = -Mi[l*nxs*nts+i*nts+nts-j];
                             }
+					        /* This collects the eliminated internal multiples and is the sum in right hand-side in equation (1) */	
         		        	if (file_update != NULL) {
 								j=0;
                                 Mup[l*nxs*nts+i*nts+j] += DD[l*nxs*nts+ix*nts+j] - k1min[l*nxs*nts+i*nts+j];
@@ -858,11 +874,13 @@ int main (int argc, char **argv)
 							}
 						}
 						else {
+						    /* store results in kmin as defined in equation (6) */
                             j = 0;
                             k1min[l*nxs*nts+i*nts+j] -= Mi[l*nxs*nts+i*nts+j];
                             for (j = 1; j < nts; j++) {
                                 k1min[l*nxs*nts+i*nts+j] -= Mi[l*nxs*nts+i*nts+nts-j];
                             }
+					        /* Mup collects the eliminated internal multiples and is the sum in right hand-side in equation (1) */	
         		        	if (file_update != NULL) {
 								j=0;
                             	Mup[l*nxs*nts+i*nts+j] += Mi[l*nxs*nts+i*nts+j];
@@ -871,7 +889,8 @@ int main (int argc, char **argv)
                             	}
 							}
 					    }
-					    /* apply mute window for samples above nts-ii */
+					    /* Apply mute window for samples above nts-ii : the Heaviside function in equation (4)
+                         * This also defines u1_min, for t>=t2-epsilon in equation (7) */
 						iw = NINT((ii*dt+twplane[ix])/dt);
                         for (j = 0; j < MIN(nts,nts-iw+isms); j++) {
                             Mi[l*nxs*nts+i*nts+j] = 0.0;
@@ -907,7 +926,8 @@ int main (int argc, char **argv)
             }
         }
 
-        /* write optional u- u+ v- v+ to disk */
+        /* Write optional u- u+ v- v+ to disk */
+        /* Based on equation(6) and (7) k1min is split in vmin and umin */
         if (file_vmin != NULL) {
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < npos; i++) {
@@ -952,16 +972,44 @@ int main (int argc, char **argv)
 			}
           	writeDataIter(file_umin, uv, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixp, npos, 0, ii);
 	    }
+        /*
+         * \begin{alignat}{2}
+         * \label{k1p}
+         * k_{1,i}^+({\bf x}'_0,{\bf x}''_0,t,t_2) = & \int_{t'=0}^{+\infty} \int_{\partial \setD_0}  R({\bf x}'_0,{\bf x}_0,-t')
+         * v_{1,i}^-({\bf x}_0,{\bf x}''_0,t-t',t_2) {\rm d}t' {\rm d} {\bf x}_0.
+         * \end{alignat}
+         * 
+         * Equation (\ref{k1p}) can be further split in the time domain as follows; 
+         * %
+         * \begin{equation} \label{uv+}
+         *     k_{1,i}^+({\bf x}'''_0,{\bf x}''_0,t,t_2) = \begin{cases}
+         *                v_{1,i}^+({\bf x}'''_0,{\bf x}''_0,t,t_2)            & t < t_2-\varepsilon \\
+         *                u_{1,i}^+({\bf x}'''_0,{\bf x}''_0,t,t_2)			   & t \geq t_2-\varepsilon
+         *            \end{cases},
+         * \end{equation}
+         * %
+         *
+         */
+        /* The equation (\ref{k1p}) above is the k1plus equivalent of k1min of equation(6) 
+         * and the time window in equation (\ref{uv+}) defines vplus and uplus */
+        /* Based on these equations and k1plus is split in vplus and uplus */
+
         if (file_vplus != NULL) {
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < npos; i++) {
 					/* apply mute window for delta function at t=0*/
 					iw0 = NINT((twplane[ix])/dt);
-            		for (j = 0; j < MAX(0,iw0+shift-smooth); j++) {
-                		uv[l*nxs*nts+i*nts+j] = 0.0;
-            		}
-            		for (j = MAX(0,iw0+shift-smooth), k=1; j < MAX(0,iw0+shift); j++, k++) {
-                		uv[l*nxs*nts+i*nts+j] = k1plus[l*nxs*nts+i*nts+j]*costaper[smooth-k];
+                    /* to apply muting window around epsilon below t=0 uncomment this part */
+                    /* This (partly) removes the delta function at t=0 */
+            	//   for (j = 0; j < MAX(0,iw0+shift-smooth); j++) {
+                //		uv[l*nxs*nts+i*nts+j] = 0.0;
+            	//	}
+            	//	for (j = MAX(0,iw0+shift-smooth), k=1; j < MAX(0,iw0+shift); j++, k++) {
+                //		uv[l*nxs*nts+i*nts+j] = k1plus[l*nxs*nts+i*nts+j]*costaper[smooth-k];
+ 				//	}
+ 				/*  this keeps the delta pulse below at at t=0 */
+            		for (j = 0; j < iw0+shift; j++) {
+                		uv[l*nxs*nts+i*nts+j] = k1plus[l*nxs*nts+i*nts+j];
  					}
 					iw = NINT((ii*dt+twplane[ix])/dt);
             		for (j = MAX(0,iw0+shift); j < iw-isme; j++, k++) {
