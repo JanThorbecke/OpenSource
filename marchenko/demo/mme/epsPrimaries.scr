@@ -102,6 +102,10 @@ fi
 # second iteration
 if [[ "$1" == "Figure4" ]];
 then
+if [[ ! -f "shotsx0.su" ]]; then
+echo "ERR: File shotsx0.su is not yet created, please run ./epsPrimaries.scr Figure3 first."
+exit
+fi
 suwind itmax=1023 <  Mi_276001.su > N0.su
 #compute R*N0
 fconv file_in1=shotsx0.su file_in2=N0.su file_out=fconvN1.su verbose=1 fmax=90
@@ -182,7 +186,7 @@ echo $piter
 file=Mi_${istart}${piter}.su
 file_base=${file%.su}
 #possibly add suflip flip=3 to flip the time-axis
-supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
+supsimage < $file hbox=6 wbox=4 labelsize=16 linewidth=0.0 \
 	n1tic=2 d2=5 x1beg=$nstart x1end=$ns d1=1 d1num=100 \
 	label1="time sample number" label2="lateral distance" \
     f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > $file_base.eps
@@ -197,7 +201,7 @@ piter=$(printf %03d $iter)
 echo $piter
 file=Mi_${istart}${piter}.su
 file_base=${file%.su}
-supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
+supsimage < $file hbox=6 wbox=4 labelsize=16 linewidth=0.0 \
 	n1tic=2 d2=5 x1beg=0 x1end=$nsd d1=1 d1num=100 \
 	label1="time sample number" label2="lateral distance" \
     f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > $file_base.eps
@@ -218,14 +222,14 @@ file=Mi_${istart}${piter}.su
 #shift=$(echo "scale=4; ($dtrcv*($ns/2.0-1))" | bc -l)
 #basop choice=shift shift=$shift file_in=$file | \
 file_base=${file%.su}
-suflip flip=3 < $file | supsimage hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
+suflip flip=3 < $file | supsimage hbox=6 wbox=4 labelsize=16 linewidth=0.0 \
 	n1tic=2 d2=5 x1beg=0 x1end=$nsd d1=1 d1num=100 \
 	label1="time sample number" label2="lateral distance" \
     f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > ${file_base}flip.eps
 
 file=k1min_${istart}${piter}.su
 file_base=${file%.su}
-supsimage hbox=6 wbox=4 labelsize=14 linewidth=0.0 < $file\
+supsimage hbox=6 wbox=4 labelsize=16 linewidth=0.0 < $file\
 	n1tic=2 d2=5 x1beg=0 x1end=$nsd d1=1 d1num=100 \
 	label1="time sample number" label2="lateral distance" \
     f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > $file_base.eps
@@ -242,7 +246,7 @@ for (( istart=246; istart<=316; istart+=10 ))
 do
 file=k1min_${istart}${piter}.su
 file_base=${file%.su}
-supsimage hbox=6 wbox=4 labelsize=14 linewidth=0.0 < $file\
+supsimage hbox=6 wbox=4 labelsize=16 linewidth=0.0 < $file\
 	n1tic=2 d2=5 x1beg=0 x1end=$nsd d1=1 d1num=100 \
 	label1="time sample number" label2="lateral distance" \
     f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > $file_base.eps
@@ -259,7 +263,7 @@ echo $piter
 file=Mi_${istart}${piter}.su
 file_base=${file%.su}
 #possibly add suflip flip=3 to flip the time-axis
-supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
+supsimage < $file hbox=6 wbox=4 labelsize=16 linewidth=0.0 \
 	n1tic=2 d2=5 x1beg=$nstart x1end=$ns d1=1 d1num=100 \
 	label1="time sample number" label2="lateral distance" \
     f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > ${file_base}T.eps
@@ -296,12 +300,12 @@ file=WindowOdd276.su
 file_base=${file%.su}
 suwind key=tracl min=1 max=1 < $file | suwind itmin=1024 | \
 supsgraph d1=1 style=normal f1=0 \
-    labelsize=12 label1="time sample number" label2="amplitude" \
+    labelsize=14 label1="time sample number" label2="amplitude" \
     d1num=100 wbox=6 hbox=3 x2end=1.2 > $file_base.eps
 file=WindowEven276.su
 file_base=${file%.su}
 suwind key=tracl min=1 max=1 < $file | suwind itmax=1024 | \
 supsgraph d1=1 style=normal f1=0 \
-    labelsize=12 label1="time sample number" label2="amplitude" \
+    labelsize=14 label1="time sample number" label2="amplitude" \
     d1num=100 wbox=6 hbox=3 x2end=1.2 > $file_base.eps
 

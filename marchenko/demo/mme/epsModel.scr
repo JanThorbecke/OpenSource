@@ -21,13 +21,13 @@ cat << EOF3 > line3
 EOF3
 
 #model
-supsimage hbox=4 wbox=6 labelsize=12 < model10_cp.su \
+supsimage hbox=4 wbox=6 labelsize=16 < model10_cp.su \
         x1beg=0 x1end=1400.0 d1num=200 lstyle=vertright legend=1 threecolor=0 \
     	label1="depth (m)" label2="lateral distance (m)" \
         curve=line1,line2,line3 npair=2,2,2 curvecolor=black,black,black \
         n1tic=5 x2beg=-2250 f2num=-2000 d2num=1000 x2end=2250 > model_cp_line.eps
 
-supsimage hbox=4 wbox=6 labelsize=12 < model10_ro.su \
+supsimage hbox=4 wbox=6 labelsize=16 < model10_ro.su \
         x1beg=0 x1end=1400.0 d1num=200 lstyle=vertright legend=1 threecolor=0 \
     	label1="depth (m)" label2="lateral distance (m)" \
         curve=line1,line2,line3 npair=2,2,2 curvecolor=black,black,black \
@@ -36,12 +36,12 @@ supsimage hbox=4 wbox=6 labelsize=12 < model10_ro.su \
 #wavelet
 dt=0.0005
 supsgraph < wavefw.su \
-    labelsize=12 d1=$dt style=normal \
+    labelsize=16 d1=$dt style=normal \
     label1="time (s)" label2="amplitude" \
     d1num=0.15 wbox=6 hbox=3 x1end=0.9 > wavefw.eps
  
 sufft < wavefw.su | suamp | sugain scale=$dt | supsgraph \
-    labelsize=12 style=normal \
+    labelsize=16 style=normal \
     label1="frequency (1/s)" label2="amplitude" \
     d1num=10 wbox=6 hbox=3 x1end=125 x2end=1.1 > wavefw_freq.eps
  
