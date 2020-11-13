@@ -1,4 +1,5 @@
 #!/bin/bash
 
 rm *.su *.bin *.eps nep line* *.asci
+rm strongContrast/*.su strongContrast/*.eps
 
