@@ -581,9 +581,13 @@ int main (int argc, char **argv)
         }
         /* Apply mute with window for Gmin */
 		if ( plane_wave==1 ) {
-            applyMute_tshift(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 0, tsynW);
             /* for plane wave with angle tshift downward */
+			if (verbose>1) vmess("Gmin planewave tshift=%f\n", tshift);
             timeShift(Gmin, nts, npos, dt, tshift, fmin, fmax);
+		    itmin = NINT(0.5*tshift/dt);
+            for (i=0; i<nxs; i++) tsynW[i] -= itmin;
+            applyMute_tshift(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 0, tsynW);
+            for (i=0; i<nxs; i++) tsynW[i] += itmin;
 		}
 		else {
             applyMute(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
