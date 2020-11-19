@@ -70,10 +70,10 @@ void applyMute_tshift( float *data, int *mute, int smooth, int above, int Nfoc, 
                 for (j = MAX(0,tmute-shift),l=0; j < MAX(0,tmute-shift+smooth); j++,l++) {
                     Nig[j] *= costaper[l];
                 }
-                for (j = MAX(0,tmute-shift+smooth+1); j < MIN(nt,nt+1-tmute+2*ts+shift-smooth); j++) {
+                for (j = MAX(0,tmute-shift+smooth); j < MIN(nt,nt-tmute+2*ts+shift-smooth); j++) {
                     Nig[j] = 0.0;
                 }
-                for (j = MIN(nt-1,nt-tmute+2*ts+shift-smooth),l=0; j < MIN(nt,nt-tmute+shift); j++,l++) {
+                for (j = MIN(nt,nt-tmute+2*ts+shift-smooth),l=0; j < MIN(nt,nt-tmute+shift); j++,l++) {
                     Nig[j] *= costaper[smooth-l-1];
                 }
             }
@@ -93,17 +93,17 @@ void applyMute_tshift( float *data, int *mute, int smooth, int above, int Nfoc, 
                 imute = ixpos[i];
                 tmute = mute[isyn*nxs+imute];
 				ts = tsynW[isyn*nxs+imute];
+                for (j = 0; j < MAX(0,-2*ts+tmute-shift-smooth); j++) {
+                    Nig[j] = 0.0;
+                }
                 for (j = MAX(0,-2*ts+tmute-shift-smooth),l=0; j < MAX(0,-2*ts+tmute-shift); j++,l++) {
                     Nig[j] *= costaper[smooth-l-1];
                 }
-                for (j = 0; j < MAX(0,-2*ts+tmute-shift-smooth-1); j++) {
-                    Nig[j] = 0.0;
-                }
-                for (j = nt+1-tmute+shift+smooth; j < nt; j++) {
-                    Nig[j] = 0.0;
-                }
-                for (j = nt-tmute+shift,l=0; j < nt-tmute+shift+smooth; j++,l++) {
+                for (j = MIN(nt,nt-tmute+shift),l=0; j < MIN(nt,nt-tmute+shift+smooth); j++,l++) {
                     Nig[j] *= costaper[l];
+                }
+                for (j = MIN(nt,nt-tmute+shift+smooth); j < nt; j++) {
+                    Nig[j] = 0.0;
                 }
             }
 /* To Do above==2 is not yet adapated for plane-waves */
@@ -147,8 +147,8 @@ void applyMute_tshift( float *data, int *mute, int smooth, int above, int Nfoc, 
 
 void timeShift(float *data, int nsam, int nrec, float dt, float shift, float fmin, float fmax)
 {
-	int 	optn, iom, iomin, iomax, nfreq, ix, it;
-	float	omin, omax, deltom, om, tom, df, *trace, scl;
+	int 	optn, iom, nfreq, ix, it;
+	float	deltom, om, tom, df, *trace, scl;
 	complex *ctrace, ctmp;
 
 	optn = optncr(nsam);
@@ -162,10 +162,6 @@ void timeShift(float *data, int nsam, int nrec, float dt, float shift, float fmi
 	if (trace == NULL) verr("memory allocation error for rdata");
 
 	deltom = 2.*M_PI*df;
-	omin   = 2.*M_PI*fmin;
-	omax   = 2.*M_PI*fmax;
-	iomin  = (int)MIN((omin/deltom), (nfreq));
-	iomax  = MIN((int)(omax/deltom), (nfreq));
     scl = 1.0/(float)optn;
 
 	for (ix = 0; ix < nrec; ix++) {
@@ -173,16 +169,7 @@ void timeShift(float *data, int nsam, int nrec, float dt, float shift, float fmi
         for (it=nsam;it<optn;it++) trace[it]=0.0;
 	    /* Forward time-frequency FFT */
 	    rc1fft(&trace[0], &ctrace[0], optn, -1);
-
-		for (iom = 0; iom < iomin; iom++) {
-			ctrace[iom].r = 0.0;
-			ctrace[iom].i = 0.0;
-		}
-		for (iom = iomax; iom < nfreq; iom++) {
-			ctrace[iom].r = 0.0;
-			ctrace[iom].i = 0.0;
-		}
-		for (iom = iomin ; iom < iomax ; iom++) {
+		for (iom = 0 ; iom < nfreq ; iom++) {
 			om = deltom*iom;
 			tom = om*shift;
 			ctmp = ctrace[iom];
