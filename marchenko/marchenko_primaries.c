@@ -1001,16 +1001,17 @@ int main (int argc, char **argv)
 					iw0 = NINT((twplane[ix])/dt);
                     /* to apply muting window around epsilon below t=0 uncomment this part */
                     /* This (partly) removes the delta function at t=0 */
-            	//   for (j = 0; j < MAX(0,iw0+shift-smooth); j++) {
-                //		uv[l*nxs*nts+i*nts+j] = 0.0;
-            	//	}
-            	//	for (j = MAX(0,iw0+shift-smooth), k=1; j < MAX(0,iw0+shift); j++, k++) {
-                //		uv[l*nxs*nts+i*nts+j] = k1plus[l*nxs*nts+i*nts+j]*costaper[smooth-k];
- 				//	}
- 				/*  this keeps the delta pulse below at at t=0 */
-            		for (j = 0; j < iw0+shift; j++) {
-                		uv[l*nxs*nts+i*nts+j] = k1plus[l*nxs*nts+i*nts+j];
+            	   for (j = 0; j < MAX(0,iw0+shift-smooth); j++) {
+                		uv[l*nxs*nts+i*nts+j] = 0.0;
+            		}
+            		for (j = MAX(0,iw0+shift-smooth), k=1; j < MAX(0,iw0+shift); j++, k++) {
+                		uv[l*nxs*nts+i*nts+j] = k1plus[l*nxs*nts+i*nts+j]*costaper[smooth-k];
  					}
+ 				/*  this keeps the delta pulse below and around t=0 */
+            //		for (j = 0; j < iw0+shift; j++) {
+            //    		uv[l*nxs*nts+i*nts+j] = k1plus[l*nxs*nts+i*nts+j];
+ 			//		}
+
 					iw = NINT((ii*dt+twplane[ix])/dt);
             		for (j = MAX(0,iw0+shift); j < iw-isme; j++, k++) {
                 		uv[l*nxs*nts+i*nts+j] = k1plus[l*nxs*nts+i*nts+j];
