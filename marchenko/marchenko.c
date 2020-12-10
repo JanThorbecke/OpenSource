@@ -255,7 +255,6 @@ int main (int argc, char **argv)
                              
 	/* compute time shift for tilted plane waves */
 	if (plane_wave==1) {
-        itmin = nt;
 	    /* compute time shift for shifted plane waves */
         grad2rad = 17.453292e-3;
         p = sin(src_angle*grad2rad)/src_velo;
@@ -263,10 +262,15 @@ int main (int argc, char **argv)
 
 		/* compute mute window for plane waves */
 		//for (i=0; i<nxs; i++) fprintf(stderr,"i=%d window=%d\n", i, muteW[i]);
+        itmin = nt;
         for (i=0; i<nxs; i++) itmin = MIN (itmin, muteW[i]);
+/*
         for (i=0; i<nxs; i++) tsynW[i] = muteW[i]-itmin;
+*/
+        for (i=0; i<nxs; i++) tsynW[i] = NINT(i*dxs*p/dt);
+        //for (i=0; i<nxs; i++) tsynW[i] = 0.0;
 		if (Nfoc!=1) verr("For plane-wave focusing only one function can be computed at the same time");
-	    //fprintf(stderr,"itmin=%d\n", itmin);	
+	    //fprintf(stderr,"itmin=%d tshift=%f =%d \n", itmin, tshift, NINT(tshift/dt));	
 		//for (i=0; i<nxs; i++) fprintf(stderr,"i=%d window=%f\n", i, tsynW[i]*dt);
 	}
 	else { /* just fill with zero's */
@@ -487,13 +491,34 @@ int main (int argc, char **argv)
             if (verbose >=2) vmess(" - iSyn %d: Ni at iteration %d has energy %e; relative to N0 %e", l, iter, sqrt(energyNi), sqrt(energyNi/energyN0[l]));
         }
 
+//        writeDataIter("bmute.su", Ni, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, iter+1);
         /* apply mute window based on times of direct arrival (in muteW) */
+
         if ( plane_wave==1 ) { /* use a-symmetric shift for plane waves with non-zero angles */
-            applyMute_tshift(Ni, muteW, smooth, above, Nfoc, nxs, nts, ixpos, npos, shift, iter, tsynW);
+            applyMute_tshift(Ni, muteW, smooth, 0, Nfoc, nxs, nts, ixpos, npos, shift, iter, tsynW);
         }
         else {
             applyMute(Ni, muteW, smooth, -above, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
         }
+//        writeDataIter("amute.su", Ni, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, iter+1);
+
+/*
+    		// for testing time-windows with dipping plane waves
+            for (i = 0; i < npos; i++) {
+                for (j = 0; j < nts; j++) {
+                    Ni[i*nts+j]    = 1.0;
+				}
+			}
+            applyMute_tshift(Ni, muteW, smooth, 0, Nfoc, nxs, nts, ixpos, npos, shift, iter, tsynW);
+            writeDataIter("mute0.su", Ni, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, iter+1);
+            for (i = 0; i < npos; i++) {
+                for (j = 0; j < nts; j++) {
+                    Ni[i*nts+j]    = 1.0;
+				}
+			}
+            applyMute_tshift(Ni, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, iter, tsynW);
+            writeDataIter("mute4.su", Ni, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, iter+1);
+*/
 
         if (iter % 2 == 0) { /* even iterations update: => f_1^-(t) */
             for (l = 0; l < Nfoc; l++) {
@@ -582,12 +607,12 @@ int main (int argc, char **argv)
         /* Apply mute with window for Gmin */
 		if ( plane_wave==1 ) {
             /* for plane wave with angle tshift downward */
-			if (verbose>1) vmess("Gmin planewave tshift=%f\n", tshift);
+			if (verbose>1) vmess("Gmin planewave tshift=%f", tshift);
+            applyMute_tshift(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 1, tsynW);
             timeShift(Gmin, nts, npos, dt, tshift, fmin, fmax);
 		    itmin = NINT(0.5*tshift/dt);
-            for (i=0; i<nxs; i++) tsynW[i] -= itmin;
-            applyMute_tshift(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 0, tsynW);
-            for (i=0; i<nxs; i++) tsynW[i] += itmin;
+            //for (i=0; i<nxs; i++) tsynW[i] -= itmin;
+            //for (i=0; i<nxs; i++) tsynW[i] += itmin;
 		}
 		else {
             applyMute(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
@@ -617,7 +642,7 @@ int main (int argc, char **argv)
         }
         /* Apply mute with window for Gplus */
 		if ( plane_wave==1 ) {
-            applyMute_tshift(Gplus, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 1, tsynW);
+            applyMute_tshift(Gplus, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 0, tsynW);
         }
         else {
             applyMute(Gplus, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);

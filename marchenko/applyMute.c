@@ -52,10 +52,10 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
                 for (j = MAX(0,-2*ts+tmute-shift-smooth),l=0; j < MAX(0,-2*ts+tmute-shift); j++,l++) {
                     data[isyn*nxs*nt+i*nt+j] *= costaper[l];
                 }
-                for (j = MAX(0,-2*ts+tmute-shift); j < MIN(nt,nt-tmute+shift); j++) {
+                for (j = MAX(0,-2*ts+tmute-shift); j < MIN(nt,nt+1-tmute+shift+2*ts); j++) {
                     data[isyn*nxs*nt+i*nt+j] = 0.0;
                 }
-                for (j = MIN(nt,nt-tmute+shift),l=0; j < MIN(nt,nt-tmute+shift+smooth); j++,l++) {
+                for (j = MIN(nt,nt+1-tmute+shift+2*ts),l=0; j < MIN(nt,nt+1-tmute+shift+2*ts+smooth); j++,l++) {
                     data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
                 }
             }
@@ -64,16 +64,17 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
             for (i = 0; i < npos; i++) {
                 imute = ixpos[i];
                 tmute = mute[isyn*nxs+imute];
-                for (j = 0; j < MAX(0,tmute-shift-smooth); j++) {
+                ts = tsynW[isyn*nxs+imute];
+                for (j = 0; j < MAX(0,tmute-2*ts-shift-smooth); j++) {
                     data[isyn*nxs*nt+i*nt+j] = 0.0;
                 }
-                for (j = MAX(0,tmute-shift-smooth),l=0; j < MAX(0,tmute-shift); j++,l++) {
+                for (j = MAX(0,-2*ts+tmute-shift-smooth),l=0; j < MAX(0,-2*ts+tmute-shift); j++,l++) {
                     data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
                 }
-                for (j = MIN(nt,nt-tmute+shift),l=0; j < MIN(nt,nt-tmute+shift+smooth); j++,l++) {
+                for (j = MIN(nt,nt+1-tmute+shift+2*ts),l=0; j < MIN(nt,nt+1-tmute+shift+2*ts+smooth); j++,l++) {
                     data[isyn*nxs*nt+i*nt+j] *= costaper[l];
                 }
-                for (j = MIN(nt,nt-tmute+shift+smooth); j < nt; j++) {
+                for (j = MIN(nt,nt+1-tmute+shift+2*ts+smooth); j < nt; j++) {
                     data[isyn*nxs*nt+i*nt+j] = 0.0;
                 }
             }
