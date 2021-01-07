@@ -51,7 +51,6 @@ void applyMute_tshift( float *data, int *mute, int smooth, int above, int Nfoc, 
                 if (above==4) above=-4;
                 tmute = tmute-2*ts;
             }
-            //fprintf(stderr,"above = %d\n", above);
             if (above==-1){ /* the above=0 implementation for plane-waves at odd iterations */
                 if (tmute >= nt/2) {
                     memset(&Nig[0],0, sizeof(float)*nt);
@@ -67,6 +66,17 @@ void applyMute_tshift( float *data, int *mute, int smooth, int above, int Nfoc, 
                 for (j = MAX(0,tmute-shift); j < MIN(nt,nt+1-tmute+shift-2*ts); j++) {
                     Nig[j] = 0.0;
                 }
+                for (j = MIN(nt,nt+1-(tmute+2*ts)+shift),l=0; j < MIN(nt,nt+1-(tmute+2*ts)+shift+smooth); j++,l++) {
+                    Nig[j] *= costaper[smooth-l-1];
+                }
+				if (nt-(tmute+2*ts)+shift+smooth > nt) {
+                	for (j = 0; j < MAX(0,-(tmute+2*ts)+shift); j++) {
+                    	Nig[j] = 0.0;
+                	}
+                	for (j = MAX(0,-(tmute+2*ts)+shift),l=0; j < MAX(0,-(tmute+2*ts)+shift+smooth); j++,l++) {
+                    	Nig[j] *= costaper[smooth-l-1];
+                	}
+				}
                 if (tmute-shift < 0) {
                     for (j = MIN(nt,nt+1+tmute-shift-smooth),l=0; j < MIN(nt,nt+1+tmute-shift); j++,l++) {
                         Nig[j] *= costaper[l];
@@ -74,10 +84,6 @@ void applyMute_tshift( float *data, int *mute, int smooth, int above, int Nfoc, 
                     for (j = MIN(nt,nt+1+tmute-shift); j < nt; j++) {
                         Nig[j] = 0.0;
                     }
-                }
-                /* negative time axis */
-                for (j = MIN(nt,nt+1-(tmute+2*ts)+shift),l=0; j < MIN(nt,nt+1-(tmute+2*ts)+shift+smooth); j++,l++) {
-                    Nig[j] *= costaper[smooth-l-1];
                 }
             }
             else if (above==0){
@@ -102,6 +108,14 @@ void applyMute_tshift( float *data, int *mute, int smooth, int above, int Nfoc, 
                     	Nig[j] *= costaper[smooth-l-1];
                 	}
 				}
+                if (tmute-shift-smooth < 0) {
+                    for (j = MIN(nt,nt+1+tmute-shift-smooth),l=0; j < MIN(nt,nt+1+tmute-shift); j++,l++) {
+                        Nig[j] *= costaper[l];
+                    }
+                    for (j = MIN(nt,nt+1+tmute-shift); j < nt; j++) {
+                        Nig[j] = 0.0;
+                    }
+                }
             }
             else if (above==4) { //Psi gate which is the inverse of the Theta gate (above=0)
                 if (tmute >= nt/2) continue;
