@@ -99,7 +99,7 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 			}
 			if ((sx_shot != hdr.sx) || (fldr_shot != hdr.fldr) ) break;
 		}
-		if (verbose>2) {
+		if (verbose>3) {
 			fprintf(stderr,"finished reading shot %d (%d) with %d traces\n",sx_shot,isyn,itrace);
 			//disp_fileinfo(filename, nt, xnx[isyn], hdr.f1, xrcv[isyn*nxm], d1, d2, &hdr);
 		}
@@ -144,7 +144,7 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
             }
         }
         maxval[isyn*nx+imax] = jmax;
-        if (verbose >= 3) vmess("Mute max at src-trace %d is sample %d", imax, maxval[imax]);
+        if (verbose >= 2) vmess("Mute max at src-trace %d is sample %d", imax, maxval[imax]);
 
         /* search forward in trace direction from maximum in file */
         for (i = imax+1; i < nx1; i++) {

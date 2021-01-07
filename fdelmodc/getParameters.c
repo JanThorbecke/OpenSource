@@ -891,6 +891,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			for (is=0; is<nsrc; is++) {
 				src->tbeg[is] = fabsf((nsrc-is-1)*dx*p);
 			}
+			//rec->delay+=NINT(fabsf((nsrc-1)*dx*p)/mod->dt);
+			//mod->nt += NINT(fabsf((nsrc-1)*dx*p)/mod->dt);
 		}
 		else {
 			for (is=0; is<nsrc; is++) {

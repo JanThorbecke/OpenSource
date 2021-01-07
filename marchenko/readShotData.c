@@ -131,7 +131,7 @@ int nx, int nxs, float fxsb, float dxs, int ntfft, int mode, float scale, float 
             }
             if ((sx_shot != hdr.sx) || (fldr_shot != hdr.fldr) ) break;
         }
-        if (verbose>2) {
+        if (verbose>3) {
             vmess("finished reading shot %d (%d) with %d traces",sx_shot,igath,itrace);
         }
 
