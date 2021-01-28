@@ -46,12 +46,18 @@ Virtual acoustics in inhomogeneous media with single-sided access:
 2018, Scientific Reports, Vol. 8, 2497. 
 Download: http://homepage.tudelft.nl/t4n4v/4_Journals/Nature/SR_18.pdf
 
--4- When you are using the marchenko_primaries algorithm developed by Lele Zhang please refer to the following paper
+-4- When you are using the marchenko_primaries algorithm developed by Lele Zhang please refer to the following papers
 
 Free-surface and internal multiple elimination in one step without adaptive subtraction
 Lele Zhang and Evert Slob
 2019, Geophysics, Vol. 84, no. 1 (January-February); p. A7-A11, doi: 10.1190/GEO2018-0548.1
 Download: http://homepage.tudelft.nl/t4n4v/BeyondInterferometry/geo_19h.pdf
+
+and
+
+Implementation of the Marchenko Multiple Elimination algorithm,
+Jan Thorbecke, Lele Zhang, Kees Wapenaar, Evert Slob,
+2021, Geophysics, Vol. 86, no. 2 (March-April); p. 1-15, doi: 10.1190/GEO2020-0196.1
 
 -5- If you use the fdacrtmc code of Max Holicki please refer to the following paper:
 

@@ -40,10 +40,11 @@ Lele Zhang and Evert Slob
 2019, Geophysics, Vol. 84, no. 1 (January-February); p. A7-A11, doi: 10.1190/GEO2018-0548.1
 Download: http://homepage.tudelft.nl/t4n4v/BeyondInterferometry/geo_19h.pdf
 
-Or to the paper that belongs to the MME source code package:
+and the paper that belongs to the MME source code package:
+
 "Implementation of the Marchenko Multiple Elimination algorithm",
 Jan Thorbecke, Lele Zhang, Kees Wapenaar, Evert Slob,
-2020, Geophysics, Accepted for pubication in November 2020
+2021, Geophysics, Vol. 86, no. 2 (March-April); p. 1-15, doi: 10.1190/GEO2020-0196.1
 
 *** To reproduce the Figures shown in the GEOPHYICS paper "Implementation of the Marchenko Multiple Elimination algorithm" the scripts in marchenko/demo/mme directory can be used. The README_PRIMARIES in this directory gives more instructions and guidelines. 
 
