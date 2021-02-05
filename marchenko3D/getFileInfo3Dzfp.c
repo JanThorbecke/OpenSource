@@ -38,7 +38,7 @@ long getFileInfo3Dzfp(char *filename, long *n1, long *n2, long *n3, long *ngath,
     
     fp_in = fopen(filename, "r");
 	if (fp_in==NULL) {
-		fprintf(stderr,"input file %s has an error\n", fp_in);
+		fprintf(stderr,"input file %s has an error\n", filename);
 		perror("error in opening file: ");
 		fflush(stderr);
 		return -1;
