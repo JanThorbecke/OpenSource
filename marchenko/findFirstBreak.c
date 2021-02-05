@@ -4,6 +4,7 @@
 #include <math.h>
 #include <assert.h>
 
+void vmess(char *fmt, ...);
 #ifndef MAX
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #endif

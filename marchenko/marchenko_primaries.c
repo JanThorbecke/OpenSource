@@ -790,8 +790,8 @@ int main (int argc, char **argv)
                                 energyMi += RMi[l*nacq*nts+ix*nts+j]*RMi[l*nacq*nts+ix*nts+j];
 					        }
                         }
-                        if ( (iter==0) ) energyM0[l] = energyMi;
-                        if ( (recur==0) ) {
+                        if ( iter==0 ) energyM0[l] = energyMi;
+                        if ( recur==0 ) {
                         	vmess(" - ii %d: Mi at iteration %d has energy %e; relative to M0 %e", ii, iter, sqrt(energyMi), sqrt(energyMi/energyM0[l]));
 						}
                     }

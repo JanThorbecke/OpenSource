@@ -25,7 +25,7 @@ int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, floa
     char number[16], filename[1024];
 	float *trace;
 
-	if (file_iter==NULL) return;
+	if (file_iter==NULL) return -1;
     trace  = (float *)malloc(n1*sizeof(float));
 	strcpy(filename, file_iter);
 	sprintf(number,"_%03d",(iter));

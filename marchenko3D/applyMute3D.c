@@ -3,7 +3,9 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
+#include "genfft.h"
 
+void verr(char *fmt, ...);
 #ifndef MAX
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #endif
