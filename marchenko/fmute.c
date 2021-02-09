@@ -176,15 +176,15 @@ int main (int argc, char **argv)
     if (file_out==NULL) fp_out = stdout;
     else {
         fp_out = fopen(file_out, "w+");
-        if (fp_out==NULL) verr("error on ceating output file");
+        if (fp_out==NULL) verr("error on creating output file");
     }
     if (check!=0){
         fp_chk = fopen("check.su", "w+");
-        if (fp_chk==NULL) verr("error on ceating output file");
+        if (fp_chk==NULL) verr("error on creating output file");
         fp_psline1 = fopen("pslinepos.asci", "w+");
-        if (fp_psline1==NULL) verr("error on ceating output file");
+        if (fp_psline1==NULL) verr("error on creating output file");
         fp_psline2 = fopen("pslineneg.asci", "w+");
-        if (fp_psline2==NULL) verr("error on ceating output file");
+        if (fp_psline2==NULL) verr("error on creating output file");
         
     }
     if (smooth) {
@@ -316,6 +316,7 @@ int main (int argc, char **argv)
             if (ret < 0 ) verr("error on writing check file.");
             for (i=0; i<nx1; i++) {
                 jmax = maxval[i]-shift;
+                if (above==6) jmax = maxval[i]+shift;
                 ret = fprintf(fp_psline1, "%.5f %.5f \n",jmax*dt,hdrs_in1[i].gx*sclshot);
                 jmax =-maxval[i]+shift;
                 ret = fprintf(fp_psline2, "%.5f %.5f \n",jmax*dt,hdrs_in1[i].gx*sclshot);

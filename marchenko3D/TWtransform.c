@@ -3,13 +3,10 @@
 #include <string.h>
 #include <math.h>
 #include "segy.h"
+#include "genfft.h"
 #include "zfpmar.h"
 #include <assert.h>
 #include <zfp.h>
-
-typedef struct { /* complex number */
-        float r,i;
-} complex;
 
 #define NINT(x) ((long)((x)>0.0?(x)+0.5:(x)-0.5))
 #define MAX(x,y) ((x) > (y) ? (x) : (y))

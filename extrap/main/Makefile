@@ -2,7 +2,7 @@
 
 include ../../Make_include
 
-LIBS += -L$L -lextrap2d  -lgenfft -lm 
+LIBS += -L$L -lextrap2d -lgenfft $(BLAS) -lm 
 
 LDFLAGS += $(LIBS)
 

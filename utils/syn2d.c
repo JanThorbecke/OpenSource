@@ -489,7 +489,7 @@ int main (int argc, char **argv)
 	for (j = 0; j < n1; j++) etap[j] = exp(-alpha*j*dt);
 
     fp_out = fopen(file_cfp, "w+");
-    if (fp_out==NULL) verr("error on ceating output file");
+    if (fp_out==NULL) verr("error on creating output file");
 
 	for (l = 0; l < Nsyn; l++) {
 		if (ixa || ixb) f2 = xsyn[l]-ixb*d2;

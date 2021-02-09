@@ -180,7 +180,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
             
             } /* end of Nfoc loop */
 
-            if (verbose>4) vmess("*** Shot gather %d processed ***", k);
+            if (verbose>3) vmess("*** Shot gather %d processed ***", k);
 
         } /* end of nparallel shots (k) loop */
         free(sum);
@@ -375,7 +375,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
             
             } /* end of Nfoc loop */
 
-            if (verbose>4) vmess("*** Shot gather %d processed ***", k);
+            if (verbose>3) vmess("*** Shot gather %d processed ***", k);
 
         } /* end of nparallel shots (k) loop */
         free(sum);
