@@ -28,7 +28,7 @@ long writeData3D(FILE *fp, float *data, segy *hdrs, long n1, long n2);
 long readSnapData3D(char *filename, float *data, segy *hdrs, long nsnaps, 
     long nx, long ny, long nz, long sx, long ex, long sy, long ey, long sz, long ez);
 
-void timeShift(float *data, long nsam, long nrec, float dt, float *time, float *amp, float *delay, float fmin, float fmax);
+void timeShift(float *data, long nsam, long nrec, float dt, float *time, float *amp, float delay, float fmin, float fmax);
 void pad_data(float *data, long nsam, long nrec, long nsamout, float *datout);
 void scl_data(float *data, long nsam, long nrec, float scl, float *datout, long nsamout);
 
@@ -64,9 +64,9 @@ int main (int argc, char **argv)
 	FILE	*fp_gmin, *fp_ray, *fp_amp, *fp_out;
 	char	*file_gmin, *file_ray, *file_amp, *file_out, fbr[100], fer[100], fba[100], fea[100], fins[100], fin2[100], numb1[100], *ptr;
 	float	*gmin, *conv, *time, *amp, *image, fmin, fmax;
-	float	dt, dy, dx, dz, t0, y0, x0, scl, *shift, *block;
+	float	dt, dy, dx, dz, t0, y0, x0, te, ye, xe, scl, *shift, *block, sy, sx;
 	float	dt_ray, dy_ray, dx_ray, t0_ray, y0_ray, x0_ray, scl_ray, px, py, src_velox, src_veloy, src_anglex, src_angley, grad2rad;
-	long	nshots, nt, ny, nx, ntr, delay;
+	long	nshots, nt, ny, nx, ntr, *delay, nx1, ny1, tmp;
 	long	nray, nt_ray, ny_ray, nx_ray, ntr_ray;
     long    verbose, ix, iy, it, iz, is, *gx, *gy, *gz, numb, dnumb, pos, nzs, file_det;
     size_t  ret;
@@ -146,11 +146,16 @@ int main (int argc, char **argv)
     *----------------------------------------------------------------------------*/
     getFileInfo3D(file_gmin, &nt, &nx, &ny, &nshots, &dt, &dx, &dy, &t0, &x0, &y0, &scl, &ntr);
 
+	xe = x0 + ((float)(nx-1))*dx;
+	ye = y0 + ((float)(ny-1))*dy;
+	te = t0 + ((float)(nt-1))*dt;
+
 	if (verbose) {
         vmess("************************ Gmin info ************************");
 		vmess("Number of depth levels : %li",nshots);
 		vmess("Number of samples     x: %li,  y: %li,  t: %li",nx,ny,nt);
 		vmess("Starting distance for x: %.3f, y: %.3f, t: %.3f",x0,y0,t0);
+		vmess("Ending   distance for x: %.3f, y: %.3f, t: %.3f",xe,ye,te);
 		vmess("Sampling distance for x: %.3f, y: %.3f, t: %.3f",dx,dy,dt);
         vmess("***********************************************************");
 	}
@@ -186,6 +191,7 @@ int main (int argc, char **argv)
 	gz       	= (long *)calloc(nray*nshots,sizeof(long));
 
 	block       = (float *)calloc(nray*nshots*nt,sizeof(float));
+	delay      	= (long *)calloc(nray,sizeof(long));
 
 	readSnapData3D(file_gmin, gmin, hdr_gmin, nshots, nx, ny, nt, 0, nx, 0, ny, 0, nt);
 	if (verbose) vmess("Read in Gmin data");
@@ -193,41 +199,67 @@ int main (int argc, char **argv)
 	/*----------------------------------------------------------------------------*
     *   Add the delay in case the plane wave is at an angle
     *----------------------------------------------------------------------------*/
+   
+   	hdr_time    = (segy *)calloc(ny*nray,sizeof(segy));	
+	time        = (float *)calloc(nx*ny*nray,sizeof(float));
 
-    shift = (float *)calloc(nx*ny,sizeof(float));
+	sprintf(fins,"z%li",numb);
+	sprintf(fin2,"%s%s%s",fbr,fins,fer);
+	readSnapData3D(fin2, time, hdr_time, nray, 1, ny, nx, 0, 1, 0, ny, 0, nx);
+
+	ny1 = 1;
+	tmp = hdr_time[0].sy;
+	for (it=1; it<nray; it++) {
+		if (tmp!=hdr_time[it*ny].sy)
+		{
+			ny1++;
+			tmp = hdr_time[it*ny].sy;
+		}
+	}
+	nx1=nray/ny1;
+	vmess("ny1=%li nx1=%li nray=%li",ny1,nx1,nray);
+
+    shift = (float *)calloc(nray,sizeof(float));
 	grad2rad = 17.453292e-3;
-	px = sin(src_anglex*grad2rad)/src_velox;
-	py = sin(src_angley*grad2rad)/src_veloy;
-	if (verbose) vmess("px value is %f and py value is %f",px,py);
+	if (src_anglex==0.0) px=0.0;
+	else px = sin(-1.0*src_anglex*grad2rad)/src_velox;
+	if (src_angley==0.0) py=0.0;
+	else py = sin(-1.0*src_angley*grad2rad)/src_veloy;
+	if (verbose) {
+		vmess("************************ plane wave info *************************");
+		vmess("Plane wave angle    x: %.3f,  y: %.3f",src_anglex,src_angley);
+		vmess("Plane wave velocity x: %.3f,  y: %.3f",src_velox,src_veloy);
+		vmess("Plane wave slowness x: %.3f,  y: %.3f",px,py);
+        vmess("***********************************************************");
+	}
 
-	// if (py < 0.0) {
-	// 	for (iy=0; iy<ny; iy++) {
-	// 		if (px < 0.0) {
-	// 			for (ix=0; ix<nx; ix++) {
-	// 				shift[iy*nx+ix] = fabsf((nx-1-ix)*dx*px) + fabsf((ny-1-iy)*dy*py);
-	// 			}
-	// 		}
-	// 		else {
-	// 			for (ix=0; ix<nx; ix++) {
-	// 				shift[iy*nx+ix] = ix*dx*px + fabsf((ny-1-iy)*dy*py);
-	// 			}
-	// 		}
-	// 	}
-	// }
-	// else {
-	// 	for (iy=0; iy<ny; iy++) {
-	// 		if (px < 0.0) {
-	// 			for (ix=0; ix<nx; ix++) {
-	// 				shift[iy*nx+ix] = fabsf((nx-1-ix)*dx*px) + iy*dy*py;
-	// 			}
-	// 		}
-	// 		else {
-	// 			for (ix=0; ix<nx; ix++) {
-	// 				shift[iy*nx+ix] = ix*dx*px + iy*dy*py;
-	// 			}
-	// 		}
-	// 	}
-	// }
+	for (iy=0; iy<ny1; iy++) {
+		for (ix=0; ix<nx1; ix++) {
+			sy = ((float)(hdr_time[(iy*nx1+ix)*ny].sy))/1000.0;
+			sx = ((float)(hdr_time[(iy*nx1+ix)*ny].sx))/1000.0;
+			//vmess("sy=%.3f sx=%.3f",sy,sx);
+			if (py < 0.0) {
+				if (px < 0.0) {
+					shift[iy*nx1+ix] = fabsf((xe-sx)*px) + fabsf((ye-sy)*py);
+				}
+				else {
+					shift[iy*nx1+ix] = fabsf((x0-sx)*px) + fabsf((ye-sy)*py);
+				}
+			}
+			else {
+				if (px < 0.0) {
+					shift[iy*nx1+ix] = fabsf((xe-sx)*px) + fabsf((y0-sy)*py);
+				}
+				else {
+					shift[iy*nx1+ix] = fabsf((x0-sx)*px) + fabsf((y0-sy)*py);
+				}
+			}
+		}
+	}
+	
+
+	free(hdr_time); free(time);
+
 
 	/*----------------------------------------------------------------------------*
     *   Apply the imaging condition
@@ -247,7 +279,7 @@ int main (int argc, char **argv)
         sprintf(fin2,"%s%s%s",fbr,fins,fer);
 		readSnapData3D(fin2, time, hdr_time, nray, 1, ny, nx, 0, 1, 0, ny, 0, nx);
         sprintf(fin2,"%s%s%s",fba,fins,fea);
-		readSnapData3D(file_amp, amp,  hdr_amp,  nray, 1, ny, nx, 0, 1, 0, ny, 0, nx);
+		readSnapData3D(file_amp, amp, hdr_amp, nray, 1, ny, nx, 0, 1, 0, ny, 0, nx);
 
 		for (is = 0; is < nray; is++) {
 			gx[is*nshots+iy] = hdr_time[is*ny].sx;
@@ -257,34 +289,35 @@ int main (int argc, char **argv)
 			x0_ray = ((float)gx[is*nshots+iy])/1000.0;
 			y0_ray = ((float)gy[is*nshots+iy])/1000.0;
 
-			if (py < 0.0) {
-				if (px < 0.0) {
-					delay = NINT(fabsf((x0-x0_ray)*px)/dt) + NINT(fabsf((y0-y0_ray)*py)/dt);
-				}
-				else {
-					delay = NINT((x0_ray-x0)*px/dt) + NINT(fabsf((y0-y0_ray)*py)/dt);
-				}
-			}
-			else {
-				if (px < 0.0) {
-					delay = NINT(fabsf((x0-x0_ray)*px)/dt) + NINT((y0_ray-y0)*py/dt);
-				}
-				else {
-					delay = NINT((x0_ray-x0)*px/dt) + NINT((y0_ray-y0)*py/dt);
-				}
-			}
+			// if (py < 0.0) {
+			// 	if (px < 0.0) {
+			// 		delay = NINT(fabsf((x0-x0_ray)*px)/dt) + NINT(fabsf((y0-y0_ray)*py)/dt);
+			// 	}
+			// 	else {
+			// 		delay = NINT((x0_ray-x0)*px/dt) + NINT(fabsf((y0-y0_ray)*py)/dt);
+			// 	}
+			// }
+			// else {
+			// 	if (px < 0.0) {
+			// 		delay = NINT(fabsf((x0-x0_ray)*px)/dt) + NINT((y0_ray-y0)*py/dt);
+			// 	}
+			// 	else {
+			// 		delay = NINT((x0_ray-x0)*px/dt) + NINT((y0_ray-y0)*py/dt);
+			// 	}
+			// }
 
-			if (delay > nt-1) delay = nt-1;
+			// if (delay > nt-1) delay = nt-1;
 
 			for (it = 0; it < nx*ny*nt; it++) {
 				conv[it] = gmin[iy*nx*ny*nt+it];
 			}
-			timeShift(&conv[0],nt,nx*ny,dt,&time[is*ny*nx],&amp[is*ny*nx],shift,fmin,fmax);
+			timeShift(&conv[0],nt,nx*ny,dt,&time[is*ny*nx],&amp[is*ny*nx],shift[is],fmin,fmax);
 			for (ix = 0; ix < ny*nx; ix++) {
-				image[is*nshots+iy] += conv[ix*nt+delay+2]*dx*dy*dt;
+				image[is*nshots+iy] += conv[ix*nt]*dx*dy*dt;
 				for (it=0; it<nt; it++) {
 					block[is*nshots*nt+iy*nt+it] += conv[ix*nt+it];
 				}
+				block[is*nshots*nt+iy*nt] = 1e20;
 			}
 		}
 
@@ -324,37 +357,37 @@ int main (int argc, char **argv)
 
 	fclose(fp_out);
 
-	fp_out = fopen("block.su", "w+");
+	// fp_out = fopen("block.su", "w+");
 
-	if (nshots>1) dz = ((float)(gz[1] - gz[0]))/1000.0;
-	else dz = 1.0;
+	// if (nshots>1) dz = ((float)(gz[1] - gz[0]))/1000.0;
+	// else dz = 1.0;
 
-	for (is = 0; is < nshots; is++) {
-		for (it = 0; it < nray; it++) {
-			hdr_out[it*nshots+is].fldr		= it+1;
-			hdr_out[it*nshots+is].tracl		= it+1;
-			hdr_out[it*nshots+is].tracf		= it+1;
-			hdr_out[it*nshots+is].scalco	= -1000;
-			hdr_out[it*nshots+is].scalel	= -1000;
-			hdr_out[it*nshots+is].trid		= 1;
-			hdr_out[it*nshots+is].ns		= nt;
-			hdr_out[it*nshots+is].trwf		= nray;
-			hdr_out[it*nshots+is].ntr		= nray;
-			hdr_out[it*nshots+is].f1		= (((float)gz[0])/1000.0);
-			hdr_out[it*nshots+is].f2		= (((float)gx[0])/1000.0);
-			hdr_out[it*nshots+is].dt		= ((int)(dt*1E6));
-			hdr_out[it*nshots+is].d1		= roundf(dz*1000.0)/1000.0;
-			hdr_out[it*nshots+is].d2		= roundf(dx*1000.0)/1000.0;
-			hdr_out[it*nshots+is].gx		= gx[it*nshots+is];
-			hdr_out[it*nshots+is].gy		= gy[it*nshots+is];
-			hdr_out[it*nshots+is].sdepth	= gz[it*nshots+is];
-		}
-	}
+	// for (is = 0; is < nshots; is++) {
+	// 	for (it = 0; it < nray; it++) {
+	// 		hdr_out[it*nshots+is].fldr		= it+1;
+	// 		hdr_out[it*nshots+is].tracl		= it+1;
+	// 		hdr_out[it*nshots+is].tracf		= it+1;
+	// 		hdr_out[it*nshots+is].scalco	= -1000;
+	// 		hdr_out[it*nshots+is].scalel	= -1000;
+	// 		hdr_out[it*nshots+is].trid		= 1;
+	// 		hdr_out[it*nshots+is].ns		= nt;
+	// 		hdr_out[it*nshots+is].trwf		= nray;
+	// 		hdr_out[it*nshots+is].ntr		= nray;
+	// 		hdr_out[it*nshots+is].f1		= (((float)gz[0])/1000.0);
+	// 		hdr_out[it*nshots+is].f2		= (((float)gx[0])/1000.0);
+	// 		hdr_out[it*nshots+is].dt		= ((int)(dt*1E6));
+	// 		hdr_out[it*nshots+is].d1		= dt;
+	// 		hdr_out[it*nshots+is].d2		= roundf(dx*1000.0)/1000.0;
+	// 		hdr_out[it*nshots+is].gx		= gx[it*nshots+is];
+	// 		hdr_out[it*nshots+is].gy		= gy[it*nshots+is];
+	// 		hdr_out[it*nshots+is].sdepth	= gz[it*nshots+is];
+	// 	}
+	// }
 
-	ret = writeData3D(fp_out, &block[0], hdr_out, nt, nray*nshots);
-	if (ret < 0 ) verr("error on writing output file.");
+	// ret = writeData3D(fp_out, &block[0], hdr_out, nt, nray*nshots);
+	// if (ret < 0 ) verr("error on writing output file.");
 
-	fclose(fp_out);
+	// fclose(fp_out);
 
 	free(image); free(hdr_out); free(block);
 
@@ -363,7 +396,7 @@ int main (int argc, char **argv)
 	return 0;
 }
 
-void timeShift(float *data, long nsam, long nrec, float dt, float *time, float *amp, float *delay, float fmin, float fmax)
+void timeShift(float *data, long nsam, long nrec, float dt, float *time, float *amp, float delay, float fmin, float fmax)
 {
 	long 	optn, iom, iomin, iomax, nfreq, ix, sign;
 	float	omin, omax, deltom, om, tom, df, *rdata, scl;
@@ -406,7 +439,7 @@ void timeShift(float *data, long nsam, long nrec, float dt, float *time, float *
 		}
 		for (iom = iomin ; iom < iomax ; iom++) {
 			om = deltom*iom;
-			tom = om*-1.0*(time[ix]-delay[ix]);
+			tom = om*-1.0*(time[ix]+delay);
 			cdatascl[ix*nfreq+iom].r = (cdata[ix*nfreq+iom].r*cos(-tom) - cdata[ix*nfreq+iom].i*sin(-tom))/(amp[ix]*amp[ix]);
 			cdatascl[ix*nfreq+iom].i = (cdata[ix*nfreq+iom].i*cos(-tom) + cdata[ix*nfreq+iom].r*sin(-tom))/(amp[ix]*amp[ix]);
 		}
