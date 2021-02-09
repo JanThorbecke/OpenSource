@@ -14,13 +14,13 @@
 
 void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift, int *tsynW)
 {
-     int i, j, l, isyn;
+    int i, j, l, isyn;
     float *costaper, scl;
     int imute, tmute, ts;
 
     if (smooth) {
         costaper = (float *)malloc(smooth*sizeof(float));
-        scl = M_PI/((float)smooth);
+        scl = M_PI/((float)(smooth+1));
         for (i=0; i<smooth; i++) {
             costaper[i] = 0.5*(1.0+cos((i+1)*scl));
         }
@@ -40,7 +40,7 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
                 }
             }
         }
-        else if (above==0){
+        else if (above==0){ /* implementation of <t1-epsilon : -t1+epsilon> window */
             for (i = 0; i < npos; i++) {
                 imute = ixpos[i];
                 tmute = mute[isyn*nxs+imute];
@@ -49,14 +49,91 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
                     memset(&data[isyn*nxs*nt+i*nt],0, sizeof(float)*nt);
                     continue;
                 }
-                for (j = MAX(0,-2*ts+tmute-shift),l=0; j < MAX(0,-2*ts+tmute-shift+smooth); j++,l++) {
+                for (j = MAX(0,-2*ts+tmute-shift-smooth),l=0; j < MAX(0,-2*ts+tmute-shift); j++,l++) {
                     data[isyn*nxs*nt+i*nt+j] *= costaper[l];
                 }
-                for (j = MAX(0,-2*ts+tmute-shift+smooth)+1; j < MIN(nt,nt+1-tmute+shift-smooth); j++) {
+                for (j = MAX(0,-2*ts+tmute-shift); j < MIN(nt,nt+1-tmute+shift+2*ts); j++) {
                     data[isyn*nxs*nt+i*nt+j] = 0.0;
                 }
-                for (j = MIN(nt,nt-tmute+shift-smooth),l=0; j < MIN(nt,nt-tmute+shift); j++,l++) {
+                for (j = MIN(nt,nt+1-tmute+shift+2*ts),l=0; j < MIN(nt,nt+1-tmute+shift+2*ts+smooth); j++,l++) {
                     data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
+                }
+            }
+        }
+        else if (above==4 || above==-4) { //Psi gate which is the inverse of the Theta gate (above=0)
+            for (i = 0; i < npos; i++) {
+                imute = ixpos[i];
+                tmute = mute[isyn*nxs+imute];
+                ts = tsynW[isyn*nxs+imute];
+                for (j = 0; j < MAX(0,tmute-2*ts-shift-smooth); j++) {
+                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                }
+                for (j = MAX(0,-2*ts+tmute-shift-smooth),l=0; j < MAX(0,-2*ts+tmute-shift); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
+                }
+                for (j = MIN(nt,nt+1-tmute+shift+2*ts),l=0; j < MIN(nt,nt+1-tmute+shift+2*ts+smooth); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+j] *= costaper[l];
+                }
+                for (j = MIN(nt,nt+1-tmute+shift+2*ts+smooth); j < nt; j++) {
+                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                }
+            }
+        }
+        else if (above==6){ /* implementation of <t1+epsilon : -t1+epsilon> window */
+            for (i = 0; i < npos; i++) {
+                imute = ixpos[i];
+                tmute = mute[isyn*nxs+imute];
+                ts = tsynW[isyn*nxs+imute];
+                if (tmute >= nt/2) {
+                    memset(&data[isyn*nxs*nt+i*nt],0, sizeof(float)*nt);
+                    continue;
+                }
+                for (j = MAX(0,-2*ts+tmute+shift-smooth),l=0; j < MAX(0,-2*ts+tmute+shift); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+j] *= costaper[l];
+                }
+                for (j = MAX(0,-2*ts+tmute+shift); j < MIN(nt,nt-tmute+shift); j++) {
+                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                }
+                for (j = MIN(nt,nt-tmute+shift),l=0; j < MIN(nt,nt-tmute+shift+smooth); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
+                }
+            }
+        }
+        else if (above==-6){ /* time-reversed implementation of <t1+epsilon : -t1+epsilon> window */
+            for (i = 0; i < npos; i++) {
+                imute = ixpos[i];
+                tmute = mute[isyn*nxs+imute];
+                ts = tsynW[isyn*nxs+imute];
+                if (tmute >= nt/2) {
+                    memset(&data[isyn*nxs*nt+i*nt],0, sizeof(float)*nt);
+                    continue;
+                }
+                for (j = MAX(0,-2*ts+tmute-shift-smooth),l=0; j < MAX(0,-2*ts+tmute-shift); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+j] *= costaper[l];
+                }
+                for (j = MAX(0,-2*ts+tmute-shift); j < MIN(nt,nt-tmute-shift); j++) {
+                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                }
+                for (j = MIN(nt,nt-tmute-shift),l=0; j < MIN(nt,nt-tmute-shift+smooth); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
+                }
+            }
+        }
+        else if (above==10) { //Psi gate which is the inverse of the above=6 gate 
+            for (i = 0; i < npos; i++) {
+                imute = ixpos[i];
+                tmute = mute[isyn*nxs+imute];
+                for (j = 0; j < MAX(0,tmute+shift-smooth); j++) {
+                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                }
+                for (j = MAX(0,tmute+shift-smooth),l=0; j < MAX(0,tmute+shift); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
+                }
+                for (j = MIN(nt,nt-tmute+shift),l=0; j < MIN(nt,nt-tmute+shift+smooth); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+j] *= costaper[l];
+                }
+                for (j = MIN(nt,nt-tmute+shift+smooth); j < nt; j++) {
+                    data[isyn*nxs*nt+i*nt+j] = 0.0;
                 }
             }
         }
@@ -90,24 +167,6 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
                 }
                 for (j = MAX(0,ts+tmute-shift+smooth); j < nt; j++) {
                     data[isyn*nxs*nt+i*nt+j] = 0.0;
-                }
-            }
-        }
-        else if (above==4) { //Psi gate which is the inverse of the Theta gate (above=0)
-            for (i = 0; i < npos; i++) {
-                imute = ixpos[i];
-                tmute = mute[isyn*nxs+imute];
-                for (j = MAX(0,tmute-shift-smooth),l=0; j < MAX(0,tmute-shift); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
-                }
-                for (j = 0; j < MAX(0,tmute-shift-smooth-1); j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
-                }
-                for (j = MIN(nt,nt+1-tmute+shift+smooth); j < nt; j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
-                }
-                for (j = MIN(nt,nt-tmute+shift),l=0; j < MIN(nt,nt-tmute+shift+smooth); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[l];
                 }
             }
         }
