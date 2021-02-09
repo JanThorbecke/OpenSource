@@ -90,14 +90,32 @@ void applyMute3D_tshift( float *data, long *mute, long smooth, long above, long 
                     Nig[j] = 0.0;
                 }
             }
+            else if (above==-2){ //New Theta window keeps Gd
+                imute = iypos[i]*nxs+ixpos[i];
+                tmute = mute[isyn*nxys+imute];
+                ts = tsynW[isyn*nxys+imute];
+                if (tmute >= nt/2) {
+                    memset(&Nig[0],0, sizeof(float)*nt);
+                    continue;
+                }
+                for (j = MAX(0,-2*ts+tmute+shift),l=0; j < MAX(0,-2*ts+tmute+shift+smooth); j++,l++) {
+                    Nig[isyn*nxys*nt+i*nt+j] *= costaper[l];
+                }
+                for (j = MAX(0,-2*ts+tmute+shift+smooth)+1; j < MIN(nt,nt+1-tmute-shift-smooth); j++) {
+                    Nig[isyn*nxys*nt+i*nt+j] = 0.0;
+                }
+                for (j = MIN(nt,nt-tmute-shift-smooth),l=0; j < MIN(nt,nt-tmute-shift); j++,l++) {
+                    Nig[isyn*nxys*nt+i*nt+j] *= costaper[smooth-l-1];
+                }
+            }
             else if (above==4) { //Psi gate which is the inverse of the Theta gate (above=0)
                 imute = iypos[i]*nxs+ixpos[i];
                 tmute = mute[isyn*nxys+imute];
 				ts = tsynW[isyn*nxys+imute];
-                for (j = -2*ts+tmute-shift-smooth,l=0; j < -2*ts+tmute-shift; j++,l++) {
+                for (j = MAX(0,-2*ts+tmute-shift-smooth),l=0; j < MAX(0,-2*ts+tmute-shift); j++,l++) {
                     Nig[j] *= costaper[smooth-l-1];
                 }
-                for (j = 0; j < -2*ts+tmute-shift-smooth-1; j++) {
+                for (j = 0; j < MAX(0,-2*ts+tmute-shift-smooth-1); j++) {
                     Nig[j] = 0.0;
                 }
                 for (j = nt+1-tmute+shift+smooth; j < nt; j++) {
