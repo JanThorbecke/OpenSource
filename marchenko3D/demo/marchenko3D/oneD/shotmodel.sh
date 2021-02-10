@@ -9,7 +9,7 @@ makewave w=fw fmin=0 flef=5 frig=25 fmax=30 dt=$dt file_out=wavefw.su nt=4096 t0
 export OMP_NUM_THREADS=8
 
 #Model shot record in middle of model
-fdelmodc3D \
+../../../../fdelmodc3D/fdelmodc3D \
     file_cp=cp3d.su ischeme=1 iorder=4 \
     file_den=ro3d.su \
     file_src=wavefw.su \
@@ -34,7 +34,7 @@ fdelmodc3D \
     left=4 right=4 top=4 bottom=4 front=4 back=4
 
 #Model direct wave only in middle of model
-fdelmodc3D \
+../../../../fdelmodc3D/fdelmodc3D \
     file_cp=cphom3d.su ischeme=1 iorder=4 \
     file_den=rohom3d.su \
     file_src=wavefw.su \

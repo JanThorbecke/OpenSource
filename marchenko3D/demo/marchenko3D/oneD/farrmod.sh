@@ -7,7 +7,7 @@ makewave fp=15 fmax=22 dt=${dt} file_out=wavefpmod.su nt=8192 t0=0.2 scale=1 scf
 export OMP_NUM_THREADS=8
 
 #Model shot record in middle of model
-fdelmodc3D \
+../../../../fdelmodc3D/fdelmodc3D \
     file_cp=cp3d.su ischeme=1 iorder=4 \
     file_den=ro3d.su \
     file_src=wavefpmod.su \
