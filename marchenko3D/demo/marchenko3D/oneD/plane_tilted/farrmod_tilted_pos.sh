@@ -7,11 +7,15 @@ makewave fp=15 fmax=22 dt=${dt} file_out=wavefpmod.su nt=8192 t0=0.2 scale=1 scf
 export OMP_NUM_THREADS=8
 
 #Model shot record in middle of model
-../../../../fdelmodc3D/fdelmodc3D \
-    file_cp=cp3d.su ischeme=1 iorder=4 \
-    file_den=ro3d.su \
+../../../../../fdelmodc3D/fdelmodc3D \
+    file_cp=../cp3d.su ischeme=1 iorder=4 \
+    file_den=../ro3d.su \
     file_src=wavefpmod.su \
-    file_rcv=farrmod.su \
+    file_rcv=farrmod_tilted_pos.su \
+    plane_wave=1 npxsrc=201 npysrc=61 \
+    src_anglex=10 src_angley=5 \
+    src_velox=2170 src_veloy=2170 \
+    src_nxwindow=0 src_nywindow=0 \
     src_type=1 \
     src_orient=1 \
     src_injectionrate=1 \
