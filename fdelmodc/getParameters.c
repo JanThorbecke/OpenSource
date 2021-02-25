@@ -174,6 +174,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparfloat("rec_delay",&rdelay)) rdelay=0.0;
 	rec->delay=NINT(rdelay/mod->dt);
 	mod->nt = NINT(mod->tmod/mod->dt);
+    mod->t0 = 0.0;
 	dt = mod->dt;
 
 	if (!getparint("src_type",&src->type)) src->type=1;
@@ -878,6 +879,10 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			vwarn("number of gridpoints in X. Plane wave will be clipped to the edges of the model");
 			nsrc = mod->nx;
 		}
+	    src_ix0=MAX(0,NINT((xsrc-sub_x0)/dx));
+	    src_ix0=MIN(src_ix0,nx);
+	    src_iz0=MAX(0,NINT((zsrc-sub_z0)/dz));
+	    src_iz0=MIN(src_iz0,nz);
 
 	/* for a source defined on mutliple gridpoint calculate p delay factor */
 
@@ -887,6 +892,11 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		src->tend = (float *)malloc(nsrc*sizeof(float));
 		grad2rad = 17.453292e-3;
 		p = sin(src_angle*grad2rad)/src_velo;
+		for (is=0; is<nsrc; is++) {
+			src->tbeg[is] = (is-src_ix0)*dx*p;
+		}
+		mod->t0 = MIN(-src_ix0*dx*p,(nsrc-src_ix0)*dx*p);
+/*
 		if (p < 0.0) {
 			for (is=0; is<nsrc; is++) {
 				src->tbeg[is] = fabsf((nsrc-is-1)*dx*p);
@@ -899,11 +909,13 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 				src->tbeg[is] = is*dx*p;
 			}
 		}
+*/
 		for (is=0; is<nsrc; is++) {
 			src->tend[is] = src->tbeg[is] + (wav->nt-1)*wav->dt;
 		}
 		
 		is0 = -1*floor((nsrc-1)/2);
+		is0 = -src_ix0;
 		for (is=0; is<nsrc; is++) {
 			src->x[is] = is0 + is;
 			src->z[is] = 0;
@@ -986,7 +998,10 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			vmess("Areal source array is defined with %d sources.",nsrc);
 /*			vmess("Memory requirement for sources = %.2f MB.",sizeof(float)*(wav->nx*(wav->nt/(1024.0*1024.0))));*/
 			vmess("Memory requirement for sources = %.2f MB.",sizeof(float)*(nsamp/(1024.0*1024.0)));
-			if (src->plane) vmess("Computed p-value = %f.",p);
+			if (src->plane) {
+				vmess("Computed p-value = %f.",p);
+        		vmess("Maximum negative time delay is %f\n", mod->t0);
+			}
 		}
 		if (src->random) {
 		vmess("Sources are placed at random locations in domain: ");

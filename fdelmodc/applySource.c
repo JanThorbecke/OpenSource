@@ -97,7 +97,8 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
             ix = ixsrc + ibndx + is0 + isrc;
             iz = izsrc + ibndz;
 		}
-		time = itime*dt - src.tbeg[isrc];
+        /* mod.t0 negative time correction for dipping plane waves */
+		time = itime*dt - src.tbeg[isrc] + mod.t0;
 		id1 = floor(time/dt);
 		id2 = id1+1;
         
