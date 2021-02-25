@@ -48,6 +48,7 @@ char *sdoc[] = {
 "   nshift=0 ................. Sample number shift",
 "   shift=0.0 ................ Base shift in seconds for the data",
 "   dtshift=0.0 .............. Shift per gather in seconds",
+"   opt=0 .................... Option for muting acausal events (=0) or no muting (=1)",
 "   verbose=1 ................ Give information about the process (=1) or not (=0)",
 NULL};
 
@@ -58,7 +59,7 @@ int main (int argc, char **argv)
 	float   *indata, *outdata, *loopdata, shift, dtshift;
 	float   dt, dz, dy, dx, t0, x0, y0, z0, scl, dxrcv, dyrcv, dzrcv;
 	long    nt, nz, ny, nx, nxyz, ntr, ix, iy, it, is, iz, pos, file_det, nxs, nys, nzs;
-	long    numb, dnumb, ret, nzmax, verbose, nt_out, ishift, nshift, *sx, *sy, *sz;
+	long    numb, dnumb, ret, nzmax, verbose, nt_out, ishift, nshift, *sx, *sy, *sz, opt;
 	segy    *hdr_in, *hdr_loop, *hdr_out;
 
 	initargs(argc, argv);
@@ -74,6 +75,7 @@ int main (int argc, char **argv)
 	if (!getparlong("nzmax", &nzmax)) nzmax=0;
 	if (!getparlong("verbose", &verbose)) verbose=0;
 	if (!getparlong("nshift", &nshift)) nshift=0;
+	if (!getparlong("opt", &opt)) opt=0;
 	if (!getparfloat("shift", &shift)) shift=0.0;
 	if (!getparfloat("dtshift", &dtshift)) dtshift=0.0;
 	if (fin == NULL) verr("Incorrect downgoing input");
@@ -137,6 +139,8 @@ int main (int argc, char **argv)
 		vmess("Starting distance for     x: %.3f, y: %.3f, z: %.3f",x0,y0,z0);
 		vmess("Sampling distance for     x: %.3f, y: %.3f, z: %.3f",dx,dy,dz);
 		vmess("Number of virtual sources:   %li",nzs);
+		if (opt==0) vmess("Muting is applied");
+		if (opt==1) vmess("Muting is not applied");
 	}
 
 	/*----------------------------------------------------------------------------*
@@ -165,6 +169,8 @@ int main (int argc, char **argv)
 	hdr_out     = (segy *)calloc(nx*ny,sizeof(segy));	
 	outdata		= (float *)calloc(nt_out*nxyz,sizeof(float));
 
+	if (dtshift==0.0) dtshift=((float) nshift)*dt;
+
     /*----------------------------------------------------------------------------*
     *   Parallel loop for reading in and combining the various shots
     *----------------------------------------------------------------------------*/
@@ -189,12 +195,25 @@ int main (int argc, char **argv)
 		sz[is] = hdr_loop[0].sdepth;
 		
 		ishift = nshift*is;
-		if (verbose) vmess("Shifting %li timesteps for a total of %.3f seconds",ishift,shift+(dtshift*((float)iz)));
-		for (it = ishift; it < nt_out; it++) {
-			for (iy = 0; iy < ny; iy++) {
-				for (ix = 0; ix < nx; ix++) {
-					for (iz = 0; iz < nz; iz++) {
-						outdata[it*nxyz+iy*nx*nz+ix*nz+iz] += loopdata[(it-ishift+(nt/2))*nxyz+iy*nx*nz+ix*nz+iz];
+		if (verbose) vmess("Shifting %li timesteps for a total of %.3f seconds",ishift,shift+(dtshift*((float)is)));
+		if (opt==0) {
+			for (it = ishift; it < nt_out; it++) {
+				for (iy = 0; iy < ny; iy++) {
+					for (ix = 0; ix < nx; ix++) {
+						for (iz = 0; iz < nz; iz++) {
+							outdata[it*nxyz+iy*nx*nz+ix*nz+iz] += loopdata[(it-ishift+(nt/2))*nxyz+iy*nx*nz+ix*nz+iz];
+						}
+					}
+				}
+			}
+		}
+		else {
+			for (it = 0; it < nt_out; it++) {
+				for (iy = 0; iy < ny; iy++) {
+					for (ix = 0; ix < nx; ix++) {
+						for (iz = 0; iz < nz; iz++) {
+							outdata[it*nxyz+iy*nx*nz+ix*nz+iz] += loopdata[(it-ishift+(nt/2))*nxyz+iy*nx*nz+ix*nz+iz];
+						}
 					}
 				}
 			}

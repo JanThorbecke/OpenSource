@@ -1,15 +1,15 @@
 #!/bin/bash
 
-./model.sh
+#./model.sh
 
-./shotmodel.sh
+#./shotmodel.sh
 
-./makeR.sh
+#./makeR.sh
+
+./zfp.sh
 
 ./farrmod.sh
 
 ./fmute3D.sh
-
-./zfp.sh
 
 ./marchenko3d.sh
