@@ -6,6 +6,8 @@
 #include <math.h>
 #include <assert.h>
 
+double wallclock_time(void);
+
 /*********************** self documentation **********************/
 char *sdoc[] = {
 " ",
