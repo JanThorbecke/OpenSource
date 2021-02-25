@@ -397,7 +397,7 @@ int main (int argc, char **argv)
 		px = sin(src_anglex*grad2rad)/src_velox;
 		py = sin(src_angley*grad2rad)/src_veloy;
 		
-		tshift = fabs((nys-1)*dys*py) + fabs((nxs-1)*dxs*px);
+		tshift = fabs((nys-1)*dys*py) + fabs((nxs-1)*dxs*px) - dt;
 
         for (j = 0; j < Nfoc; j++) {
             itmin[j] = nt;
@@ -602,7 +602,13 @@ int main (int argc, char **argv)
         vmess("number of time samples (nt,nts) = %li (%li,%li)", ntfft, nt, nts);
         vmess("frequency cutoffs               = min:%.3f max:%.3f",fmin,fmax);
         vmess("time sampling                   = %e ", dt);
-        if (plane_wave) vmess("Plane wave focusing is applied");
+        if (plane_wave) {
+            vmess("Plane wave focusing is applied");
+            vmess("Plane wave angle                = x:%.2f y%.2f",src_anglex,src_angley);
+            vmess("Plane wave velocity             = x:%.2f y%.2f",src_velox,src_veloy);
+            vmess("Plane wave p value              = x:%.6f y%.6f",px,py);
+            vmess("tshift                          = x:%.3f",tshift);
+        }
         if (file_green != NULL) vmess("Green output file               = %s ", file_green);
         if (file_gmin != NULL)  vmess("Gmin output file                = %s ", file_gmin);
         if (file_gplus != NULL) vmess("Gplus output file               = %s ", file_gplus);
@@ -781,7 +787,14 @@ int main (int argc, char **argv)
                     }
                 }
             }
-            if (above==-2) applyMute3D(f1min, muteW, smooth, 0, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);
+            if (above==-2) {
+                if (plane_wave==1) {
+                    applyMute3D_tshift(f1min,  muteW, smooth, 0, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, iter, tsynW);
+                }
+                else {
+                    applyMute3D(f1min, muteW, smooth, 0, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);
+                }
+            }
         }
         else {/* odd iterations update: => f_1^+(t)  */
             for (l = 0; l < Nfoc; l++) {
@@ -878,17 +891,6 @@ int main (int argc, char **argv)
         if (plane_wave==1) {
             applyMute3D_tshift(Gmin, muteW, smooth, 4, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, 0, tsynW);
             /* for plane wave with angle shift itmin downward */
-            for (l = 0; l < Nfoc; l++) {
-                for (i = 0; i < npos; i++) {
-                    memcpy(&trace[0],&Gmin[l*nys*nxs*nts+i*nts],nts*sizeof(float));
-                    for (j = 0; j < itmin[l]; j++) {
-                        Gmin[l*nys*nxs*nts+i*nts+j] = 0.0;
-                    }
-                    for (j = 0; j < nts-itmin[l]; j++) {
-                        Gmin[l*nys*nxs*nts+i*nts+j+itmin[l]] = trace[j];
-                    }
-                }
-            }
             timeShift(Gmin, nts, npos*Nfoc, dt, tshift, fmin, fmax);
         }
         else {

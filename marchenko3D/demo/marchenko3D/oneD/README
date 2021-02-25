@@ -4,3 +4,33 @@ Due to the size of the data, one requires around 256 GB of RAM. Keep this limita
 
 To avoid the need for large storage space on your directory, we reccomend using the ZFP compressed option. 
 This is the standard option included in the data. You can just execute execute.sh and everything will be done for you. It will take a considerable amount of time, depending on your machine.
+
+In order to run all of the code the folders fdelmodc3D/ and utils/ in the main directory should have been compiled.
+Additionally, some steps require the installation of Seismic Unix
+
+model.sh will create a layered 2D model and convert it into a 3D model (requires Seimsic Unix and utils/)
+
+shotmodel.sh will model a shot of reflection data in the model as well as its direct arrival. It will subtract this first arrival
+from the reflection data (requires fdelmodc3D)
+
+makeR.sh will create a full 3D reflection response from the single shot by shifting traces. The file contains a warning due to the
+large size of the dataset. (requires utils/)
+
+farrmod.sh models a first arrival in a truncated version of the subsurface model. (requires fdelmodc3D/)
+
+fmute3D.sh separates the first arrival from the coda (requires utils/)
+
+zfp.sh transforms the reflection data to the frequency data and applies ZFP compression in order to shrink the datasize of the
+reflection data. It will also delete the original reflection data once the compression has been applied. (requires marchenko3D/)
+
+marchenko3d.sh will perform the Marchenko method using the data created with the previous scripts. (requires marchenko3D)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Additionally, there are two demo's for running plane-wave Marchenko in the directories plane_horizontal/ and plane_tilted/
+In order to run these examples, the scripts model.sh shotmodel.sh makeR.sh in the main directory should all have been run
+
+plane_horizontal/ will run the 3D Marchenko method on a horizontal plane-wave
+
+plane_tilted/ will run the 3D Marchenko method on a tilted plane-wave. In order to construct a full Green's function
+the method needs to be run twice at opposing dips. For more information see
+Meles, G. A., Wapenaar, K., & Thorbecke, J. (2018). Virtual plane-wave imaging via Marchenko redatuming. Geophysical Journal International, 214(1), 508-519.
