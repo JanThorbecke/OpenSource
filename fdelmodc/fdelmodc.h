@@ -73,6 +73,7 @@ typedef struct _modelPar { /* Model Parameters */
 	int nt;
 	float z0;
 	float x0;
+	float t0;
 	/* medium max/min values */
 	float cp_min;
 	float cp_max;
