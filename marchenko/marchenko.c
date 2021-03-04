@@ -115,7 +115,7 @@ char *sdoc[] = {
 " ",
 NULL};
 /**************** end self doc ***********************************/
-
+// JT plane-wave
 int main (int argc, char **argv)
 {
     FILE    *fp_out, *fp_f1plus, *fp_f1min;
@@ -261,6 +261,7 @@ int main (int argc, char **argv)
 		tshift = fabs((nxs-1)*dxs*p);
 
 		/* compute mute window for plane waves */
+
 		//for (i=0; i<nxs; i++) fprintf(stderr,"i=%d window=%d\n", i, muteW[i]);
         //itmin = nt;
         //for (i=0; i<nxs; i++) itmin = MIN (itmin, muteW[i]);
