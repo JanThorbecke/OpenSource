@@ -884,7 +884,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	    src_iz0=MAX(0,NINT((zsrc-sub_z0)/dz));
 	    src_iz0=MIN(src_iz0,nz);
 
-	/* for a source defined on mutliple gridpoint calculate p delay factor */
+	/* plane-wave defined on multiple gridpoints calculate p delay factor */
 
 		src->x = (int *)malloc(nsrc*sizeof(int));
 		src->z = (int *)malloc(nsrc*sizeof(int));
@@ -892,6 +892,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		src->tend = (float *)malloc(nsrc*sizeof(float));
 		grad2rad = 17.453292e-3;
 		p = sin(src_angle*grad2rad)/src_velo;
+		/* t=0 is defined at position src_ix0 */
 		for (is=0; is<nsrc; is++) {
 			src->tbeg[is] = (is-src_ix0)*dx*p;
 		}

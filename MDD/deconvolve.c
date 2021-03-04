@@ -131,7 +131,7 @@ int deconvolve(complex *cA, complex *cB, complex *cC, complex *oBB, int nfreq, i
 	if (conjgA) NC = nshots;
 	else NC = nstationB;
 
-//	if (verbose) fprintf(stderr,"transa=%s transb=%s %d %d %d\n", transa, transb, NA, NB, nshots);
+	if (verbose>1) vmess("MMD tranpose options transa=%s transb=%s N(rec)A=%d N(rec)B=%d LDA(nshots)=%d\n", transa, transb, NA, NB, nshots);
 
 #pragma omp for schedule(static) \
 private(iw, iwnA, iwnB, iwAB, iwBB) 
@@ -141,10 +141,12 @@ private(iw, iwnA, iwnB, iwAB, iwBB)
 		iwnB = iw*nstationB*nshots;
 		iwAB = iw*NC*NC;
 		if (mdd==0) { /* Correlation */
-				/* cblas_cgemm(CblasRowMajor,CblasNoTrans, CblasConjTrans, NA, NB, nshots, &alpha.r, 
+/*
+				cblas_cgemm(CblasColMajor,CblasNoTrans, CblasNoTrans, NA, NB, nshots, &alpha.r, 
 				&cA[iwnA].r, NA, 
 				&cB[iwnB].r, NB, &beta.r,
-				&cC[iwAB].r, NC); */
+				&cC[iwAB].r, NC); 
+*/
 			cgemm_(transa, transb, &NA, &NB, &nshots, &alpha.r, 
 				&cA[iwnA].r, &NA, 
 				&cB[iwnB].r, &NB, &beta.r, 
