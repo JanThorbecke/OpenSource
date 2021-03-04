@@ -86,7 +86,7 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 				C10 = tzz[(ix+1)*n1+iz];
 				C01 = tzz[ix*n1+iz+1];
 				C11 = tzz[(ix+1)*n1+iz+1];
-				rec_p[irec*rec.nt+isam] = C00*(1.0-rdx)*(1.0-rdz) + C10*rdx*(1.0-rdz) +
+				rec_p[irec*rec.nt+isam] += C00*(1.0-rdx)*(1.0-rdz) + C10*rdx*(1.0-rdz) +
 										  C01*(1.0-rdx)*rdz       + C11*rdx*rdz;
 			}
 			if (rec.type.txx) {
@@ -94,7 +94,7 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 				C10 = txx[(ix+1)*n1+iz];
 				C01 = txx[ix*n1+iz+1];
 				C11 = txx[(ix+1)*n1+iz+1];
-				rec_txx[irec*rec.nt+isam] = C00*(1.0-rdx)*(1.0-rdz) + C10*rdx*(1.0-rdz) +
+				rec_txx[irec*rec.nt+isam] += C00*(1.0-rdx)*(1.0-rdz) + C10*rdx*(1.0-rdz) +
 											C01*(1.0-rdx)*rdz       + C11*rdx*rdz;
 			}
 			if (rec.type.tzz) {
@@ -102,7 +102,7 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 				C10 = tzz[(ix+1)*n1+iz];
 				C01 = tzz[ix*n1+iz+1];
 				C11 = tzz[(ix+1)*n1+iz+1];
-				rec_tzz[irec*rec.nt+isam] = C00*(1.0-rdx)*(1.0-rdz) + C10*rdx*(1.0-rdz) +
+				rec_tzz[irec*rec.nt+isam] += C00*(1.0-rdx)*(1.0-rdz) + C10*rdx*(1.0-rdz) +
 											C01*(1.0-rdx)*rdz       + C11*rdx*rdz;
 			}
 			if (rec.type.txz) {
@@ -110,7 +110,7 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 				C10 = txz[(ix2+1)*n1+iz2];
 				C01 = txz[ix2*n1+iz2+1];
 				C11 = txz[(ix2+1)*n1+iz2+1];
-				rec_txz[irec*rec.nt+isam] = C00*(1.0-rdx)*(1.0-rdz) + C10*rdx*(1.0-rdz) +
+				rec_txz[irec*rec.nt+isam] += C00*(1.0-rdx)*(1.0-rdz) + C10*rdx*(1.0-rdz) +
 											C01*(1.0-rdx)*rdz       + C11*rdx*rdz;
 			}
 			if (rec.type.pp) {
@@ -122,7 +122,7 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 					   vz[ix*n1+iz2+1]-vz[ix*n1+iz+1])/mod.dx;
 				C11 = (vx[(ix2+1)*n1+iz+1]-vx[(ix+1)*n1+iz+1] +
 					   vz[(ix+1)*n1+iz2+1]-vz[(ix+1)*n1+iz+1])/mod.dx;
-				rec_pp[irec*rec.nt+isam] = C00*(1.0-rdx)*(1.0-rdz) + C10*rdx*(1.0-rdz) +
+				rec_pp[irec*rec.nt+isam] += C00*(1.0-rdx)*(1.0-rdz) + C10*rdx*(1.0-rdz) +
 										   C01*(1.0-rdx)*rdz       + C11*rdx*rdz;
 			}
 			if (rec.type.ss) {
@@ -134,7 +134,7 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 						(vz[ix2*n1+iz2+1]-vz[ix*n1+iz2+1]))/mod.dx;;
 				C11 = (vx[(ix2+1)*n1+iz2+1]-vx[(ix2+1)*n1+iz+1] -
 						(vz[(ix2+1)*n1+iz2+1]-vz[(ix+1)*n1+iz2+1]))/mod.dx;
-				rec_ss[irec*rec.nt+isam] = C00*(1.0-rdx)*(1.0-rdz) + C10*rdx*(1.0-rdz) +
+				rec_ss[irec*rec.nt+isam] += C00*(1.0-rdx)*(1.0-rdz) + C10*rdx*(1.0-rdz) +
 										   C01*(1.0-rdx)*rdz       + C11*rdx*rdz;
 			}
 			if (rec.type.vz) {
@@ -142,7 +142,7 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 				C10 = vz[(ix+1)*n1+iz2];
 				C01 = vz[ix*n1+iz2+1];
 				C11 = vz[(ix+1)*n1+iz2+1];
-				rec_vz[irec*rec.nt+isam] = C00*(1.0-rdx)*(1.0-rdz) + C10*rdx*(1.0-rdz) +
+				rec_vz[irec*rec.nt+isam] += C00*(1.0-rdx)*(1.0-rdz) + C10*rdx*(1.0-rdz) +
 										   C01*(1.0-rdx)*rdz       + C11*rdx*rdz;
 			}
 			if (rec.type.vx) {
@@ -150,7 +150,7 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 				C10 = vx[(ix2+1)*n1+iz];
 				C01 = vx[ix2*n1+iz+1];
 				C11 = vx[(ix2+1)*n1+iz+1];
-				rec_vx[irec*rec.nt+isam] = C00*(1.0-rdx)*(1.0-rdz) + C10*rdx*(1.0-rdz) +
+				rec_vx[irec*rec.nt+isam] += C00*(1.0-rdx)*(1.0-rdz) + C10*rdx*(1.0-rdz) +
 										   C01*(1.0-rdx)*rdz       + C11*rdx*rdz;
 			}
 			
@@ -173,10 +173,10 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
                         dvz = c1*(vz[ix*n1+iz1+1]   - vz[ix*n1+iz1]) +
                               c2*(vz[ix*n1+iz1+2]   - vz[ix*n1+iz1-1]);
                         field += tzz[ix*n1+iz1] + 0.5*l2m[ix*n1+iz1]*(dvx+dvz);
-						rec_p[irec*rec.nt+isam] = 0.5*field;
+						rec_p[irec*rec.nt+isam] += 0.5*field;
 					}
 					else {
-						rec_p[irec*rec.nt+isam] = 0.5*(tzz[ix*n1+iz1]+tzz[ix*n1+iz]);
+						rec_p[irec*rec.nt+isam] += 0.5*(tzz[ix*n1+iz1]+tzz[ix*n1+iz]);
 					}
 				}
 				else if (rec.int_p == 2) {
@@ -191,40 +191,40 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
                         dvz = c1*(vz[ix1*n1+iz+1]   - vz[ix1*n1+iz]) +
                               c2*(vz[ix1*n1+iz+2]   - vz[ix1*n1+iz-1]);
                         field += tzz[ix1*n1+iz] + 0.5*l2m[ix1*n1+iz]*(dvx+dvz);
-						rec_p[irec*rec.nt+isam] = 0.5*field;
+						rec_p[irec*rec.nt+isam] += 0.5*field;
 					}
 					else {
-						rec_p[irec*rec.nt+isam] = 0.5*(tzz[ix1*n1+iz]+tzz[ix*n1+iz]);
+						rec_p[irec*rec.nt+isam] += 0.5*(tzz[ix1*n1+iz]+tzz[ix*n1+iz]);
 					}
 				}
 				else {
-					rec_p[irec*rec.nt+isam] = tzz[ix*n1+iz];
+					rec_p[irec*rec.nt+isam] += tzz[ix*n1+iz];
 				}
 			}
-			if (rec.type.txx) rec_txx[irec*rec.nt+isam] = txx[ix*n1+iz];
-			if (rec.type.tzz) rec_tzz[irec*rec.nt+isam] = tzz[ix*n1+iz];
+			if (rec.type.txx) rec_txx[irec*rec.nt+isam] += txx[ix*n1+iz];
+			if (rec.type.tzz) rec_tzz[irec*rec.nt+isam] += tzz[ix*n1+iz];
 			if (rec.type.txz) { /* time interpolation to be done */
 				if (rec.int_vz == 2 || rec.int_vx == 2) {
-					rec_txz[irec*rec.nt+isam] = 0.25*(
+					rec_txz[irec*rec.nt+isam] += 0.25*(
 							txz[ix*n1+iz2]+txz[ix2*n1+iz2]+
 							txz[ix*n1+iz]+txz[ix2*n1+iz]);
 				}
 				else {
-					rec_txz[irec*rec.nt+isam] = txz[ix2*n1+iz2];
+					rec_txz[irec*rec.nt+isam] += txz[ix2*n1+iz2];
 				}
 			}
 			if (rec.type.pp) {
-				rec_pp[irec*rec.nt+isam] = (vx[ix2*n1+iz]-vx[ix*n1+iz] +
+				rec_pp[irec*rec.nt+isam] += (vx[ix2*n1+iz]-vx[ix*n1+iz] +
 											vz[ix*n1+iz2]-vz[ix*n1+iz])/mod.dx;
 			}
 			if (rec.type.ss) {
-				rec_ss[irec*rec.nt+isam] = (vx[ix2*n1+iz2]-vx[ix2*n1+iz] -
+				rec_ss[irec*rec.nt+isam] += (vx[ix2*n1+iz2]-vx[ix2*n1+iz] -
 										   (vz[ix2*n1+iz2]-vz[ix*n1+iz2]))/mod.dx;
 			}
 			if (rec.type.vz) {
 /* interpolate vz to vx position to the right and above of vz */
 				if (rec.int_vz == 1) {
-					rec_vz[irec*rec.nt+isam] = 0.25*(
+					rec_vz[irec*rec.nt+isam] += 0.25*(
 							vz[ix*n1+iz2]+vz[ix1*n1+iz2]+
 							vz[ix*n1+iz] +vz[ix1*n1+iz]);
 				}
@@ -237,14 +237,14 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
                         field += vz[ix*n1+iz2] - 0.5*roz[ix*n1+iz2]*(
                         	c1*(tzz[ix*n1+iz2]   - tzz[ix*n1+iz2-1]) +
                         	c2*(tzz[ix*n1+iz2+1] - tzz[ix*n1+iz2-2]));
-						rec_vz[irec*rec.nt+isam] = 0.5*field;
+						rec_vz[irec*rec.nt+isam] += 0.5*field;
 					}
 					else {
-						rec_vz[irec*rec.nt+isam] = 0.5*(vz[ix*n1+iz2]+vz[ix*n1+iz]);
+						rec_vz[irec*rec.nt+isam] += 0.5*(vz[ix*n1+iz2]+vz[ix*n1+iz]);
 					}
 				}
 				else {
-					rec_vz[irec*rec.nt+isam] = vz[ix*n1+iz2];
+					rec_vz[irec*rec.nt+isam] += vz[ix*n1+iz2];
 					//rec_vz[irec*rec.nt+isam] = vz[ix*n1+iz];
 					//fprintf(stderr,"isam=%d vz[%d]=%e vz[%d]=%e vz[%d]=%e \n",isam, iz-1,vz[ix*n1+iz-1],iz,vz[ix*n1+iz], iz+1, vz[ix*n1+iz+1]);
 				}
@@ -252,7 +252,7 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 			if (rec.type.vx) {
 /* interpolate vx to vz position to the left and below of vx */
 				if (rec.int_vx == 1) {
-					rec_vx[irec*rec.nt+isam] = 0.25*(
+					rec_vx[irec*rec.nt+isam] += 0.25*(
 							vx[ix2*n1+iz]+vx[ix2*n1+iz1]+
 							vx[ix*n1+iz]+vx[ix*n1+iz1]);
 				}
@@ -265,14 +265,14 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
             			field += vx[ix2*n1+iz] - 0.5*rox[ix2*n1+iz]*(
                 			c1*(tzz[ix2*n1+iz]     - tzz[(ix2-1)*n1+iz]) +
                 			c2*(tzz[(ix2+1)*n1+iz] - tzz[(ix2-2)*n1+iz]));
-						rec_vx[irec*rec.nt+isam] = 0.5*field;
+						rec_vx[irec*rec.nt+isam] += 0.5*field;
 					}
 					else {
-						rec_vx[irec*rec.nt+isam] = 0.5*(vx[ix2*n1+iz]+vx[ix*n1+iz]);
+						rec_vx[irec*rec.nt+isam] += 0.5*(vx[ix2*n1+iz]+vx[ix*n1+iz]);
 					}
 				}
 				else {
-					rec_vx[irec*rec.nt+isam] = vx[ix2*n1+iz];
+					rec_vx[irec*rec.nt+isam] += vx[ix2*n1+iz];
 				}
 			}
 		}
@@ -297,8 +297,8 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
        	}
 		for (ix=0; ix<mod.nax; ix++) {
 			/* -2- compute average in time and depth to get Vz at same depth and time as P */
-			rec_udvz[ix*rec.nt+isam] = 0.25*(vz[ix*n1+iz2]+vz[ix*n1+iz]+vz_t[mod.nax+ix]+vz_t[ix]);
-			rec_udp[ix*rec.nt+isam]  = tzz[ix*n1+iz];
+			rec_udvz[ix*rec.nt+isam] += 0.25*(vz[ix*n1+iz2]+vz[ix*n1+iz]+vz_t[mod.nax+ix]+vz_t[ix]);
+			rec_udp[ix*rec.nt+isam]  += tzz[ix*n1+iz];
 		}
 		free(vz_t);
 	}

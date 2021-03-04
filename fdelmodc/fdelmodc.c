@@ -521,12 +521,12 @@ int main(int argc, char **argv)
 			its=-1;
 
 			it0=0;
-			it1=mod.nt;
+			it1=mod.nt+NINT(-mod.t0/mod.dt);
 			its=1;
 		}
 		else {
 			it0=0;
-			it1=mod.nt;
+			it1=mod.nt+NINT(-mod.t0/mod.dt);
 			its=1;
 		}
         perc=it1/100;if(!perc)perc=1;
@@ -607,20 +607,18 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 			if ( (((it-rec.delay) % rec.skipdt)==0) && (it >= rec.delay) ) {
 				int writeToFile, itwritten;
 
-				writeToFile = ! ( (((it-rec.delay)/rec.skipdt)+1)%rec.nt );
+				writeToFile = ! ( (((it-rec.delay+NINT(mod.t0/mod.dt))/rec.skipdt)+1)%rec.nt );
 				itwritten   = fileno*(rec.nt)*rec.skipdt;
                 /* Note that time step it=0 (t=0 for t**-fields t=-1/2 dt for v*-field) is not recorded */
-				//isam        = (it-rec.delay-itwritten)/rec.skipdt+1;
 				/* negative time correction with mod.t0 for dipping plane waves modeling */
 				isam        = (it-rec.delay-itwritten+NINT(mod.t0/mod.dt))/rec.skipdt+1;
 				if (isam < 0) isam = rec.nt+isam;
-
 				/* store time at receiver positions */
 				getRecTimes(mod, rec, bnd, it, isam, vx, vz, tzz, txx, txz, 
 					l2m, rox, roz, 
 					rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
 					rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose);
-			
+
 				/* at the end of modeling a shot, write receiver array to output file(s) */
 				if (writeToFile && (it+rec.skipdt <= it1-1) ) {
 					fileno = ( ((it-rec.delay)/rec.skipdt)+1)/rec.nt;
@@ -686,8 +684,6 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 				}
 			}
 		}
-		/* negative time correction with mod.t0 for dipping plane waves modeling */
-        isam += NINT(-mod.t0/mod.dt)/rec.skipdt;
 		writeRec(rec, mod, bnd, wav, ixsrc, izsrc, isam+1, ishot, fileno,
 			rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
 			rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose);

@@ -16,7 +16,7 @@ ALLINC  = -I.
 #FFLAGS += -g -mcmodel=medium
 #LIBS += -lblas -llapack -L$L -lgenfft $(LIBSM) -lc -lm
 
-all: mdd 
+all: mdd
 
 PRG = mdd
 
