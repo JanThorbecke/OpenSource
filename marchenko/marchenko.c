@@ -115,7 +115,7 @@ char *sdoc[] = {
 " ",
 NULL};
 /**************** end self doc ***********************************/
-// JT plane-wave
+
 int main (int argc, char **argv)
 {
     FILE    *fp_out, *fp_f1plus, *fp_f1min;
