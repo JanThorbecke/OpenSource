@@ -274,7 +274,7 @@ int main (int argc, char **argv)
             timeShift(G_d, nts, nxs, dt, tshift, fmin, fmax);
 		}
 
-        for (i=0; i<nxs; i++) tsynW[i] = NINT(i*dxs*p/dt);
+        for (i=0; i<nxs; i++) tsynW[i] = NINT((i-(nxs-1)/2)*dxs*p/dt);
         //for (i=0; i<nxs; i++) tsynW[i] = 0.0;
 		if (Nfoc!=1) verr("For plane-wave focusing only one function can be computed at the same time");
 	    //fprintf(stderr,"itmin=%d tshift=%f =%d \n", itmin, tshift, NINT(tshift/dt));	
@@ -624,10 +624,10 @@ int main (int argc, char **argv)
             applyMute_tshift(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 1, tsynW);
             if (src_angle > 0.0) {
 			    if (verbose>1) vmess("Gmin planewave tshift=%f", tshift);
-                timeShift(Gmin, nts, npos, dt, tshift, fmin, fmax);
+                //timeShift(Gmin, nts, npos, dt, tshift, fmin, fmax);
 			}
 			else {
-			    if (verbose>1) vmess("Gmin NO planewave tshift");
+			    if (verbose>1) vmess("Gmin no planewave tshift needed for src_angle<0");
 			}
 		}
 		else {
