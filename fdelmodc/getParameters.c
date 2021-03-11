@@ -1000,8 +1000,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 /*			vmess("Memory requirement for sources = %.2f MB.",sizeof(float)*(wav->nx*(wav->nt/(1024.0*1024.0))));*/
 			vmess("Memory requirement for sources = %.2f MB.",sizeof(float)*(nsamp/(1024.0*1024.0)));
 			if (src->plane) {
-				vmess("Computed p-value = %f.",p);
-        		vmess("Maximum negative time delay is %f\n", mod->t0);
+				vmess("plane-wave: Computed p-value = %f.",p);
+        		vmess("plane-wave: Maximum negative time delay is %f", mod->t0);
 			}
 		}
 		if (src->random) {

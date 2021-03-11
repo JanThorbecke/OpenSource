@@ -613,11 +613,13 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 				/* negative time correction with mod.t0 for dipping plane waves modeling */
 				isam        = (it-rec.delay-itwritten+NINT(mod.t0/mod.dt))/rec.skipdt+1;
 				if (isam < 0) isam = rec.nt+isam;
+				fprintf(stderr,"it=%d isam=%d writeToFile=%d\n", it, isam, writeToFile);
 				/* store time at receiver positions */
 				getRecTimes(mod, rec, bnd, it, isam, vx, vz, tzz, txx, txz, 
 					l2m, rox, roz, 
 					rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
 					rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose);
+//fprintf(stderr,"rec%d=%e\n", isam, rec_p[isam]);
 
 				/* at the end of modeling a shot, write receiver array to output file(s) */
 				if (writeToFile && (it+rec.skipdt <= it1-1) ) {
@@ -684,6 +686,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 				}
 			}
 		}
+fprintf(stderr,"rec=%e\n", rec_p[isam]);
 		writeRec(rec, mod, bnd, wav, ixsrc, izsrc, isam+1, ishot, fileno,
 			rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
 			rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose);
