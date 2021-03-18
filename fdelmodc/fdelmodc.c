@@ -364,7 +364,7 @@ int main(int argc, char **argv)
 		src_nwav[0] = (float *)calloc(wav.nt*wav.nx,sizeof(float));
 		assert(src_nwav[0] != NULL);
 		for (i=0; i<wav.nx; i++) {
-			src_nwav[i] = (float *)(src_nwav[0] + wav.nt*i);
+			src_nwav[i] = (float *)(src_nwav[0] + (long)(wav.nt*i));
 		}
 	}
 
@@ -624,7 +624,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 					l2m, rox, roz, 
 					rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
 					rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose);
-fprintf(stderr,"rec%d=%e nt=%d\n", isam, rec_p[isam], rec.nt);
+fprintf(stderr,"rec[%d]=%e nt=%d\n", isam, rec_p[isam], rec.nt);
 
 				/* at the end of modeling a shot, write receiver array to output file(s) */
 				if (writeToFile && (it+rec.skipdt <= it1-1) ) {
@@ -652,11 +652,11 @@ fprintf(stderr,"rec%d=%e nt=%d\n", isam, rec_p[isam], rec.nt);
 #pragma omp master
 {
 			if (verbose) {
-                if(!((it1-it)%perc)) fprintf(stderr,"\b\b\b\b%3d%%",it*100/mod.nt);
+                if(!((it1-it)%perc)) fprintf(stderr,"\b\b\b\b%3d%%",it*100/(it1-it0));
                 if(it==100)t3=wallclock_time();
                 if(it==500){
-                    t3=(wallclock_time()-t3)*(mod.nt/400.0);
-                    fprintf(stderr,"\r    %s: Estimated total compute time for this shot = %.2fs.\n    %s: Progress: %3d%%",xargv[0],t3,xargv[0],it/(mod.nt/100));
+                    t3=(wallclock_time()-t3)*((it1-it0)/400.0);
+                    fprintf(stderr,"\r    %s: Estimated total compute time for this shot = %.2fs.\n    %s: Progress: %3d%%",xargv[0],t3,xargv[0],it/((it1-it0)/100));
                 }
 
 /*
