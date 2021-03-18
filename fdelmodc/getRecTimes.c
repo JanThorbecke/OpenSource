@@ -199,7 +199,6 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 				}
 				else {
 					rec_p[irec*rec.nt+isam] += tzz[ix*n1+iz];
-					//fprintf(stderr,"isam=%d tzz=%e rec=%e\n", isam, tzz[ix*n1+iz], rec_p[irec*rec.nt+isam]);
 				}
 			}
 			if (rec.type.txx) rec_txx[irec*rec.nt+isam] += txx[ix*n1+iz];
