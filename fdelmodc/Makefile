@@ -9,11 +9,13 @@ ALLINC  = -I.
 #OPTC = -g -Wall -fsignaling-nans -O0 -fopenmp
 #OPTC += -fopenmp -Waddress
 #OPTC +=  -qopt-report=5 -g
+OPTC =  -fp-trap=invalid -traceback -g -O1
 #OPTC := $(subst -O3 -ffast-math, -O1 -g ,$(OPTC))
 #PGI options for compiler feedback
 #OPTC += -Mprof=lines
 #OPTC += -qopt-report
 #LDFLAGS += -Mprof=lines
+#LDFLAGS += -Wl,-z,muldefs
 
 all: fdelmodc 
 
