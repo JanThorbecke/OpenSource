@@ -55,7 +55,7 @@ int elastic6(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsr
     float *roz, float *l2m, float *lam, float *mul, int verbose);
 
 int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *vx, float *vz, float *tzz, float *txx, 
-	float *txz, float *l2m, float *rox, float *roz,
+	float *txz, float *l2m, float *lam, float *rox, float *roz,
 	float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
 	float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, int verbose);
 
@@ -364,7 +364,7 @@ int main(int argc, char **argv)
 		src_nwav[0] = (float *)calloc(wav.nt*wav.nx,sizeof(float));
 		assert(src_nwav[0] != NULL);
 		for (i=0; i<wav.nx; i++) {
-			src_nwav[i] = (float *)(src_nwav[0] + wav.nt*i);
+			src_nwav[i] = (float *)(src_nwav[0] + (long)(wav.nt*i));
 		}
 	}
 
@@ -540,7 +540,7 @@ shared (tss, tep, tes, r, q, p) \
 shared (tinit, it0, it1, its) \
 shared(beam_vx, beam_vz, beam_txx, beam_tzz, beam_txz, beam_p, beam_pp, beam_ss) \
 shared(rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, rec_p, rec_pp, rec_ss) \
-shared (tt, t2, t3) \
+shared (tt, t2, t3, isam) \
 shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 {
 			if (it==it0 && verbose>2) {
@@ -607,7 +607,12 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 			if ( (((it-rec.delay) % rec.skipdt)==0) && (it >= rec.delay) ) {
 				int writeToFile, itwritten;
 
-				writeToFile = ! ( (((it-rec.delay+NINT(mod.t0/mod.dt))/rec.skipdt)+1)%rec.nt );
+				if ((((it-rec.delay+NINT(mod.t0/mod.dt))/rec.skipdt)+1)!=0) {
+				    writeToFile = ! ( (((it-rec.delay+NINT(mod.t0/mod.dt))/rec.skipdt)+1)%rec.nt );
+				}
+				else { /* when negative times passes  zero-time */
+				    writeToFile = 0;
+				}
 				itwritten   = fileno*(rec.nt)*rec.skipdt;
                 /* Note that time step it=0 (t=0 for t**-fields t=-1/2 dt for v*-field) is not recorded */
 				/* negative time correction with mod.t0 for dipping plane waves modeling */
@@ -615,7 +620,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 				if (isam < 0) isam = rec.nt+isam;
 				/* store time at receiver positions */
 				getRecTimes(mod, rec, bnd, it, isam, vx, vz, tzz, txx, txz, 
-					l2m, rox, roz, 
+					l2m, lam, rox, roz, 
 					rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
 					rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose);
 
@@ -640,15 +645,16 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 					beam_p, beam_pp, beam_ss, verbose);
 			}
 }
+#pragma omp barrier
 					
 #pragma omp master
 {
 			if (verbose) {
-                if(!((it1-it)%perc)) fprintf(stderr,"\b\b\b\b%3d%%",it*100/mod.nt);
+                if(!((it1-it)%perc)) fprintf(stderr,"\b\b\b\b%3d%%",it*100/(it1-it0));
                 if(it==100)t3=wallclock_time();
                 if(it==500){
-                    t3=(wallclock_time()-t3)*(mod.nt/400.0);
-                    fprintf(stderr,"\r    %s: Estimated total compute time for this shot = %.2fs.\n    %s: Progress: %3d%%",xargv[0],t3,xargv[0],it/(mod.nt/100));
+                    t3=(wallclock_time()-t3)*((it1-it0)/400.0);
+                    fprintf(stderr,"\r    %s: Estimated total compute time for this shot = %.2fs.\n    %s: Progress: %3d%%",xargv[0],t3,xargv[0],it/((it1-it0)/100));
                 }
 
 /*

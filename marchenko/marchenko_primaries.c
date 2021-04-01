@@ -190,6 +190,7 @@ int main (int argc, char **argv)
     if(!getparfloat("src_velo",&src_velo)) src_velo=1500.;
     if(!getparfloat("t0",&tt0)) tt0=0.1;
 	if( (niterskip>1) && ISODD(niter) ) niter++;
+    if (niterskip==0) niterskip=1;
 
     if (T>0) {
 		T=-1;

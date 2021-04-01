@@ -261,30 +261,10 @@ int main (int argc, char **argv)
 		tshift = fabs((nxs-1)*dxs*p);
 
 		/* compute mute window for plane waves */
-		//for (i=0; i<nxs; i++) fprintf(stderr,"i=%d window=%d\n", i, muteW[i]);
-        //itmin = nt;
-        //for (i=0; i<nxs; i++) itmin = MIN (itmin, muteW[i]);
-
-        /* for negative angles tshift is negative and */
-        if (src_angle < 0.0) {
-			itmin = NINT(tshift/dt);
-        	//for (i=0; i<nxs; i++) muteW[i] = MAX(0, muteW[i]-itmin);
-        	for (i=0; i<nxs; i++) muteW[i] = muteW[i]-itmin;
-            timeShift(G_d, nts, nxs, dt, tshift, fmin, fmax);
-		}
-
-        for (i=0; i<nxs; i++) tsynW[i] = NINT(i*dxs*p/dt);
-        //for (i=0; i<nxs; i++) tsynW[i] = 0.0;
+        for (i=0; i<nxs; i++) tsynW[i] = NINT((i-(nxs-1)/2)*dxs*p/dt);
 		if (Nfoc!=1) verr("For plane-wave focusing only one function can be computed at the same time");
-	    //fprintf(stderr,"itmin=%d tshift=%f =%d \n", itmin, tshift, NINT(tshift/dt));	
-		//for (i=0; i<nxs; i++) fprintf(stderr,"i=%d window=%f\n", i, tsynW[i]*dt);
-/*		// TESTING SHIFT 
-        tshift=0.3;
-        for (i=0; i<nxs; i++) tsynW[i] = NINT(0.3/dt);
-*/
 	}
 	else { /* just fill with zero's */
-		//itmin=0;
 		for (i=0; i<nxs*Nfoc; i++) {
 			tsynW[i] = 0;
 		}
@@ -619,15 +599,7 @@ int main (int argc, char **argv)
         }
         /* Apply mute with window for Gmin */
 		if ( plane_wave==1 ) {
-            /* for plane wave with angle tshift downward */
             applyMute_tshift(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 1, tsynW);
-            if (src_angle > 0.0) {
-			    if (verbose>1) vmess("Gmin planewave tshift=%f", tshift);
-                timeShift(Gmin, nts, npos, dt, tshift, fmin, fmax);
-			}
-			else {
-			    if (verbose>1) vmess("Gmin NO planewave tshift");
-			}
 		}
 		else {
             applyMute(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);

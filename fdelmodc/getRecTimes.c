@@ -17,7 +17,7 @@
 *           The Netherlands 
 **/
 
-int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *vx, float *vz, float *tzz, float *txx, float *txz, float *l2m, float *rox, float *roz, float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, int verbose)
+int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *vx, float *vz, float *tzz, float *txx, float *txz, float *l2m, float *lam, float *rox, float *roz, float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, int verbose)
 {
 	int n1, ibndx, ibndz;
 	int irec, ix, iz, ix2, iz2, ix1, iz1;
@@ -176,7 +176,17 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 						rec_p[irec*rec.nt+isam] += 0.5*field;
 					}
 					else {
-						rec_p[irec*rec.nt+isam] += 0.5*(tzz[ix*n1+iz1]+tzz[ix*n1+iz]);
+                        dvx = c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
+                              c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]);
+                        dvz = c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
+                              c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]);
+                        field = tzz[ix*n1+iz] + 0.5*(l2m[ix*n1+iz]*dvz + lam[ix*n1+iz]*dvx);
+                        dvx = c1*(vx[(ix+1)*n1+iz1] - vx[ix*n1+iz1]) +
+                              c2*(vx[(ix+2)*n1+iz1] - vx[(ix-1)*n1+iz1]);
+                        dvz = c1*(vz[ix*n1+iz1+1]   - vz[ix*n1+iz1]) +
+                              c2*(vz[ix*n1+iz1+2]   - vz[ix*n1+iz1-1]);
+                        field += tzz[ix*n1+iz1] + 0.5*(l2m[ix*n1+iz1]*dvz + lam[ix*n1+iz1]*dvx);
+						rec_p[irec*rec.nt+isam] += 0.5*field;
 					}
 				}
 				else if (rec.int_p == 2) {
@@ -194,7 +204,17 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 						rec_p[irec*rec.nt+isam] += 0.5*field;
 					}
 					else {
-						rec_p[irec*rec.nt+isam] += 0.5*(tzz[ix1*n1+iz]+tzz[ix*n1+iz]);
+                        dvx = c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
+                              c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]);
+                        dvz = c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
+                              c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]);
+                        field = tzz[ix*n1+iz] + 0.5*(l2m[ix*n1+iz]*dvz + lam[ix*n1+iz]*dvx);
+                        dvx = c1*(vx[(ix1+1)*n1+iz] - vx[ix1*n1+iz]) +
+                              c2*(vx[(ix+2)*n1+iz] - vx[(ix1-1)*n1+iz]);
+                        dvz = c1*(vz[ix1*n1+iz+1]   - vz[ix1*n1+iz]) +
+                              c2*(vz[ix1*n1+iz+2]   - vz[ix1*n1+iz-1]);
+                        field += tzz[ix1*n1+iz] + 0.5*(l2m[ix1*n1+iz]*dvz + lam[ix1*n1+iz]*dvx);
+						rec_p[irec*rec.nt+isam] += 0.5*field;
 					}
 				}
 				else {
@@ -240,13 +260,21 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 						rec_vz[irec*rec.nt+isam] += 0.5*field;
 					}
 					else {
-						rec_vz[irec*rec.nt+isam] += 0.5*(vz[ix*n1+iz2]+vz[ix*n1+iz]);
+                        field = vz[ix*n1+iz] - 0.5*roz[ix*n1+iz]*(
+                            c1*(tzz[ix*n1+iz]     - tzz[ix*n1+iz-1] +
+                                txz[(ix+1)*n1+iz] - txz[ix*n1+iz])  +
+                            c2*(tzz[ix*n1+iz+1]   - tzz[ix*n1+iz-2] +
+                                txz[(ix+2)*n1+iz] - txz[(ix-1)*n1+iz]));
+                        field += vz[ix*n1+iz2] - 0.5*roz[ix*n1+iz2]*(
+                            c1*(tzz[ix*n1+iz2]     - tzz[ix*n1+iz2-1] +
+                                txz[(ix+1)*n1+iz2] - txz[ix*n1+iz2])  +
+                            c2*(tzz[ix*n1+iz2+1]   - tzz[ix*n1+iz2-2] +
+                                txz[(ix+2)*n1+iz2] - txz[(ix-1)*n1+iz2]));
+						rec_vz[irec*rec.nt+isam] += 0.5*field;
 					}
 				}
 				else {
 					rec_vz[irec*rec.nt+isam] += vz[ix*n1+iz2];
-					//rec_vz[irec*rec.nt+isam] = vz[ix*n1+iz];
-					//fprintf(stderr,"isam=%d vz[%d]=%e vz[%d]=%e vz[%d]=%e \n",isam, iz-1,vz[ix*n1+iz-1],iz,vz[ix*n1+iz], iz+1, vz[ix*n1+iz+1]);
 				}
 			}
 			if (rec.type.vx) {
@@ -268,7 +296,17 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 						rec_vx[irec*rec.nt+isam] += 0.5*field;
 					}
 					else {
-						rec_vx[irec*rec.nt+isam] += 0.5*(vx[ix2*n1+iz]+vx[ix*n1+iz]);
+                        field = vx[ix*n1+iz] - 0.5*rox[ix*n1+iz]*(
+                            c1*(txx[ix*n1+iz]     - txx[(ix-1)*n1+iz] +
+                                txz[ix*n1+iz+1]   - txz[ix*n1+iz])    +
+                            c2*(txx[(ix+1)*n1+iz] - txx[(ix-2)*n1+iz] +
+                                txz[ix*n1+iz+2]   - txz[ix*n1+iz-1])  );
+                        field = vx[ix2*n1+iz] - 0.5*rox[ix2*n1+iz]*(
+                            c1*(txx[ix2*n1+iz]     - txx[(ix2-1)*n1+iz] +
+                                txz[ix2*n1+iz+1]   - txz[ix2*n1+iz])    +
+                            c2*(txx[(ix2+1)*n1+iz] - txx[(ix2-2)*n1+iz] +
+                                txz[ix2*n1+iz+2]   - txz[ix2*n1+iz-1])  );
+						rec_vx[irec*rec.nt+isam] += 0.5*field;
 					}
 				}
 				else {
