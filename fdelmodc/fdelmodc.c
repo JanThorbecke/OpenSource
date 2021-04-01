@@ -458,7 +458,7 @@ int main(int argc, char **argv)
 		iz = ioPz;
 		while(l2m[(ix+ioPx)*n1+iz] == 0.0) iz++;
 		bnd.surface[ix+ioPx] = iz;
-		if ((verbose>3) && (iz != ioPz)) vmess("Topgraphy surface x=%.2f z=%.2f", mod.x0+mod.dx*ix, mod.z0+mod.dz*(iz-ioPz));
+		if ((verbose>3) && (iz != ioPz)) vmess("Topography surface x=%.2f z=%.2f", mod.x0+mod.dx*ix, mod.z0+mod.dz*(iz-ioPz));
 	}
 	for (ix=0; ix<ioPx; ix++) {
 		bnd.surface[ix] = bnd.surface[ioPx];
