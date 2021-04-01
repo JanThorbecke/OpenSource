@@ -219,3 +219,10 @@ void timeShift(float *data, int nsam, int nrec, float dt, float shift, float fmi
 
     return;
 }
+
+int map(int j, int nt)
+{
+	if (j<0) return nt-j;
+    else if (j>=nt) return j-nt;
+    else return j;
+}

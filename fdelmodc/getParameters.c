@@ -58,7 +58,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	int i, j;
 	int cfree;
 	int tapleft,tapright,taptop,tapbottom;
-	int nxsrc, nzsrc;
+	int nxsrc, nzsrc, nhx;
 	int largeSUfile;
 	int is,ntraces,length_random;
 	float rand;
@@ -881,6 +881,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		}
 	    src_ix0=MAX(0,NINT((xsrc-sub_x0)/dx));
 	    src_ix0=MIN(src_ix0,nx);
+		is0 = -1*floor((nsrc-1)/2);
 	    src_iz0=MAX(0,NINT((zsrc-sub_z0)/dz));
 	    src_iz0=MIN(src_iz0,nz);
 
@@ -894,9 +895,9 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		p = sin(src_angle*grad2rad)/src_velo;
 		/* t=0 is defined at position src_ix0 */
 		for (is=0; is<nsrc; is++) {
-			src->tbeg[is] = (is-src_ix0)*dx*p;
+			src->tbeg[is] = (is+is0)*dx*p;
 		}
-		mod->t0 = MIN(-src_ix0*dx*p,(nsrc-src_ix0)*dx*p);
+		mod->t0 = MIN(is0*dx*p,(nsrc+is0)*dx*p);
 /*
 		if (p < 0.0) {
 			for (is=0; is<nsrc; is++) {
@@ -916,7 +917,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		}
 		
 		is0 = -1*floor((nsrc-1)/2);
-		is0 = -src_ix0;
+		//is0 = -src_ix0;
 		for (is=0; is<nsrc; is++) {
 			src->x[is] = is0 + is;
 			src->z[is] = 0;
@@ -1000,8 +1001,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 /*			vmess("Memory requirement for sources = %.2f MB.",sizeof(float)*(wav->nx*(wav->nt/(1024.0*1024.0))));*/
 			vmess("Memory requirement for sources = %.2f MB.",sizeof(float)*(nsamp/(1024.0*1024.0)));
 			if (src->plane) {
-				vmess("Computed p-value = %f.",p);
-        		vmess("Maximum negative time delay is %f\n", mod->t0);
+				vmess("plane-wave: Computed p-value = %f.",p);
+        		vmess("plane-wave: Maximum negative time delay is %f", mod->t0);
 			}
 		}
 		if (src->random) {

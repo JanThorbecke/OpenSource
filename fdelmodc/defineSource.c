@@ -128,7 +128,7 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwa
             randomWavelet(wav, src, &src_nwav[i][0], src.tbeg[i], src.tend[i], verbose);
         }
         else {
-            memset(&ctrace[0].r,0,nfreqscale*sizeof(complex));
+            memset(&ctrace[0],0,nfreqscale*sizeof(complex));
             memset(&trace[0],0,optnscale*sizeof(float));
             memcpy(&trace[0],&src_nwav[i][0],n1*sizeof(float));
             rc1fft(trace,ctrace,optn,-1);

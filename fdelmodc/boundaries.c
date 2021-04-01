@@ -134,7 +134,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 /************************************************************/
 
     npml=bnd.npml; /* lenght of pml in grid-points */
-    if ( (npml != 0) && (itime==0) && pml) {
+    if ( (npml != 0) && (allocated==0) && pml) {
 #pragma omp master
 {
 		if (allocated) {
@@ -1170,7 +1170,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 /************************************************************/	
    
     npml=bnd.npml; /* lenght of pml in grid-points */
-    if ( (npml != 0) && (itime==0) && pml) {
+    if ( (npml != 0) && (allocated==0) && pml) {
 #pragma omp master
 {
 		if (allocated) {
