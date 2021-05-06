@@ -879,11 +879,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			vwarn("number of gridpoints in X. Plane wave will be clipped to the edges of the model");
 			nsrc = mod->nx;
 		}
-	    src_ix0=MAX(0,NINT((xsrc-sub_x0)/dx));
-	    src_ix0=MIN(src_ix0,nx);
-		is0 = -1*floor((nsrc-1)/2);
-	    src_iz0=MAX(0,NINT((zsrc-sub_z0)/dz));
-	    src_iz0=MIN(src_iz0,nz);
+        nhx = floor((nsrc-1)/2);
+		is0 = -1*nhx;
 
 	/* plane-wave defined on multiple gridpoints calculate p delay factor */
 
@@ -893,32 +890,13 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		src->tend = (float *)malloc(nsrc*sizeof(float));
 		grad2rad = 17.453292e-3;
 		p = sin(src_angle*grad2rad)/src_velo;
-		/* t=0 is defined at position src_ix0 */
+		/* t=0 is defined at position is0 */
 		for (is=0; is<nsrc; is++) {
 			src->tbeg[is] = (is+is0)*dx*p;
 		}
 		mod->t0 = MIN(is0*dx*p,(nsrc+is0)*dx*p);
-/*
-		if (p < 0.0) {
-			for (is=0; is<nsrc; is++) {
-				src->tbeg[is] = fabsf((nsrc-is-1)*dx*p);
-			}
-			//rec->delay+=NINT(fabsf((nsrc-1)*dx*p)/mod->dt);
-			//mod->nt += NINT(fabsf((nsrc-1)*dx*p)/mod->dt);
-		}
-		else {
-			for (is=0; is<nsrc; is++) {
-				src->tbeg[is] = is*dx*p;
-			}
-		}
-*/
 		for (is=0; is<nsrc; is++) {
 			src->tend[is] = src->tbeg[is] + (wav->nt-1)*wav->dt;
-		}
-		
-		is0 = -1*floor((nsrc-1)/2);
-		//is0 = -src_ix0;
-		for (is=0; is<nsrc; is++) {
 			src->x[is] = is0 + is;
 			src->z[is] = 0;
 		}

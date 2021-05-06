@@ -285,7 +285,7 @@ int main(int argc, char **argv)
 	float *beam_pp, *beam_ss;	
 	float sinkvel, npeshot;
 	double t0, t1, t2, t3, tt, tinit;
-	size_t size, sizem, nsamp, perc;
+	size_t size, sizem, nsamp, perc, sizew;
 	int n1, ix, iz, ir, ishot, i;
 	int ioPx, ioPz;
 	int it0, it1, its, it, fileno, isam;
@@ -360,11 +360,12 @@ int main(int argc, char **argv)
 		}
 	}
 	else {
+        sizew=wav.nt*wav.nx;
 		src_nwav = (float **)calloc(wav.nx,sizeof(float *));
-		src_nwav[0] = (float *)calloc(wav.nt*wav.nx,sizeof(float));
+		src_nwav[0] = (float *)calloc(sizew,sizeof(float));
 		assert(src_nwav[0] != NULL);
 		for (i=0; i<wav.nx; i++) {
-			src_nwav[i] = (float *)(src_nwav[0] + (long)(wav.nt*i));
+			src_nwav[i] = (float *)(src_nwav[0] + (size_t)(wav.nt*i));
 		}
 	}
 

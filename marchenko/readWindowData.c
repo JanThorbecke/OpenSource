@@ -5,10 +5,6 @@
 #include "segy.h"
 #include <assert.h>
 
-typedef struct { /* complex number */
-        float r,i;
-} complex;
-
 #ifndef MAX
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #endif
@@ -17,18 +13,16 @@ typedef struct { /* complex number */
 #endif
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
-void findShotInMute(float *xrcvMute, float xrcvShot, int nxs, int *imute);
-
-int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nfoc, int nx, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose)
+int readWindowData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nfoc, int nx, int ntfft, int *maxval, int hw, int verbose)
 {
 	FILE *fp;
 	segy hdr;
 	size_t nread;
-	int fldr_shot, sx_shot, itrace, one_shot, ig, isyn, i, j;
+	int fldr_shot, sx_shot, itrace, one_shot, isyn, i, j;
 	int end_of_file, nt, gx0, gx1;
 	int nx1, jmax, imax, tstart, tend;
 	float xmax, tmax, lmax;
-	float scl, scel, *trace, dxrcv;
+	float scl, scel, *trace, dxrcv, *shot;
 
 	/* Reading first header  */
 
@@ -54,6 +48,7 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 
 	nt     = hdr.ns;
 	trace  = (float *)calloc(ntfft,sizeof(float));
+	shot   = (float *)calloc(nx*ntfft,sizeof(float));
 
 	end_of_file = 0;
 	one_shot    = 1;
@@ -76,14 +71,12 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 		xsrc[isyn] = sx_shot*scl;
 		zsrc[isyn] = hdr.selev*scel;
 		xnx[isyn]  = 0;
-        ig = isyn*nx*ntfft;
 		while (one_shot) {
 			xrcv[isyn*nx+itrace] = hdr.gx*scl;
 			nread = fread( trace, sizeof(float), nt, fp );
 			assert (nread == hdr.ns);
 
-			/* copy trace to data array */
-            memcpy( &tinv[ig+itrace*ntfft], trace, nt*sizeof(float));
+            memcpy( &shot[itrace*ntfft], trace, nt*sizeof(float));
 
             gx1 = hdr.gx;
 			itrace++;
@@ -112,7 +105,7 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
             tmax=0.0;
             jmax = 0;
             for (j = 0; j < nt; j++) {
-                lmax = fabs(tinv[ig+i*ntfft+j]);
+                lmax = fabs(shot[i*ntfft+j]);
                 if (lmax > tmax) {
                     jmax = j;
                     tmax = lmax;
@@ -132,7 +125,7 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
         tmax=0.0;
         jmax = 0;
         for (j = 0; j < nt; j++) {
-            lmax = fabs(tinv[ig+imax*ntfft+j]);
+            lmax = fabs(shot[imax*ntfft+j]);
             if (lmax > tmax) {
                 jmax = j;
                 tmax = lmax;
@@ -151,7 +144,7 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
             jmax=tstart;
             tmax=0.0;
             for(j = tstart; j <= tend; j++) {
-                lmax = fabs(tinv[ig+i*ntfft+j]);
+                lmax = fabs(shot[i*ntfft+j]);
                 if (lmax > tmax) {
                     jmax = j;
                     tmax = lmax;
@@ -166,7 +159,7 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
             jmax=tstart;
             tmax=0.0;
             for(j = tstart; j <= tend; j++) {
-                lmax = fabs(tinv[ig+i*ntfft+j]);
+                lmax = fabs(shot[i*ntfft+j]);
                 if (lmax > tmax) {
                     jmax = j;
                     tmax = lmax;
@@ -178,60 +171,16 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 		if (itrace != 0) { /* end of shot record, but not end-of-file */
 			fseek( fp, -TRCBYTES, SEEK_CUR );
 			isyn++;
+            memset(shot,0,nx*ntfft*sizeof(float));
 		}
 		else {
 			end_of_file = 1;
 		}
 
-		/* copy trace to data array for mode=-1 */
-        /* time reverse trace */
-		if (mode==-1) {
-			for (i = 0; i < nx1; i++) {
-            	memcpy( trace, &tinv[ig+i*ntfft], ntfft*sizeof(float));
-				j=0;
-				tinv[ig+i*ntfft+j] = trace[j];
-				for (j=1; j<ntfft; j++) tinv[ig+i*ntfft+ntfft-j] = trace[j];
-			}
-		}
 	}
 
 	free(trace);
+	free(shot);
 
 	return 0;
 }
-
-
-/* simple sort algorithm */
-void findShotInMute(float *xrcvMute, float xrcvShot, int nxs, int *imute)
-{
-	int i, sign;
-	float diff1, diff2;
-
-	*imute=0;
-
-	if (xrcvMute[0] < xrcvMute[1]) sign = 1;
-	else sign = -1;
-
-	if (sign == 1) {
-		i = 0;
-		while (xrcvMute[i] < xrcvShot && i < nxs) {
-			i++;
-		}
-		/* i is now position larger than xrcvShot */
-	}
-	else {
-		i = 0;
-		while (xrcvMute[i] > xrcvShot && i < nxs) {
-			i++;
-		}
-		/* i is now position smaller than xrcvShot */
-	}
-
-	diff1 = fabsf(xrcvMute[i]-xrcvShot);
-	diff2 = fabsf(xrcvMute[i-1]-xrcvShot);
-	if (diff1 < diff2) *imute = i;
-	else *imute = i-1;
-
-	return;
-}
-

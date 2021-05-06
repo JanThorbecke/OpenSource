@@ -30,6 +30,8 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 
 int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nfoc, int nx, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose);
 
+int readWindowData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nfoc, int nx, int ntfft, int *maxval, int hw, int verbose);
+
 int findFirstBreak(float *shot, int nx, int nt, int ishot, float *maxval, int tr, int hw, int verbose);
 int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, float d2, float f2, int n2out, int Nfoc, float *xsyn, float *zsyn, int *ixpos, int npos, int t0shift, int iter);
 int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *nxm);
@@ -62,6 +64,7 @@ char *sdoc[] = {
 "   ishot=nshots/2 ........... shot number(s) to remove internal multiples ",
 "   file_tinv= ............... shot-record to remove internal multiples",
 "   file_src= ................ optional source wavelet to convolve selected ishot(s)",
+"   file_win= ................ contains the window time functions",
 " COMPUTATION",
 "   tap=0 .................... lateral taper R_ishot(1), file_shot(2), or both(3)",
 "   ntap=0 ................... number of taper points at boundaries",
@@ -80,6 +83,7 @@ char *sdoc[] = {
 " MUTE-WINDOW ",
 "   shift=20 ................. number of points to account for wavelet (epsilon in papers)",
 "   smooth=shift/2 ........... number of points to smooth mute with cosine window",
+"   vplus_delta=0 ............ 0) removes delta at t=0; 1) keeps delta a t=0",
 " REFLECTION RESPONSE CORRECTION ",
 "   tsq=0.0 .................. scale factor n for t^n for true amplitude recovery",
 "   Q=0.0 .......,............ Q correction factor",
@@ -125,8 +129,8 @@ int main (int argc, char **argv)
     int     n1, n2, ntap, tap, di, ntraces, tr;
     int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     int     reci, countmin, mode, n2out, verbose, ntfft;
-    int     iter, niter, niterec, recur, niterskip, niterrun, tracf, *muteW;
-    int     hw, ii, iw, iw0, ishot, istart, iend;
+    int     iter, niter, niterec, recur, niterskip, niterrun, tracf, *muteW, *itmp;
+    int     hw, ii, iw, iw0, ishot, istart, iend, vplus_delta;
     int     smooth, *ixpos, *ixp, npos, ix, ixrcv, m, pad, T, isms, isme, perc;
     int     nshots_r, *isxcount, *reci_xsrc, *reci_xrcv, shift, plane_wave;
     float   fmin, fmax, tom, deltom, *tapersh, *tapersy, fxf, dxf, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
@@ -141,7 +145,7 @@ int main (int argc, char **argv)
 	float   src_velo, src_angle, grad2rad, p, *twplane;
     complex *Refl, *Fop, *ctrace, *cwave, csum, cwav;
     char    *file_tinv, *file_shot, *file_rr, *file_src, *file_iter, *file_update;
-    char    *file_umin, *file_uplus, *file_vmin, *file_vplus;
+    char    *file_umin, *file_uplus, *file_vmin, *file_vplus, *file_win;
 	char    *file_dd;
     segy    *hdrs_out, hdr;
 
@@ -153,6 +157,7 @@ int main (int argc, char **argv)
 
     if (!getparstring("file_shot", &file_shot)) file_shot = NULL;
     if (!getparstring("file_tinv", &file_tinv)) file_tinv = NULL;
+    if (!getparstring("file_win", &file_win)) file_win = NULL;
     if(!getparstring("file_src", &file_src)) file_src = NULL;
     if (!getparstring("file_rr", &file_rr)) verr("parameter file_rr not found");
     if (!getparstring("file_dd", &file_rr)) file_dd = NULL;
@@ -167,6 +172,7 @@ int main (int argc, char **argv)
     if (!getparfloat("fmin", &fmin)) fmin = 0.0;
     if (!getparfloat("fmax", &fmax)) fmax = 70.0;
     if (!getparint("reci", &reci)) reci = 0;
+    if (!getparint("vplus_delta", &vplus_delta)) vplus_delta = 0;
     reci=0; // source-receiver reciprocity is not yet fully build into the code
     if (!getparfloat("scale", &scale)) scale = 2.0;
     if (!getparfloat("Q", &Q)) Q = 0.0;
@@ -252,8 +258,22 @@ int main (int argc, char **argv)
     }
     assert (nacq >= nshots); /* ToDo allow other geometries */
 
+/*================ Read (optional) mute window function defined by first arrivals ================*/
+
+    if (file_win != NULL) { 
+		assert(file_tinv == NULL);
+        ret  = getFileInfo(file_win, &n1, &n2, &ngath, &d1, &d2, &f1, &f2, &xmin, &xmax, &scl, &ntraces);
+        Nfoc = ngath;
+        nacq = n2;
+        nxs  = n2;
+		/* defining an explicit time window does not need processing for all times
+         * set istart and iend to only one loop iteration */
+        istart=0;
+        iend=1;
+    }
+
 	/* compute time delay for plane-wave responses */
-    twplane = (float *) calloc(nacq,sizeof(float)); /* initialize with zeros */
+    twplane = (float *) calloc(nacq*Nfoc,sizeof(float)); /* initialize with zeros */
 	if (plane_wave==1) {
         grad2rad = 17.453292e-3;
         p = sin(src_angle*grad2rad)/src_velo;
@@ -304,6 +324,7 @@ int main (int argc, char **argv)
     xsyn    = (float *)malloc(Nfoc*sizeof(float));
     zsyn    = (float *)malloc(Nfoc*sizeof(float));
     xnxsyn  = (int *)calloc(Nfoc,sizeof(int));
+    muteW = (int *)calloc(ngath*nxs,sizeof(int));
 
     Refl    = (complex *)malloc(nw*nx*nshots*sizeof(complex));
     xsrc    = (float *)calloc(nshots,sizeof(float));
@@ -322,13 +343,13 @@ int main (int argc, char **argv)
 /* this is an optional functionality, typically one uses one of the shots from R */
 
     if (file_tinv != NULL) {  /*  M0 is named DD */
-        muteW   = (int *)calloc(Nfoc*nxs,sizeof(int));
+        itmp   = (int *)calloc(Nfoc*nxs,sizeof(int));
         mode=-1; /* apply complex conjugate to read in data */
         readTinvData(file_tinv, xrcvsyn, xsyn, zsyn, xnxsyn, Nfoc, nxs, ntfft, 
-             mode, muteW, DD, hw, verbose);
+             mode, itmp, DD, hw, verbose);
         /* reading data added zero's to the number of time samples to be the same as ntfft */
         nts   = ntfft;
-    	free(muteW);
+    	free(itmp);
 
         /* check consistency of header values */
         if (xrcvsyn[0] != 0 || xrcvsyn[1] != 0 ) fxsb = xrcvsyn[0];
@@ -340,6 +361,11 @@ int main (int argc, char **argv)
             vmess("dx in operator => %f", dxs);
         }
 	}
+
+    if (file_win != NULL) { 
+        readWindowData(file_win, xrcvsyn, xsyn, zsyn, xnxsyn, Nfoc, nxs, ntfft, muteW, hw, verbose);
+		nwin = Nfoc;
+    }
 
 /* ========================= Opening optional wavelet file ====================== */
 
@@ -442,7 +468,7 @@ int main (int argc, char **argv)
 /* M0 = -R(ishot,-t)  equation (3) */
 
     /* use ishot from Refl, complex-conjugate(time reverse), scale with -1 and convolve with wavelet */
-    if (file_tinv == NULL) {
+    if (file_tinv == NULL && file_win == NULL) {
         if (verbose) vmess("Selecting M0 from Refl of %s", file_shot);
         nts    = ntfft;
         scl    = 1.0/((float)2.0*ntfft);
@@ -492,7 +518,7 @@ int main (int argc, char **argv)
             	for (j = 0; j < nts; j++) {
                		DD[0*nxs*nts+ix*nts+j] = 1.0*scl*rtrace[j];
         		}
-				/* compute Source wavelet for plane-wave imaging */
+				/* compute Source wavelet (downgoing field) for plane-wave imaging */
             	for (j = nw_low, m = 0; j <= nw_high; j++, m++) {
             		tom = j*deltom*twplane[l];
             		csum.r = cos(-tom);
@@ -589,6 +615,10 @@ int main (int argc, char **argv)
 			vmess("k1min intermediate array        = k1min_%03d'iter'.su ", istart);
 			vmess("Mi intermediate array           = Mi_%03d'iter'.su ", istart);
 		}
+        if (file_vplus != NULL) vmess("vplus output file               = %s ", file_vplus);
+        if (file_vmin != NULL) vmess("vmin output file                = %s ", file_vmin);
+        if (file_uplus != NULL) vmess("uplus output file               = %s ", file_uplus);
+        if (file_umin != NULL) vmess("umin output file                = %s ", file_umin);
     }
 
 /*================ initializations ================*/
@@ -686,11 +716,7 @@ int main (int argc, char **argv)
 
 /*================ initialization ================*/
 
-/*
-    for (i = 0; i < npos; i++) {
-		twplane[i] = sqrt(dxs*dxs*(i-npos/2)*(i-npos/2)+ii*ii*dt*dt*2200*2200)/2200-ii*dt;
-	}
-*/
+
         t5 = wallclock_time();
         memset(M0, 0, Nfoc*nxs*ntfft*sizeof(float));
         memset(k1plus, 0, Nfoc*nxs*ntfft*sizeof(float));
@@ -706,7 +732,8 @@ int main (int argc, char **argv)
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < npos; i++) {
                     ix = ixpos[i];
-                    iw = NINT((ii*dt+twplane[i])/dt);
+                    iw = NINT((ii*dt+twplane[l*nxs+ix])/dt);
+					//fprintf(stderr,"i=%d ix=%d tw=%f iw=%d\n", i, ix, twplane[l*nxs+ix], iw);
                     for (j = 0; j < nts; j++) {
                         M0[l*nxs*nts+i*nts+j] = -DD[l*nxs*nts+ix*nts+j];
                     }
@@ -736,7 +763,7 @@ int main (int argc, char **argv)
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < npos; i++) {
                     ix = ixpos[i];
-					iw = NINT((ii*dt+twplane[ix])/dt);
+					iw = NINT((ii*dt+twplane[l*nxs+ix])/dt);
                     M0[l*nxs*nts+i*nts+j] = DD[l*nxs*nts+ix*nts] - k1min[l*nxs*nts+i*nts+j];
                     for (j = 1; j < nts; j++) {
                         M0[l*nxs*nts+i*nts+j] = DD[l*nxs*nts+ix*nts+nts-j] - k1min[l*nxs*nts+i*nts+nts-j];
@@ -820,7 +847,7 @@ int main (int argc, char **argv)
                 for (l = 0; l < Nfoc; l++) {
                     for (i = 0; i < npos; i++) {
 						ix = ixpos[i];
-						iw = NINT((ii*dt+twplane[ix])/dt);
+						iw = NINT((ii*dt+twplane[l*nxs+ix])/dt);
 						/* store results in kplus the 'plus-part' of equation (6) */
                         for (j = 0; j < nts; j++) {
                             k1plus[l*nxs*nts+i*nts+j] += Mi[l*nxs*nts+i*nts+j];
@@ -834,7 +861,9 @@ int main (int argc, char **argv)
                             Mi[l*nxs*nts+i*nts+j] *= costaper[k];
                         }
 						/* Apply mute window for delta function at t=0*/
-						iw = NINT((twplane[ix])/dt);
+					    //iw = NINT((twplane[l*nxs+ix])/dt);
+						if (plane_wave==1) iw = NINT((twplane[l*nxs+ix])/dt);
+                        else iw = 0;
                         for (j = 0; j < MAX(0,iw+shift-smooth); j++) {
                             Mi[l*nxs*nts+i*nts+j] = 0.0;
                         }
@@ -892,7 +921,7 @@ int main (int argc, char **argv)
 					    }
 					    /* Apply mute window for samples above nts-ii : the Heaviside function in equation (4)
                          * This also defines u1_min, for t>=t2-epsilon in equation (7) */
-						iw = NINT((ii*dt+twplane[ix])/dt);
+						iw = NINT((ii*dt+twplane[l*nxs+ix])/dt);
                         for (j = 0; j < MIN(nts,nts-iw+isms); j++) {
                             Mi[l*nxs*nts+i*nts+j] = 0.0;
                         }
@@ -919,7 +948,7 @@ int main (int argc, char **argv)
         for (l = 0; l < Nfoc; l++) {
             for (i = 0; i < npos; i++) {
            		ix = ixpos[i];
-				iw = NINT((ii*dt+twplane[ix])/dt);
+				iw = NINT((ii*dt+twplane[l*nxs+ix])/dt);
                 if ( iw<nts && iw>=0 )  {
                     RR[l*nxs*nts+i*nts+iw] = k1min[l*nxs*nts+i*nts+iw];
        			    if (file_update != NULL) Msp[l*nxs*nts+i*nts+iw] = Mup[l*nxs*nts+i*nts+iw];
@@ -932,15 +961,18 @@ int main (int argc, char **argv)
         if (file_vmin != NULL) {
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < npos; i++) {
+           		    ix = ixpos[i];
 					/* apply mute window for delta function at t=0*/
-					iw0 = NINT((twplane[ix])/dt);
+					//iw0 = NINT((twplane[l*nxs+ix])/dt);
+					if (plane_wave==1) iw0 = NINT((twplane[l*nxs+ix])/dt);
+                    else iw0 = 0;
             		for (j = 0; j < MAX(0,iw0+shift-smooth); j++) {
                 		uv[l*nxs*nts+i*nts+j] = 0.0;
             		}
             		for (j = MAX(0,iw0+shift-smooth), k=1; j < MAX(0,iw0+shift); j++, k++) {
                 		uv[l*nxs*nts+i*nts+j] = k1min[l*nxs*nts+i*nts+j]*costaper[smooth-k];
  					}
-					iw = NINT((ii*dt+twplane[ix])/dt);
+					iw = NINT((ii*dt+twplane[l*nxs+ix])/dt);
             		for (j = MAX(0,iw0+shift); j < iw-isme; j++, k++) {
                 		uv[l*nxs*nts+i*nts+j] = k1min[l*nxs*nts+i*nts+j];
 					}
@@ -958,7 +990,8 @@ int main (int argc, char **argv)
         if (file_umin != NULL) {
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < npos; i++) {
-					iw = NINT((ii*dt+twplane[ix])/dt);
+           		    ix = ixpos[i];
+					iw = NINT((ii*dt+twplane[l*nxs+ix])/dt);
 					/* apply mute window for samples before ii */
             		for (j = 0; j < MAX(0,iw-isme); j++) {
                 		uv[l*nxs*nts+i*nts+j] = 0.0;
@@ -998,22 +1031,27 @@ int main (int argc, char **argv)
         if (file_vplus != NULL) {
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < npos; i++) {
+           		    ix = ixpos[i];
 					/* apply mute window for delta function at t=0*/
-					iw0 = NINT((twplane[ix])/dt);
-                    /* to apply muting window around epsilon below t=0 uncomment this part */
-                    /* This (partly) removes the delta function at t=0 */
-            	   for (j = 0; j < MAX(0,iw0+shift-smooth); j++) {
-                		uv[l*nxs*nts+i*nts+j] = 0.0;
-            		}
-            		for (j = MAX(0,iw0+shift-smooth), k=1; j < MAX(0,iw0+shift); j++, k++) {
-                		uv[l*nxs*nts+i*nts+j] = k1plus[l*nxs*nts+i*nts+j]*costaper[smooth-k];
- 					}
- 				/*  this keeps the delta pulse below and around t=0 */
-            //		for (j = 0; j < iw0+shift; j++) {
-            //    		uv[l*nxs*nts+i*nts+j] = k1plus[l*nxs*nts+i*nts+j];
- 			//		}
+					//iw0 = NINT((twplane[l*nxs+ix])/dt);
+					if (plane_wave==1) iw0 = NINT((twplane[l*nxs+ix])/dt);
+                    else iw0 = 0;
+                    /* to apply muting window around epsilon below t=0 */
+					if (vplus_delta==1) { /*  this keeps the delta pulse below and around t=0 */
+            		    for (j = 0; j < MAX(0,iw0+shift); j++) {
+                		    uv[l*nxs*nts+i*nts+j] = k1plus[l*nxs*nts+i*nts+j];
+						}
+					}
+					else { /* This (partly) removes the delta function at t=0 */
+            	        for (j = 0; j < MAX(0,iw0+shift-smooth); j++) {
+                		    uv[l*nxs*nts+i*nts+j] = 0.0;
+            		    }
+            		    for (j = MAX(0,iw0+shift-smooth), k=1; j < MAX(0,iw0+shift); j++, k++) {
+                		    uv[l*nxs*nts+i*nts+j] = k1plus[l*nxs*nts+i*nts+j]*costaper[smooth-k];
+ 					    }
+					}
 
-					iw = NINT((ii*dt+twplane[ix])/dt);
+					iw = NINT((ii*dt+twplane[l*nxs+ix])/dt);
             		for (j = MAX(0,iw0+shift); j < iw-isme; j++, k++) {
                 		uv[l*nxs*nts+i*nts+j] = k1plus[l*nxs*nts+i*nts+j];
 					}
@@ -1031,7 +1069,8 @@ int main (int argc, char **argv)
         if (file_uplus != NULL) {
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < npos; i++) {
-					iw = NINT((ii*dt+twplane[ix])/dt);
+           		    ix = ixpos[i];
+					iw = NINT((ii*dt+twplane[l*nxs+ix])/dt);
 					/* apply mute window for samples before ii */
             		for (j = 0; j < MAX(0,iw-isme); j++) {
                 		uv[l*nxs*nts+i*nts+j] = 0.0;

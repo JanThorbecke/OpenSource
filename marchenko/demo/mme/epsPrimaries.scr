@@ -12,6 +12,7 @@ then
 exit 0
 fi
 
+#General parameter settings
 istart=276
 #set same clip factor for iteration updates
 file=Mi_${istart}002.su
@@ -60,6 +61,7 @@ suwind key=fldr min=$select max=$select < shotsdx5_rp.su > shotsx0.su
 suwind itmin=516 itmax=1539 < M0_276000.su > N0.su
 #compute R*N0
 fconv file_in1=shotsx0.su file_in2=N0.su file_out=fconvN0.su verbose=1 fmax=90
+#compute R*S (wavelet)
 
 file=fconvN0.su
 sumax < $file mode=abs outpar=nep
@@ -94,7 +96,8 @@ file_base=${file%.su}
 supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
 	n1tic=2 d2=5 x1beg=0 x1end=$nsd d1=1 d1num=100 \
 	label1="time sample number" label2="lateral distance" \
-    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > $file_base.eps
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > ${file_base}f3.eps
+
 
 fi
 
@@ -137,7 +140,7 @@ suwind itmin=516 itmax=1539 < $file > N2.su
 supsimage < N2.su hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
 	n1tic=2 d2=5 x1beg=624 x1end=1024 d1=1 f1=0 d1num=100 \
 	label1="time sample number" label2="lateral distance" \
-    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > $file_base.eps
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > ${file_base}f4.eps
 
 fi
 
@@ -290,6 +293,54 @@ supsimage hbox=6 wbox=4 labelsize=14 linewidth=0.0 < $file\
 	label1="time sample number" label2="lateral distance" \
     f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > ${file_base}T.eps
 done
+
+fi
+
+#figures for parCFD2021 conference
+
+if [[ "$1" == "parCFD" ]];
+then
+
+file=DDshot_451.su
+file_base=${file%.su}
+supsimage < $file hbox=6 wbox=4 labelsize=16 linewidth=0.0 \
+	n1tic=2 d2=5 x1beg=0 x1end=$nsd d1=1 d1num=100 \
+	label1="time sample number" label2="lateral distance" \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > ${file_base}.eps
+
+istart=276
+for iter in 2 4 10 20
+do
+piter=$(printf %03d $iter)
+echo $piter
+file=iter_${istart}${piter}.su
+file_base=${file%.su}
+supsimage hbox=6 wbox=4 labelsize=16 linewidth=0.0 < $file\
+	n1tic=2 d2=5 x1beg=0 x1end=$nsd d1=1 d1num=100 \
+	label1="time sample number" label2="lateral distance" \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > ${file_base}.eps
+done
+
+iter=2
+piter=$(printf %03d $iter)
+file=iter_${istart}${piter}.su
+suflip < $file flip=3 | suwind itmin=516 > nep.su 
+file_base=${file%.su}
+#possibly add suflip flip=3 to flip the time-axis
+supsimage < nep.su hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
+	n1tic=2 d2=5 x1beg=624 x1end=1024 d1=1 f1=0 d1num=100 \
+	label1="time sample number" label2="lateral distance" \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > ${file_base}flip.eps
+
+
+file=fconvN1.su
+sumax < $file mode=abs outpar=nep
+clipiter=`cat nep | awk '{print $1/15}'`
+file_base=${file%.su}
+supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
+    n1tic=2 d2=5 x1beg=0 x1end=400 d1=1 f1=0 f1num=0 d1num=200 \
+    label1="time sample number" label2="lateral distance" \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipiter > ${file_base}time400.eps
 
 fi
 
