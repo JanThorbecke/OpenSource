@@ -364,7 +364,6 @@ int main (int argc, char **argv)
 
     if (file_win != NULL) { 
         readWindowData(file_win, xrcvsyn, xsyn, zsyn, xnxsyn, Nfoc, nxs, ntfft, muteW, hw, verbose);
-		nwin = Nfoc;
     }
 
 /* ========================= Opening optional wavelet file ====================== */
