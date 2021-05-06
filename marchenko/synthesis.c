@@ -35,8 +35,7 @@ typedef struct _complexStruct { /* complex number */
 
 double wallclock_time(void);
 
-void synthesisPositions(int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nfoc, float *xrcv, float *xsrc, int *xnx,
-float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos, int *npos, int *isxcount, int countmin, int reci, int verbose);
+void synthesisPositions(int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nfoc, float *xrcv, float *xsrc, int *xnx, float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos, int *npos, int *isxcount, int countmin, int reci, int verbose);
 
 int linearsearch(int *array, size_t N, int value);
 
@@ -50,9 +49,7 @@ int linearsearch(int *array, size_t N, int value);
  * so all traces can be used to compute R*Fop.
  * The output RNi has the traces in the grid of Fop, these are the x_s positions of R(x_r,x_s)  */
 
-void synthesis(complex *Refl, complex *Fop, float *Top, float *RNi, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int
-Nfoc, float *xrcv, float *xsrc, int *xnx, float fxse, float fxsb, float dxs, float dxsrc, float dx, int ntfft, int
-nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int npos, double *tfft, int *isxcount, int
+void synthesis(complex *Refl, complex *Fop, float *Top, float *RNi, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nfoc, float *xrcv, float *xsrc, int *xnx, float fxse, float fxsb, float dxs, float dxsrc, float dx, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int npos, double *tfft, int *isxcount, int
 *reci_xsrc,  int *reci_xrcv, float *ixmask, int verbose)
 {
     int     nfreq, size, inx;
@@ -261,10 +258,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
  *   so all traces can be used to compute R*Fop.
  * The output RNi has the traces in the grid of Fop, these are the x_s positions of R(x_r,x_s) */
 
-void synthesisp(complex *Refl, complex *Fop, float *Top, float *RNi, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int
-Nfoc, float *xrcv, float *xsrc, int *xnx, float fxse, float fxsb, float dxs, float dxsrc, float dx, int ntfft, int
-nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int npos, double *tfft, int *isxcount, int
-*reci_xsrc,  int *reci_xrcv, float *ixmask, int verbose)
+void synthesisp(complex *Refl, complex *Fop, float *Top, float *RNi, int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nfoc, float *xrcv, float *xsrc, int *xnx, float fxse, float fxsb, float dxs, float dxsrc, float dx, int ntfft, int nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int npos, double *tfft, int *isxcount, int *reci_xsrc,  int *reci_xrcv, float *ixmask, int verbose)
 {
     int     nfreq, size, inx;
     float   scl;
@@ -448,8 +442,7 @@ nw, int nw_low, int nw_high,  int mode, int reci, int nshots, int *ixpos, int np
 }
 
 
-void synthesisPositions(int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nfoc, float *xrcv, float *xsrc, int *xnx,
-float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos, int *npos, int *isxcount, int countmin, int reci, int verbose)
+void synthesisPositions(int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nfoc, float *xrcv, float *xsrc, int *xnx, float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos, int *npos, int *isxcount, int countmin, int reci, int verbose)
 {
     int     i, j, l, ixsrc, ixrcv, dosrc, k, *count;
     float   x0, x1;

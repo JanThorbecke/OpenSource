@@ -29,7 +29,6 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 	int nx1, jmax, imax, tstart, tend;
 	float xmax, tmax, lmax;
 	float scl, scel, *trace, dxrcv;
-	complex *ctrace;
 
 	/* Reading first header  */
 
@@ -55,7 +54,6 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 
 	nt     = hdr.ns;
 	trace  = (float *)calloc(ntfft,sizeof(float));
-	ctrace = (complex *)malloc(ntfft*sizeof(complex));
 
 	end_of_file = 0;
 	one_shot    = 1;
@@ -197,7 +195,6 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 		}
 	}
 
-	free(ctrace);
 	free(trace);
 
 	return 0;
