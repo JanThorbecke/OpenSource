@@ -324,7 +324,7 @@ int main (int argc, char **argv)
     xsyn    = (float *)malloc(Nfoc*sizeof(float));
     zsyn    = (float *)malloc(Nfoc*sizeof(float));
     xnxsyn  = (int *)calloc(Nfoc,sizeof(int));
-    muteW = (int *)calloc(ngath*nxs,sizeof(int));
+    muteW   = (int *)calloc(Nfoc*nxs,sizeof(int));
 
     Refl    = (complex *)malloc(nw*nx*nshots*sizeof(complex));
     xsrc    = (float *)calloc(nshots,sizeof(float));
@@ -467,7 +467,7 @@ int main (int argc, char **argv)
 /* M0 = -R(ishot,-t)  equation (3) */
 
     /* use ishot from Refl, complex-conjugate(time reverse), scale with -1 and convolve with wavelet */
-    if (file_tinv == NULL && file_win == NULL) {
+    if (file_tinv == NULL) {
         if (verbose) vmess("Selecting M0 from Refl of %s", file_shot);
         nts    = ntfft;
         scl    = 1.0/((float)2.0*ntfft);
@@ -486,6 +486,13 @@ int main (int argc, char **argv)
                 DD[0*nxs*nts+ixrcv*nts+j] = scl*rtrace[j];
             }
         }
+           for (i = 0; i < nxs; i++) {
+               ix = ixpos[i];
+                      twplane[ix] = muteW[i]*dt;
+                      //twplane[l*nxs+i] = 1500*dt;
+               //fprintf(stderr,"l=%d i=%d ix=%d tw=%f muteW=%d\n", l, i, ix, twplane[l*nxs+ix], muteW[l*nxs+i]);
+           }
+
 		/* set timereversal for searching First Break */
 		/* for experimenting with non flat truncation windows */
         //maxval = (float *)calloc(nxs,sizeof(float));
