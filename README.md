@@ -66,7 +66,7 @@ Holicki, M., Drijkoningen, G., and Wapenaar, K., 2019, Acoustic directional snap
 Prospecting, Vol. 67, 32-51
 Download: http://homepage.tudelft.nl/t4n4v/4_Journals/Geophys.Prosp/GP_19a.pdf
 
--5- If you use the vmar code of Johno van IJsseldijk please refer to the following paper:
+-6- If you use the vmar code of Johno van IJsseldijk please refer to the following paper:
 
 INSTALLATION
 -------------
