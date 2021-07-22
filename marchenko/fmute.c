@@ -21,11 +21,13 @@ typedef struct _complexStruct { /* complex number */
 } complex;
 #endif/* complex */
 
+int mapj(int j, int nt);
 int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *nxm);
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
 int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 int disp_fileinfo(char *file, int n1, int n2, float f1, float f2, float d1, float d2, segy *hdrs);
 void applyMute(float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *xrcvsyn, int npos, int shift, int *muteW);
+void applyMute_tshift( float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift, int iter, int *tsynW);
 double wallclock_time(void);
 
 /*********************** self documentation **********************/
@@ -50,8 +52,8 @@ char *sdoc[] = {
 "   scale=0 .................. scale data by dividing through maximum",
 "   hw=15 .................... number of time samples to look up and down in next trace for maximum",
 "   smooth=0 ................. number of points to smooth mute with cosine window",
-//"   nxmax=512 ................ maximum number of traces in input file",
-//"   ntmax=1024 ............... maximum number of samples/trace in input file",
+"   plane_wave=0 ............. apply mute window as is done on plane-waves",
+"   returnmask=0 ............. return the muted file (0) or return the mask file (1)",
 "   verbose=0 ................ silent option; >0 display info",
 " ",
 " author  : Jan Thorbecke : 2012 (janth@xs4all.nl)",
@@ -62,14 +64,14 @@ NULL};
 int main (int argc, char **argv)
 {
     FILE    *fp_in1, *fp_in2, *fp_out, *fp_chk, *fp_psline1, *fp_psline2;
-    int        verbose, shift, k, nx1, nt1, nx2, nt2;
-    int     ntmax, nxmax, ret, i, j, jmax, imax, above, check;
+    int     verbose, shift, k, nx1, nt1, nx2, nt2, returnmask;
+    int     ntmax, nxmax, ret, i, j, jmax, imax, above, check, plane_wave, iter;
     int     size, ntraces, ngath, *maxval, *tsynW, hw, smooth;
     int     tstart, tend, scale, *xrcv;
     float   dt, d2, f1, f2, t0, t1, f1b, f2b, d1, d1b, d2b;
-    float    w1, w2, dxrcv;
-    float     *tmpdata, *tmpdata2, *costaper;
-    char     *file_mute, *file_shot, *file_out;
+    float   w1, w2, dxrcv;
+    float   *tmpdata, *tmpdata2, *costaper;
+    char    *file_mute, *file_shot, *file_out;
     float   scl, sclsxgx, sclshot, xmin, xmax, tmax, lmax;
     segy    *hdrs_in1, *hdrs_in2;
 
@@ -86,11 +88,13 @@ int main (int argc, char **argv)
     if(!getparint("above", &above)) above = 0;
     if(!getparint("check", &check)) check = 0;
     if(!getparint("scale", &scale)) scale = 0;
+    if(!getparint("plane_wave", &plane_wave)) plane_wave = 0;
     if(!getparint("hw", &hw)) hw = 15;
     if(!getparint("smooth", &smooth)) smooth = 0;
     if(!getparfloat("w1", &w1)) w1=1.0;
     if(!getparfloat("w2", &w2)) w2=1.0;
     if(!getparint("shift", &shift)) shift=0;
+    if(!getparint("returnmask", &returnmask)) returnmask=0;
     if(!getparint("verbose", &verbose)) verbose=0;
 
 /* Reading input data for file_mute */
@@ -226,7 +230,7 @@ int main (int argc, char **argv)
         }
         */
 
-        /* alternative find maximum at source position */
+        /* find maximum at source position */
         dxrcv = (hdrs_in1[nx1-1].gx - hdrs_in1[0].gx)*sclsxgx/(float)(nx1-1);
         imax = NINT(((hdrs_in1[0].sx-hdrs_in1[0].gx)*sclsxgx)/dxrcv);
 		/* make sure that the position fits into the receiver array */
@@ -247,14 +251,14 @@ int main (int argc, char **argv)
         maxval[imax] = jmax;
         if (verbose >= 3) vmess("Mute max at src-trace %d is sample %d", imax, maxval[imax]);
 
-        /* search forward */
+        /* search forward in trace direction from maximum in file */
         for (i = imax+1; i < nx1; i++) {
-            tstart = MAX(0, (maxval[i-1]-hw));
-            tend   = MIN(nt1-1, (maxval[i-1]+hw));
+            tstart = (maxval[i-1]-hw);
+            tend   = (maxval[i-1]+hw);
             jmax=tstart;
             tmax=0.0;
             for(j = tstart; j <= tend; j++) {
-                lmax = fabs(tmpdata[i*nt1+j]);
+                lmax = fabs(tmpdata[i*nt1+mapj(j,nt1)]);
                 if (lmax > tmax) {
                     jmax = j;
                     tmax = lmax;
@@ -264,12 +268,12 @@ int main (int argc, char **argv)
         }
         /* search backward */
         for (i = imax-1; i >=0; i--) {
-            tstart = MAX(0, (maxval[i+1]-hw));
-            tend   = MIN(nt1-1, (maxval[i+1]+hw));
+            tstart = (maxval[i+1]-hw);
+            tend   = (maxval[i+1]+hw);
             jmax=tstart;
             tmax=0.0;
             for(j = tstart; j <= tend; j++) {
-                lmax = fabs(tmpdata[i*nt1+j]);
+                lmax = fabs(tmpdata[i*nt1+mapj(j,nt1)]);
                 if (lmax > tmax) {
                     jmax = j;
                     tmax = lmax;
@@ -288,12 +292,26 @@ int main (int argc, char **argv)
                 }
             }
         }
+        if (returnmask==1) {
+            for (i = 0; i < nx2; i++) {
+                lmax = fabs(tmpdata2[i*nt2+maxval[i]]);
+                for (j = 0; j < nt2; j++) {
+                    tmpdata2[i*nt2+j] = 1;
+                }
+            }
+        }
 
         for (i = 0; i < nx2; i++) xrcv[i] = i;
 
 /*================ apply mute window ================*/
 
-        applyMute(tmpdata2, maxval, smooth, above, 1, nx2, nt2, xrcv, nx2, shift, tsynW);
+		if (plane_wave) {
+            iter = 0;
+            applyMute_tshift(tmpdata2, maxval, smooth, above, 1, nx2, nt2, xrcv, nx2, shift, iter, tsynW);
+		}
+		else {
+            applyMute(tmpdata2, maxval, smooth, above, 1, nx2, nt2, xrcv, nx2, shift, tsynW);
+        }
 
 /*================ write result to output file ================*/
 
@@ -372,4 +390,5 @@ int main (int argc, char **argv)
 
     return 0;
 }
+
 

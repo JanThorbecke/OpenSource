@@ -41,8 +41,6 @@ void name_ext(char *filename, char *extension);
 
 void applyMute(float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *xrcvsyn, int npos, int shift, int *muteW);
 void applyMute_tshift( float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift, int iter, int *tsynW);
-void timeShift(float *data, int nsam, int nrec, float dt, float shift, float fmin, float fmax);
-
 
 int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *ntraces);
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
@@ -134,7 +132,7 @@ int main (int argc, char **argv)
     float   *f1plus, *f1min, *iRN, *Ni, *trace, *Gmin, *Gplus;
     float   xmin, xmax, scale, tsq, Q, f0;
     float   *ixmask;
-    float   grad2rad, p, src_angle, src_velo, tshift, tneg;
+    float   grad2rad, p, src_angle, src_velo, tneg;
     complex *Refl, *Fop;
     char    *file_tinv, *file_shot, *file_green, *file_iter;
     char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_pmin;
@@ -197,6 +195,7 @@ int main (int argc, char **argv)
     ngath = 0; /* setting ngath=0 scans all traces; nx contains maximum traces/gather */
     ret = getFileInfo(file_shot, &nt, &nx, &ngath, &d1, &dx, &ft, &fx, &xmin, &xmax, &scl, &ntraces);
     nshots = ngath;
+    fprintf(stderr,"nxs=%d nshots=%d\n", nxs, nshots);
     assert (nxs >= nshots);
 
     if (!getparfloat("dt", &dt)) dt = d1;
@@ -258,7 +257,6 @@ int main (int argc, char **argv)
 	    /* compute time shift for shifted plane waves */
         grad2rad = 17.453292e-3;
         p = sin(src_angle*grad2rad)/src_velo;
-		tshift = fabs((nxs-1)*dxs*p);
 
 		/* compute mute window for plane waves */
         for (i=0; i<nxs; i++) tsynW[i] = NINT((i-(nxs-1)/2)*dxs*p/dt);
@@ -484,15 +482,17 @@ int main (int argc, char **argv)
         //writeDataIter("bmute.su", Ni, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, iter+1);
         /* apply mute window based on times of direct arrival (in muteW) */
 
-        if ( plane_wave==1 ) { /* use a-symmetric shift for plane waves with non-zero angles */
+        if ( plane_wave==1 ) { /* use an a-symmetric window for plane waves with non-zero angles */
             applyMute_tshift(Ni, muteW, smooth, 0, Nfoc, nxs, nts, ixpos, npos, shift, iter, tsynW);
         }
         else {
             applyMute(Ni, muteW, smooth, -above, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
         }
         //writeDataIter("amute.su", Ni, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, iter+1);
+       
+
+    	/* for testing time-windows with dipping plane waves */
 /*
-    		// for testing time-windows with dipping plane waves
             for (i = 0; i < npos; i++) {
                 for (j = 0; j < nts; j++) {
                     Ni[i*nts+j]    = 1.0;
@@ -500,7 +500,7 @@ int main (int argc, char **argv)
 			}
             applyMute_tshift(Ni, muteW, smooth, 0, Nfoc, nxs, nts, ixpos, npos, shift, iter, tsynW);
             //applyMute(Ni, muteW, smooth, -above, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
-            writeDataIter("mute0.su", Ni, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, iter+1);
+            writeDataIter("mute0-5.su", Ni, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, iter+1);
             for (i = 0; i < npos; i++) {
                 for (j = 0; j < nts; j++) {
                     Ni[i*nts+j]    = 1.0;
@@ -508,7 +508,7 @@ int main (int argc, char **argv)
 			}
             applyMute_tshift(Ni, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, iter, tsynW);
             //applyMute(Ni, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
-            writeDataIter("mute4.su", Ni, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, iter+1);
+            writeDataIter("mute4-5.su", Ni, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, iter+1);
 */
 
         if (iter % 2 == 0) { /* even iterations update: => f_1^-(t) */
@@ -584,7 +584,7 @@ int main (int argc, char **argv)
             xrcv, xsrc, xnx, fxse, fxsb, dxs, dxsrc, dx, ntfft, nw, nw_low, nw_high, mode,
             reci, nshots, ixpos, npos, &tfft, isxcount, reci_xsrc, reci_xrcv, ixmask, verbose);
 
-        writeDataIter("iRN.su", iRN, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 1, iter+1);
+        //writeDataIter("iRN.su", iRN, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 1, iter+1);
         
         /* compute upgoing Green's G^-,+ */
         for (l = 0; l < Nfoc; l++) {

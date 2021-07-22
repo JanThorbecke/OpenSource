@@ -267,7 +267,7 @@ int main(int argc, char **argv)
 		if (strstr(choice, "shift") || !strcmp(choice, "1")) {
 			if (verbose) vmess("time shift with %f seconds",shift);
 			timeShift(data, nsam, nrec, dt, shift, fmin, fmax);
-			f1 -= shift;
+			f1 += shift;
 			for (i = 0; i < n2; i++) hdrs[i].f1 = f1;
 		}
 		else if (!strcmp(choice, "rot") || !strcmp(choice, "2")) {

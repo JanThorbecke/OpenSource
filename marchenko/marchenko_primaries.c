@@ -125,7 +125,7 @@ int main (int argc, char **argv)
     FILE    *fp_out, *fp_rr, *fp_w, *fp_ud;
     FILE    *fp_um, *fp_up, *fp_vm, *fp_vp;
 	size_t  nread, size;
-    int     i, j, k, l, ret, nshots, Nfoc, nt, nx, nts, nxs, ngath, nacq;
+    int     i, j, k, l, ret, nshots, Nfoc, nt, nx, nts, nxs, ngath, nacq, nwin;
     int     n1, n2, ntap, tap, di, ntraces, tr;
     int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     int     reci, countmin, mode, n2out, verbose, ntfft;
@@ -260,10 +260,12 @@ int main (int argc, char **argv)
 
 /*================ Read (optional) mute window function defined by first arrivals ================*/
 
+    nwin = 1;
     if (file_win != NULL) { 
 		assert(file_tinv == NULL);
         ret  = getFileInfo(file_win, &n1, &n2, &ngath, &d1, &d2, &f1, &f2, &xmin, &xmax, &scl, &ntraces);
-        Nfoc = ngath;
+        Nfoc = 1;
+        nwin = ngath;
         nacq = n2;
         nxs  = n2;
 		/* defining an explicit time window does not need processing for all times
@@ -324,7 +326,7 @@ int main (int argc, char **argv)
     xsyn    = (float *)malloc(Nfoc*sizeof(float));
     zsyn    = (float *)malloc(Nfoc*sizeof(float));
     xnxsyn  = (int *)calloc(Nfoc,sizeof(int));
-    muteW   = (int *)calloc(Nfoc*nxs,sizeof(int));
+    muteW   = (int *)calloc(nwin*nxs,sizeof(int));
 
     Refl    = (complex *)malloc(nw*nx*nshots*sizeof(complex));
     xsrc    = (float *)calloc(nshots,sizeof(float));
@@ -486,12 +488,12 @@ int main (int argc, char **argv)
                 DD[0*nxs*nts+ixrcv*nts+j] = scl*rtrace[j];
             }
         }
-           for (i = 0; i < nxs; i++) {
-               ix = ixpos[i];
-                      twplane[ix] = muteW[i]*dt;
-                      //twplane[l*nxs+i] = 1500*dt;
-               //fprintf(stderr,"l=%d i=%d ix=%d tw=%f muteW=%d\n", l, i, ix, twplane[l*nxs+ix], muteW[l*nxs+i]);
-           }
+        for (i = 0; i < nxs; i++) {
+            ix = ixpos[i];
+            twplane[ix] = muteW[i]*dt;
+            //twplane[l*nxs+i] = 1500*dt;
+            //fprintf(stderr,"i=%d ix=%d tw=%f muteW=%d\n", l, i, ix, twplane[ix], muteW[i]);
+        }
 
 		/* set timereversal for searching First Break */
 		/* for experimenting with non flat truncation windows */

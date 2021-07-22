@@ -68,7 +68,7 @@ int writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot)
 		fp = fopen(tmpname, "w+");
 		for (ish=0; ish<shot->n; ish++) {
 			for (is=0; is<src->n; is++) {
-				ix = shot->x[ish] + 1 + is0 + is;
+				ix = shot->x[ish] + is0 + is;
 				iz = shot->z[ish] + 1;
 				dum[ix*nz+iz] = 1.0;
 				dum[(MAX(0,ix-1))*nz+iz] = 1.0;
@@ -125,7 +125,7 @@ int writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot)
 		dum[rec->x[is]*nz+MAX(0,rec->z[is]-1)] = -1.0;
 		dum[rec->x[is]*nz+MIN(nz-1,rec->z[is]+1)] = -1.0;
 
-//		vmess("receiver position %d at grid[ix=%d, iz=%d] = (x=%f z=%f)", ir, ix+ioPx, rec.z[ir]+ioPz, rec.xr[ir]+mod.x0, rec.zr[ir]+mod.z0);
+		//vmess("receiver position %d at grid[ix=%d, iz=%d] = (x=%f z=%f)", ir, ix+ioPx, rec.z[ir]+ioPz, rec.xr[ir]+mod.x0, rec.zr[ir]+mod.z0);
 		if (rec->int_vx==3) {
 			fprintf(fp, "(%f, %f)\n", rec->xr[is]*dx+sub_x0, rec->zr[is]*dz+sub_z0);
 		}

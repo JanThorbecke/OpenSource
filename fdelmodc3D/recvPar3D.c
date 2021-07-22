@@ -73,6 +73,7 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 	/* no receivers are defined use default linear array of receivers on top of model */
     if (!rec->max_nrec && Nx1==0) Nx1=1; // Default is to use top of model to record data
     if (!rec->max_nrec && Ny1==0) Ny1=1;
+    if (!rec->max_nrec && Nz1==0) Nz1=1;
 
     if (Nx1) {
         /* Allocate Start & End Points of Linear Arrays */
@@ -450,11 +451,12 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 				dxrcv = dxr[iarray];
 				dyrcv = yrange/(nlyrcv[iarray]-1);
 				dzrcv = zrange/(nlxrcv[iarray]-1);
-				if (dyrcv != dyr[iarray]) {
+        fprintf(stderr,"recvPar3D.c 0 dzrcv=%f zrange=%f %d %d %d\n", dzrcv, zrange, iarray, nlxrcv[iarray], isnan(dzrcv));
+				if (dyrcv != dyr[iarray] && !isnan(dyrcv)) {
 					vwarn("For receiver array %li: calculated dyrcv=%f given=%f", iarray, dyrcv, dyr[iarray]);
 					vwarn("The calculated receiver distance %f is used", dyrcv);
 				}
-				if (dzrcv != dzr[iarray]) {
+				if (dzrcv != dzr[iarray] && !isnan(dzrcv)) {
 					vwarn("For receiver array %li: calculated dzrcv=%f given=%f", iarray, dzrcv, dzr[iarray]);
 					vwarn("The calculated receiver distance %f is used", dzrcv);
 				}
@@ -464,11 +466,11 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 				dxrcv = xrange/(nlxrcv[iarray]-1);
 				dyrcv = dyr[iarray];
 				dzrcv = zrange/(nlxrcv[iarray]-1);
-				if (dxrcv != dxr[iarray]) {
+				if (dxrcv != dxr[iarray] && !isnan(dxrcv)) {
 					vwarn("For receiver array %li: calculated dxrcv=%f given=%f", iarray, dxrcv, dxr[iarray]);
 					vwarn("The calculated receiver distance %f is used", dxrcv);
 				}
-				if (dzrcv != dzr[iarray]) {
+				if (dzrcv != dzr[iarray] && !isnan(dzrcv)) {
 					vwarn("For receiver array %li: calculated dzrcv=%f given=%f", iarray, dzrcv, dzr[iarray]);
 					vwarn("The calculated receiver distance %f is used", dzrcv);
 				}
@@ -517,6 +519,10 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
         free(nlxrcv);
         free(nlyrcv);
 	}
+        fprintf(stderr,"recvPar3D.c dxrcv=%f\n", dxrcv);
+        fprintf(stderr,"recvPar3D.c dyrcv=%f\n", dyrcv);
+        fprintf(stderr,"recvPar3D.c dzrcv=%f\n", dzrcv);
+
 
     rec->n=rec->max_nrec;
 	return 0;

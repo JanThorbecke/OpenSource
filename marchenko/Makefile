@@ -4,7 +4,7 @@ include ../Make_include
 
 #LIBS    += -L$L -lgenfft -lm $(LIBSM)
 #OPTC += -g -O0 -Wall 
-#OPTC += -g -traceback #-check-pointers=rw -check-pointers-undimensioned
+#OPTC += -O0 -g -traceback #-check-pointers=rw -check-pointers-undimensioned
 
 
 ALL: fmute marchenko marchenko_primaries 
@@ -13,8 +13,10 @@ SRCJ	= fmute.c \
 		getFileInfo.c  \
 		readData.c \
 		applyMute.c \
+		applyMute_tshift.c \
 		writeData.c \
 		wallclock_time.c \
+		mapj.c \
 		verbosepkg.c  \
 		atopkge.c \
 		docpkge.c \
@@ -31,6 +33,7 @@ SRCH	= marchenko.c \
 		writeData.c \
 		writeDataIter.c \
 		wallclock_time.c \
+		mapj.c \
 		name_ext.c  \
 		verbosepkg.c  \
 		atopkge.c \
@@ -48,6 +51,7 @@ SRCP	= marchenko_primaries.c \
 		writeData.c \
 		writeDataIter.c \
 		wallclock_time.c \
+		mapj.c \
 		name_ext.c  \
 		verbosepkg.c  \
 		atopkge.c \
