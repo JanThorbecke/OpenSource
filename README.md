@@ -133,7 +133,6 @@ SEISMIC UNIX
 -----------
 If you want to use the .su files with SU from CWP:
 git clone https://github.com/JohnWStockwellJr/SeisUnix
-git clone https://gitlab.tudelft.nl/Geophysics/OpenSource.git
 
 ==> Please make sure that SU is compiled without XDR (in $CWPROOT/Makefile.config make sure that XDRFLAG is NOT enabled). The SU output files of fdelmodc are all based on local IEEE data.
 To exclude the XDRFLAG in SU you have to use the following line in $CWPROOT/src/Makefile.config around line 35:
@@ -168,17 +167,11 @@ CFLAGS  += -DWISDOMDIR="/directory/that/exists"
 
 or you can change the name of WISDOMDIR in fdacrtmc.h
 
-The Finite Different based RTM code (FDACRTMC) will not be installed if MKL is not available. This code depends on FFTW and we do want to
-include the full FFTW source code package to this. Our aim is to keep the compilation of the code in the GitHub repository
-as simple as possible with the smallest number of external libraries.
+The Finite Different based RTM code (FDACRTMC) will not be installed if MKL is not available. This code depends on FFTW and we do want to include the full FFTW source code package to this. Our aim is to keep the compilation of the code in the GitLab repository as simple as possible with the smallest number of external libraries.
 
 UPDATES AND LATEST VERSION
 --------------------------
 The latest version of the source code and manual can be found at:
 
-git clone https://github.com/JanThorbecke/OpenSource.git
-
-git clone git://github.com/JanThorbecke/OpenSource.git
-
-The code is used by many different people and if there is a request for a new option in the code, then we will try to implement, test and make it available. 
+git clone https://gitlab.tudelft.nl/Geophysics/OpenSource.git
 
