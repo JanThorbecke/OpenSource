@@ -94,7 +94,8 @@ char *sdoc[] = {
 "    nt (the number of samples read by the IO routine)",
 " ",
 " Options for mdd= ",
-"	  6 = Iterative Transmission Response (based on Vd Neut et al. 2018, EAGE)",
+"	  6 = Iterative Transmission Response (based on Vasconcelos et al. 2018, EAGE)",
+"	  7 = Neumann Series",
 "     3 = LSQR based solver A = Bx",
 "     2 = A/(B + eps) ",
 "     1 = A*B^H/(B*B^H + eps) ",
@@ -122,11 +123,11 @@ int main (int argc, char **argv)
 	int		i, j, k, ret, nshots, ntraces;
 	int		size, n1, n2, ntfft, nf, causal;
 	int     verbose, fullcorr, ncorstat, err;
- 	int     nt, nc, ncc, ntc, nshotA, nshotB, nshotC;
+ 	int     nt, nc, ncc, ntc, nshotA, nshotB, statB, nshotC;
  	size_t  nstationA, nstationB, nstationC, nfreq, istation, jstation, iw;
 	int     pgsz, istep,jstep;
 	int     mdd;
-	int	    conjgA, conjgB, conjgC;
+	int	    conjgA, conjgB, conjgC, conjgAB;
  	int     ntapA, ntapB, nxm, ngath, nw, nw_low, nw_high, eigenvalues, rthm, combine, distance;
 	size_t  nwrite, cdatainSize, datainSize, cdataoutSize, stationSize, is;
 	float	dx, dt, fmin, fmax, df, eps_r, eps_a, ftap, numacc;
@@ -193,6 +194,7 @@ int main (int argc, char **argv)
         if (!getparfloat("sclC", &sclC)) sclC = 1.;
         if (!getparfloat("cjC", &cjC)) cjC = 1.;
         if (!getparint("conjgC", &conjgC)) conjgC = 0;
+	if (!getparint("conjgAB", &conjgAB)) conjgAB = 0;
     }
 
     if (!getparint("npad", &npad)) npad = 0;
@@ -265,7 +267,7 @@ int main (int argc, char **argv)
 
 /* scaling of the results by Johno van IJsseldijk */
     if (scaling==1) {
-        if (mdd == 0) scl = dx*dt/((float)ntfft); //correlation
+        if (mdd == 0 || mdd==5) scl = dx*dt/((float)ntfft); //correlation
         else if (mdd==1) scl = 1/((float)ntfft)/dx/dt; // MDD
         else if (mdd==3) scl = 1/((float)ntfft)/dx/dt; // MDD LSQR
         else if (mdd==2) scl = 1/((float)ntfft)/dx/dt; // MDD with A and B already computed (NOT TESTED)
@@ -285,13 +287,13 @@ int main (int argc, char **argv)
     }
 
 /* allocate in shared memory the in- and output data */
-
+    statB = ((mdd==5) ? nshotB : nstationB);
 	jstep        = nfreq*nshotA;
 	cdatainSize  = nfreq*nshotA*sizeof(complex);
 	cdataoutSize = nstationA*nstationB*nfreq*sizeof(complex);
 	cdataout     = (complex *)malloc(cdataoutSize);
-	cA           = (complex *)malloc(nstationA*cdatainSize);
-	cB           = (complex *)malloc(nstationB*cdatainSize);
+	cA           = (complex *)malloc(nstationA*nfreq*nshotA*sizeof(complex));
+	cB           = (complex *)malloc(nstationB*nfreq*nshotB*sizeof(complex));
 	if (file_dmat!=NULL) oBB = (complex *)malloc(nstationB*nstationB*nfreq*sizeof(complex));
 	else oBB = NULL;
 	assert(cdataout != NULL);
@@ -307,27 +309,24 @@ int main (int argc, char **argv)
 
 /* for first touch binding of allocated memory */
 #pragma omp parallel for schedule(static) private(jstation,is) default(shared)
-	for (jstation=0; jstation<nstationB; jstation++) {
+	for (jstation=0; jstation<statB; jstation++) {
 		stationSize=nstationA*nfreq*sizeof(complex);
 		is = jstation*nstationA*nfreq;
 		memset(&cdataout[is],0,stationSize);
 		memset(&cB[jstation*jstep],0,jstep*sizeof(complex));
 	}
-
 #pragma omp parallel for schedule(static) private(jstation) default(shared)
 	for (jstation=0; jstation<nstationA; jstation++) {
 		memset(&cA[jstation*jstep],0,jstep*sizeof(complex));
 	}
-
     if (file_C != NULL && mdd != 3) {
 #pragma omp parallel for schedule(static) private(jstation) default(shared)
         for (jstation=0; jstation<nstationC; jstation++) {
             memset(&cC[jstation*jstep],0,jstep*sizeof(complex));
         }
     }
-
     if (verbose) {
-		if (mdd==3) rthmName="LSQR";
+	if (mdd==3) rthmName="LSQR";
         else if (rthm==0) rthmName="Cholesky";
         else if (rthm==1) rthmName="LU";
         else if (rthm==2) rthmName="SVD single precision";
@@ -351,14 +350,15 @@ int main (int argc, char **argv)
         fprintf(stderr,"  number t-fft ..... : %d\n", ntfft);
         fprintf(stderr,"  Input  size ...... : %ld MB\n", ((file_C != NULL) ? (nstationA+nstationB+nstationC)*cdatainSize/(1024*1024) : (nstationA+nstationB)*cdatainSize/(1024*1024)));
 
-		fprintf(stderr,"  Output size ...... : %ld MB\n", (cdataoutSize/((size_t)1024*1024)));
+        fprintf(stderr,"  Output size ...... : %ld MB\n", (cdataoutSize/((size_t)1024*1024)));
         if (ntapB != 0) fprintf(stderr,"  taper points ..... : %d (%.0f %%)\n", ntapB, ftap*100.0);
         if (ntapA != 0) fprintf(stderr,"  taper points ..... : %d \n", ntapA);
         fprintf(stderr,"  process number ... : %d\n", pe);
         fprintf(stderr,"  fmin ............. : %.3f (%d)\n", fmin, nw_low);
         fprintf(stderr,"  fmax ............. : %.3f (%d)\n", fmax, nw_high);
         fprintf(stderr,"  nfreq  ........... : %ld\n", nfreq);
-        if (mdd) fprintf(stderr,"  Matrix inversion . : %s\n", rthmName);
+        if (mdd == 7) fprintf(stderr,"  Neumann Series ... : %d iterations \n", k_iter);
+		else if (mdd) fprintf(stderr,"  Matrix inversion . : %s\n", rthmName);
         else  fprintf(stderr,"  Correlation ...... : \n");
         if (mdd==1) {
             fprintf(stderr,"  eps_r ............ : %e\n", eps_r);
@@ -380,12 +380,10 @@ int main (int argc, char **argv)
     xnx       = (int *)calloc(nshotA,sizeof(int));
 	alpha = 0.0;
     readShotData(file_A, xmin, dx, xrcvA, xsrcA, xnx, cA, nw, nw_low, nshotA, nstationA, nstationA, ntfft, alpha, sclA, cjA, transposeA, verbose);
-
     xsrcB     = (float *)calloc(nshotB,sizeof(float));
     xrcvB     = (float *)calloc(nshotB*nstationB,sizeof(float));
 	alpha = 0.0;
     readShotData(file_B, xmin, dx, xrcvB, xsrcB, xnx, cB, nw, nw_low, nshotB, nstationB, nstationB, ntfft, alpha, sclB, cjB, transposeB, verbose);
-
     if (file_C != NULL && mdd != 3) {
         xsrcC     = (float *)calloc(nshotC,sizeof(float));
         xrcvC     = (float *)calloc(nshotC*nstationC,sizeof(float));
@@ -424,7 +422,7 @@ int main (int argc, char **argv)
             taper[j] = 1.0;
         for (j = nstationA-ntapB; j < nstationA; j++)
             taper[j] = taper[abs(j-nstationA)-1];//(cos(M_PI*(j-(nstationA-ntap))/ntap)+1)/2.0;
-        for (jstation = 0; jstation < nstationA; jstation++) {  // Swap for jstation?
+        for (jstation = 0; jstation < statB; jstation++) {  // Swap for jstation?
             for (istation = 0; istation < nshotA; istation++) {
                 for (iw=0; iw<nw; iw++) {
                     cB[iw*nstationA*nshotA+istation*nshotA+jstation].r *= taper[istation];
@@ -444,21 +442,20 @@ int main (int argc, char **argv)
 	private(t1,t2,pe) \
  	shared(cA,cB,cC,eigen,eigenvalues,numacc,eps_r,eps_a) \
  	shared(nstationA,nstationB,nstationC,verbose,cdatainSize) \
-    shared(rthm,mdd,nfreq,nshotA,conjgA,conjgB,conjgC) \
+    shared(rthm,mdd,nfreq,nshotA,conjgA,conjgB,conjgC,conjgAB) \
     shared(cdataout,cTemp,oBB,file_C,cdataoutSize,k_iter,stderr, lsqr_iter, lsqr_damp, TCscl)
 { /* start of OpenMP parallel part */
 
 #ifdef _OPENMP
 	pe = omp_get_thread_num();
 #endif
-
 	/* compute deconvolution */
 	deconvolve(cA, cB, cdataout, oBB, nfreq, nshotA, nstationA, nstationB, 
         eps_a, eps_r, numacc, eigenvalues, eigen, rthm, mdd, conjgA, conjgB, lsqr_iter, lsqr_damp, k_iter, TCscl, verbose);
 
     if (file_C != NULL && mdd != 3) {
-        deconvolve(cdataout, cC, cTemp, oBB, nfreq, nshotA, nstationA, nstationC,
-            eps_a, eps_r, numacc, eigenvalues, eigen, rthm, mdd, conjgA, conjgC, lsqr_iter, lsqr_damp, k_iter, TCscl, verbose);
+        deconvolve(cC, cdataout, cTemp, oBB, nfreq, nshotA, nstationA, nstationC,
+            eps_a, eps_r, numacc, eigenvalues, eigen, rthm, mdd, conjgAB, conjgC, lsqr_iter, lsqr_damp, k_iter, TCscl, verbose);
         memcpy(&cdataout[0].r, &cTemp[0].r, cdataoutSize);
     }
 
@@ -519,7 +516,8 @@ int main (int argc, char **argv)
  	    assert(fpout != NULL);
 	}
 //#pragma omp for
-	for (jstation=0; jstation<nstationB; jstation++) {
+
+	for (jstation=0; jstation<statB; jstation++) {
 		/* FFT */
 		t1 = wallclock_time();
 		for (istation=0; istation<nstationA; istation++) {
@@ -573,7 +571,7 @@ int main (int argc, char **argv)
 			hdr[0].d2 = dx;
 //			hdr[0].trwf = nstationA;
 			hdr[0].sx = NINT((f2+dx*jstation)*1000);
-			hdr[0].ntr = nstationA*nstationB;
+			hdr[0].ntr = nstationA*statB;
 			if (!one_file) {
 				strcpy(filename, file_out);
 				sprintf(number,"Station%03ld",jstation+1);

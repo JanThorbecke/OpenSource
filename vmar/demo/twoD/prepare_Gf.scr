@@ -1,0 +1,26 @@
+#! /bin/bash
+
+dt=0.004
+
+#suwind <refl_rp.su >refl_rp2.su itmax=2047
+
+makewave fp=20 dt=0.004 file_out=wave.su nt=1024 t0=0. scale=1
+
+raytime \
+        file_cp=./syncl_cp.su \
+        file_src=wave.su \
+        verbose=1 \
+        geomspread=1 \
+        smooth_window=1 \
+        file_rcvtime=Td.su \
+        method=fd nt=1024 \
+        xrcv1=-3000 xrcv2=3000 dxrcv=10 \
+        zrcv1=0 zrcv2=0 dzrcv=0.0 \
+        zsrc=1100 dxshot=0 dzshot=0 \
+        xsrc=0 nxshot=1 \
+        dt=$dt
+
+suflip flip=3 <Td.su | suwind itmax=2047 | sushw key=f1 a=-4.096 >fp0.su 
+
+fmute file_shot=fp0.su file_out=WinC.su above=4 verbose=0 hw=8 shift=-10 smooth=3 returnmask=1
+

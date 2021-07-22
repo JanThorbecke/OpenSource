@@ -18,6 +18,7 @@ else
 endif
 	cd fdelmodc3D	; $(MAKE) install
 	cd marchenko3D	; $(MAKE) install
+	cd vmar	; $(MAKE) install
 ifneq ($(strip $(FC)),)
 	cd MDD			; $(MAKE) install
 else
@@ -42,6 +43,7 @@ clean:
 	cd fdelmodc3D	; $(MAKE) $@
 	cd marchenko3D	; $(MAKE) $@
 	cd MDD			; $(MAKE) $@
+	cd vmar			; $(MAKE) $@
 
 realclean:
 	cd FFTlib 		; $(MAKE) $@
@@ -55,6 +57,7 @@ realclean:
 	cd fdelmodc3D	; $(MAKE) $@
 	cd marchenko3D	; $(MAKE) $@
 	cd MDD			; $(MAKE) $@
+	cd vmar			; $(MAKE) $@
 	rm -f lib/*
 	rm -f include/*
 	rm -f bin/*

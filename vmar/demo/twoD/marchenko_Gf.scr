@@ -1,0 +1,5 @@
+#! /bin/bash
+
+suwind <shots/refl_rp.su >refl_rp.su itmax=2047
+
+~/OpenSource/Marchenko_LSQR/vmar file_inif=fp0.su file_Refl=refl_rp.su  file_WinA=WinC.su file_fp=fp.su file_fm=fm.su file_gp=Gp.su file_gm=Gm.su niter=15 square=0 verbose=1

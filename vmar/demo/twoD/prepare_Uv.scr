@@ -1,0 +1,38 @@
+#! /bin/bash
+
+export OMP_NUM_THREADS=16
+dt=0.004
+
+makewave fp=20 dt=0.004 file_out=wave.su nt=1024 t0=0. scale=1
+
+raytime \
+        file_cp=./syncl_cp.su \
+        file_src=wave.su \
+        verbose=1 \
+        geomspread=1 \
+        smooth_window=1 \
+        file_rcvtime=temp.su \
+        method=fd nt=1024 \
+        xrcv1=-3000 xrcv2=3000 dxrcv=10 \
+        zrcv1=0 zrcv2=0 dzrcv=0.0 \
+        zsrc=1100 dxshot=10 dzshot=0 \
+        xsrc=-3000 nxshot=601 \
+        dt=$dt
+
+mdd mdd=0 file_A=temp.su file_B=temp.su file_out=Td2.su verbose=1 conjgA=0 conjgB=0 
+
+makewave fp=20 dt=0.004 nt=2048 t0=4.096 scale=1 file_out=wave.su
+
+suspike nt=2048 ntr=601 offset=0 nspk=1 ix1=301 it1=1025 | sushw key=f2,d2,f1,d1,scalel,scalco,fldr,sx a=-3000,10,-4.096,0.004,-1000,-1000,1,0 | sushw key=gx,tracf a=-3000000,1 b=10000,1 >id.su
+
+<id.su sudipfilt dx=1 dt=1 amps=0,1,1,0 slopes=-1.0,-0.9,0.9,1.0 | suconv sufile=wave.su | suwind itmin=1024 itmax=3071 >vp0.su
+
+suflip <vp0.su flip=3 | suwind itmax=1023 | suwind itmax=2047 | suflip flip=3 >temp.su
+
+fmute file_shot=temp.su file_out=WinA.su above=1 verbose=0 hw=8 shift=-10 smooth=3 returnmask=1
+
+suwind <Td2.su itmax=1023 key=fldr min=301 max=301 | suflip flip=3 | suwind itmax=2047 >temp.su  
+
+fmute file_shot=temp.su file_out=WinB.su above=4 verbose=0 hw=8 shift=-10 smooth=3 returnmask=1
+
+rm temp.su
