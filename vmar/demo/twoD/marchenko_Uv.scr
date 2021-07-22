@@ -1,0 +1,5 @@
+#! /bin/bash
+
+suwind <shots/refl_rp.su >refl_rp.su itmax=2047
+
+vmar file_inif=vp0.su file_Refl=refl_rp.su  file_WinA=WinA.su file_WinB=WinB.su file_fp=vp.su file_fm=vm.su file_gp=Up.su file_gm=Um.su niter=12 square=0 verbose=1

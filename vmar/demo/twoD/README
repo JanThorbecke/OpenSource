@@ -1,0 +1,23 @@
+Description of files:
+1) model.scr computes the model
+NOTE: 2 and 3 are only required if you have not previously ran the twoD demo in the marchenko folder! 
+If you have previously run this demo use:
+ln -s ../../../marchenko/demo/twoD/shots/ . 
+and skip to 4
+2a) shots_slurm/pbs.scr creates the shots and submit jobs to slurm or PBS
+2b) check.scr after the jobs on shots_*.scr are finished checks if all shots are there
+3a) direct.scr creates the direct arrival to be removed from the shots
+3b) remove_direct.scr remove the direct wave from the shots 
+
+NOTE: vmar can solve both the conventional Marchenko (Wapenaar et al., 2014) as well as the projected Marchenko (van der Neut & Wapenaar, 2016) algorithms, 
+
+Projected Marchenko scripts (U and v):
+4a) prepare_Uv.scr constructs initial focus (vp0.su) and mute windows A and B (WinA.su, WinB.su)
+5a) marchenko_Uv.scr appends the reflection response with zeros (refl_rp.su) and preforms the projected Marchenko iterative scheme (Um.su, Up.su, vm.su, vp.su)
+
+Conventional Marchenko scripts (G and f):
+4b) prepare_Gf.scr constructs initial focus (fp0.su) and mute window C (WinC.su)
+5b) marchenko_Gf.scr appends the reflection response with zeros (refl_rp.su) and preforms the conventional Marchenko iterative scheme (Gm.su, Gp.su, fm.su, fp.su)
+
+NOTE: the vmar scripts requires the focusing functions and mute windows to have both the acausal and causal parts.
+Whereas the reflection data is purely causal with the same number of samples. All outputs contain both the acausal and causal part.
