@@ -449,9 +449,10 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
 			if (dxr[iarray] != 0.0) {
 				nrcv = nlyrcv[iarray]*nlxrcv[iarray];
 				dxrcv = dxr[iarray];
-				dyrcv = yrange/(nlyrcv[iarray]-1);
-				dzrcv = zrange/(nlxrcv[iarray]-1);
-        fprintf(stderr,"recvPar3D.c 0 dzrcv=%f zrange=%f %d %d %d\n", dzrcv, zrange, iarray, nlxrcv[iarray], isnan(dzrcv));
+				if (yrange != 0.0) {dyrcv = yrange/(nlyrcv[iarray]-1);}
+				else {dyrcv=0.0;}
+				if (zrange != 0.0) {dzrcv = zrange/(nlxrcv[iarray]-1);}
+				else {dzrcv=0.0;}
 				if (dyrcv != dyr[iarray] && !isnan(dyrcv)) {
 					vwarn("For receiver array %li: calculated dyrcv=%f given=%f", iarray, dyrcv, dyr[iarray]);
 					vwarn("The calculated receiver distance %f is used", dyrcv);
@@ -519,10 +520,6 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
         free(nlxrcv);
         free(nlyrcv);
 	}
-        fprintf(stderr,"recvPar3D.c dxrcv=%f\n", dxrcv);
-        fprintf(stderr,"recvPar3D.c dyrcv=%f\n", dyrcv);
-        fprintf(stderr,"recvPar3D.c dzrcv=%f\n", dzrcv);
-
 
     rec->n=rec->max_nrec;
 	return 0;

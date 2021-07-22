@@ -144,9 +144,6 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 	mod->nfz = nz;
 	mod->nfx = nx;
 	mod->nfy = ny;
-		fprintf(stderr,"before ny=%ld dy=%f y0=%f\n", ny, dy, sub_y0);
-		fprintf(stderr,"before nz=%ld dz=%f z0=%f\n", nz, dz, sub_z0);
-		fprintf(stderr,"before nx=%ld dx=%f x0=%f\n", nx, dx, sub_x0);
     /* check if 1D, 2D or full 3D gridded model is given as input model */
 	if (nx==1 && ny==1 ) { // 1D model 
         if (!getparlong("nx",&nx)) nx=nz;
@@ -161,7 +158,6 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
         if (!getparlong("ny",&ny)) ny=nx;
         if (!getparfloat("y0",&sub_y0)) sub_y0=-0.5*(ny-1)*(dy);
     	//sub_y0=-0.5*(ny-1)*(dy);
-		fprintf(stderr,"get param ny=%ld dy=%f y0=%f\n", ny, dy, sub_y0);
 	}
 	mod->dz = dz;
 	mod->dx = dx;
@@ -1308,7 +1304,6 @@ criteria we have imposed.*/
 			dxrcv = rec->xr[MIN(1,rec->n-1)]-rec->xr[0];
 			dyrcv = rec->yr[MIN(1,rec->n-1)]-rec->yr[0];
 			dzrcv = rec->zr[MIN(1,rec->n-1)]-rec->zr[0];
-fprintf(stderr,"zr %f %f %d\n", rec->zr[MIN(1,rec->n-1)], rec->zr[0], rec->n-1);
 			vmess("*******************************************");
 			vmess("************* receiver info ***************");
 			vmess("*******************************************");
