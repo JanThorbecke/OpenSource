@@ -894,6 +894,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		for (is=0; is<nsrc; is++) {
 			src->tbeg[is] = (is+is0)*dx*p;
 		}
+		/* start time for dipping plane waves is negative to set t=0 for the middle shot at position is0*/
 		mod->t0 = MIN(is0*dx*p,(nsrc+is0)*dx*p);
 		for (is=0; is<nsrc; is++) {
 			src->tend[is] = src->tbeg[is] + (wav->nt-1)*wav->dt;

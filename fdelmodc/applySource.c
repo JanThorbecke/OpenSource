@@ -103,9 +103,8 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 		id2 = id1+1;
         
 		/* delay not reached or no samples left in source wavelet? */
-		if ( (time < 0.0) || ((itime*dt) >= src.tend[isrc]) || id2 > wav.nt ) continue;
-		//if (isrc==0) fprintf(stderr,"isrc=%d id1=%d time=%f wav.nt=%d tend=%f\n", isrc, id1, time, wav.nt, src.tend[isrc]);
-
+		if ( (time < 0.0) || ((itime*dt+mod.t0) >= src.tend[isrc]) || id2 > wav.nt ) continue;
+		//if (isrc==0) fprintf(stderr,"isrc=%d id1=%d time=%f wav.nt=%d tbeg=%f tend=%f\n", isrc, id1, time, wav.nt, src.tbeg[isrc], src.tend[isrc]);
 //		fprintf(stderr,"isrc=%d ix=%d iz=%d src.x=%d src.z=%d\n", isrc, ix, iz, src.x[isrc], src.z[isrc]);
 
 		if (!src.multiwav) { /* only one wavelet for all sources */

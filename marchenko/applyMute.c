@@ -12,6 +12,7 @@
 #endif
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
+int mapj(int j, int nt);
 void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift, int *tsynW)
 {
     int i, j, l, isyn;
@@ -27,16 +28,16 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
     }
 
     for (isyn = 0; isyn < Nfoc; isyn++) {
-        if (above==1) {
+        if (above==1) { /* mute data between t=0 and t1-epsilon */
             for (i = 0; i < npos; i++) {
                 imute = ixpos[i];
                 tmute = mute[isyn*nxs+imute];
                 ts = tsynW[isyn*nxs+imute];
-                for (j = 0; j < MAX(0,-2*ts+tmute-shift-smooth); j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                for (j = 0; j < (-2*ts+tmute-shift-smooth); j++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] = 0.0;
                 }
-                for (j = MAX(0,-2*ts+tmute-shift-smooth),l=0; j < MAX(0,-2*ts+tmute-shift); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
+                for (j = (-2*ts+tmute-shift-smooth),l=0; j < (-2*ts+tmute-shift); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] *= costaper[smooth-l-1];
                 }
             }
         }
@@ -49,14 +50,14 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
                     memset(&data[isyn*nxs*nt+i*nt],0, sizeof(float)*nt);
                     continue;
                 }
-                for (j = MAX(0,-2*ts+tmute-shift-smooth),l=0; j < MAX(0,-2*ts+tmute-shift); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[l];
+                for (j = (-2*ts+tmute-shift-smooth),l=0; j < (-2*ts+tmute-shift); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] *= costaper[l];
                 }
-                for (j = MAX(0,-2*ts+tmute-shift); j < MIN(nt,nt+1-tmute+shift+2*ts); j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                for (j = (-2*ts+tmute-shift); j < (nt+1-tmute+shift+2*ts); j++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] = 0.0;
                 }
-                for (j = MIN(nt,nt+1-tmute+shift+2*ts),l=0; j < MIN(nt,nt+1-tmute+shift+2*ts+smooth); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
+                for (j = (nt+1-tmute+shift+2*ts),l=0; j < (nt+1-tmute+shift+2*ts+smooth); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] *= costaper[smooth-l-1];
                 }
             }
         }
@@ -65,17 +66,17 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
                 imute = ixpos[i];
                 tmute = mute[isyn*nxs+imute];
                 ts = tsynW[isyn*nxs+imute];
-                for (j = 0; j < MAX(0,tmute-2*ts-shift-smooth); j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                for (j = 0; j < (tmute-2*ts-shift-smooth); j++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] = 0.0;
                 }
-                for (j = MAX(0,-2*ts+tmute-shift-smooth),l=0; j < MAX(0,-2*ts+tmute-shift); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
+                for (j = (-2*ts+tmute-shift-smooth),l=0; j < (-2*ts+tmute-shift); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] *= costaper[smooth-l-1];
                 }
-                for (j = MIN(nt,nt+1-tmute+shift+2*ts),l=0; j < MIN(nt,nt+1-tmute+shift+2*ts+smooth); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[l];
+                for (j = (nt+1-tmute+shift+2*ts),l=0; j < (nt+1-tmute+shift+2*ts+smooth); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] *= costaper[l];
                 }
-                for (j = MIN(nt,nt+1-tmute+shift+2*ts+smooth); j < nt; j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                for (j = (nt+1-tmute+shift+2*ts+smooth); j < nt; j++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] = 0.0;
                 }
             }
         }
@@ -88,14 +89,14 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
                     memset(&data[isyn*nxs*nt+i*nt],0, sizeof(float)*nt);
                     continue;
                 }
-                for (j = MAX(0,-2*ts+tmute+shift-smooth),l=0; j < MAX(0,-2*ts+tmute+shift); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[l];
+                for (j = (-2*ts+tmute+shift-smooth),l=0; j < (-2*ts+tmute+shift); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] *= costaper[l];
                 }
-                for (j = MAX(0,-2*ts+tmute+shift); j < MIN(nt,nt-tmute+shift); j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                for (j = (-2*ts+tmute+shift); j < (nt-tmute+shift); j++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] = 0.0;
                 }
-                for (j = MIN(nt,nt-tmute+shift),l=0; j < MIN(nt,nt-tmute+shift+smooth); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
+                for (j = (nt-tmute+shift),l=0; j < (nt-tmute+shift+smooth); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] *= costaper[smooth-l-1];
                 }
             }
         }
@@ -108,14 +109,14 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
                     memset(&data[isyn*nxs*nt+i*nt],0, sizeof(float)*nt);
                     continue;
                 }
-                for (j = MAX(0,-2*ts+tmute-shift-smooth),l=0; j < MAX(0,-2*ts+tmute-shift); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[l];
+                for (j = (-2*ts+tmute-shift-smooth),l=0; j < (-2*ts+tmute-shift); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] *= costaper[l];
                 }
-                for (j = MAX(0,-2*ts+tmute-shift); j < MIN(nt,nt-tmute-shift); j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                for (j = (-2*ts+tmute-shift); j < (nt-tmute-shift); j++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] = 0.0;
                 }
-                for (j = MIN(nt,nt-tmute-shift),l=0; j < MIN(nt,nt-tmute-shift+smooth); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
+                for (j = (nt-tmute-shift),l=0; j < (nt-tmute-shift+smooth); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] *= costaper[smooth-l-1];
                 }
             }
         }
@@ -123,17 +124,17 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
             for (i = 0; i < npos; i++) {
                 imute = ixpos[i];
                 tmute = mute[isyn*nxs+imute];
-                for (j = 0; j < MAX(0,tmute+shift-smooth); j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                for (j = 0; j < (tmute+shift-smooth); j++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] = 0.0;
                 }
-                for (j = MAX(0,tmute+shift-smooth),l=0; j < MAX(0,tmute+shift); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
+                for (j = (tmute+shift-smooth),l=0; j < (tmute+shift); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] *= costaper[smooth-l-1];
                 }
-                for (j = MIN(nt,nt-tmute+shift),l=0; j < MIN(nt,nt-tmute+shift+smooth); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[l];
+                for (j = (nt-tmute+shift),l=0; j < (nt-tmute+shift+smooth); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] *= costaper[l];
                 }
-                for (j = MIN(nt,nt-tmute+shift+smooth); j < nt; j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                for (j = (nt-tmute+shift+smooth); j < nt; j++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] = 0.0;
                 }
             }
         }
@@ -146,14 +147,14 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
                     memset(&data[isyn*nxs*nt+i*nt],0, sizeof(float)*nt);
                     continue;
                 }
-                for (j = MAX(0,-2*ts+tmute+shift),l=0; j < MAX(0,-2*ts+tmute+shift+smooth); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[l];
+                for (j = (-2*ts+tmute+shift),l=0; j < (-2*ts+tmute+shift+smooth); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] *= costaper[l];
                 }
-                for (j = MAX(0,-2*ts+tmute+shift+smooth)+1; j < MIN(nt,nt+1-tmute-shift-smooth); j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                for (j = (-2*ts+tmute+shift+smooth)+1; j < (nt+1-tmute-shift-smooth); j++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] = 0.0;
                 }
-                for (j = MIN(nt,nt-tmute-shift-smooth),l=0; j < MIN(nt,nt-tmute-shift); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
+                for (j = (nt-tmute-shift-smooth),l=0; j < (nt-tmute-shift); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] *= costaper[smooth-l-1];
                 }
             }
         }
@@ -162,11 +163,11 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
                 imute = ixpos[i];
                 tmute = mute[isyn*nxs+imute];
                 ts = tsynW[isyn*nxs+imute];
-                for (j = MAX(0,ts+tmute-shift),l=0; j < MAX(0,ts+tmute-shift+smooth); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[l];
+                for (j = (ts+tmute-shift),l=0; j < (ts+tmute-shift+smooth); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] *= costaper[l];
                 }
-                for (j = MAX(0,ts+tmute-shift+smooth); j < nt; j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                for (j = (ts+tmute-shift+smooth); j < nt; j++) {
+                   	data[isyn*nxs*nt+i*nt+mapj(j,nt)] = 0.0;
                 }
             }
         }
@@ -174,17 +175,17 @@ void applyMute( float *data, int *mute, int smooth, int above, int Nfoc, int nxs
             for (i = 0; i < npos; i++) {
                 imute = ixpos[i];
                 tmute = mute[isyn*nxs+imute];
-                for (j = 0; j < MAX(0,tmute-shift-smooth); j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                for (j = 0; j < (tmute-shift-smooth); j++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] = 0.0;
                 }
-                for (j = MAX(0,tmute-shift-smooth),l=0; j < MAX(0,tmute-shift); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[smooth-l-1];
+                for (j = (tmute-shift-smooth),l=0; j < (tmute-shift); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] *= costaper[smooth-l-1];
                 }
-                for (j = MAX(0,tmute+shift),l=0; j < MAX(0,tmute+shift+smooth); j++,l++) {
-                    data[isyn*nxs*nt+i*nt+j] *= costaper[l];
+                for (j = (tmute+shift),l=0; j < (tmute+shift+smooth); j++,l++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] *= costaper[l];
                 }
-                for (j = MAX(0,tmute+shift+smooth); j < nt; j++) {
-                    data[isyn*nxs*nt+i*nt+j] = 0.0;
+                for (j = (tmute+shift+smooth); j < nt; j++) {
+                    data[isyn*nxs*nt+i*nt+mapj(j,nt)] = 0.0;
                 }
             }
         }

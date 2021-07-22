@@ -17,6 +17,7 @@ typedef struct { /* complex number */
 #endif
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
+int mapj(int j, int nt);
 void findShotInMute(float *xrcvMute, float xrcvShot, int nxs, int *imute);
 
 int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nfoc, int nx, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose)
@@ -128,6 +129,7 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 
         /* alternative find maximum at source position */
         dxrcv = (gx1 - gx0)*scl/(float)(nx1-1);
+        /* make sure that the position fits into the receiver array */
         imax = NINT(((sx_shot-gx0)*scl)/dxrcv);
         tmax=0.0;
         jmax = 0;
@@ -142,16 +144,16 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
             }
         }
         maxval[isyn*nx+imax] = jmax;
-        if (verbose >= 2) vmess("Mute max at src-trace %d is sample %d", imax, maxval[imax]);
+        if (verbose >= 3) vmess("Mute max at src-trace %d is sample %d", imax, maxval[imax]);
 
         /* search forward in trace direction from maximum in file */
         for (i = imax+1; i < nx1; i++) {
-            tstart = MAX(0, (maxval[isyn*nx+i-1]-hw));
-            tend   = MIN(nt-1, (maxval[isyn*nx+i-1]+hw));
+            tstart = (maxval[isyn*nx+i-1]-hw);
+            tend   = (maxval[isyn*nx+i-1]+hw);
             jmax=tstart;
             tmax=0.0;
             for(j = tstart; j <= tend; j++) {
-                lmax = fabs(tinv[ig+i*ntfft+j]);
+                lmax = fabs(tinv[ig+i*ntfft+mapj(j,ntfft)]);
                 if (lmax > tmax) {
                     jmax = j;
                     tmax = lmax;
@@ -161,12 +163,12 @@ int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
         }
         /* search backward in trace direction from maximum in file */
         for (i = imax-1; i >=0; i--) {
-            tstart = MAX(0, (maxval[isyn*nx+i+1]-hw));
-            tend   = MIN(nt-1, (maxval[isyn*nx+i+1]+hw));
+            tstart = (maxval[isyn*nx+i+1]-hw);
+            tend   = (maxval[isyn*nx+i+1]+hw);
             jmax=tstart;
             tmax=0.0;
             for(j = tstart; j <= tend; j++) {
-                lmax = fabs(tinv[ig+i*ntfft+j]);
+                lmax = fabs(tinv[ig+i*ntfft+mapj(j,ntfft)]);
                 if (lmax > tmax) {
                     jmax = j;
                     tmax = lmax;
