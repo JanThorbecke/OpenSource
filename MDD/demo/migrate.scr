@@ -1,0 +1,47 @@
+#! /bin/bash
+
+startTime=$(date +%s)
+
+type=psf
+mig=corr
+mkdir -p greensfunctions
+
+# find up- and down-going Green's functions
+fmute file_shot=marchenko_irr/GF_2idd.su file_mute=iniF/iniFocii_z1100.su above=1 shift=10 | sufilter f=0,5,80,100 amps=0,1,1,0 >temp.su #greensfunctions/G_reg.su
+
+basop file_in=marchenko_irr/F2_0.su choice=conjg file_out=temp1.su
+susum temp1.su temp.su >greensfunctions/G_psf.su
+rm temp.su temp1.su
+
+fmute file_shot=marchenko_irr/GFMmdd.su file_mute=iniF/iniFocii_z1100.su above=1 shift=10 | sufilter f=0,5,80,100 amps=0,1,1,0 >greensfunctions/GM_psf.su
+sudiff greensfunctions/G_psf.su greensfunctions/GM_psf.su >greensfunctions/GP_psf.su
+
+# find redatumed reflection response at focal level
+~/OpenSource/MDD/mdd file_A=greensfunctions/GM_psf.su file_B=greensfunctions/GP_psf.su mdd=3 verbose=1 file_out=refl_redatum_psf.su causal=3 transposeA=1 transposeB=1 lsqr_damp=0.0 lsqr_iter=50
+
+# create smoothed model below focal depth
+sm=25
+
+makemod sizex=6000 sizez=800 dx=10 dz=2.5 cp0=2400 \
+        orig=-3000,0 file_base=tmp.su verbose=2 supersmooth=1 \
+        intt=def x=-3000,0,3000 z=10,10,10 poly=0 cp=2300 grad=$sm \
+        intt=def x=-3000,3000 z=80,80 poly=0 cp=2480 grad=$sm \
+        intt=def x=-3000,0,3000 z=190,190,270 poly=0 cp=2600 grad=$sm \
+        intt=def x=-3000,3000 z=280,280 poly=0 cp=2720 grad=$sm \
+        intt=def x=-3000,3000 z=380,380 poly=0 cp=2800 grad=$sm
+sushw <tmp_cp.su key=tracl,tracf,timbas,trwf a=1,1,0,0 b=1,1,0,0 >bottom_cp.su;
+
+# convolve ricker wavelet to reduce ringing in final image
+makewave fp=25 dt=0.004 file_out=wave.su nt=2048 t0=0. scale=1
+fconv file_in1=refl_redatum_psf.su file_in2=wave.su file_out=temp.su
+suwind itmin=1024 itmax=1535 <temp.su >test.su
+
+# pre-stack depth migration 
+migr file_shot=test.su file_vel=bottom_cp.su file_image=result_psf.su verbose=1 ntmax=512 nxmax=361601 imc=0 key=fldr
+
+rm temp.su test.su
+
+
+duration=$(echo "($(date +%s) -$startTime)" | bc -l)
+echo "Elapsed time: ${duration} seconds"
+

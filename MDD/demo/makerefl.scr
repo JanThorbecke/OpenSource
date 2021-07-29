@@ -1,0 +1,76 @@
+#! /bin/bash
+
+dt=0.0005
+
+export OMP_NUM_THREADS=8
+makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3 scale=0
+
+fdelmodc \
+    file_cp=noContrast_cp.su ischeme=1 iorder=4 \
+    file_den=noContrast_ro.su \
+    file_src=wavefw.su \
+    file_rcv=direct.su \
+    src_type=7 \
+        src_orient=1 \
+        src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+        rec_delay=0.3 \
+    dtrcv=0.004 \
+    verbose=2 \
+    tmod=4.392 \
+    dxrcv=10.0 \
+    xrcv1=-6000 xrcv2=6000 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=0 zsrc=0 \
+    ntaper=200 \
+    left=2 right=2 top=2 bottom=2
+
+
+dxshot=10
+ishot=0
+nshots=601
+
+rm iniF/iniFocii_z1100.su 
+rm shots/refl_rp.su
+
+while (( ishot < nshots ))
+do
+        (( xsrc = -3000 + ${ishot}*${dxshot} ))
+        (( iishot = ${ishot}*${dxshot}/10 ))
+        (( tr1 = 601 - ${iishot} ))
+        (( tr2 = ${tr1} + 600 ))
+        echo xsrc=$xsrc tr1=$tr1 tr2=$tr2
+        suwind < direct_rp.su key=tracl min=$tr1 max=$tr2 > direct.su
+
+        file_rcv=shots/shots_${xsrc}_rp.su
+        suwind key=tracl min=1 max=601 < $file_rcv > shotz0.su
+
+        sudiff shotz0.su direct.su > refl.su
+
+        (( ishot = $ishot + 1))
+
+        sushw < refl.su key=fldr a=$ishot | \
+        suwind itmax=1023 >> shots/refl_rp.su
+
+        file_ini=iniF/iniFocus_z1100_${xsrc}_rp.su
+
+        sushw <$file_ini key=fldr a=$ishot >> temp.su
+
+done
+
+# add acausal part
+fmute file_shot=temp.su above=2 shift=15 | suwind itmax=2047 | suflip flip=3 | suwind itmin=1024 itmax=3071 | suflip flip=3 | sushw key=f1 a=-4.096 >iniF/iniFocii_z1100.su
+
+rm temp.su direct.su shotz0.su 
+
+suwind <shots/refl_rp.su itmax=2047 >temp.su
+
+# add acausal part and marchenko refl scaling (2)
+basop file_in=temp.su choice=shift shift=4.096 | sugain scale=2 | sushw key=f1 a=-4.096 >refl_rp.su
+
+# mute traces
+basop file_in=refl_rp.su choice=kill file_t2k=t2kill_50.txt file_out=refl_rp_50.su dim=0
+
+rm temp.su

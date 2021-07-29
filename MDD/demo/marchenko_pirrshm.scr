@@ -1,0 +1,77 @@
+#! /bin/bash
+#SBATCH -J MDD_demo
+#SBATCH --cpus-per-task=40
+#SBATCH --ntasks=1
+#SBATCH -p max4h
+
+cd /vardim/home/thorbcke/src/OpenSource/MDD/demo
+
+startTime=$(date +%s)
+n_iter=10
+mkdir -p marchenko_irr
+tmpdir=/dev/shm
+
+export OMP_NUM_THREADS=20
+
+dips="slopes=-1.,-.9,.9,1. amps=0,1,1,0 dx=1 dt=1"
+freqs="f=0,5,80,100 amps=0,1,1,0"
+
+mdd file_A=ID.su file_B=iniF/iniFocii_z1100.su file_out=$tmpdir/temp.su mdd=3 verbose=1 causal=3 lsqr_damp=0.0001 lsqr_iter=50
+
+sufilter <$tmpdir/temp.su >$tmpdir/F2_0.su f=0,5,80,100 amps=0,1,1,0
+
+fmute file_out=$tmpdir/temp1.su file_shot=$tmpdir/F2_0.su above=4 verbose=0 hw=8 shift=-15 smooth=3
+
+cp $tmpdir/F2_0.su $tmpdir/FP.su
+cp $tmpdir/F2_0.su $tmpdir/F2.su 
+ 
+for (( i=1; i<=$n_iter; i++ ))
+do
+		echo "  ######################### Iteration $i: Update to F2 #########################"
+		mdd file_A=ID.su file_B=$tmpdir/F2.su mdd=1 verbose=1 file_out=$tmpdir/temp.su causal=3 transposeB=1 transposeA=0 eps_r=50e-7 eps_a=1e-12 
+
+		basop file_in=$tmpdir/temp.su choice=kill file_t2k=t2kill_50.txt file_out=$tmpdir/Pinv50.su dim=0
+		
+		mdd file_A=$tmpdir/Pinv50.su file_B=$tmpdir/F2.su mdd=0 verbose=1 conjgB=0 file_out=$tmpdir/PSF_2.su transposeA=1 causal=3 
+	        	
+        mdd file_B=$tmpdir/F2.su file_A=refl_rp_50.su file_out=$tmpdir/GF_2.su mdd=0 verbose=1 conjgB=0 transposeA=1 causal=3
+		
+		mdd file_A=$tmpdir/GF_2.su file_B=$tmpdir/PSF_2.su mdd=1 verbose=1 file_out=$tmpdir/temp1.su causal=3 eps_r=5e-9 eps_a=1e-10 
+		
+		<$tmpdir/temp1.su sudipfilt $dips | sufilter $freqs >$tmpdir/GF_2mdd.su
+
+		basop file_in=$tmpdir/GF_2mdd.su choice=conjg | sugain scale=-1 >$tmpdir/temp.su
+		
+        fmute file_shot=$tmpdir/temp.su file_mute=$tmpdir/F2_0.su file_out=$tmpdir/temp1.su above=4 verbose=0 hw=8 shift=-15 smooth=3
+
+        susum $tmpdir/temp1.su $tmpdir/F2_0.su >$tmpdir/F2.su
+
+		if (( i % 2 == 0 ))
+        	then
+			echo "  ######################### Iteration $i: Update to FP #########################"
+			
+			mdd file_A=ID.su file_B=$tmpdir/FP.su mdd=1 verbose=1 file_out=$tmpdir/temp.su causal=3 transposeB=1 eps_r=50e-7 eps_a=1e-12 
+
+            basop file_in=$tmpdir/temp.su choice=kill file_t2k=t2kill_50.txt file_out=$tmpdir/TY_50.su dim=0
+
+            mdd file_A=$tmpdir/TY_50.su file_B=$tmpdir/FP.su mdd=0 verbose=1 conjgB=0 file_out=$tmpdir/PSF.su transposeA=1 causal=3 
+
+			mdd file_B=$tmpdir/FP.su file_A=refl_rp_50.su file_out=$tmpdir/GFM.su mdd=0 verbose=1 conjgB=0 transposeA=1 causal=3
+			
+			mdd file_A=$tmpdir/GFM.su file_B=$tmpdir/PSF.su mdd=1 verbose=1 file_out=$tmpdir/temp1.su causal=3 eps_r=5e-9 eps_a=1e-10 
+
+			<$tmpdir/temp1.su sudipfilt $dips | sufilter $freqs >$tmpdir/GFMmdd.su
+
+			basop file_in=$tmpdir/GFMmdd.su choice=conjg >$tmpdir/temp1.su
+
+			fmute file_shot=$tmpdir/temp1.su file_mute=$tmpdir/F2_0.su file_out=$tmpdir/temp.su above=4 verbose=0 hw=8 shift=-15 smooth=3
+
+			susum $tmpdir/F2.su $tmpdir/temp.su >$tmpdir/FP.su
+		fi
+done
+
+cp $tmpdir/FP.su marchenko_irr/FP.su
+rm $tmpdir/temp.su $tmpdir/temp1.su $tmpdir/temp2.su $tmpdir/*
+
+duration=$(echo "($(date +%s) -$startTime)" | bc -l)
+echo "Elapsed time: ${duration} seconds"
