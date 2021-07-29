@@ -316,7 +316,7 @@ int main(int argc, char *argv[])
 		fclose(vel_file);
 	}
 
-	if (hdrs[0].scalco < 0) sl = 1.0/fabs(hdrs[0].scalco);
+	if (hdrs[0].scalco < 0) sl = 1.0/abs(hdrs[0].scalco);
 	else if (hdrs[0].scalco == 0) sl = 1.0;
 	else sl = hdrs[0].scalco;
 
@@ -586,11 +586,11 @@ int main(int argc, char *argv[])
 		if (nx != 0) {
 			/* start migration of data */
 
-			if (hdrs_in[0].scalco < 0) scl = 1.0/fabs(hdrs_in[0].scalco);
+			if (hdrs_in[0].scalco < 0) scl = 1.0/abs(hdrs_in[0].scalco);
 			else if (hdrs_in[0].scalco == 0) scl = 1.0;
 			else scl = hdrs_in[0].scalco;
 
-			if (hdrs_in[0].scalel < 0) sclz = 1.0/fabs(hdrs_in[0].scalel);
+			if (hdrs_in[0].scalel < 0) sclz = 1.0/abs(hdrs_in[0].scalel);
 			else if (hdrs_in[0].scalel == 0) sclz = 1.0;
 			else sclz = hdrs_in[0].scalel;
 
@@ -772,7 +772,7 @@ int mpi_handleIO(char *file_shot, float *data_in, segy *hdrs_in,
 	pe   = 0;
 #endif          
 
-	if (hdrs_in[0].scalco < 0) scl = 1.0/fabs(hdrs_in[0].scalco);
+	if (hdrs_in[0].scalco < 0) scl = 1.0/abs(hdrs_in[0].scalco);
 	else if (hdrs_in[0].scalco == 0) scl = 1.0;
 	else scl = hdrs_in[0].scalco;
 	fldro = hdrs_in[0].fldr;

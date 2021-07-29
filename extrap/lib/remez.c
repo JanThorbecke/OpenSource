@@ -9,6 +9,8 @@
 #define b1 (11.01217)
 #define b2 (0.51244)
 
+void optremez_(int *ngrid, int *hoplx, double *weight, double *r_opkx, double *grid, double *r_opx, int *ni, int *r_ext);
+
 int optfiltn(float delt1, float delt2, float df)
 {
 	int		n;
