@@ -39,6 +39,7 @@ utils/truncate
 utils/changevalue
 fdelmodc/fdelmodc
 include/genfft.h
+include/optim.h
 include/zfp.h
 include/bitstream.h
 include/zfp/

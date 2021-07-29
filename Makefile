@@ -10,6 +10,7 @@ all: mkdirs
 	cd marchenko	; $(MAKE) install
 	cd corrvir		; $(MAKE) install
 	cd raytime		; $(MAKE) install
+	cd extrap		; $(MAKE) install
 ifneq ($(strip $(MKLROOT)),)
 	cd fdacrtmc		; $(MAKE) install
 else
@@ -38,6 +39,7 @@ clean:
 	cd marchenko	; $(MAKE) $@
 	cd corrvir		; $(MAKE) $@
 	cd raytime		; $(MAKE) $@
+	cd extrap		; $(MAKE) $@
 	cd fdacrtmc		; $(MAKE) $@
 	cd zfp			; $(MAKE) $@
 	cd fdelmodc3D	; $(MAKE) $@
@@ -52,6 +54,7 @@ realclean:
 	cd marchenko	; $(MAKE) $@
 	cd corrvir		; $(MAKE) $@
 	cd raytime		; $(MAKE) $@
+	cd extrap		; $(MAKE) $@
 	cd fdacrtmc		; $(MAKE) $@
 	cd zfp			; $(MAKE) $@
 	cd fdelmodc3D	; $(MAKE) $@

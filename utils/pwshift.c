@@ -68,7 +68,8 @@ int main (int argc, char **argv)
 	float	dt_ray, dy_ray, dx_ray, t0_ray, y0_ray, x0_ray, scl_ray, px, py, src_velox, src_veloy, src_anglex, src_angley, grad2rad;
 	long	nshots, nt, ny, nx, ntr, *delay, nx1, ny1, tmp;
 	long	nray, nt_ray, ny_ray, nx_ray, ntr_ray;
-    long    verbose, ix, iy, it, iz, is, *gx, *gy, *gz, numb, dnumb, pos, nzs, file_det;
+    long    verbose, ix, iy, it, iz, is, *gx, *gy, *gz, numb, dnumb, nzs, file_det;
+    int     pos;
     size_t  ret;
 	segy	*hdr_gmin, *hdr_time, *hdr_amp, *hdr_out;
 
@@ -161,7 +162,7 @@ int main (int argc, char **argv)
 	}
    
     nray = 0;
-    sprintf(fins,"z%li",0);
+    sprintf(fins,"z%i",0);
     sprintf(file_ray,"%s%s%s",fbr,fins,fer);
     getFileInfo3D(file_ray, &nx_ray, &nt_ray, &ny_ray, &nray, &dx_ray, &dt_ray, &dy_ray, &x0_ray, &t0_ray, &y0_ray, &scl_ray, &ntr_ray);
 

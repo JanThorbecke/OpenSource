@@ -62,7 +62,7 @@ int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *
     ntraces  = (int) (bytes/trace_sz);
 //	fprintf(stderr,"data_sz %ld trace_sz %lld  bytes = %lld\n", data_sz, trace_sz, bytes);
 
-    if (hdr.scalco < 0) scl = 1.0/fabs(hdr.scalco);
+    if (hdr.scalco < 0) scl = 1.0/abs(hdr.scalco);
     else if (hdr.scalco == 0) scl = 1.0;
     else scl = hdr.scalco;
 
@@ -146,7 +146,7 @@ int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *
         		if ((sx_shot != hdr.sx) || (fldr_shot != hdr.fldr) ) break;
             }
             if (itrace>1) {
-                dxrcv  = (float)fabs(gx_end - gx_start)/((float)(itrace-1));
+                dxrcv  = (float)abs(gx_end - gx_start)/((float)(itrace-1));
                 dxsrc  = (float)(hdr.sx - sx_shot)*scl;
 				*n2 = MAX(*n2,itrace);
             }

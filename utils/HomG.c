@@ -126,7 +126,8 @@ int main (int argc, char **argv)
 	long    nshots, ntvs, nyvs, nxvs, ntraces, ret, ix, iy, it, is, ir, ig, file_det, verbose;
     long    ntr, nxr, nyr, nsr, i, l, j, k, nxvr, nyvr, nzvr, count, num, isn;
     float   dtr, dxr, dyr, ftr, fxr, fyr, sclr, scl, *wavelet;
-	long    pos1, npos, zmax, numb, dnumb, scheme, ntmax, ntshift, shift_num, zfps, zfpr, size;
+	long    npos, zmax, numb, dnumb, scheme, ntmax, ntshift, shift_num, zfps, zfpr, size;
+    int     pos1;
     long    ixr, iyr, zsrc, zrcv, *xvr, *yvr, *zvr;
 	segy    *hdr_rcv, *hdr_out, *hdr_shot, *hdr_wav;
 
@@ -1320,7 +1321,7 @@ void getFileInfo3Dzfp(char *filename, long *n1, long *n2, long *n3, long *ngath,
     
     fp_in = fopen(filename, "r");
 	if (fp_in==NULL) {
-		fprintf(stderr,"input file %s has an error\n", fp_in);
+		fprintf(stderr,"input file %s has an error\n", filename);
 		perror("error in opening file: ");
 		fflush(stderr);
 		return;
@@ -1372,7 +1373,7 @@ void getVirReczfp(char *filename, long *nxs, long *nys, long *nxr, long *nyr, lo
     
     fp_in = fopen(filename, "r");
 	if (fp_in==NULL) {
-		fprintf(stderr,"input file %s has an error\n", fp_in);
+		fprintf(stderr,"input file %s has an error\n", filename);
 		perror("error in opening file: ");
 		fflush(stderr);
 		return;
@@ -1452,7 +1453,7 @@ void getxyzzfp(char *filename, long *sx, long *sy, long *sz, long iz, long nz)
     
     fp_in = fopen(filename, "r");
 	if (fp_in==NULL) {
-		fprintf(stderr,"input file %s has an error\n", fp_in);
+		fprintf(stderr,"input file %s has an error\n", filename);
 		perror("error in opening file: ");
 		fflush(stderr);
 		return;
