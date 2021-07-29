@@ -36,6 +36,7 @@ utils/makeR1D
 utils/padmodel
 utils/pwshift
 utils/truncate
+utils/changevalue
 fdelmodc/fdelmodc
 include/genfft.h
 include/zfp.h
