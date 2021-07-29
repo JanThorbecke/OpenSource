@@ -39,12 +39,6 @@ int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 
 int Marchenko_Iterations(float *inif, float *WinA, float *WinB, float *rdatavp, float *rdatavm, float *rdatagm, float *rdatagp, complex *Reflw, complex *cjReflw, float fftscl, int ntfft, int nw, int nw_low, int nblock, size_t nstationA, size_t nstationB, int niter, int squaremat, int verbose);
 
-/**************
-* ntc output samples of deconvolution result
-* note that nt (the number of samples read by the IO routine)
-* should be 2*ntc and a number efficient for FFT's
-*/
-
 /*********************** self documentation **********************/
 char *sdoc[] = {
 " ",

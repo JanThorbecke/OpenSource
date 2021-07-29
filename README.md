@@ -112,6 +112,9 @@ The MDD kernels depend on BLAS and LAPACK calls. Free downloads of these librari
 https://www.netlib.org/blas/index.html
 https://www.netlib.org/lapack/index.html
 
+MDD with LSQR uses the Fortran90 zLSQR code (for real or complex A) from the Systems Optimization Laboratory of Stanford University
+
+https://stanford.edu/group/SOL/software/lsqr/
 
 MKL libraries
 -------------
