@@ -50,8 +50,10 @@ CSRC = \
 
 #if there is a Fortran compiler you can also use Remez optimised operators
 # uncomment this line to do so.
-#FSRC = \
-#	optRemez.f \
+ifneq ($(strip $(FC)),)
+FSRC = \
+	optRemez.f 
+endif
 
 OBJC    = $(CSRC:%.c=%.o)
 OBJF    = $(FSRC:%.f=%.o)
