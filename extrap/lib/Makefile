@@ -53,6 +53,7 @@ CSRC = \
 ifneq ($(strip $(FC)),)
 FSRC = \
 	optRemez.f 
+CFLAGS += -DREM 
 endif
 
 OBJC    = $(CSRC:%.c=%.o)
