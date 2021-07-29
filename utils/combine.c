@@ -58,7 +58,8 @@ int main (int argc, char **argv)
 	char	*fin, *fout, *ptr, fbegin[100], fend[100], fins[100], fin2[100], numb1[100], *direction;
 	float	*indata, *outdata;
 	float	dz,  dy,  dx,  z0,  y0,  x0,  scl;
-	long	nt, nz, ny, nx, ntr, ix, iy, it, is, iz, pos, file_det, nzs, dt;
+	long	nt, nz, ny, nx, ntr, ix, iy, it, is, iz, file_det, nzs, dt;
+    int     pos;
 	long	numb, dnumb, ret, nzmax, compact, verbose, nxyz, sx, sy, sz;
 	long 	nxout, nyout, nzout, ixout, iyout, izout;
 	segy	*hdr_in, *hdr_out;
