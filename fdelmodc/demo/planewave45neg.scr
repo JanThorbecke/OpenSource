@@ -1,0 +1,36 @@
+#!/bin/bash
+#PBS -N fdelmodc
+#PBS -k eo
+#PBS -j eo
+#
+# Models plane wave at depth to receivers at the surface, including snapshots
+export PATH=../../utils:$PATH:
+
+makewave file_out=wavelet.su dt=0.001 nt=1024 fp=13 shift=1 w=g2 verbose=1
+
+makemod file_base=model.su \
+        cp0=1500 ro0=1000 sizex=2100 sizez=1000 \
+        dx=3 dz=3 orig=0,0 \
+		verbose=1
+
+export filecp=model_cp.su
+export filero=model_ro.su
+
+export OMP_NUM_THREADS=1
+
+time ../fdelmodc \
+	file_cp=$filecp file_den=$filero \
+	ischeme=1 \
+	file_src=wavelet.su verbose=5 \
+	file_rcv=rec.su \
+	file_snap=snap.su \
+    rec_delay=0.1 \
+	xrcv1=0 xrcv2=2100 dxrcv=15 \
+	zrcv1=0 zrcv2=0 \
+	dtrcv=0.004 \
+	xsrc=1000 zsrc=300 nshot=1 plane_wave=1 nsrc=701 \
+	src_type=1 tmod=1.0 src_velo=1800 src_angle=45 \
+	ntaper=21 \
+	left=2 right=2 bottom=2 top=2 \
+	tsnap1=0.1 tsnap2=1.0 dtsnap=0.1 \
+

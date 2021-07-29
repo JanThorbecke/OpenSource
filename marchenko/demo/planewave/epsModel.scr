@@ -1,0 +1,127 @@
+#!/bin/bash
+
+srcname=Source
+srcname=SourceNew
+
+supsimage hbox=4 wbox=6 labelsize=12 < ge_cp.su \
+        x1beg=0 x1end=1400.0 d1num=200 lstyle=vertright legend=1 threecolor=0 \
+        label1="depth (m)" label2="lateral distance (m)" \
+        n1tic=5 x2beg=-3000 f2num=-3000 d2num=1500 x2end=3000 > ge_cp.eps
+
+supsimage hbox=4 wbox=6 labelsize=12 < ge_ro.su \
+        x1beg=0 x1end=1400.0 d1num=200 lstyle=vertright legend=1 threecolor=0 \
+        label1="depth (m)" label2="lateral distance (m)" \
+        n1tic=5 x2beg=-3000 f2num=-3000 d2num=1500 x2end=3000 > ge_ro.eps
+
+suwind < shots/refl_rp.su key=sx min=0 max=0 > shot0_rp.su
+
+ntfft=1024
+ns=602
+nsd=351 #number of samples to display
+(( nstart = ns - nsd ))
+
+sumax < ${srcname}0a120_rp.su mode=abs outpar=nep
+clipS=`cat nep | awk '{print $1/7}'`
+
+file=shot0_rp.su
+sumax < $file mode=abs outpar=nep
+clipf1=`cat nep | awk '{print $1/7}'`
+file_base=${file%.su}
+supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+      n1tic=2 x1end=1.4 f1=0 \
+      label1="time [s]" label2="lateral distance [m]" \
+      f2=-3000 f2num=-3000 d2num=1500 clip=$clipf1 > $file_base.eps
+
+#mute windows for angle=5 and angle=-5
+for file in mute05_001.su mute05_002.su mute0-5_001.su mute0-5_002.su #mute0-5s_001.su mute0-5s_002.su
+do
+  file_base=${file%.su}
+  supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+      n1tic=2 f1=0 \
+      label1="time [s]" label2="lateral distance [m]" \
+      f2=-3000 f2num=-3000 d2num=1500 wclip=0 bclip=1 > $file_base.eps
+
+	rotate file_in=$file file_out=nep.su
+
+  supsimage < nep.su hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+      n1tic=2 x1beg=-0.7 x1end=0.7 f1=-2.048 \
+      label1="time [s]" label2="lateral distance [m]" \
+      f2=-3000 f2num=-3000 d2num=1500 wclip=0 bclip=1 > ${file_base}_shift0.eps
+done
+rm nep.su
+
+#for file in p0plus.su Gplus120.su TGmin120.su TCorrect_${srcname}120_rp.su shot0_rp.su
+for file in ${srcname}5a120_rp.su ${srcname}-5a120_rp.su ${srcname}0a120_rp.su fdplus${srcname}5a120.su fdplus${srcname}0a120.su fdplus${srcname}-5a120.su SourceDipa_rp.su fdplusSourceDipa.su #fdplus${srcname}-5a120S.su
+do 
+  #sumax < $file mode=abs outpar=nep
+  #clipf1=`cat nep | awk '{print $1/7}'`
+
+  file_base=${file%.su}
+  supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+      n1tic=2 x1end=1.4 f1=0 \
+      label1="time [s]" label2="lateral distance [m]" \
+      f1=0 f2=-3000 f2num=-3000 d2num=1500 clip=$clipS > $file_base.eps
+
+done
+
+for file in Gplus${srcname}0a120.su Gplus${srcname}5a120.su Gplus${srcname}-5a120.su Gmin${srcname}0a120.su Gmin${srcname}5a120.su Gmin${srcname}-5a120.su GminSourceDipa.su GplusSourceDipa.su #Gplus${srcname}5a120_shifted.su Gmin${srcname}5a120_shifted.su 
+do 
+  sumax < $file mode=abs outpar=nep
+  clipf1=`cat nep | awk '{print $1/7}'`
+
+  file_base=${file%.su}
+  supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+      n1tic=2 x1end=1.4 f1=0 \
+      label1="time [s]" label2="lateral distance [m]" \
+      f2=-3000 f2num=-3000 d2num=1500 clip=$clipS > $file_base.eps
+
+done
+
+#plane-wave snapshots
+for file in snap5a120_sp.su snapDipa_sp.su snap-5a120_sp.su snap-5Aa120_sp.su
+do 
+  sumax < $file mode=abs outpar=nep
+  clipf1=`cat nep | awk '{print $1/7}'`
+
+  file_base=${file%.su}
+  for fldr in 1 2 3 4
+  do
+    suwind < $file key=fldr min=$fldr max=$fldr > shottmp.su
+    supsimage < shottmp.su hbox=4 wbox=4 labelsize=8 linewidth=0.0 \
+      n1tic=2 f1=0 \
+      label1="depth [m]" label2="lateral distance [m]" \
+      f2=-3000 f2num=-3000 d2num=1500 clip=$clipf1 > ${file_base}_$fldr.eps
+
+   done
+done
+
+#iterrations and f1plus and f1min
+
+for file in f1plus${srcname}5a120.su f1min${srcname}5a120.su 
+do 
+  sumax < $file mode=abs outpar=nep
+  clipf1=`cat nep | awk '{print $1/9}'`
+
+  file_base=${file%.su}
+  supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+      n1tic=2 x1beg=-0.7 x1end=0.7 \
+      label1="time [s]" label2="lateral distance [m]" \
+      f2=-3000 f2num=-3000 d2num=1500 clip=$clipS > $file_base.eps
+
+done
+
+for file in iter${srcname}5a120_002.su iter${srcname}5a120_001.su 
+do 
+  sumax < $file mode=abs outpar=nep
+  clipf1=`cat nep | awk '{print $1/9}'`
+
+  basop file_in=$file file_out=nep.su choice=shift shift=-2.048
+  file_base=${file%.su}
+  supsimage < nep.su hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+      n1tic=2 x1beg=-0.7 x1end=0.7 f1=-2.048 \
+      label1="time [s]" label2="lateral distance [m]" \
+      f2=-3000 f2num=-3000 d2num=1500 clip=$clipS > $file_base.eps
+
+done
+
+rm nep.su

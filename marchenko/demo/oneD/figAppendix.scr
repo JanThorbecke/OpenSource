@@ -20,8 +20,8 @@ for above in 0 1 -1 2 4
 do
 fmute file_mute=iniFocus_rp.su file_shot=${file_base}.su file_out=nep.su above=${above} shift=8 verbose=1 check=1 hw=4
 
-basop choice=shift shift=-$shift file_in=nep.su file_out=nep_t0.su
-supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < nep.su \
+basop choice=shift shift=-$shift file_in=nep$above.su file_out=nep${above}_t0.su
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < nep$above.su \
    	label1="time (s)" label2="lateral distance (m)" \
     n1tic=2 d2=5 x1beg=0  d1num=0.5 \
     curve=pslinepos.asci,pslineneg.asci npair=901,901 curvewidth=2,2 curvecolor=black,black curvedash=3,3 \

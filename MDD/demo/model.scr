@@ -1,0 +1,29 @@
+#!/bin/bash
+
+dx=2.5
+sm=50
+
+makemod sizex=6000 sizez=3000 dx=$dx dz=$dx cp0=1900  ro0=1200 \
+        orig=-3000,0 file_base=syncl.su verbose=2 \
+        intt=def x=-3000,500,3000 z=195,195,195 poly=1 cp=1950 ro=3700 \
+        intt=def x=-3000,3000 z=600,600 poly=0 cp=2050 ro=1750 \
+        intt=def x=-3000,3000 z=680,680 poly=0 cp=2150 ro=2220 \
+        intt=def x=-3000,3000 z=780,780 poly=0 cp=2230 ro=1700 \
+        intt=def x=-3000,-2200,-1500,0,1300,2100,3000 z=520,580,680,840,680,600,500 poly=2 cp=2400 ro=2800 \
+        intt=def x=-3000,0,3000 z=1110,1110,1110 poly=0 cp=2300 ro=1950 \
+        intt=def x=-3000,3000 z=1180,1180 poly=0 cp=2480 ro=1820 \
+        intt=def x=-3000,0,3000 z=1290,1290,1370 poly=0 cp=2600 ro=2000 \
+        intt=def x=-3000,3000 z=1380,1380 poly=0 cp=2720 ro=2050 \
+        intt=def x=-3000,3000 z=1480,1480 poly=0 cp=2800 ro=1850
+
+makemod sizex=6000 sizez=3000 dx=$dx dz=$dx cp0=1900  ro0=1200 \
+        orig=-3000,0 file_base=smooth.su verbose=2 supersmooth=1 \
+        intt=def x=-3000,500,3000 z=195,195,195 poly=1 cp=1950 ro=3700 grad=$sm \
+        intt=def x=-3000,3000 z=600,600 poly=0 cp=2050 ro=1750 grad=$sm \
+        intt=def x=-3000,3000 z=680,680 poly=0 cp=2150 ro=2220 grad=$sm \
+        intt=def x=-3000,3000 z=780,780 poly=0 cp=2230 ro=1700 grad=$sm \
+        intt=def x=-3000,-2200,-1500,0,1300,2100,3000 z=520,580,680,840,680,600,500 poly=2 cp=2400 ro=2800 grad=$sm
+
+makemod sizex=12000 sizez=4000 dx=$dx dz=$dx cp0=1900 ro0=1200 \
+        orig=-6000,-1000 file_base=noContrast.su
+

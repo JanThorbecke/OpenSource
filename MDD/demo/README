@@ -1,0 +1,16 @@
+1 - model.scr
+	Make models: full syncl model, smooth truncated model and homogeneous background model
+2 - shots_slurm.scr
+	FD modelling of all shot positions
+3 - initialFocus.scr
+	FD modelling of response between surface and focal points (z = 1100m)
+3 - makerefl.scr
+	Merge all shots and direct Green's function arrivals. Add acausal parts
+4 - makeID.scr 
+	Make a bandlimited identity matrix for inversions
+5 - marchenko_pirr.scr
+	Iteratively solve the irregular Marchenko scheme (10 iterations)
+6 - migrate.scr
+	Redatum reflection response to focal depth and perform migration
+
+
