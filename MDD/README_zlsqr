@@ -1,0 +1,70 @@
+README for lsqrf90-v2
+
+The software for LSQR (f90 version 2) is provided by SOL, Stanford University
+under the terms of the OSI Common Public License (CPL):
+http://www.opensource.org/licenses/cpl1.0.php
+
+24 Sep 2007: Version 2 of f90 files for LSQR.
+             Separate modules are used for LSQR, example test problems,
+             and Check routines for A and x.
+
+             LSQR lives in lsqrModule.f90.
+             Aprod1, Aprod2 (matrix-vector product routines) are in
+             lsqrTestModule.f90.  This module illustrates how
+             problem-specific data can be created for Aprod1, Aprod2
+             even though LSQR calls them with a simple parameter list.
+             
+24 Sep 2007: f90 files available for download from SOL.
+19 Dec 2008: lsqrblasInterface module implemented.
+26 Oct 2012: lsqrTestProgram outputs helpful info to the screen.
+29 Jun 2013: Support for complex A and b
+
+Maintained by Michael Saunders, SOL, Stanford University
+              saunders@stanford.edu  650-723-1875
+-----------------------------------------------------------------------------
+
+LSQR (f90 version 2) involves the following files:
+
+   lsqrblas.f90         (not needed if Level 1 BLAS are available)
+   lsqrblasInterface.f90
+   lsqrCheckModule.f90
+   lsqrModule.f90
+   lsqrTestModule.f90
+   lsqrTestProgram.f90
+   LSQR.txt             (example output file from an Apple iMac 
+                         compiled with gfortran -g -O on Mac OS X 10.6.8)
+   Makefile
+
+To compile the code and run the test program on Linux or Unix,
+proceed as follows:
+
+   make lsqr               (creates executable TestProgram)
+   ./TestProgram
+   grep appears LSQR.txt
+
+"LSQR  appears to be successful" should occur 17 times.
+"LSQR  appears to have failed" might occur for the most
+ill-conditioned problem, but this is not cause for alarm
+if ||A'r|| is very small (~= 1e-12).
+
+zLSQR is LSQR for complex A and complex b.  zLSQR involves the
+following files:
+   zlsqrblas.f90         (not needed if Level 1 BLAS are available)
+   zlsqrblasInterface.f90
+   zlsqrCheckModule.f90
+   zlsqrModule.f90
+   zlsqrTestModule.f90
+   zlsqrTestProgram.f90
+   zLSQR.txt             (example output file from an Apple iMac 
+                          compiled with gfortran -g -O on Mac OS X 10.6.8)
+   lsqrDataModule.f90
+   Makefile
+
+To compile the code and run the test program on Linux or Unix,
+proceed as follows:
+
+   make zlsqr               (creates executable zTestProgram)
+   ./zTestProgram
+
+
+
