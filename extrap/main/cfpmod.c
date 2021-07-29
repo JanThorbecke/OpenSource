@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
 	}
 	fclose(vel_fp);
 
-	if (hdrs[0].scalco < 0) scl = 1.0/fabs(hdrs[0].scalco);
+	if (hdrs[0].scalco < 0) scl = 1.0/abs(hdrs[0].scalco);
 	else if (hdrs[0].scalco == 0) scl = 1.0;
 	else scl = hdrs[0].scalco;
 

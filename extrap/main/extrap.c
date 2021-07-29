@@ -188,11 +188,11 @@ int main(int argc, char *argv[])
 	/* get trid value from hdrs_in */
 	trid = hdrs_in[0].trid;
 	
-	if (hdrs_in[0].scalco < 0) scl = 1.0/fabs(hdrs_in[0].scalco);
+	if (hdrs_in[0].scalco < 0) scl = 1.0/abs(hdrs_in[0].scalco);
 	else if (hdrs_in[0].scalco == 0) scl = 1.0;
 	else scl = hdrs_in[0].scalco;
 	
-	if (hdrs_in[0].scalel < 0) scel = 1.0/fabs(hdrs_in[0].scalel);
+	if (hdrs_in[0].scalel < 0) scel = 1.0/abs(hdrs_in[0].scalel);
 	else if (hdrs_in[0].scalel == 0) scel = 1.0;
 	else scel = hdrs_in[0].scalel;
 	
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
 	}
 	fclose(vel_fp);
 
-	if (hdrs[0].scalco < 0) sl = 1.0/fabs(hdrs[0].scalco);
+	if (hdrs[0].scalco < 0) sl = 1.0/abs(hdrs[0].scalco);
 	else if (hdrs[0].scalco == 0) sl = 1.0;
 	else sl = hdrs[0].scalco;
 
