@@ -23,16 +23,14 @@ MPICTARGET= %: %.c
 INSTALL: $(CPROGS) $(MPICPROGS)
 
 $(CPROGS):	$(CTARGET) $L/libextrap2d.a
-	$(CC) $(CFLAGS) $(OPTC) $(CPPFLAGS) $@.c $(LDFLAGS) -o $@.tmp
-	test ! -f $@ || $(RM) $@
-	mv $@.tmp $B/$@
+	$(CC) $(CFLAGS) $(OPTC) $(CPPFLAGS) $@.c $(LDFLAGS) -o $@
+	cp -rp $@ $B/$@
 
 $(MPICPROGS): $(MPICTARGET) $L/libextrap2d.a
 ifdef MPICC
 	@test -d $(@D) || mkdir -p $(patsubst %/,%,$(@D))
-	$(MPICC) -DMPI $(CFLAGS) $(OPTC) $(CPPFLAGS) $(@F).c $(LDFLAGS) -o $@.tmp
-	test ! -f $@ || $(RM) $@
-	mv $@.tmp $B/$@
+	$(MPICC) -DMPI $(CFLAGS) $(OPTC) $(CPPFLAGS) $(@F).c $(LDFLAGS) -o $@
+	cp -rp $@ $B/$@
 else
 	@echo cannot make $@ because no MPI-C compiler has been defined
 endif
