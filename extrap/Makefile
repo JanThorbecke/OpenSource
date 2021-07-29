@@ -1,6 +1,6 @@
 #master makefile for extrap3d
 
-all: 
+install: 
 	cd lib		; $(MAKE)
 	cd main		; $(MAKE) 
 
