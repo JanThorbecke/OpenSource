@@ -4,8 +4,6 @@ include ../../Make_include
 
 LIBS := $(subst -lgenfft,-lextrap2d -lgenfft ,$(LIBS))
 
-#LIBS += -L$L -lextrap2d -lgenfft -lm 
-
 LDFLAGS += $(LIBS)
 
 MPICPROGS = \
