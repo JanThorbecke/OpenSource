@@ -16,6 +16,13 @@ ALLINC  = -I.
 #FFLAGS += -g -mcmodel=medium
 #LIBS += -lblas -llapack -L$L -lgenfft $(LIBSM) -lc -lm
 
+ifeq ($(FC),ifort)
+   LDFLAGS += -nofor-main
+endif
+ifeq ($(FC),gfortran)
+   LDFLAGS += -Wno-main
+endif
+
 all: mdd
 
 PRG = mdd
@@ -43,7 +50,7 @@ OBJC	= $(SRCC:%.c=%.o)
 OBJF    = $(SRCF:%.F90=%.o)
 
 $(PRG):	$(OBJC) $(OBJF)
-	$(FC) $(LDFLAGS) -nofor-main $(CFLAGS) $(OPTC) -o $(PRG) $(OBJC) $(OBJF) $(LIBS) 
+	$(FC) $(LDFLAGS) $(CFLAGS) $(OPTC) -o $(PRG) $(OBJC) $(OBJF) $(LIBS) 
 
 install: $(PRG) 
 	cp $(PRG) $B
