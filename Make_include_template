@@ -94,6 +94,13 @@ endif
 
 #LIBARIES
 LIBS= -L$L -lgenfft $(BLAS)
+ifeq ($(FC),ifort)
+   LIBS += -lifcore
+endif
+ifeq ($(FC),gfortran)
+   LIBS += -lgfortran
+endif
+
 
 
 ########################################################################

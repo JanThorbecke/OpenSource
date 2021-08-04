@@ -10,16 +10,16 @@ all: mkdirs
 	cd marchenko	; $(MAKE) install
 	cd corrvir		; $(MAKE) install
 	cd raytime		; $(MAKE) install
+	cd fdelmodc3D	; $(MAKE) install
+	cd marchenko3D	; $(MAKE) install
+	cd vmar			; $(MAKE) install
 	cd extrap		; $(MAKE) install
 ifneq ($(strip $(MKLROOT)),)
-	cd fdacrtmc		; $(MAKE) install
+	cd fdacrtmc	    ; $(MAKE) install
 else
 	@echo "***************************************************************************";
 	@echo "**** There is no MKL or other library for the FFTW calls in use by fdacrtmc";
 endif
-	cd fdelmodc3D	; $(MAKE) install
-	cd marchenko3D	; $(MAKE) install
-	cd vmar	; $(MAKE) install
 ifneq ($(strip $(FC)),)
 	cd MDD			; $(MAKE) install
 else
