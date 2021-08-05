@@ -178,4 +178,5 @@ UPDATES AND LATEST VERSION
 The latest version of the source code and manual can be found at:
 
 git clone https://gitlab.tudelft.nl/Geophysics/OpenSource.git
+git clone https://gitlab.com/geophysicsdelft/OpenSource.git
 
