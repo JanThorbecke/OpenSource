@@ -699,6 +699,20 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 				   beam_vx, beam_vz, beam_txx, beam_tzz, beam_txz, 
 				   beam_p, beam_pp, beam_ss, verbose);
 		
+        /* set receiver arrays to zero for next shot */
+	    size = rec.n*rec.nt;
+	    if (rec.type.vz)  memset(rec_vz,0,size*sizeof(float)); 
+	    if (rec.type.vx)  memset(rec_vx,0,size*sizeof(float));
+	    if (rec.type.p)   memset(rec_p ,0,size*sizeof(float));
+	    if (rec.type.txx) memset(rec_txx ,0,size*sizeof(float));
+	    if (rec.type.tzz) memset(rec_tzz ,0,size*sizeof(float));
+	    if (rec.type.txz) memset(rec_txz ,0,size*sizeof(float));
+	    if (rec.type.pp)  memset(rec_pp ,0,size*sizeof(float));
+	    if (rec.type.ss)  memset(rec_ss ,0,size*sizeof(float));
+        if (rec.type.ud) { 
+		    memset(rec_udvz,0,mod.nax*rec.nt*sizeof(float));
+		    memset(rec_udp ,0,mod.nax*rec.nt*sizeof(float));
+	    }
 
 	} /* end of loop over number of shots */
 
