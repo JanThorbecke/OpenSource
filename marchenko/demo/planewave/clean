@@ -1,0 +1,4 @@
+#!/bin/bash
+
+rm *.su *.bin *.eps nep line* *.asci src*.txt
+

@@ -37,8 +37,11 @@ CSRC = \
 
 #if there is a Fortran compiler you can also use Remez optimised operators
 # uncomment this line to do so.
+#ifneq ($(strip $(FC)),)
 #FSRC = \
-#	optRemez.f \
+#	optRemez.f 
+#CFLAGS += -DREM 
+#endif
 
 OBJC    = $(CSRC:%.c=%.o)
 OBJF    = $(FSRC:%.f=%.o)
