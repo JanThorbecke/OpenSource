@@ -3,6 +3,13 @@
 srcname=Source
 srcname=SourceNew
 
+ntfft=1024
+ns=602
+nsd=351 #number of samples to display
+(( nstart = ns - nsd ))
+
+if [[ "$1" == "model" ]];
+then
 supsimage hbox=4 wbox=6 labelsize=12 < ge_cp.su \
         x1beg=0 x1end=1400.0 d1num=200 lstyle=vertright legend=1 threecolor=0 \
         label1="depth (m)" label2="lateral distance (m)" \
@@ -15,14 +22,6 @@ supsimage hbox=4 wbox=6 labelsize=12 < ge_ro.su \
 
 suwind < shots/refl_rp.su key=sx min=0 max=0 > shot0_rp.su
 
-ntfft=1024
-ns=602
-nsd=351 #number of samples to display
-(( nstart = ns - nsd ))
-
-sumax < ${srcname}0a120_rp.su mode=abs outpar=nep
-clipS=`cat nep | awk '{print $1/7}'`
-
 file=shot0_rp.su
 sumax < $file mode=abs outpar=nep
 clipf1=`cat nep | awk '{print $1/7}'`
@@ -31,6 +30,33 @@ supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
       n1tic=2 x1end=1.4 f1=0 \
       label1="time [s]" label2="lateral distance [m]" \
       f2=-3000 f2num=-3000 d2num=1500 clip=$clipf1 > $file_base.eps
+exit
+fi
+
+if [[ "$1" == "snapshots" ]];
+then
+#plane-wave snapshots
+for file in snap5a120_sp.su snapDipa_sp.su snap-5a120_sp.su 
+do 
+  sumax < $file mode=abs outpar=nep
+  clipf1=`cat nep | awk '{print $1/7}'`
+
+  file_base=${file%.su}
+  for fldr in 1 2 3 4
+  do
+    suwind < $file key=fldr min=$fldr max=$fldr > shottmp.su
+    supsimage < shottmp.su hbox=4 wbox=4 labelsize=8 linewidth=0.0 \
+      n1tic=2 f1=0 \
+      label1="depth [m]" label2="lateral distance [m]" \
+      f2=-3000 f2num=-3000 d2num=1500 clip=$clipf1 > ${file_base}_$fldr.eps
+
+   done
+done
+exit
+fi
+
+sumax < ${srcname}0a120_rp.su mode=abs outpar=nep
+clipS=`cat nep | awk '{print $1/7}'`
 
 #mute windows for angle=5 and angle=-5
 for file in mute05_001.su mute05_002.su mute0-5_001.su mute0-5_002.su #mute0-5s_001.su mute0-5s_002.su
@@ -75,24 +101,6 @@ do
       label1="time [s]" label2="lateral distance [m]" \
       f2=-3000 f2num=-3000 d2num=1500 clip=$clipS > $file_base.eps
 
-done
-
-#plane-wave snapshots
-for file in snap5a120_sp.su snapDipa_sp.su snap-5a120_sp.su snap-5Aa120_sp.su
-do 
-  sumax < $file mode=abs outpar=nep
-  clipf1=`cat nep | awk '{print $1/7}'`
-
-  file_base=${file%.su}
-  for fldr in 1 2 3 4
-  do
-    suwind < $file key=fldr min=$fldr max=$fldr > shottmp.su
-    supsimage < shottmp.su hbox=4 wbox=4 labelsize=8 linewidth=0.0 \
-      n1tic=2 f1=0 \
-      label1="depth [m]" label2="lateral distance [m]" \
-      f2=-3000 f2num=-3000 d2num=1500 clip=$clipf1 > ${file_base}_$fldr.eps
-
-   done
 done
 
 #iterrations and f1plus and f1min

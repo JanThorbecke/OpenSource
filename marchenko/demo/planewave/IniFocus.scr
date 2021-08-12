@@ -42,7 +42,7 @@ varq=SourceNew-${angle}a${a}.su
 dx=2.5
 dt=0.0005
 
-/vardim/home/thorbcke/src/OpenSource/fdelmodc/fdelmodc \
+fdelmodc \
         file_cp=ge_cp.su ischeme=1 iorder=4 \
         file_den=ge_ro.su \
         file_src=wave.su \
@@ -67,7 +67,7 @@ dt=0.0005
         left=2 right=2 top=2 bottom=2\
 
 
-/vardim/home/thorbcke/src/OpenSource/fdelmodc/fdelmodc \
+fdelmodc \
         file_cp=ge_cp.su ischeme=1 iorder=4 \
         file_den=ge_ro.su \
         file_src=wave.su \

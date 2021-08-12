@@ -4,12 +4,25 @@ ROOT=/vardim/home/thorbcke/R1/
 ROOT=/vardim/home/thorbcke/src/
 export PATH=$HOME/src/OpenSource/bin:$PATH:
 export OMP_NUM_THREADS=4
-exe=$ROOT/OpenSource/marchenko/marchenkowd
-exe=$ROOT/OpenSource/marchenko/marchenko
+#exe=$ROOT/OpenSource/marchenko/marchenkowd
 #exe=$ROOT/OpenSource/bin/marchenko
+exe=$ROOT/OpenSource/bin/marchenko
 
-#5 degrees dip without (set src_angle=0) tshift for Gmin in marchenko program (recompiled)
-base=Source5a120_shiftedIter
+#zero angle
+if [[ "$1" == "plane0" ]];
+then
+src_angle=0
+inifile=SourceNew${src_angle}a120_rp.su
+base=${inifile%_rp.su}
+fmute file_shot=$inifile file_out=fdplus${base}.su above=-1 shift=-6 verbose=1 check=0 hw=2
+$exe file_shot=shots/refl_rp.su file_tinv=fdplus${base}.su nshots=601 verbose=2 \
+        tap=3 niter=16 hw=2 shift=7 smooth=3 plane_wave=0 src_angle=0 rotate=0 \
+        file_green=green${base}.su file_gplus=Gplus${base}.su file_gmin=Gmin${base}.su  \
+        file_f1plus=f1plus${base}.su file_f1min=f1min${base}.su file_f2=f2${base}.su 
+exit
+fi
+
+#5 degrees dip without (set src_angle=0) 
 base=Source5a120old
 
 src_angle=5
@@ -25,15 +38,6 @@ $exe file_shot=shots/refl_rp.su file_tinv=fdplus${base}.su nshots=601 verbose=2 
         file_f1plus=f1plus${base}.su file_f1min=f1min${base}.su file_f2=f2${base}.su file_iter=iter${base}.su 
 
 #exit
-#zero angle
-src_angle=0
-inifile=SourceNew${src_angle}a120_rp.su
-base=${inifile%_rp.su}
-fmute file_shot=$inifile file_out=fdplus${base}.su above=-1 shift=-6 verbose=1 check=0 hw=2
-$exe file_shot=shots/refl_rp.su file_tinv=fdplus${base}.su nshots=601 verbose=2 \
-        tap=3 niter=16 hw=2 shift=7 smooth=3 plane_wave=0 src_angle=0 rotate=0 \
-        file_green=green${base}.su file_gplus=Gplus${base}.su file_gmin=Gmin${base}.su  \
-        file_f1plus=f1plus${base}.su file_f1min=f1min${base}.su file_f2=f2${base}.su 
 
 for angle in 5 #10
 do
