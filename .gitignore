@@ -8,6 +8,7 @@ bin/*
 */.DS*
 **/.DS*
 .DS*
+slurm*.out
 Make_include
 fdelmodc_cuda.tgz
 marchenko/fmute
