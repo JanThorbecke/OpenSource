@@ -2,7 +2,6 @@ Code to reproduce the example in section `Plane-Wave Marchenko algorithm` of the
 
 Description of files:
 
-
 1) ./model.scr computes the gridded velocity/density model 
 
 2) ./shots.scr computes 601 shots using slurm arrays: ~100 s runtime for each shot
@@ -34,6 +33,12 @@ correct results at the moment
    ./marchenko.scr
    ./eps.scr
 ]
+
+8)
+
+
+
+
 
 
 2) itertions.scr computes the intermediate results of the multiple attenutation scheme and produces all output files that are used in the manuscript.
