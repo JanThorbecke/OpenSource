@@ -53,6 +53,8 @@ char *sdoc[] = {
 "   hw=15 .................... number of time samples to look up and down in next trace for maximum",
 "   smooth=0 ................. number of points to smooth mute with cosine window",
 "   plane_wave=0 ............. apply mute window as is done on plane-waves",
+"   src_angle=0 .............. angle of plane source array",
+"   src_velo=1500 ............ velocity to use in src_angle definition",
 "   returnmask=0 ............. return the muted file (0) or return the mask file (1)",
 "   verbose=0 ................ silent option; >0 display info",
 " ",
@@ -70,6 +72,7 @@ int main (int argc, char **argv)
     int     tstart, tend, scale, *xrcv;
     float   dt, d2, f1, f2, t0, t1, f1b, f2b, d1, d1b, d2b;
     float   w1, w2, dxrcv;
+    float   grad2rad, p, src_angle, src_velo, dxs;
     float   *tmpdata, *tmpdata2, *costaper;
     char    *file_mute, *file_shot, *file_out;
     float   scl, sclsxgx, sclshot, xmin, xmax, tmax, lmax;
@@ -89,6 +92,8 @@ int main (int argc, char **argv)
     if(!getparint("check", &check)) check = 0;
     if(!getparint("scale", &scale)) scale = 0;
     if(!getparint("plane_wave", &plane_wave)) plane_wave = 0;
+    if (!getparfloat("src_angle",&src_angle)) src_angle=0.;
+    if (!getparfloat("src_velo",&src_velo)) src_velo=1500.;
     if(!getparint("hw", &hw)) hw = 15;
     if(!getparint("smooth", &smooth)) smooth = 0;
     if(!getparfloat("w1", &w1)) w1=1.0;
@@ -117,6 +122,7 @@ int main (int argc, char **argv)
         hdrs_in1 = (segy *) calloc(nxmax,sizeof(segy));
 
         nx1 = readData(fp_in1, tmpdata, hdrs_in1, nt1);
+        dxs = d2;
         if (nx1 == 0) {
             fclose(fp_in1);
             if (verbose) vmess("end of file_mute data reached");
@@ -199,6 +205,22 @@ int main (int argc, char **argv)
 /*            fprintf(stderr,"costaper[%d]=%f\n",i,costaper[i]);*/
         }
     }
+
+    /* compute time shift for tilted plane waves */
+    if (plane_wave==1) {
+        /* compute time shift for shifted plane waves */
+        grad2rad = 17.453292e-3;
+        p = sin(src_angle*grad2rad)/src_velo;
+
+        /* compute mute window for plane waves */
+        for (i=0; i<nx1; i++) tsynW[i] = NINT((i-(nx1-1)/2)*dxs*p/dt);
+    }
+    else { /* just fill with zero's */
+        for (i=0; i<nx1; i++) {
+            tsynW[i] = 0;
+        }
+    }
+
 
 /*================ loop over all shot records ================*/
 
@@ -294,7 +316,6 @@ int main (int argc, char **argv)
         }
         if (returnmask==1) {
             for (i = 0; i < nx2; i++) {
-                lmax = fabs(tmpdata2[i*nt2+maxval[i]]);
                 for (j = 0; j < nt2; j++) {
                     tmpdata2[i*nt2+j] = 1;
                 }
