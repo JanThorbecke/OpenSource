@@ -92,8 +92,9 @@ int main (int argc, char **argv)
     if(!getparint("check", &check)) check = 0;
     if(!getparint("scale", &scale)) scale = 0;
     if(!getparint("plane_wave", &plane_wave)) plane_wave = 0;
-    if (!getparfloat("src_angle",&src_angle)) src_angle=0.;
-    if (!getparfloat("src_velo",&src_velo)) src_velo=1500.;
+    if(!getparfloat("src_angle",&src_angle)) src_angle=0.;
+    if(!getparfloat("src_velo",&src_velo)) src_velo=1500.;
+    if(!getparint("iter",&iter)) iter=0;
     if(!getparint("hw", &hw)) hw = 15;
     if(!getparint("smooth", &smooth)) smooth = 0;
     if(!getparfloat("w1", &w1)) w1=1.0;
@@ -122,7 +123,6 @@ int main (int argc, char **argv)
         hdrs_in1 = (segy *) calloc(nxmax,sizeof(segy));
 
         nx1 = readData(fp_in1, tmpdata, hdrs_in1, nt1);
-        dxs = d2;
         if (nx1 == 0) {
             fclose(fp_in1);
             if (verbose) vmess("end of file_mute data reached");
@@ -144,6 +144,7 @@ int main (int argc, char **argv)
     size = ntmax * nxmax;
     tmpdata2 = (float *)malloc(size*sizeof(float));
     hdrs_in2 = (segy *) calloc(nxmax,sizeof(segy));
+    dxs = d2b;
 
     if (file_shot != NULL) fp_in2 = fopen(file_shot, "r");
     else fp_in2=stdin;
@@ -175,7 +176,14 @@ int main (int argc, char **argv)
         sclsxgx = sclshot;
     }
 
-    if (verbose) vmess("sampling file_mute=%d, file_shot=%d", nt1, nt2);
+    if (verbose) {
+        vmess("sampling file_mute=%d, file_shot=%d", nt1, nt2);
+        if (plane_wave==1 ) {
+            vmess("src_angle                      = %e ", src_angle);
+            vmess("src_velo                       = %e ", src_velo);
+            vmess("iter                           = %e ", iter);
+		}
+    }
 
 /*================ initializations ================*/
 
@@ -327,7 +335,6 @@ int main (int argc, char **argv)
 /*================ apply mute window ================*/
 
 		if (plane_wave) {
-            iter = 0;
             applyMute_tshift(tmpdata2, maxval, smooth, above, 1, nx2, nt2, xrcv, nx2, shift, iter, tsynW);
 		}
 		else {
