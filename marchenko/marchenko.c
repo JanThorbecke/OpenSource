@@ -366,6 +366,10 @@ int main (int argc, char **argv)
         vmess("direction of increasing traces = %d", di);
         vmess("number of time samples (nt,nts) = %d (%d,%d)", ntfft, nt, nts);
         vmess("time sampling                  = %e ", dt);
+        if (plane_wave ) {
+            vmess("src_angle                      = %e ", src_angle);
+            vmess("src_velo                       = %e ", src_velo);
+		}
         if (file_green != NULL) vmess("Green output file              = %s ", file_green);
         if (file_gmin != NULL)  vmess("Gmin output file               = %s ", file_gmin);
         if (file_gplus != NULL) vmess("Gplus output file              = %s ", file_gplus);
