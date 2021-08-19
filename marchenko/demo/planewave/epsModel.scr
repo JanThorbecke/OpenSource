@@ -60,6 +60,12 @@ fi
 
 if [[ "$1" == "mutewindow" ]];
 then
+  # basic (wrong) window for 5 degrees
+  inifile=SourceNew5a120_rp.su
+  fmute file_shot=$inifile file_out=mute0Basic_001.su above=0 shift=7 smooth=3 \
+    verbose=1 check=0 hw=2 returnmask=1 plane_wave=0 
+
+  # plane wave designed windows for 5 and -5 degrees
   for angle in 5 -5
   do
     inifile=SourceNew${angle}a120_rp.su
@@ -72,7 +78,7 @@ then
   done
 
   #mute windows for angle=5 and angle=-5
-  for file in mute05_001.su mute05_002.su mute0-5_001.su mute0-5_002.su 
+  for file in mute05_001.su mute05_002.su mute0-5_001.su mute0-5_002.su mute0Basic_001.su
   do
     file_base=${file%.su}
     supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
