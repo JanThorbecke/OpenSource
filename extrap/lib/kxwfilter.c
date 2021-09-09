@@ -46,7 +46,7 @@ void kxwfilter(complex *data, float k, float dx, int nkx,
 	}
 
 	band = fabs(kpos - kneg);
-	filterpoints = (int)fabs((int)(perc*band/dkx));
+	filterpoints = (int)abs((int)(perc*band/dkx));
 	kfilt = fabs(dkx*filterpoints);
 
 	if (perc > 0) {
