@@ -45,10 +45,10 @@ OPTC += -fopenmp
 #CC = icc
 #FC = ifort
 ### Linux
-##OPTC = -O3 -no-prec-div -qopt-report-phase=vec,openmp
-##OPTF = -O3 -no-prec-div -qopt-report-phase=vec,openmp
-#OPTC = -O3 -no-prec-div -xCORE-AVX2 
-#OPTF = -O3 -no-prec-div -xCORE-AVX2
+##OPTC = -O3 -qopt-report-phase=vec,openmp
+##OPTF = -O3 -qopt-report-phase=vec,openmp
+#OPTC = -O3 -xCORE-AVX2 
+#OPTF = -O3 -xCORE-AVX2
 ###to include parallelisation with OpenMP
 #OPTC += -qopenmp
 ## for static linking uncomment the following
