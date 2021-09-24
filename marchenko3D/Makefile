@@ -2,7 +2,7 @@
 
 include ../Make_include
 
-LIBS    += -L$L -lgenfft -lzfp -lm $(LIBSM)
+LIBS    += -L$L -lgenfft -lzfp $(LIBSM)
 CFLAGS  += 
 #OPTC += -g -O0 -Wall 
 
