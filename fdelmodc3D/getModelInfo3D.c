@@ -123,7 +123,7 @@ long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3,
 	}
 
     if ( NINT(100.0*((*d1)/(*d3)))!=100 ) {
-        verr("dx and dy are different in the model !"); 
+        verr("dx and dy are different in the model ! d1=%f d2=%f d3=%f", *d1, *d2, *d3); 
     }
 
     if (verbose>2) {
