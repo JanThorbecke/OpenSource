@@ -35,13 +35,14 @@ int sched_getaffinity(pid_t pid, size_t cpu_size, cpu_set_t *cpu_set)
 {
   int32_t core_count = 0;
   size_t  len = sizeof(core_count);
+  int     i;
   int ret = sysctlbyname(SYSCTL_CORE_COUNT, &core_count, &len, 0, 0);
   if (ret) {
     printf("error while get core count %d\n", ret);
     return -1;
   }
   cpu_set->count = 0;
-  for (int i = 0; i < core_count; i++) {
+  for (i = 0; i < core_count; i++) {
     cpu_set->count |= (1 << i);
   }
 
