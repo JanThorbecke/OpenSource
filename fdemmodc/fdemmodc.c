@@ -23,9 +23,9 @@ int writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot);
 int em4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *hz, float *hx, float *Ey, float *eprs, float *ksigma, float *mu, int verbose);
 
 
-int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *vx, float *vz, float *tzz, float *txx,
-    float *txz, float *l2m, float *rox, float *roz,
-    float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz,
+int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *vx, float *vz, float *tzz, float *txx, 
+    float *txz, float *l2m, float *lam, float *rox, float *roz, 
+    float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
     float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, int verbose);
 
 int writeEmRec(recPar rec, modPar mod, int ixsrc, int izsrc, int nsam, int ishot, int fileno, 
@@ -380,7 +380,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 
 				/* store time at receiver positions */
                 getRecTimes(mod, rec, bnd, it, isam, vx, vz, tzz, txx, txz,
-					mu, eprs, ksigma,
+					mu, eprs, ksigma, ksigma,
                     rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz,
                     rec_p, rec_pp, rec_ss, NULL, NULL, verbose);
 
