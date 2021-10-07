@@ -500,8 +500,8 @@ int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx,
 				rec->xr[nrec]=xrcv1[iarray]-sub_x0+ir*dxrcv;
 				rec->zr[nrec]=zrcv1[iarray]-sub_z0+ir*dzrcv;
 
-				rec->x[nrec]=NINT((rec->xr[nrec])/dx);
-				rec->z[nrec]=NINT((rec->zr[nrec])/dz);
+				rec->x[nrec]=floor((rec->xr[nrec])/dx);
+				rec->z[nrec]=floor((rec->zr[nrec])/dz);
 				nrec++;
 			}
 		}
