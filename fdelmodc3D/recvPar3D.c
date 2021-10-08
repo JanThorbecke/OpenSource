@@ -501,9 +501,9 @@ long recvPar3D(recPar *rec, float sub_x0, float sub_y0, float sub_z0,
                     rec->yr[nrec]=yrcv1[iarray]-sub_y0+iy*dyrcv;
                     rec->zr[nrec]=zrcv1[iarray]-sub_z0+ix*dzrcv;
 
-                    rec->x[nrec]=floor((rec->xr[nrec])/dx);
-                    rec->y[nrec]=floor((rec->yr[nrec])/dy);
-                    rec->z[nrec]=floor((rec->zr[nrec])/dz);
+                    rec->x[nrec]=NINT((rec->xr[nrec])/dx);
+                    rec->y[nrec]=NINT((rec->yr[nrec])/dy);
+                    rec->z[nrec]=NINT((rec->zr[nrec])/dz);
                     nrec++;
                 }
             }
