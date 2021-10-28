@@ -1,0 +1,73 @@
+#!/bin/bash
+
+#example from /vardim/home/thorbcke/data/Kees/Marchenko/Overview2020
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+cd /vardim/home/thorbcke/src/OpenSource/marchenko/demo/oneD
+
+dx=2.5
+dt=0.0005
+angle=0
+
+export OMP_NUM_THREADS=8
+
+#interpolate file_in=f1plus0.su d1out=$dt file_out=f1plusdt.su
+
+fdelmodc \
+    file_cp=modelup_cp.su ischeme=1 iorder=4 \
+    file_den=modelup_ro.su \
+    file_src=f1plusPla${angle}.su dt=$dt \
+    file_rcv=backpropf1plus${angle}.su \
+    grid_dir=0 \
+    src_type=1 \
+    src_injectionrate=1 \
+	src_orient=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.002 \
+	rec_delay=0.0 \
+    verbose=2 \
+    tmod=4.094 \
+    dxrcv=10.0 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=900 zrcv2=900 \
+    xsrc=0 zsrc=0 \
+    ntaper=250 \
+	file_snap=backa${angle}.su tsnap1=1.0044 dtsnap=0.05 tsnap2=3.0044 \
+    dxsnap=10 dzsnap=10 zsnap1=0 zsnap2=2000 xsnap1=-2250 xsnap2=2250 \
+    left=2 right=2 top=2 bottom=2
+
+# for eps image n1tic=2 d2=10 f1=-2.044 x1beg=-1.5 x1end=1.5
+# suxmovie < back_sp.su clip=1e10 loop=1
+exit
+
+suwind key=sx min=0 max=0 itmax=1023 < p0plusallz1100.su > p0plus.su
+basop file_in=p0plus.su file_out=p0plusr.su choice=5  verbose=1 
+rotate nrot=512 < p0plusr.su > f1plusi0.su
+#interpolate file_in=f1plusi0.su d1out=$dt file_out=f1plusi0dt.su
+
+$HOME/bin64/fdelmodc \
+    file_cp=syncl_cp.su ischeme=1 iorder=4 \
+    file_den=syncl_ro.su \
+    file_src=f1plusi0.su dt=$dt \
+    file_rcv=backprop_f1plusi0z1100.su \
+    grid_dir=0 \
+    src_type=1 \
+    src_injectionrate=1 \
+	src_orient=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.002 \
+	rec_delay=0.0 \
+    verbose=2 \
+    tmod=4.094 \
+    dxrcv=10.0 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=1100 zrcv2=1100 \
+    xsrc=0 zsrc=0 \
+    ntaper=250 \
+	file_snap=backi0.su tsnap1=1.5005 dtsnap=0.05 tsnap2=2.5005 dxsnap=10 dzsnap=10 zsnap1=0 zsnap2=2000 xsnap1=-2250 xsnap2=2250 \
+    left=2 right=2 top=2 bottom=2
+

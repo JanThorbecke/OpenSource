@@ -30,8 +30,6 @@ int readShotData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx
 
 int readTinvData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nfoc, int nx, int ntfft, int mode, int *maxval, float *tinv, int hw, int verbose);
 
-int readWindowData(char *filename, float *xrcv, float *xsrc, float *zsrc, int *xnx, int Nfoc, int nx, int ntfft, int *maxval, int hw, int verbose);
-
 int findFirstBreak(float *shot, int nx, int nt, int ishot, float *maxval, int tr, int hw, int verbose);
 int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, float d2, float f2, int n2out, int Nfoc, float *xsyn, float *zsyn, int *ixpos, int npos, int t0shift, int iter);
 int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *nxm);
@@ -64,7 +62,6 @@ char *sdoc[] = {
 "   ishot=nshots/2 ........... shot number(s) to remove internal multiples ",
 "   file_tinv= ............... shot-record to remove internal multiples",
 "   file_src= ................ optional source wavelet to convolve selected ishot(s)",
-"   file_win= ................ contains the window time functions",
 " COMPUTATION",
 "   tap=0 .................... lateral taper R_ishot(1), file_shot(2), or both(3)",
 "   ntap=0 ................... number of taper points at boundaries",
@@ -125,7 +122,7 @@ int main (int argc, char **argv)
     FILE    *fp_out, *fp_rr, *fp_w, *fp_ud;
     FILE    *fp_um, *fp_up, *fp_vm, *fp_vp;
 	size_t  nread, size;
-    int     i, j, k, l, ret, nshots, Nfoc, nt, nx, nts, nxs, ngath, nacq, nwin;
+    int     i, j, k, l, ret, nshots, Nfoc, nt, nx, nts, nxs, ngath, nacq;
     int     n1, n2, ntap, tap, di, ntraces, tr;
     int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     int     reci, countmin, mode, n2out, verbose, ntfft;
@@ -145,7 +142,7 @@ int main (int argc, char **argv)
 	float   src_velo, src_angle, grad2rad, p, *twplane;
     complex *Refl, *Fop, *ctrace, *cwave, csum, cwav;
     char    *file_tinv, *file_shot, *file_rr, *file_src, *file_iter, *file_update;
-    char    *file_umin, *file_uplus, *file_vmin, *file_vplus, *file_win;
+    char    *file_umin, *file_uplus, *file_vmin, *file_vplus;
 	char    *file_dd;
     segy    *hdrs_out, hdr;
 
@@ -157,7 +154,6 @@ int main (int argc, char **argv)
 
     if (!getparstring("file_shot", &file_shot)) file_shot = NULL;
     if (!getparstring("file_tinv", &file_tinv)) file_tinv = NULL;
-    if (!getparstring("file_win", &file_win)) file_win = NULL;
     if(!getparstring("file_src", &file_src)) file_src = NULL;
     if (!getparstring("file_rr", &file_rr)) verr("parameter file_rr not found");
     if (!getparstring("file_dd", &file_rr)) file_dd = NULL;
@@ -258,22 +254,6 @@ int main (int argc, char **argv)
     }
     assert (nacq >= nshots); /* ToDo allow other geometries */
 
-/*================ Read (optional) mute window function defined by first arrivals ================*/
-
-    nwin = 1;
-    if (file_win != NULL) { 
-		assert(file_tinv == NULL);
-        ret  = getFileInfo(file_win, &n1, &n2, &ngath, &d1, &d2, &f1, &f2, &xmin, &xmax, &scl, &ntraces);
-        Nfoc = 1;
-        nwin = ngath;
-        nacq = n2;
-        nxs  = n2;
-		/* defining an explicit time window does not need processing for all times
-         * set istart and iend to only one loop iteration */
-        istart=0;
-        iend=1;
-    }
-
 	/* compute time delay for plane-wave responses */
     twplane = (float *) calloc(nacq*Nfoc,sizeof(float)); /* initialize with zeros */
 	if (plane_wave==1) {
@@ -326,7 +306,7 @@ int main (int argc, char **argv)
     xsyn    = (float *)malloc(Nfoc*sizeof(float));
     zsyn    = (float *)malloc(Nfoc*sizeof(float));
     xnxsyn  = (int *)calloc(Nfoc,sizeof(int));
-    muteW   = (int *)calloc(nwin*nxs,sizeof(int));
+    muteW   = (int *)calloc(Nfoc*nxs,sizeof(int));
 
     Refl    = (complex *)malloc(nw*nx*nshots*sizeof(complex));
     xsrc    = (float *)calloc(nshots,sizeof(float));
@@ -363,10 +343,6 @@ int main (int argc, char **argv)
             vmess("dx in operator => %f", dxs);
         }
 	}
-
-    if (file_win != NULL) { 
-        readWindowData(file_win, xrcvsyn, xsyn, zsyn, xnxsyn, Nfoc, nxs, ntfft, muteW, hw, verbose);
-    }
 
 /* ========================= Opening optional wavelet file ====================== */
 
