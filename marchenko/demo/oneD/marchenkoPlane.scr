@@ -4,17 +4,15 @@ export PATH=$HOME/src/OpenSource/bin:$PATH:
 export OMP_NUM_THREADS=8
 
 #mute all events below the first arrival to get the intial focusing field
-#angle=3
-fmute file_shot=iniFocusPlane_rp.su file_out=p0plus.su above=-1 shift=-8 verbose=1 check=0 hw=8
-#nagle=-3
-#fmute file_shot=iniFocusPlane_a3_rp.su file_out=p0plus.su above=-1 shift=-8 verbose=1 check=0 hw=8
+angle=3
+fmute file_shot=iniFocusPlane_a${angle}_rp.su file_out=p0plus.su above=-1 shift=-8 verbose=1 check=0 hw=8
 
 #apply the Marchenko algorithm
-../../marchenko file_shot=shotsdx5_rp.su file_tinv=p0plus.su nshots=901 verbose=2 \
+marchenko file_shot=shotsdx5_rp.su file_tinv=p0plus.su nshots=901 verbose=2 \
 	tap=0 niter=12 hw=8 shift=14 smooth=6 \
-	src_angle=-3 src_velo=1500 file_iter=iterplane.su plane_wave=1 \
-	file_green=pgreenPl.su file_gplus=GplusPl.su file_gmin=GminPl.su  \
-	file_f1plus=f1plusPl.su file_f1min=f1minPl.su file_f2=f2Pl.su 
+	src_angle=${angle} src_velo=1500 plane_wave=1 \
+	file_green=pgreenPla${angle}.su file_gplus=GplusPla${angle}.su file_gmin=GminPla${angle}.su  \
+	file_f1plus=f1plusPla${angle}.su file_f1min=f1minPla${angle}.su file_f2=f2Pla${angle}.su 
 
 exit
 

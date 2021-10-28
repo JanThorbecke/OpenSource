@@ -1,0 +1,53 @@
+#!/bin/bash
+
+if [[ "$1" == "snapshots" ]];
+then
+#plane-wave snapshots
+for file in backa0_sp.su backa3_sp.su
+do
+  sumax < $file mode=abs outpar=nep
+  clipf1=`cat nep | awk '{print $1/7}'`
+
+  file_base=${file%.su}
+  for fldr in 20 22 24 26
+  do
+    suwind < $file key=fldr min=$fldr max=$fldr > shottmp.su
+    supsimage < shottmp.su hbox=4 wbox=4 labelsize=8 linewidth=0.0 \
+      n1tic=2 f1=0 \
+      label1="depth [m]" label2="lateral distance [m]" \
+      f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > ${file_base}_$fldr.eps
+
+   done
+done
+exit
+fi
+
+
+if [[ "$1" == "plane" ]];
+then
+  for a in 0 3
+  do
+    for file in f1plusPla${a}.su backpropf1plus${a}_rp.su
+    do
+      file_base=${file%.su}
+      sumax < $file mode=abs outpar=nep
+      clipf1=`cat nep | awk '{print $1/7}'`
+      supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+          n1tic=2 x1beg=-0.7 x1end=0.7 f1=-2.044 \
+          label1="time [s]" label2="lateral distance [m]" \
+          f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > $file_base.eps
+    done
+    for file in iniFocusPlane_a${a}_rp.su 
+    do
+      file_base=${file%.su}
+      sumax < $file mode=abs outpar=nep
+      clipf1=`cat nep | awk '{print $1/7}'`
+      supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+          n1tic=2 x1end=1.4 f1=0 \
+          label1="time [s]" label2="lateral distance [m]" \
+          f1=0 f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > $file_base.eps
+    done
+  done
+  exit
+fi
+

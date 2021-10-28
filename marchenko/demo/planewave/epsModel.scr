@@ -58,6 +58,22 @@ done
 exit
 fi
 
+if [[ "$1" == "backprop" ]];
+then
+  for file in backprop_f1plus${srcname}5a120_rp.su 
+  do 
+    sumax < $file mode=abs outpar=nep
+    clipf1=`cat nep | awk '{print $1/9}'`
+  
+    file_base=${file%.su}
+    supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+        n1tic=2 x1beg=-1.5 x1end=1.5 f1=-2.044 \
+        label1="time [s]" label2="lateral distance [m]" \
+        f2=-3000 f2num=-3000 d2num=1500 clip=$clipf1 > $file_base.eps
+  
+  done
+fi
+
 if [[ "$1" == "mutewindow" ]];
 then
   # basic (wrong) window for 5 degrees

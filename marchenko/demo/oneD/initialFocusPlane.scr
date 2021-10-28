@@ -14,12 +14,13 @@ makemod sizex=10000 sizez=1400 dx=$dx dz=$dx cp0=1800 ro0=1000 \
 makewave fp=25 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=1
 
 export OMP_NUM_THREADS=8
+angle=3
 
 fdelmodc \
     file_cp=modelup_cp.su ischeme=1 iorder=4 \
     file_den=modelup_ro.su \
     file_src=wave.su \
-    file_rcv=iniFocusPlane_a3.su \
+    file_rcv=iniFocusPlane_a${angle}.su \
     src_type=1 \
     src_orient=1 \
     src_injectionrate=1 \
@@ -31,14 +32,16 @@ fdelmodc \
     verbose=2 \
     tmod=2.144 \
     dxrcv=5 \
-plane_wave=1 nsrc=4001 src_angle=-3 src_velo=1500 \
+    plane_wave=1 nsrc=4001 src_angle=${angle} src_velo=1500 \
     xrcv1=-2250 xrcv2=2250 \
     zrcv1=0 zrcv2=0 \
-    xsrc=0 zsrc=540 \
+    xsrc=0 zsrc=900 \
     ntaper=101 \
     left=2 right=2 top=2 bottom=2 
 
-#fdelmodc \
+exit;
+
+fdelmodc \
     file_cp=model10_cp.su ischeme=1 iorder=4 \
     file_den=model10_ro.su \
     file_src=wave.su \
