@@ -18,6 +18,7 @@ raytime/raytime
 utils/basop
 utils/correigen
 utils/extendModel
+utils/extend3D
 utils/fconv
 utils/ftr1d
 utils/green
