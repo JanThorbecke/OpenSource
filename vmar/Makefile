@@ -10,7 +10,7 @@ ALLINC  = -I.
 #General BLAS library
 #LIBS += -L$L -lgenfft $(LIBSM)
 #General BLAS library
-#LIBS += $(BLAS)
+LIBS += $(BLAS)
 
 #CFLAGS += -g # -I$(MKLROOT)/include  
 #FFLAGS += -g -mcmodel=medium

@@ -74,8 +74,8 @@ $(LIB): $(ARCH)
 	$(RANLIB) $(LIB)
 
 mkdirs:
-	-mkdir $(ROOT)/lib
-	-mkdir $(ROOT)/include
+	-mkdir -p $(ROOT)/lib
+	-mkdir -p $(ROOT)/include
 	-ln -sf $(ROOT)/extrap/lib/optim.h $I/optim.h 
 
 remake	:

@@ -64,6 +64,7 @@ OPTC += -fopenmp
 
 #Apple OSX clang/gcc (10.9) llvm
 #CC = clang
+#FC =
 #OPTC = -Ofast
 #LDFLAGS = -Ofast
 
@@ -95,7 +96,7 @@ else
 endif
 
 #LIBARIES
-LIBS= -L$L -lgenfft $(BLAS)
+LIBS= -L$L -lgenfft
 ifeq ($(FC),ifort)
    LIBS += -lifcore
 # for static linking with Intel compiler
