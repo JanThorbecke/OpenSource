@@ -97,6 +97,9 @@ endif
 
 #LIBARIES
 LIBS= -L$L -lgenfft
+ifneq ($(strip $(MKLROOT)),)
+   LIBS += $(BLAS)
+endif
 ifeq ($(FC),ifort)
    LIBS += -lifcore
 # for static linking with Intel compiler
