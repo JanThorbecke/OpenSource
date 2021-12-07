@@ -54,15 +54,15 @@ void seedCMWC4096(void);
 
 int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwav, int reverse, int verbose)
 {
-    FILE    *fp;
-    size_t  nread;
-    int optn, nfreq, i, j, k, iwmax, tracesToDo;
-    int iw, n1, namp, optnscale, nfreqscale;
-    float scl, d1, df, deltom, om, tshift;
-    float amp1, amp2, amp3;
-    float *trace, maxampl, scale;
+    FILE   *fp;
+    size_t nread;
+    int    optn, nfreq, i, j, k, iwmax, tracesToDo;
+    int    iw, n1, namp, optnscale, nfreqscale;
+    float  scl, d1, df, deltom, om, tshift;
+    float  amp1, amp2, amp3;
+    float  *trace, maxampl, scale;
     complex *ctrace, tmp;
-    segy hdr;
+    segy   hdr;
     
 	scale = 1.0;
     n1 = wav.ns;
@@ -72,30 +72,33 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwa
         for (i=0; i<8192; i++) {
             amp1 = dcmwc4096();
         }
-
     }
-    else {
-
-/* read first header and last byte to get file size */
-
+    else { /* read wavelet from file */
         fp = fopen( wav.file_src, "r" );
         assert( fp != NULL);
-        nread = fread( &hdr, 1, TRCBYTES, fp );
-        assert(nread == TRCBYTES);
-    
-/* read all traces */
-
-        tracesToDo = wav.nx;
-        i = 0;
-        while (tracesToDo) {
-            memset(&src_nwav[i][0],0,wav.nt*sizeof(float));
-            nread = fread(&src_nwav[i][0], sizeof(float), hdr.ns, fp);
-            assert (nread == hdr.ns);
-    
+        if (strstr(wav.file_src, ".su") == NULL) { /* assume a binary file is given */
+                memset(&src_nwav[0][0],0,wav.nt*sizeof(float));
+                nread = fread(&src_nwav[0][0], sizeof(float), n1, fp);
+        }
+        else {
+            /* read first header and last byte to get file size */
             nread = fread( &hdr, 1, TRCBYTES, fp );
-            if (nread==0) break;
-            tracesToDo--;
-            i++;
+            assert(nread == TRCBYTES);
+    
+            /* read all traces */
+
+            tracesToDo = wav.nx;
+            i = 0;
+            while (tracesToDo) {
+                memset(&src_nwav[i][0],0,wav.nt*sizeof(float));
+                nread = fread(&src_nwav[i][0], sizeof(float), hdr.ns, fp);
+                assert (nread == hdr.ns);
+        
+                nread = fread( &hdr, 1, TRCBYTES, fp );
+                if (nread==0) break;
+                tracesToDo--;
+                i++;
+            }
         }
         fclose(fp);
     }

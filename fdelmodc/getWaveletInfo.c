@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <math.h>
+#include "par.h"
 #include "segy.h"
 
 /**
@@ -49,6 +50,19 @@ int getWaveletInfo(char *file_src, int *n1, int *n2, float *d1, float *d2, float
     if (file_src == NULL) return 0; /* Input pipe can not be handled */
     else fp = fopen( file_src, "r" );
     assert( fp != NULL);
+    if (strstr(file_src, ".su") == NULL) { /* assume a binary file is read in and read number of samples in file */
+        ret = fseeko( fp, 0, SEEK_END );
+        bytes = ftello( fp );
+        *n1 = (int)(bytes/sizeof(float));
+        *f1 = 0.0;
+        *f2 = 0.0;
+        *n2 = *nxm = 1;
+		if(!getparfloat("dt",d1)) verr("For binary file_src dt must be given");
+		if(!getparfloat("fmax",fmax)) verr("For binary file_src fmax in wavelet must be given");
+		*d2 = 1.0;
+		return 0;
+    }
+
     nread = fread( &hdr, 1, TRCBYTES, fp );
     assert(nread == TRCBYTES);
     ret = fseeko( fp, 0, SEEK_END );
