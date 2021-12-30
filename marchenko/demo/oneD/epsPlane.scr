@@ -1,5 +1,22 @@
 #!/bin/bash
 
+# Add interface line to postscript file of model 
+cat << EOF1 > line1
+400 -2500
+400 2500
+EOF1
+
+cat << EOF2 > line2
+700 -2500
+700 2500
+EOF2
+
+cat << EOF3 > line3
+1100 -2500
+1100 2500
+EOF3
+
+
 if [[ "$1" == "snapshots" ]];
 then
 #plane-wave snapshots
@@ -14,6 +31,7 @@ do
     suwind < $file key=fldr min=$fldr max=$fldr > shottmp.su
     supsimage < shottmp.su hbox=4 wbox=4 labelsize=8 linewidth=0.0 \
       n1tic=2 f1=0 \
+      curve=line1,line2,line3 npair=2,2,2 curvecolor=black,black,black curvedash=2 \
       label1="depth [m]" label2="lateral distance [m]" \
       f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > ${file_base}_$fldr.eps
 

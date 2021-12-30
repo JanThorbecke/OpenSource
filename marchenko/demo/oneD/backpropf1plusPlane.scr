@@ -11,8 +11,6 @@ angle=0
 
 export OMP_NUM_THREADS=8
 
-#interpolate file_in=f1plus0.su d1out=$dt file_out=f1plusdt.su
-
 fdelmodc \
     file_cp=modelup_cp.su ischeme=1 iorder=4 \
     file_den=modelup_ro.su \
