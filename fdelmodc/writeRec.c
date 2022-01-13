@@ -43,9 +43,9 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 
 int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsrc, int nsam, int ishot, int fileno, 
              float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
-             float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, int verbose)
+             float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, float *rec_dxvx, float *rec_dzvz, int verbose)
 {
-    FILE    *fpvx, *fpvz, *fptxx, *fptzz, *fptxz, *fpp, *fppp, *fpss, *fpup, *fpdown;
+    FILE    *fpvx, *fpvz, *fptxx, *fptzz, *fptxz, *fpp, *fppp, *fpss, *fpup, *fpdown, *fpdxvx, *fpdzvz;
     float *rec_up, *rec_down, *trace, *rec_vze, *rec_pe;
     float dx, dt, cp, rho, fmin, fmax;
     complex *crec_vz, *crec_p, *crec_up, *crec_dw;
@@ -106,6 +106,8 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
     if (rec.type.txx) fptxx = fileOpen(filename, "_rtxx", append);
     if (rec.type.tzz) fptzz = fileOpen(filename, "_rtzz", append);
     if (rec.type.txz) fptxz = fileOpen(filename, "_rtxz", append);
+    if (rec.type.dxvx) fpdxvx = fileOpen(filename, "_rdxvx", append);
+    if (rec.type.dzvz) fpdzvz = fileOpen(filename, "_rdzvz", append);
     if (rec.type.pp)  fppp  = fileOpen(filename, "_rpp", append);
     if (rec.type.ss)  fpss  = fileOpen(filename, "_rss", append);
 
@@ -196,6 +198,12 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
         if (rec.type.txz) {
             traceWrite( &hdr, &rec_txz[irec*rec.nt], nsam, fptxz) ;
         }
+        if (rec.type.dxvx) {
+            traceWrite( &hdr, &rec_dxvx[irec*rec.nt], nsam, fpdxvx) ;
+        }
+        if (rec.type.dzvz) {
+            traceWrite( &hdr, &rec_dzvz[irec*rec.nt], nsam, fpdzvz) ;
+        }
         if (rec.type.pp) {
             traceWrite( &hdr, &rec_pp[irec*rec.nt], nsam, fppp) ;
         }
@@ -214,6 +222,8 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
     if (rec.type.txx) fclose(fptxx);
     if (rec.type.tzz) fclose(fptzz);
     if (rec.type.txz) fclose(fptxz);
+    if (rec.type.dxvx) fclose(fpdxvx);
+    if (rec.type.dzvz) fclose(fpdzvz);
     if (rec.type.pp) fclose(fppp);
     if (rec.type.ss) fclose(fpss);
     if (rec.type.ud) {
