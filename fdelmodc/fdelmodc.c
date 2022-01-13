@@ -55,13 +55,13 @@ int elastic6(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsr
     float *roz, float *l2m, float *lam, float *mul, int verbose);
 
 int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *vx, float *vz, float *tzz, float *txx, 
-	float *txz, float *l2m, float *lam, float *rox, float *roz,
-	float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
-	float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, int verbose);
+    float *txz, float *l2m, float *lam, float *rox, float *roz, 
+    float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
+    float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, float *rec_dxvx, float *rec_dzvz, int verbose);
 
 int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsrc, int nsam, int ishot, int fileno, 
 			 float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
-			 float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, int verbose);
+			 float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, float *rec_dxvx, float *rec_dzvz, int verbose);
 
 int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, wavPar wav,int ixsrc, int izsrc, int itime, 
 				   float *vx, float *vz, float *tzz, float *txx, float *txz, int verbose);
@@ -280,6 +280,7 @@ int main(int argc, char **argv)
 	float *rec_txx, *rec_tzz, *rec_txz;
 	float *rec_pp, *rec_ss;
 	float *rec_udp, *rec_udvz;
+	float *rec_dxvx, *rec_dzvz;
 	float *beam_vx, *beam_vz, *beam_p;
 	float *beam_txx, *beam_tzz, *beam_txz;
 	float *beam_pp, *beam_ss;	
@@ -388,6 +389,8 @@ int main(int argc, char **argv)
 	if (rec.type.txx) rec_txx = (float *)calloc(size,sizeof(float));
 	if (rec.type.tzz) rec_tzz = (float *)calloc(size,sizeof(float));
 	if (rec.type.txz) rec_txz = (float *)calloc(size,sizeof(float));
+	if (rec.type.dxvx) rec_dxvx = (float *)calloc(size,sizeof(float));
+	if (rec.type.dzvz) rec_dzvz = (float *)calloc(size,sizeof(float));
 	if (rec.type.pp)  rec_pp  = (float *)calloc(size,sizeof(float));
 	if (rec.type.ss)  rec_ss  = (float *)calloc(size,sizeof(float));
     if (rec.type.ud) { 
@@ -623,14 +626,14 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 				getRecTimes(mod, rec, bnd, it, isam, vx, vz, tzz, txx, txz, 
 					l2m, lam, rox, roz, 
 					rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
-					rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose);
+					rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, rec_dxvx, rec_dzvz, verbose);
 
 				/* at the end of modeling a shot, write receiver array to output file(s) */
 				if (writeToFile && (it+rec.skipdt <= it1-1) ) {
 					fileno = ( ((it-rec.delay)/rec.skipdt)+1)/rec.nt;
 					writeRec(rec, mod, bnd, wav, ixsrc, izsrc, isam+1, ishot, fileno,
 						rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
-						rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose);
+						rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, rec_dxvx, rec_dzvz, verbose);
 				}
 			}
 
@@ -693,7 +696,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 		}
 		writeRec(rec, mod, bnd, wav, ixsrc, izsrc, isam+1, ishot, fileno,
 			rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
-			rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, verbose);
+			rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, rec_dxvx, rec_dzvz, verbose);
 		
 		writeBeams(mod, sna, ixsrc, izsrc, ishot, fileno, 
 				   beam_vx, beam_vz, beam_txx, beam_tzz, beam_txz, 

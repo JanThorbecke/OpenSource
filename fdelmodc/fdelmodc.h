@@ -9,6 +9,8 @@ typedef struct _compType { /* Receiver Type */
 	int txx;
 	int tzz;
 	int txz;
+	int dxvx;
+	int dzvz;
 	int pp;
 	int ss;
 	int ud;
