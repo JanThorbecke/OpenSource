@@ -68,6 +68,15 @@ Download: http://homepage.tudelft.nl/t4n4v/4_Journals/Geophys.Prosp/GP_19a.pdf
 
 -6- If you use the vmar code of Johno van IJsseldijk please refer to the following paper:
 
+Paper in preparation.
+
+-7- A reference to the extrapolation and migration programs is
+
+Design of one-way wavefield extrapolation operators, using smooth functions in WLSQ optimisation.
+Jan Thorbecke, Kees Wapenaar, Gerd Swinnen, 
+2004, Geophysics Vol 69, p. 1037-1045
+Download: http://homepage.tudelft.nl/t4n4v/4_Journals/Geophysics/geo_04.pdf
+
 INSTALLATION
 -------------
 See the seperate INSTALL file.

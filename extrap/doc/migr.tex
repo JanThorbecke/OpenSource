@@ -103,12 +103,14 @@ Topography is taken into account by using a velocity model which has zero veloci
 
 The parameter {\tt file\_src} describes the source wavelet. If {\tt file\_src} is not defined a band-limited spike is assumed. If {\tt file\_src} contains only one trace it is assumed that this trace is the wavelet used for all shots to be migrated. If {\tt file\_src} contains more than one trace it is interpreted as an areal shot record and areal short-record migration is carried out. 
 
-The parameters {\tt ixa} and {\tt ixb} determine the number of traces to be included in the calculation of a image gather. 
-{\tt ixa} defines the number of traces to include in the calculation with a lateral position greater than the lateral extend (max value of {\tt sx,gx}) of the shot gather ({\tt a} from after). 
+The parameters {\tt ixa} and {\tt ixb} determine the number of traces to be included in the calculation of the image gather. When they are not set the source and receiver fields are extrapolated only on the lateral grid-points that are within the receiver array. By setting the parameter {\tt ixa=number-of-gridpoints} (e.g 200) then the extrapolated filed can extrapolate 200 grid points before and after the receiver array. This gives a larger imaging aperture. {\tt ixa} defines the number of traces to include in the calculation with a lateral position greater than the lateral extend (max value of {\tt sx,gx}) of the shot gather ({\tt a} from after). 
 {\tt ixb} defines the number of traces to include in the calculation with a lateral shot position smaller than the lateral extend (max value of {\tt sx,gx}) of the shot gather ({\tt b} from before).
 
 
 For a more detailed discussion on the different parameters which are related to the extrapolation operator optimization the reader is referred to the description of the program \htmlref{{\bf opercalc}}{opercalc}. The WLSQ operators are described in Thorbecke et al. (2004).
+
+
+A rule of thumb for determinig the grid distances in a gridded model for extrapolating wave-fields with the one-way extrapolation operators:  The spatial extrapolation operators work best when {\tt dx=receiver-distance} and $dz \approx 0.5dx$. Making $dz$ smaller than $dx$ helps to support higher propagation angles and usually gives a more efficient operator. When $dx=dz$ you need more $x$-points to cover the same angle range as. Using $dz=0.5*dx$ requires 2 times more dz steps, but used as more stable operator. In most cases the choice of $dz \approx 0.5*dx$ turns out the be an efficient one. Making $dz$ much smaller than $(\approx 0.1*dx)$ does not improve the higher propagation angle that much anymore while the number of $dz$ steps to propagate the same depth range is increasing a lot.
 
 \subsection{Examples}
 

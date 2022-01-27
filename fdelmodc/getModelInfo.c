@@ -32,7 +32,7 @@ int getModelInfo(char *file_name, int *n1, int *n2, float *d1, float *d2, float 
     segy    hdr;
     
     fp = fopen( file_name, "r" );
-    assert( fp != NULL);
+    if( fp == NULL) verr("Medium file %s does not exist or can not be opened",file_name);
     nread = fread( &hdr, 1, TRCBYTES, fp );
     assert(nread == TRCBYTES);
     ret = fseeko( fp, 0, SEEK_END );

@@ -12,6 +12,7 @@ ALL: fmute marchenko marchenko_primaries
 SRCJ	= fmute.c \
 		getFileInfo.c  \
 		readData.c \
+		readTinvData.c \
 		applyMute.c \
 		applyMute_tshift.c \
 		writeData.c \

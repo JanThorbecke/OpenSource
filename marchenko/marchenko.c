@@ -84,9 +84,11 @@ char *sdoc[] = {
 "   shift=12 ................. number of points above(positive) / below(negative) travel time for mute",
 "   hw=8 ..................... window in time samples to look for maximum in next trace",
 "   smooth=5 ................. number of points to smooth mute with cosine window",
+" PLANE-WAVES ",
 "   plane_wave=0 ............. enable plane-wave illumination function",
 "   src_angle=0 .............. angle of plane source array",
 "   src_velo=1500 ............ velocity to use in src_angle definition",
+"   file_tinvi= .............. direct arrival from focal plane with angle -src_angle",
 " REFLECTION RESPONSE CORRECTION ",
 "   tsq=0.0 .................. scale factor n for t^n for true amplitude recovery",
 "   Q=0.0 .......,............ Q correction factor",
@@ -122,7 +124,7 @@ int main (int argc, char **argv)
     int     size, n1, n2, ntap, tap, di, ntraces, pad, rotate;
     int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     int     reci, countmin, mode, n2out, verbose, ntfft;
-    int     iter, niter, tracf, *muteW, *tsynW, itmin;
+    int     iter, niter, tracf, *muteW, *muteWi, *tsynW, itmin;
     int     hw, smooth, above, shift, *ixpos, npos, ix, plane_wave;
     int     nshots_r, *isxcount, *reci_xsrc, *reci_xrcv;
     float   fmin, fmax, *tapersh, *tapersy, fxf, dxf, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
@@ -134,7 +136,7 @@ int main (int argc, char **argv)
     float   *ixmask;
     float   grad2rad, p, src_angle, src_velo, tneg;
     complex *Refl, *Fop;
-    char    *file_tinv, *file_shot, *file_green, *file_iter;
+    char    *file_tinv, *file_tinvi, *file_shot, *file_green, *file_iter;
     char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_pmin;
     segy    *hdrs_out;
 
@@ -146,6 +148,7 @@ int main (int argc, char **argv)
 
     if (!getparstring("file_shot", &file_shot)) file_shot = NULL;
     if (!getparstring("file_tinv", &file_tinv)) file_tinv = NULL;
+    if (!getparstring("file_tinvi", &file_tinvi)) file_tinvi = NULL;
     if (!getparstring("file_f1plus", &file_f1plus)) file_f1plus = NULL;
     if (!getparstring("file_f1min", &file_f1min)) file_f1min = NULL;
     if (!getparstring("file_gplus", &file_gplus)) file_gplus = NULL;
@@ -221,6 +224,7 @@ int main (int argc, char **argv)
     Ni      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     G_d     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     muteW   = (int *)calloc(Nfoc*nxs,sizeof(int));
+    muteWi  = (int *)calloc(Nfoc*nxs,sizeof(int));
     tsynW   = (int *)malloc(Nfoc*nxs*sizeof(int)); // time-shift for Giovanni's plane-wave on non-zero times
     energyN0= (double *)malloc(Nfoc*sizeof(double));
     trace   = (float *)malloc(ntfft*sizeof(float));
@@ -254,6 +258,13 @@ int main (int argc, char **argv)
                              
 	/* compute time shift for tilted plane waves */
 	if (plane_wave==1) {
+		if (file_tinvi != NULL) {
+    		mode=-1; /* apply complex conjugate to read in data */
+    		readTinvData(file_tinvi, xrcvsyn, xsyn, zsyn, xnxsyn, Nfoc, nxs, ntfft, 
+         	mode, muteWi, G_d, hw, verbose);
+		}
+		else {
+		}
 	    /* compute time shift for shifted plane waves */
         grad2rad = 17.453292e-3;
         p = sin(src_angle*grad2rad)/src_velo;
