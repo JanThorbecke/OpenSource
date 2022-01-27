@@ -1,7 +1,4 @@
 #!/bin/bash
-#PBS -N fdelmodc
-#PBS -k eo
-#PBS -j eo
 #
 # Models plane wave at depth to receivers at the surface, including snapshots
 export PATH=../../utils:$PATH:
@@ -24,16 +21,15 @@ export filero=model_ro.su
 export OMP_NUM_THREADS=1
 
 ../fdelmodc \
-	file_cp=$filecp file_cs=$filecs file_den=$filero \
-	ischeme=1 \
-	src_type=1 src_orient=1 tmod=2.0  \
-	file_src=wavelet.su verbose=2 \
-	file_rcv=rec.su \
-	xrcv1=0 xrcv2=2100 dxrcv=15 \
-	zrcv1=400 zrcv2=400 \
-	rec_type_vx=1 rec_type_dxvx=1 rec_type_vz=1 rec_type_dzvz=1 rec_int_vx=1 \
-	dtrcv=0.004 \
-	xsrc=1000 zsrc=1700 \
-	ntaper=120 \
-	left=2 right=2 bottom=2 top=2 \
-
+       file_cp=$filecp file_cs=$filecs file_den=$filero \
+       ischeme=1 \
+       src_type=1 src_orient=1 tmod=2.0  \
+       file_src=wavelet.su verbose=2 \
+       file_rcv=rec.su \
+       xrcv1=0 xrcv2=2100 dxrcv=15 \
+       zrcv1=400 zrcv2=400 \
+       rec_type_vx=1 rec_type_dxvx=1 rec_type_vz=1 rec_type_dzvz=1 rec_int_vx=1 \
+       dtrcv=0.004 \
+       xsrc=1000 zsrc=1700 \
+       ntaper=120 \
+       left=2 right=2 bottom=2 top=2 \
