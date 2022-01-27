@@ -599,7 +599,7 @@ int main(int argc, char *argv[])
 
 			if (nxw == 1) {
 				if (!zomigr) xareal[0] = xsrc;
-				zsrc  = -(float)hdrs_in[0].sdepth*sclz;
+				zsrc  = (float)hdrs_in[0].sdepth*sclz;
 				izsrc = NINT((zsrc-oz)/dzm);
 				zsrc  = oz + dzm*izsrc;
 				if (!selev) izsrc = 0;
@@ -610,7 +610,7 @@ int main(int argc, char *argv[])
 			}
 			else {
 				for (i = 0; i < nxw; i++) xareal[i] = (float)hdrs_src[i].gx*scl;
-				zsrc  = -(float)hdrs_in[0].sdepth*sclz;
+				zsrc  = (float)hdrs_in[0].sdepth*sclz;
 				izsrc = NINT(-oz/dzm);
 				zsrc  = oz + dzm*izsrc;
 				if (!selev) izsrc = 0;
