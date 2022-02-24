@@ -253,9 +253,9 @@ SRCVL	= changevalue.c \
         docpkge.c 
 
 SRCEX	= \
+		extend3D.c  \
 		getFileInfo.c  \
 		writeData.c \
-		extend3D.c  \
 		polint.c \
 		spline.c \
 		verbosepkg.c  \
@@ -263,7 +263,8 @@ SRCEX	= \
 		docpkge.c \
 		getpars.c
 
-SRCSM    = smooth.c \
+SRCSM    = \
+		smooth.c \
 		getFileInfo.c  \
 		readData.c \
 		writeData.c \
