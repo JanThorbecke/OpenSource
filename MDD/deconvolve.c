@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
+#include <par.h>
 #ifdef MKL
 #include<mkl_cblas.h>
 #endif
@@ -224,10 +225,13 @@ private(iw, iwnA, iwnB, iwAB, iwBB)
 			memcpy(&cC[iwAB].r, &cA[iwnA].r, sizeof(complex)*nstationA*nshots);
 		}
 		else if (mdd==5) { //Matrix with Single shot attempt (doesn't work)
+            verr("Matrix with Single shot attempt (doesn't work)");
+/*
 			cgemv_(transa, &NA, &NA, &alpha.r, 
 				&cA[iwnA].r, &NA, 
 				&cB[iwnB].r, 1, &beta.r,
 				&cC[iwnA].r, 1);
+*/
 		}
 		
 		if (mdd==6) { /* Transmission Calculations */

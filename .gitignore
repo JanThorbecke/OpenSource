@@ -40,6 +40,7 @@ utils/padmodel
 utils/pwshift
 utils/truncate
 utils/changevalue
+utils/smooth
 fdelmodc/fdelmodc
 include/genfft.h
 include/optim.h

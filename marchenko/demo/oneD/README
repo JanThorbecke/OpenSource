@@ -16,6 +16,8 @@ Plane Wave Marchenko scripts
 +) initialFocusPlane.scr : model plane wave with angle (set to 0 or 3) at z=900
 +) marchenkoPlane.scr : use Marchenko algorithm to compute Focusing and Green's functions
 +) backpropf1plusPlane.scr : back propagate f1plus through model and measure response at z=900
++ 'epsPlane.scr snaphots' : show backpropagating snapshots.
+
 
 
 To reproduce the Figures in the Manuscript:
