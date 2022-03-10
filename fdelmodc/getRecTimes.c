@@ -224,12 +224,12 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 			if (rec.type.txx) rec_txx[irec*rec.nt+isam] += txx[ix*n1+iz];
 			if (rec.type.tzz) rec_tzz[irec*rec.nt+isam] += tzz[ix*n1+iz];
 			if (rec.type.dxvx) {
-                rec_dxvx[irec*rec.nt+isam] = c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
-                       c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]);
+                rec_dxvx[irec*rec.nt+isam] = (c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
+                       c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]))/mod.dx;
             }
 			if (rec.type.dzvz) {
-                rec_dzvz[irec*rec.nt+isam] = c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
-                       c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]);
+                rec_dzvz[irec*rec.nt+isam] = (c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
+                       c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]))/mod.dz
             }
 			if (rec.type.txz) { /* time interpolation to be done */
 				if (rec.int_vz == 2 || rec.int_vx == 2) {
