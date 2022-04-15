@@ -1,0 +1,86 @@
+#!/bin/bash
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+
+mkdir -p iniF
+
+fl_top=675
+fl_bot=1200
+
+nt=512
+dt=0.004
+
+makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=$nt t0=2.048 scale=1
+
+Raytime \
+        file_cp=models/smooth_cp.su \
+        file_src=wavefw.su \
+        verbose=1 \
+        geomspread=1 \
+        smooth_window=1 \
+        file_rcvtime=iniF/Td_${fl_top}.su \
+        method=fd nt=$nt \
+        xrcv1=0 xrcv2=6000 dxrcv=10 \
+        zrcv1=0 zrcv2=0 dzrcv=0.0 \
+        zsrc=${fl_top} dxshot=10 dzshot=0 \
+        xsrc=0 nxshot=601 nzshot=1 \
+        dt=$dt
+
+Raytime \
+        file_cp=models/smooth_cp.su \
+	file_src=wavefw.su \
+	verbose=1 \
+        geomspread=1 \
+        smooth_window=1 \
+        file_rcvtime=iniF/Td_${fl_bot}.su \
+        method=fd nt=$nt \
+        xrcv1=0 xrcv2=6000 dxrcv=10 \
+        zrcv1=0 zrcv2=0 dzrcv=0.0 \
+        zsrc=${fl_bot} dxshot=10 dzshot=0 \
+        xsrc=0 nxshot=601 nzshot=1 \
+        dt=$dt
+
+mdd file_A=iniF/Td_${fl_top}.su file_B=iniF/Td_${fl_top}.su file_out=temp.su mdd=0 conjgA=0 conjgB=0 verbose=1
+
+basop file_in=temp.su choice=5 | suwind itmax=$(( nt * 2 - 1)) >temp1.su
+basop file_in=temp1.su choice=5 file_out=iniF/Td2_${fl_top}.su
+
+mdd file_A=iniF/Td_${fl_bot}.su file_B=iniF/Td_${fl_bot}.su file_out=temp.su mdd=0 conjgA=0 conjgB=0 verbose=1
+
+basop file_in=temp.su choice=5 | suwind itmax=$(( nt * 2 - 1)) >temp1.su
+basop file_in=temp1.su choice=5 file_out=iniF/Td2_${fl_bot}.su
+
+# 
+
+makewave fp=20 dt=0.004 nt=1024 t0=2.048 scale=1 file_out=wave.su
+
+suspike nt=1024 ntr=1201 offset=0 nspk=1 ix1=601 it1=513 | sushw key=f2,d2,f1,d1,scalel,scalco,fldr,sx a=0,10,-2.048,0.004,-1000,-1000,1,0 | sushw key=gx,tracf a=0,1 b=10000,1 >temp.su
+
+<temp.su sudipfilt dx=1 dt=1 amps=0,1,1,0 slopes=-1.0,-0.9,0.9,1.0 | suconv sufile=wave.su | suwind itmin=512 itmax=1535 >iniF/ID.su
+
+rm temp.su temp1.su
+
+dxshot=10000 # with scalco factor of 1000
+ishot=0
+nshots=601
+
+rm iniF/vp0.su
+
+while (( ishot < nshots ))
+do
+
+    (( xsrc = 0 + ${ishot}*${dxshot} ))
+    (( tr1 = 601 - ${ishot} ))
+    (( tr2 = ${tr1} + 600 ))
+    echo xsrc=$xsrc tr1=$tr1 tr2=$tr2
+
+    (( ishot = $ishot + 1))
+
+    suwind <iniF/ID.su key=tracl min=$tr1 max=$tr2 itmax=1023 | \
+    sushw key=sx,gx,fldr,trwf a=$xsrc,0,$ishot,601 b=0,10000,0,0 j=0,601,0,0 | \
+    suchw key1=offset key2=gx key3=sx c=-1 d=1000 >> iniF/vp0.su
+
+done
+
+suflip <iniF/vp0.su flip=3 | suwind itmax=511 | suwind itmax=1023 | suflip flip=3 >iniF/halfID.su
+
