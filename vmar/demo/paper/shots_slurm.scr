@@ -1,0 +1,71 @@
+#!/bin/bash
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+
+dt=0.0004
+makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3 scale=0 scfft=1
+
+#./model.scr
+
+for Time in monitor baseline
+do
+
+mkdir -p shots_${Time}
+mkdir -p jobs
+
+dxshot=10
+ishot=0
+nshots=601
+zsrc=0
+
+while (( ishot < nshots ))
+do
+
+	(( xsrc = ${ishot}*${dxshot} ))
+
+	echo ishot=$ishot xsrc=$xsrc zsrc=$zsrc
+
+cat << EOF > jobs/slurm${Time}_$ishot.job 
+#!/bin/bash
+#
+#SBATCH -J mod_${xsrc}
+#SBATCH --cpus-per-task=4
+#SBATCH --ntasks=1
+#SBATCH --time=0:20:00
+#SBATCH --output=jobs/slurm${Time}_$ishot.out
+
+export PATH=\$HOME/src/OpenSource/bin:\$PATH:
+cd \$SLURM_SUBMIT_DIR
+
+export OMP_NUM_THREADS=4
+file_rcv=shots_${Time}/shots_${xsrc}.su
+
+fdelmodc \
+  	file_cp=models/${Time}_cp.su ischeme=1 iorder=4 \
+   	file_den=models/${Time}_ro.su \
+   	file_src=wavefw.su \
+   	file_rcv=\$file_rcv \
+	src_type=7 \
+	src_orient=1 \
+	src_injectionrate=1 \
+   	rec_type_vz=0 \
+   	rec_type_p=1 \
+   	rec_int_vz=2 \
+	rec_delay=0.3 \
+   	dtrcv=0.004 \
+   	verbose=2 \
+   	tmod=2.347 \
+   	dxrcv=10.0 \
+   	xrcv1=0 xrcv2=6000 \
+   	zrcv1=0 zrcv2=0 \
+   	xsrc=$xsrc zsrc=$zsrc \
+   	ntaper=200 \
+   	left=2 right=2 top=2 bottom=2
+EOF
+
+	sbatch jobs/slurm${Time}_$ishot.job
+
+   	(( ishot = $ishot + 1))
+
+done
+done

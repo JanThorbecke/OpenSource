@@ -1,0 +1,44 @@
+#!/bin/bash 
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+
+mkdir -p 4d
+
+fl_top=675
+fl_bot=1200
+
+for Time in baseline monitor #baseline monitor 
+do
+
+<shots_${Time}/refl_rp.su suwind itmax=1023 >4d/refl_rp_${Time}.su
+
+suchw key1=offset key2=tracl key3=fldr c=-1 <4d/refl_rp_${Time}.su | sufilter f=0,5,80,100 amps=0,1,1,0 | suwind key=offset min=0 max=0 | sudipfilt dt=1 dx=1 amps=0,1,1,0 slopes=-3,-2.5,2.5,3 >Rabc0z0_vmar_${Time}.su
+
+suflip flip=3 <iniF/Td2_${fl_top}.su >temp.su
+fmute file_shot=iniF/halfID.su file_out=4d/WinA.su above=1 verbose=0 hw=8 shift=-5 smooth=3 returnmask=1 #check=1
+fmute file_shot=temp.su file_out=4d/WinB_${fl_top}.su above=4 verbose=0 hw=8 shift=0 smooth=3 returnmask=1 #check=1 #above=-1 shift=10
+
+vmar file_inif=iniF/vp0.su file_Refl=4d/refl_rp_${Time}.su file_WinA=4d/WinA.su file_WinB=4d/WinB_${fl_top}.su file_gp=4d/Up_${fl_top}_${Time}.su file_gm=4d/Um_${fl_top}_${Time}.su verbose=1 niter=100 square=1 #file_fp=4d/vp_${fl_top}_${Time}.su file_fm=4d/vm_${fl_top}_${Time}.su 
+
+mdd file_A=4d/Um_${fl_top}_${Time}.su file_B=4d/Up_${fl_top}_${Time}.su file_out=temp.su verbose=1 mdd=3 eps_a=1e-3 eps_r=1e-2 lsqr_damp=0. lsqr_iter=100 transposeA=1 transposeB=1 
+
+sufilter <temp.su f=0,5,80,100 amps=0,1,1,0 >4d/Rbc_${Time}.su
+
+suchw key1=offset key2=tracl key3=fldr c=-1 <4d/Rbc_${Time}.su | sufilter f=0,5,80,100 amps=0,1,1,0 | suwind key=offset min=0 max=0 | sudipfilt dt=1 dx=1 amps=0,1,1,0 slopes=-3,-2.5,2.5,3 >Rbc0z0_vmar_${Time}.su
+
+suflip flip=3 <iniF/Td2_${fl_bot}.su >temp.su
+fmute file_shot=temp.su file_out=4d/WinB_${fl_bot}.su above=4 verbose=0 hw=8 shift=0 smooth=3 returnmask=1
+
+vmar file_inif=iniF/vp0.su file_Refl=4d/Rbc_${Time}.su file_WinA=4d/WinA.su file_WinB=4d/WinB_${fl_bot}.su file_fp=4d/vp_${fl_bot}_${Time}.su file_fm=4d/vm_${fl_bot}_${Time}.su verbose=1 niter=8 square=1 sclRefl=02. #file_gp=4d/Up_${fl_bot}_${Time}.su file_gm=4d/Um_${fl_bot}_${Time}.su
+
+mdd file_A=4d/vm_${fl_bot}_${Time}.su file_B=4d/vp_${fl_bot}_${Time}.su file_out=temp.su verbose=1 mdd=3 eps_a=1e-3 eps_r=1e-2 lsqr_damp=0.01 lsqr_iter=50 #transposeA=1 transposeB=1
+
+sufilter <temp.su f=0,5,80,100 amps=0,1,1,0 >4d/Rb_${Time}.su
+
+suchw key1=offset key2=tracl key3=fldr c=-1 <4d/Rb_${Time}.su | sufilter f=0,5,80,100 amps=0,1,1,0 | suwind key=offset min=0 max=0 | sudipfilt dt=1 dx=1 amps=0,1,1,0 slopes=-3,-2.5,2.5,3 >Rb0z0_vmar_${Time}.su
+
+rm temp.su
+done
+
+exit
+

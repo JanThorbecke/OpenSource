@@ -1,0 +1,150 @@
+#!/bin/bash
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+
+mkdir -p models
+
+dx=2.5
+
+CP=2100
+RO=2500
+
+dRO=100
+
+dCP1=100
+dCP2=100
+dCP3=100
+
+CP1=`echo "$CP + $dCP1" | bc -l`
+CP2=`echo "$CP + $dCP2" | bc -l`
+CP3=`echo "$CP + $dCP3" | bc -l`
+
+RO1=`echo "$RO + $dRO" | bc -l`
+
+# SALT model
+makemod sizex=6000 sizez=1600 dx=$dx dz=$dx cp0=3750  ro0=4250 \
+        orig=0,-400 file_base=tmp verbose=2 \
+	intt=def x=0,1100,1250,1875,2950,3950,4400,4950,6000 z=-217,-230,-243,-187,-212,-277,-238,-262,-182 poly=2 cp=3500 ro=3900 \
+	intt=def x=0,1000,1300,1800,3000,4000,4300,4800,6000 z=-117,-130,-143,-87,-112,-177,-138,-162,-82 poly=2 cp=3400 ro=3250 \
+	intt=def x=0,1100,1250,1875,2950,3950,4400,4950,6000 z=35,-15,5,-40,25,45,5,15,35 poly=2 cp=3700 ro=3750 \
+	intt=def x=0,1100,1250,1875,2950,3950,4400,4950,6000 z=60,10,30,-15,50,70,30,40,60 poly=2 cp=3300 ro=4000 \
+	intt=def x=0,1000,1300,1800,3000,4000,4300,4800,6000 z=238,175,182,143,208,203,177,190,203 poly=2 cp=2000 ro=2250 \
+	intt=def x=750,2250 z=375,375 poly=0 cp=$CP ro=2500 \
+	intt=def x=2375,3500 z=375,375 poly=0 cp=$CP ro=2500 \
+	intt=def x=3750,5000 z=375,375 poly=0 cp=$CP ro=2500 \
+        intt=def x=0,950,1400,2100,3000,4000,4500,5100,6000 z=370,300,460,380,420,370,460,310,370 poly=2 cp=3600 ro=4400 \
+        intt=def x=0,1000,1300,2100,3000,4000,4500,5100,6000 z=450,410,500,420,460,400,490,350,450 poly=2 cp=3750 ro=4220 \
+        intt=def x=0,1000,1300,1800,3000,4000,4300,4800,6000 z=600,600,640,580,630,580,640,600,600 poly=2 cp=3750 ro=4220 \
+        intt=def x=0,1000,1300,1800,3000,4000,4300,4800,6000 z=640,640,680,620,640,620,680,640,640 poly=2 cp=2350 ro=2220 \
+        intt=def x=0,1000,1300,1800,3000,4000,4300,4800,6000 z=700,700,720,680,680,680,720,700,700 poly=2 cp=3750 ro=4520 \
+        intt=def x=0,1000,1300,1800,3000,4000,4300,4800,6000 z=740,740,750,740,740,740,750,740,740 poly=2 cp=2350 ro=2220 \
+        intt=def x=0,1000,1300,1800,3000,4000,4300,4800,6000 z=770,780,800,780,760,780,800,780,770 poly=2 cp=3600 ro=4220 \
+        intt=def x=0,1000,1300,1800,3000,4000,4300,4800,6000 z=820,850,900,850,820,850,900,850,820 poly=2 cp=3000 ro=2800 \
+        intt=def x=0,750,1500,2250,3000,3750,4500,5250,6000 z=880,920,970,850,870,850,970,920,880 poly=2 cp=1950 ro=1550 \
+        intt=def x=0,6000 z=1000,1000 poly=0 cp=1800 ro=1250 
+
+suflip <tmp_cp.su flip=3 | sushw key=f1 a=0 >models/baseline_cp.su; suflip <tmp_ro.su flip=3 | sushw key=f1 a=0 >models/baseline_ro.su; rm tmp_cp.su tmp_ro.su
+
+# SALT model
+makemod sizex=6000 sizez=1600 dx=$dx dz=$dx cp0=3750  ro0=4250 \
+        orig=0,-400 file_base=tmp verbose=2 \
+        intt=def x=0,1100,1250,1875,2950,3950,4400,4950,6000 z=-217,-230,-243,-187,-212,-277,-238,-262,-182 poly=2 cp=3500 ro=3900 \
+	intt=def x=0,1000,1300,1800,3000,4000,4300,4800,6000 z=-117,-130,-143,-87,-112,-177,-138,-162,-82 poly=2 cp=3400 ro=3250 \
+        intt=def x=0,1100,1250,1875,2950,3950,4400,4950,6000 z=35,-15,5,-40,25,45,5,15,35 poly=2 cp=3700 ro=3750 \
+        intt=def x=0,1100,1250,1875,2950,3950,4400,4950,6000 z=60,10,30,-15,50,70,30,40,60 poly=2 cp=3300 ro=4000 \
+        intt=def x=0,1000,1300,1800,3000,4000,4300,4800,6000 z=238,175,182,143,208,203,177,190,203 poly=2 cp=2000 ro=2250 \
+        intt=def x=750,2250 z=375,375 poly=0 cp=$CP1 ro=$RO1 \
+        intt=def x=2375,3500 z=375,375 poly=0 cp=$CP2 ro=$RO2 \
+        intt=def x=3750,5000 z=375,375 poly=0 cp=$CP3 ro=$RO3 \
+        intt=def x=0,950,1400,2100,3000,4000,4500,5100,6000 z=370,300,460,380,420,370,460,310,370 poly=2 cp=3600 ro=4400 \
+        intt=def x=0,1000,1300,2100,3000,4000,4500,5100,6000 z=450,410,500,420,460,400,490,350,450 poly=2 cp=3750 ro=4220 \
+        intt=def x=0,1000,1300,1800,3000,4000,4300,4800,6000 z=600,600,640,580,630,580,640,600,600 poly=2 cp=3750 ro=4220 \
+        intt=def x=0,1000,1300,1800,3000,4000,4300,4800,6000 z=640,640,680,620,640,620,680,640,640 poly=2 cp=2325 ro=1820 \
+        intt=def x=0,1000,1300,1800,3000,4000,4300,4800,6000 z=700,700,720,680,680,680,720,700,700 poly=2 cp=3725 ro=4520 \
+        intt=def x=0,1000,1300,1800,3000,4000,4300,4800,6000 z=740,740,750,740,740,740,750,740,740 poly=2 cp=2325 ro=2220 \
+        intt=def x=0,1000,1300,1800,3000,4000,4300,4800,6000 z=770,780,800,780,760,780,800,780,770 poly=2 cp=3575 ro=4220 \
+        intt=def x=0,1000,1300,1800,3000,4000,4300,4800,6000 z=820,850,900,850,820,850,900,850,820 poly=2 cp=2975 ro=2800 \
+        intt=def x=0,750,1500,2250,3000,3750,4500,5250,6000 z=880,920,970,850,870,850,970,920,880 poly=2 cp=1950 ro=1550 \
+        intt=def x=0,6000 z=1000,1000 poly=0 cp=1800 ro=1250
+
+suflip <tmp_cp.su flip=3 | sushw key=f1 a=0 >models/monitor_cp.su; suflip <tmp_ro.su flip=3 | sushw key=f1 a=0 >models/monitor_ro.su; rm tmp_cp.su tmp_ro.su
+
+dt=0.0004
+makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3 scale=0 scfft=1
+
+smooth nxsm=51 ntsm=51 <models/baseline_cp.su >models/smooth_cp.su
+smooth nxsm=51 ntsm=51 <models/baseline_ro.su >models/smooth_ro.su
+
+exit
+
+dt2=${1:-0.004}
+
+sms=41
+lmt=273
+lmt2=432
+
+suwind <models/baseline_cp.su itmax=$lmt | smooth nxsm=$sms ntsm=$sms | transpose >top_cp.su
+suwind <models/baseline_ro.su itmax=$lmt | smooth nxsm=$sms ntsm=$sms | transpose >top_ro.su                                                                                                                                                 
+suwind <models/baseline_cp.su itmin=`echo "$lmt+1" | bc` | transpose >bot_cp.su
+suwind <models/baseline_ro.su itmin=`echo "$lmt+1" | bc` | transpose >bot_ro.su                                                                                                                                                              
+cat top_cp.su bot_cp.su | sushw key=tracl,tracf,f2 a=1,1,0 b=1,1,0 | transpose nxmax=821 >models/baseline_bc_cp.su
+cat top_ro.su bot_ro.su | sushw key=tracl,tracf,f2 a=1,1,0 b=1,1,0 | transpose nxmax=821 >models/baseline_bc_ro.su                                                                                                                           
+
+suwind <models/baseline_cp.su itmin=`echo "$lmt+1" | bc` itmax=$lmt2 | transpose >mid_cp.su
+suwind <models/baseline_ro.su itmin=`echo "$lmt+1" | bc` itmax=$lmt2 | transpose >mid_ro.su
+makemod sizex=6000 sizez=516 dx=$dx dz=$dx cp0=3300  ro0=4000 \
+        orig=0,0 file_base=new verbose=2
+
+suwind <new_cp.su | transpose >bot_cp.su
+suwind <new_ro.su | transpose >bot_ro.su                                                                                                                                                                                                     
+cat top_cp.su mid_cp.su bot_cp.su | sushw key=tracl,tracf,f2 a=1,1,0 b=1,1,0 | transpose nxmax=821 >models/baseline_b_cp.su
+cat top_ro.su mid_ro.su bot_ro.su | sushw key=tracl,tracf,f2 a=1,1,0 b=1,1,0 | transpose nxmax=821 >models/baseline_b_ro.su                                                                                                                  
+
+suwind <models/monitor_cp.su itmax=$lmt | smooth nxsm=$sms ntsm=$sms | transpose >top_cp.su
+suwind <models/monitor_ro.su itmax=$lmt | smooth nxsm=$sms ntsm=$sms | transpose >top_ro.su
+suwind <models/monitor_cp.su itmin=`echo "$lmt+1" | bc` | transpose >bot_cp.su
+suwind <models/monitor_ro.su itmin=`echo "$lmt+1" | bc` | transpose >bot_ro.su
+cat top_cp.su bot_cp.su | sushw key=tracl,tracf,f2 a=1,1,0 b=1,1,0 | transpose nxmax=821 >models/monitor_bc_cp.su
+cat top_ro.su bot_ro.su | sushw key=tracl,tracf,f2 a=1,1,0 b=1,1,0 | transpose nxmax=821 >models/monitor_bc_ro.su
+
+suwind <models/monitor_cp.su itmin=`echo "$lmt+1" | bc` itmax=$lmt2 | transpose >mid_cp.su
+suwind <models/monitor_ro.su itmin=`echo "$lmt+1" | bc` itmax=$lmt2 | transpose >mid_ro.su
+
+suwind <new_cp.su | transpose >bot_cp.su
+suwind <new_ro.su | transpose >bot_ro.su
+cat top_cp.su mid_cp.su bot_cp.su | sushw key=tracl,tracf,f2 a=1,1,0 b=1,1,0 | transpose nxmax=821 >models/monitor_b_cp.su
+cat top_ro.su mid_ro.su bot_ro.su | sushw key=tracl,tracf,f2 a=1,1,0 b=1,1,0 | transpose nxmax=821 >models/monitor_b_ro.su
+
+rm top_cp.su top_ro.su bot_cp.su bot_ro.su new_cp.su new_ro.su mid_ro.su mid_cp.su
+
+#makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3 scale=0
+
+fdelmodc \
+    file_cp=models/baseline_b_cp.su ischeme=1 iorder=4 \
+    file_den=models/baseline_b_ro.su \
+    file_src=wavefw.su \
+    file_rcv=shot_baseline.su \
+    file_snap=snapshots.su \
+    src_type=7 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.004 \
+    rec_delay=0.3 \
+    verbose=2 \
+    tmod=4.395 \
+    dxrcv=10.0 \
+    src_angle=0.0 \
+    src_velo=1800 \
+    xrcv1=0 xrcv2=6000 \
+    zrcv1=0 zrcv2=0 \
+    zsrc=0 xsrc=3000 \
+    plane_wave=1 nsrc=4801 \
+    nshot=1 \
+    ntaper=200 \
+    tsnap1=0.3 tsnap2=1.8 dtsnap=0.025 \
+    left=2 right=2 top=2 bottom=2
+
+exit

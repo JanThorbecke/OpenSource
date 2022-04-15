@@ -1,0 +1,36 @@
+#!/bin/bash
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+
+dx=2.5
+dt=0.0004
+
+makemod sizex=12000 sizez=4000 dx=$dx dz=$dx cp0=1800 ro0=1250 \
+	orig=0,-1000 file_base=noContrast.su 
+
+makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wavefw.su nt=4096 t0=0.3 scale=0 scfft=1
+
+export OMP_NUM_THREADS=8
+
+fdelmodc \
+    file_cp=noContrast_cp.su ischeme=1 iorder=4 \
+    file_den=noContrast_ro.su \
+    file_src=wavefw.su \
+    file_rcv=direct.su \
+    src_type=7 \
+	src_orient=1 \
+	src_injectionrate=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+	rec_delay=0.3 \
+    dtrcv=0.004 \
+    verbose=2 \
+    tmod=2.347 \
+    dxrcv=10.0 \
+    xrcv1=0 xrcv2=12000 \
+    zrcv1=0 zrcv2=0 \
+    xsrc=6000 zsrc=0 \
+    ntaper=200 \
+    left=2 right=2 top=2 bottom=2 \
+    fmax=97.5
