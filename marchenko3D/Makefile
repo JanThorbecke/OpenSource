@@ -24,6 +24,7 @@ SRCT	= marchenko3D.c \
 		makeWindow3D.c \
 		ampest3D.c \
 		imaging3D.c \
+		Cost3D.c \
 		homogeneousg3D.c \
 		readSnapData3D.c \
 		writeDataIter3D.c \

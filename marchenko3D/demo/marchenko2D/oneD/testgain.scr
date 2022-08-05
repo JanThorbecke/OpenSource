@@ -1,0 +1,21 @@
+#!/bin/bash -x
+
+sclcost=$( tail -n 1 scl.txt )
+
+gain0=0.5
+dgain=0.1
+ngain=10
+igain=0
+
+echo -e "Test Factor\tCost of test\tMin factor\tMin cost\tGain Factor" > sum.txt
+
+while [ $igain -le $ngain ]
+do
+
+gain=$( perl -E "say $gain0+$igain*$dgain" )
+
+echo -e "${sclcost}\t${gain}" >> sum.txt
+
+$(( igain++ ))
+
+done
