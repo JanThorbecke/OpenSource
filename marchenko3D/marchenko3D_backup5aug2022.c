@@ -143,7 +143,6 @@ char *sdoc[] = {
 "   scl0=1.0 ................. Starting value for the scaling estimation",
 "   scl1=2.0 ................. Final value for the scaling estimation",
 "   nscl=11 .................. Number of steps between scl0 and scl1",
-"   file_scl= ................ output file for the scale test ",
 " HOMOGENEOUS GREEN'S FUNCTION RETRIEVAL OPTIONS ",
 "   file_homg= ............... output file with homogeneous Green's function ",
 "   The homogeneous Green's function is computed if a filename is given",
@@ -190,11 +189,11 @@ NULL};
 int main (int argc, char **argv)
 {
     FILE    *fp_out, *fp_f1plus, *fp_f1min, *fp_imag, *fp_homg;
-    FILE    *fp_gmin, *fp_gplus, *fp_f2, *fp_amp, *fp_scl;
+    FILE    *fp_gmin, *fp_gplus, *fp_f2, *fp_amp;
     long    i, j, l, k, ret, nshots, nxshot, nyshot, Nfoc, nt, nx, ny, nts, nxs, nys, ngath, *itmin;
     long    size, n1, n2, n3, ntap, ntapx, ntapy, tap, dxi, dyi, ntraces, pad, *sx, *sy, *sz;
     long    nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
-    long    reci, mode, n2out, n3out, verbose, ntfft, zfp, sclcor, nscl, printscl;
+    long    reci, mode, n2out, n3out, verbose, ntfft, zfp, sclcor, nscl;
     long    iter, niter, tracf, *muteW, *tsynW, ampest, plane_wave, t0shift;
     long    hw, smooth, above, shift, *ixpos, *iypos, npos, ix, iy, nzim, nxim, nyim, compact, iscl;
     long    *isxcount, *reci_xsrc, *reci_xrcv;
@@ -209,7 +208,7 @@ int main (int argc, char **argv)
     complex *Refl, *Fop;
     char    *file_tinv, *file_shot, *file_green, *file_iter, *file_imag, *file_homg, *file_ampscl;
     char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_inp;
-    char    *file_ray, *file_amp, *file_wav, *file_shotw, *file_shotzfp, *file_scl;
+    char    *file_ray, *file_amp, *file_wav, *file_shotw, *file_shotzfp;
     segy    *hdrs_out, *hdrs_Nfoc, *hdrs_iter;
 	zfptop	zfpt;
 	zfpmar  zfpm;
@@ -238,7 +237,6 @@ int main (int argc, char **argv)
     if (!getparstring("file_imag", &file_imag)) file_imag = NULL;
     if (!getparstring("file_homg", &file_homg)) file_homg = NULL;
     if (!getparstring("file_inp", &file_inp)) file_inp = NULL;
-    if (!getparstring("file_scl", &file_scl)) file_scl = NULL;
     if (file_homg!=NULL && file_inp==NULL) verr("Cannot create HomG if no file_inp is given");
     if (!getparstring("file_ampscl", &file_ampscl)) file_ampscl = NULL;
     if (!getparlong("verbose", &verbose)) verbose = 0;
@@ -260,7 +258,6 @@ int main (int argc, char **argv)
     if (!getparlong("ampest", &ampest)) ampest = 0;
     if (!getparlong("sclcor", &sclcor)) sclcor = 0;
     if (!getparlong("nscl", &nscl)) nscl = 11;
-    if (!getparlong("printscl", &printscl)) printscl = 1;
     if (!getparfloat("scl0", &scl0)) scl0 = 1.0;
     if (!getparfloat("scl1", &scl1)) scl1 = 2.0;
     if (!getparlong("zfp", &zfp)) zfp = 0;
@@ -629,7 +626,6 @@ int main (int argc, char **argv)
             vmess("Starting value                 = %.3f",scl0);
             vmess("Final value                    = %.3f",scl1);
             vmess("Step value                     = %.3f",dscl);
-            if (file_scl != NULL) vmess("Scl output file                 = %s ", file_scl);
         }
         if (file_green != NULL) vmess("Green output file               = %s ", file_green);
         if (file_gmin != NULL)  vmess("Gmin output file                = %s ", file_gmin);
@@ -738,11 +734,7 @@ int main (int argc, char **argv)
         corfac=1.0;
     }
     sclfac0 = 1.0;
-
-    if (file_scl != NULL & sclcor > 0) {
-        fp_scl = fopen(file_scl, "w+");
-        fprintf(fp_scl,"Test Factor\tCost of test\tMin factor\tMin cost");
-    }
+    vmess("sclfac0 %.3f",sclfac0);
 
     for (iscl = 0; iscl < nscl+1; iscl++) {
 
@@ -754,6 +746,7 @@ int main (int argc, char **argv)
             }
         }
         else {
+            vmess("scl0 %.3f, dscl %.3f, iscl %li, sclfac0 %.3f",scl0,dscl,iscl,sclfac0);
             sclfac1 = (iscl*dscl) + scl0;
             vmess("Correction factor test %.3f",sclfac1);
             for (i = 0; i < nw*ny*nx*nshots; i++){
@@ -921,16 +914,12 @@ int main (int argc, char **argv)
                     cost1 /= cost0;
                     if (iscl == 0) {
                         costmin = cost1;
-                        corfac = sclfac1;
                     }
                     else{
                         if (costmin>cost1){
                             costmin = cost1;
                             corfac = sclfac1;
                         }
-                    }
-                    if (file_scl != NULL & sclcor > 0) {
-                        fprintf(fp_scl,"\n%.7e\t%.7e\t%.7e\t%.7e",sclfac1,cost1,corfac,costmin);
                     }
                 }
 
@@ -948,10 +937,6 @@ int main (int argc, char **argv)
     }
 
     free(Ni);
-
-    if (file_scl != NULL & sclcor > 0) {
-        fclose(fp_scl);
-    }
 
     /* compute full Green's function G = int R * f2(t) + f2(-t) */
     /* use f2 as operator on R in frequency domain */

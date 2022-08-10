@@ -89,8 +89,6 @@ long writeDataIter3D(char *file_iter, float *data, segy *hdrs, long n1, long n2,
 
 void imaging3D(float *Image, float *Gmin, float *f1plus, long nx, long ny, long nt, float dx, float dy, float dt, long Nfoc, long verbose);
 
-float Cost3D(float *Gmin, float *f1plus, long nx, long ny, long nt, float dx, float dy, float dt, long Nfoc, long verbose);
-
 void homogeneousg3D(float *HomG, float *green, float *f2p, float *f1p, float *f1m, float *zsyn, long nx, long ny, long nt, float dx, float dy,
     float dt, long Nfoc, long *sx, long *sy, long *sz, long verbose);
 
@@ -139,11 +137,6 @@ char *sdoc[] = {
 " REFLECTION RESPONSE CORRECTION ",
 "   scale=2 .................. scale factor of R for summation of Ni with G_d (only for time shot data)",
 "   pad=0 .................... amount of samples to pad the reflection series",
-"   sclcor=0 ................. Estimate the scaling correction of the reflection response (=1)",
-"   scl0=1.0 ................. Starting value for the scaling estimation",
-"   scl1=2.0 ................. Final value for the scaling estimation",
-"   nscl=11 .................. Number of steps between scl0 and scl1",
-"   file_scl= ................ output file for the scale test ",
 " HOMOGENEOUS GREEN'S FUNCTION RETRIEVAL OPTIONS ",
 "   file_homg= ............... output file with homogeneous Green's function ",
 "   The homogeneous Green's function is computed if a filename is given",
@@ -190,26 +183,26 @@ NULL};
 int main (int argc, char **argv)
 {
     FILE    *fp_out, *fp_f1plus, *fp_f1min, *fp_imag, *fp_homg;
-    FILE    *fp_gmin, *fp_gplus, *fp_f2, *fp_amp, *fp_scl;
+    FILE    *fp_gmin, *fp_gplus, *fp_f2, *fp_amp;
     long    i, j, l, k, ret, nshots, nxshot, nyshot, Nfoc, nt, nx, ny, nts, nxs, nys, ngath, *itmin;
     long    size, n1, n2, n3, ntap, ntapx, ntapy, tap, dxi, dyi, ntraces, pad, *sx, *sy, *sz;
     long    nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
-    long    reci, mode, n2out, n3out, verbose, ntfft, zfp, sclcor, nscl, printscl;
+    long    reci, mode, n2out, n3out, verbose, ntfft, zfp;
     long    iter, niter, tracf, *muteW, *tsynW, ampest, plane_wave, t0shift;
-    long    hw, smooth, above, shift, *ixpos, *iypos, npos, ix, iy, nzim, nxim, nyim, compact, iscl;
+    long    hw, smooth, above, shift, *ixpos, *iypos, npos, ix, iy, nzim, nxim, nyim, compact;
     long    *isxcount, *reci_xsrc, *reci_xrcv;
     float   fmin, fmax, *tapershx, *tapershy, *tapersy, *tapersx, fxf, fyf, dxf, dyf, *xsrc, *ysrc, *xrcv, *yrcv, *zsyn, *zsrc, *xrcvsyn, *yrcvsyn;
     double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, energyNi, *energyN0, tolerance;
     float   d1, d2, d3, f1, f2, f3, fxsb, fxse, fysb, fyse, ft, fx, fy, *xsyn, *ysyn, dxsrc, dysrc;
     float   *green, *f2p, *G_d, dt, dx, dy, dxs, dys, scl, mem;
     float   *f1plus, *f1min, *iRN, *Ni, *trace, *Gmin, *Gplus, *HomG;
-    float   scale, *tmpdata, tplmax, tshift, scl0, scl1, dscl, corfac, cost0, cost1, costmin, sclfac0, sclfac1;
+    float   scale, *tmpdata, tplmax, tshift;
     float   *ixmask, *iymask, *ampscl, *Gd, *Image, dzim;
     float   grad2rad, px, py, src_anglex, src_angley, src_velox, src_veloy, *mutetest;
     complex *Refl, *Fop;
     char    *file_tinv, *file_shot, *file_green, *file_iter, *file_imag, *file_homg, *file_ampscl;
     char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_inp;
-    char    *file_ray, *file_amp, *file_wav, *file_shotw, *file_shotzfp, *file_scl;
+    char    *file_ray, *file_amp, *file_wav, *file_shotw, *file_shotzfp;
     segy    *hdrs_out, *hdrs_Nfoc, *hdrs_iter;
 	zfptop	zfpt;
 	zfpmar  zfpm;
@@ -238,7 +231,6 @@ int main (int argc, char **argv)
     if (!getparstring("file_imag", &file_imag)) file_imag = NULL;
     if (!getparstring("file_homg", &file_homg)) file_homg = NULL;
     if (!getparstring("file_inp", &file_inp)) file_inp = NULL;
-    if (!getparstring("file_scl", &file_scl)) file_scl = NULL;
     if (file_homg!=NULL && file_inp==NULL) verr("Cannot create HomG if no file_inp is given");
     if (!getparstring("file_ampscl", &file_ampscl)) file_ampscl = NULL;
     if (!getparlong("verbose", &verbose)) verbose = 0;
@@ -258,11 +250,6 @@ int main (int argc, char **argv)
     if (!getparlong("ntapy", &ntapy)) ntapy = 0;
     if (!getparlong("pad", &pad)) pad = 0;
     if (!getparlong("ampest", &ampest)) ampest = 0;
-    if (!getparlong("sclcor", &sclcor)) sclcor = 0;
-    if (!getparlong("nscl", &nscl)) nscl = 11;
-    if (!getparlong("printscl", &printscl)) printscl = 1;
-    if (!getparfloat("scl0", &scl0)) scl0 = 1.0;
-    if (!getparfloat("scl1", &scl1)) scl1 = 2.0;
     if (!getparlong("zfp", &zfp)) zfp = 0;
     if (!getpardouble("tolerance", &tolerance)) tolerance = 1e-7;
 
@@ -622,15 +609,6 @@ int main (int argc, char **argv)
             vmess("Plane wave p value              = x:%.6f y%.6f",px,py);
             vmess("tshift                          = x:%.3f",tshift);
         }
-        if (sclcor) {
-            dscl = (scl1-scl0)/(nscl-1);
-            vmess("Scaling correction of the reflection response is estimated");
-            vmess("Number of steps                = %li",nscl);
-            vmess("Starting value                 = %.3f",scl0);
-            vmess("Final value                    = %.3f",scl1);
-            vmess("Step value                     = %.3f",dscl);
-            if (file_scl != NULL) vmess("Scl output file                 = %s ", file_scl);
-        }
         if (file_green != NULL) vmess("Green output file               = %s ", file_green);
         if (file_gmin != NULL)  vmess("Gmin output file                = %s ", file_gmin);
         if (file_gplus != NULL) vmess("Gplus output file               = %s ", file_gplus);
@@ -732,226 +710,123 @@ int main (int argc, char **argv)
     t1    = wallclock_time();
     tread = t1-t0;
 
-/*================ Loop for cost function ================*/
-    if (sclcor == 0) {
-        nscl=0;
-        corfac=1.0;
-    }
-    sclfac0 = 1.0;
+/*================ initialization ================*/
 
-    if (file_scl != NULL & sclcor > 0) {
-        fp_scl = fopen(file_scl, "w+");
-        fprintf(fp_scl,"Test Factor\tCost of test\tMin factor\tMin cost");
-    }
-
-    for (iscl = 0; iscl < nscl+1; iscl++) {
-
-        if (iscl == nscl) {
-            vmess("Correction factor is equal to %.3f",corfac);
-            for (i = 0; i < nw*ny*nx*nshots; i++){
-                Refl[i].r *= corfac/sclfac0;
-                Refl[i].i *= corfac/sclfac0;
+    memcpy(Ni, G_d, Nfoc*nys*nxs*ntfft*sizeof(float));
+    for (l = 0; l < Nfoc; l++) {
+        for (i = 0; i < npos; i++) {
+            j = 0;
+            ix = ixpos[i]; /* select the traces that have an output trace after integration */
+            iy = iypos[i]; /* select the traces that have an output trace after integration */
+            f2p[l*nys*nxs*nts+i*nts+j] = G_d[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
+            f1plus[l*nys*nxs*nts+i*nts+j] = G_d[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
+            for (j = 1; j < nts; j++) {
+                f2p[l*nys*nxs*nts+i*nts+j] = G_d[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
+                f1plus[l*nys*nxs*nts+i*nts+j] = G_d[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
             }
+        }
+    }
+
+/*================ start Marchenko iterations ================*/
+
+    for (iter=0; iter<niter; iter++) {
+
+        t2    = wallclock_time();
+    
+/*================ construction of Ni(-t) = - \int R(x,t) Ni(t)  ================*/
+
+        synthesis3D(Refl, Fop, Ni, iRN, nx, ny, nt, nxs, nys, nts, dt, xsyn, ysyn,
+            Nfoc, xrcv, yrcv, xsrc, ysrc, xnx, fxse, fxsb, fyse, fysb, dxs, dys,
+            dxsrc, dysrc, dx, dy, ntfft, nw, nw_low, nw_high, mode, reci, nshots,
+            nxshot, nyshot, ixpos, iypos, npos, &tfft, isxcount, reci_xsrc, reci_xrcv,
+            ixmask, verbose);
+
+        t3 = wallclock_time();
+        tsyn +=  t3 - t2;
+
+        if (file_iter != NULL) {
+            t0shift=1;
+            writeDataIter3D(file_iter, iRN, hdrs_iter, ntfft, nxs, nys, Nfoc, xsyn, ysyn, zsyn, ixpos, iypos, npos, t0shift, iter);
+        }
+
+        /* N_k(x,t) = -N_(k-1)(x,-t) */
+        /* p0^-(x,t) += iRN = (R * T_d^inv)(t) */
+        for (l = 0; l < Nfoc; l++) {
+			energyNi = 0.0;
+            for (i = 0; i < npos; i++) {
+                j = 0;
+                ix = ixpos[i]; 
+                iy = iypos[i]; 
+                Ni[l*nys*nxs*nts+i*nts+j]    = -iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
+                energyNi += iRN[l*nys*nxs*nts+ix*nts+j]*iRN[l*nys*nxs*nts+ix*nts+j];
+                for (j = 1; j < nts; j++) {
+                    Ni[l*nys*nxs*nts+i*nts+j]    = -iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+nts-j];
+                    energyNi += iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j]*iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
+                }
+            }
+            if (iter==0) energyN0[l] = energyNi;
+            if (verbose >=2) vmess(" - iSyn %li: Ni at iteration %li has energy %e; relative to N0 %e",
+                l, iter, sqrt(energyNi), sqrt(energyNi/energyN0[l]));
+        }
+
+        /* apply mute window based on times of direct arrival (in muteW) */
+        if (plane_wave==1) {
+            applyMute3D_tshift(Ni,  muteW, smooth, above, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, iter, tsynW);
         }
         else {
-            sclfac1 = (iscl*dscl) + scl0;
-            vmess("Correction factor test %.3f",sclfac1);
-            for (i = 0; i < nw*ny*nx*nshots; i++){
-                Refl[i].r *= sclfac1/sclfac0;
-                Refl[i].i *= sclfac1/sclfac0;
-            }
-            sclfac0 = sclfac1;
+            applyMute3D(Ni, muteW, smooth, above, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);
         }
 
-    /*================ initialization ================*/
+        if (iter % 2 == 0) { /* even iterations update: => f_1^-(t) */
+            for (l = 0; l < Nfoc; l++) {
+                for (i = 0; i < npos; i++) {
+                    j = 0;
+                    f1min[l*nys*nxs*nts+i*nts+j] -= Ni[l*nys*nxs*nts+i*nts+j];
+                    for (j = 1; j < nts; j++) {
+                        f1min[l*nys*nxs*nts+i*nts+j] -= Ni[l*nys*nxs*nts+i*nts+nts-j];
+                    }
+                }
+            }
+            if (above==-2) {
+                if (plane_wave==1) {
+                    applyMute3D_tshift(f1min,  muteW, smooth, 0, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, iter, tsynW);
+                }
+                else {
+                    applyMute3D(f1min, muteW, smooth, 0, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);
+                }
+            }
+        }
+        else {/* odd iterations update: => f_1^+(t)  */
+            for (l = 0; l < Nfoc; l++) {
+                for (i = 0; i < npos; i++) {
+                    j = 0;
+                    f1plus[l*nys*nxs*nts+i*nts+j] += Ni[l*nys*nxs*nts+i*nts+j];
+                    for (j = 1; j < nts; j++) {
+                        f1plus[l*nys*nxs*nts+i*nts+j] += Ni[l*nys*nxs*nts+i*nts+j];
+                    }
+                }
+            }
+        }
+
+        /* update f2 */
         for (l = 0; l < Nfoc; l++) {
             for (i = 0; i < npos; i++) {
                 j = 0;
-                ix = ixpos[i]; /* select the traces that have an output trace after integration */
-                iy = iypos[i]; /* select the traces that have an output trace after integration */
-                f2p[l*nys*nxs*nts+i*nts+j] = G_d[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
-                f1plus[l*nys*nxs*nts+i*nts+j] = G_d[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
-                f1min[l*nys*nxs*nts+i*nts+j] = 0.0;
+                f2p[l*nys*nxs*nts+i*nts+j] += Ni[l*nys*nxs*nts+i*nts+j];
                 for (j = 1; j < nts; j++) {
-                    f2p[l*nys*nxs*nts+i*nts+j] = G_d[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
-                    f1plus[l*nys*nxs*nts+i*nts+j] = G_d[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
-                    f1min[l*nys*nxs*nts+i*nts+j] = 0.0;
-                }
-            }
-        }
-
-        if (iscl==0) {
-            memcpy(Ni, G_d, Nfoc*nys*nxs*ntfft*sizeof(float));
-        }
-        else{
-            memcpy(Ni, f1plus, Nfoc*nys*nxs*ntfft*sizeof(float));
-        }
-
-    /*================ start Marchenko iterations ================*/
-
-        for (iter=0; iter<niter; iter++) {
-
-            t2    = wallclock_time();
-        
-    /*================ construction of Ni(-t) = - \int R(x,t) Ni(t)  ================*/
-
-            synthesis3D(Refl, Fop, Ni, iRN, nx, ny, nt, nxs, nys, nts, dt, xsyn, ysyn,
-                Nfoc, xrcv, yrcv, xsrc, ysrc, xnx, fxse, fxsb, fyse, fysb, dxs, dys,
-                dxsrc, dysrc, dx, dy, ntfft, nw, nw_low, nw_high, mode, reci, nshots,
-                nxshot, nyshot, ixpos, iypos, npos, &tfft, isxcount, reci_xsrc, reci_xrcv,
-                ixmask, verbose);
-
-            t3 = wallclock_time();
-            tsyn +=  t3 - t2;
-
-            if (file_iter != NULL) {
-                t0shift=1;
-                writeDataIter3D(file_iter, iRN, hdrs_iter, ntfft, nxs, nys, Nfoc, xsyn, ysyn, zsyn, ixpos, iypos, npos, t0shift, iter);
-            }
-
-            /* N_k(x,t) = -N_(k-1)(x,-t) */
-            /* p0^-(x,t) += iRN = (R * T_d^inv)(t) */
-            for (l = 0; l < Nfoc; l++) {
-                energyNi = 0.0;
-                for (i = 0; i < npos; i++) {
-                    j = 0;
-                    ix = ixpos[i]; 
-                    iy = iypos[i]; 
-                    Ni[l*nys*nxs*nts+i*nts+j]    = -iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
-                    energyNi += iRN[l*nys*nxs*nts+ix*nts+j]*iRN[l*nys*nxs*nts+ix*nts+j];
-                    for (j = 1; j < nts; j++) {
-                        Ni[l*nys*nxs*nts+i*nts+j]    = -iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+nts-j];
-                        energyNi += iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j]*iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j];
-                    }
-                }
-                if (iter==0) energyN0[l] = energyNi;
-                if (verbose >=2) vmess(" - iSyn %li: Ni at iteration %li has energy %e; relative to N0 %e",
-                    l, iter, sqrt(energyNi), sqrt(energyNi/energyN0[l]));
-            }
-
-            /* apply mute window based on times of direct arrival (in muteW) */
-            if (plane_wave==1) {
-                applyMute3D_tshift(Ni,  muteW, smooth, above, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, iter, tsynW);
-            }
-            else {
-                applyMute3D(Ni, muteW, smooth, above, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);
-            }
-
-            if (iter % 2 == 0) { /* even iterations update: => f_1^-(t) */
-                for (l = 0; l < Nfoc; l++) {
-                    for (i = 0; i < npos; i++) {
-                        j = 0;
-                        f1min[l*nys*nxs*nts+i*nts+j] -= Ni[l*nys*nxs*nts+i*nts+j];
-                        for (j = 1; j < nts; j++) {
-                            f1min[l*nys*nxs*nts+i*nts+j] -= Ni[l*nys*nxs*nts+i*nts+nts-j];
-                        }
-                    }
-                }
-                if (above==-2) {
-                    if (plane_wave==1) {
-                        applyMute3D_tshift(f1min,  muteW, smooth, 0, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, iter, tsynW);
-                    }
-                    else {
-                        applyMute3D(f1min, muteW, smooth, 0, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);
-                    }
-                }
-            }
-            else {/* odd iterations update: => f_1^+(t)  */
-                for (l = 0; l < Nfoc; l++) {
-                    for (i = 0; i < npos; i++) {
-                        j = 0;
-                        f1plus[l*nys*nxs*nts+i*nts+j] += Ni[l*nys*nxs*nts+i*nts+j];
-                        for (j = 1; j < nts; j++) {
-                            f1plus[l*nys*nxs*nts+i*nts+j] += Ni[l*nys*nxs*nts+i*nts+j];
-                        }
-                    }
-                }
-            }
-
-            /* update f2 */
-            for (l = 0; l < Nfoc; l++) {
-                for (i = 0; i < npos; i++) {
-                    j = 0;
                     f2p[l*nys*nxs*nts+i*nts+j] += Ni[l*nys*nxs*nts+i*nts+j];
-                    for (j = 1; j < nts; j++) {
-                        f2p[l*nys*nxs*nts+i*nts+j] += Ni[l*nys*nxs*nts+i*nts+j];
-                    }
                 }
             }
+        }
 
-            if (sclcor==1 && (iter==0 || iter==niter-1)){
+        t2 = wallclock_time();
+        tcopy +=  t2 - t3;
 
-                Gmin    = (float *)calloc(Nfoc*nys*nxs*ntfft,sizeof(float));
+        if (verbose) vmess("*** Iteration %li finished ***", iter);
 
-                /* use f1+ as operator on R in frequency domain */
-                mode=1;
-                synthesis3D(Refl, Fop, f1plus, iRN, nx, ny, nt, nxs, nys, nts, dt, xsyn, ysyn,
-                    Nfoc, xrcv, yrcv, xsrc, ysrc, xnx, fxse, fxsb, fyse, fysb, dxs, dys,
-                    dxsrc, dysrc, dx, dy, ntfft, nw, nw_low, nw_high, mode, reci, nshots,
-                    nxshot, nyshot, ixpos, iypos, npos, &tfft, isxcount, reci_xsrc, reci_xrcv,
-                    ixmask, verbose);
-
-                /* compute upgoing Green's G^-,+ */
-                for (l = 0; l < Nfoc; l++) {
-                    for (i = 0; i < npos; i++) {
-                        j=0;
-                        ix = ixpos[i]; 
-                        iy = iypos[i];
-                        Gmin[l*nys*nxs*nts+i*nts+j] = iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j] - f1min[l*nys*nxs*nts+i*nts+j];
-                        for (j = 1; j < nts; j++) {
-                            Gmin[l*nys*nxs*nts+i*nts+j] = iRN[l*nys*nxs*nts+iy*nxs*nts+ix*nts+j] - f1min[l*nys*nxs*nts+i*nts+j];
-                        }
-                    }
-                }
-                /* Apply mute with window for Gmin */
-                if (plane_wave==1) {
-                    applyMute3D_tshift(Gmin, muteW, smooth, 4, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, 0, tsynW);
-                    /* for plane wave with angle shift itmin downward */
-                    timeShift(Gmin, nts, npos*Nfoc, dt, tshift, fmin, fmax);
-                }
-                else {
-                    applyMute3D(Gmin, muteW, smooth, 4, Nfoc, nxs, nys, nts, ixpos, iypos, npos, shift, tsynW);
-                }
-
-                if (iter==0) {
-                    cost0 = Cost3D(Gmin, f1plus, nx, ny, nt, dx, dy, dt, Nfoc, verbose);
-                }
-                else if (iter==niter-1){
-                    cost1 = Cost3D(Gmin, f1plus, nx, ny, nt, dx, dy, dt, Nfoc, verbose);
-                    cost1 /= cost0;
-                    if (iscl == 0) {
-                        costmin = cost1;
-                        corfac = sclfac1;
-                    }
-                    else{
-                        if (costmin>cost1){
-                            costmin = cost1;
-                            corfac = sclfac1;
-                        }
-                    }
-                    if (file_scl != NULL & sclcor > 0) {
-                        fprintf(fp_scl,"\n%.7e\t%.7e\t%.7e\t%.7e",sclfac1,cost1,corfac,costmin);
-                    }
-                }
-
-                free(Gmin);
-
-            }
-
-            t2 = wallclock_time();
-            tcopy +=  t2 - t3;
-
-            if (verbose) vmess("*** Iteration %li finished ***", iter);
-
-        } /* end of iterations */
-
-    }
+    } /* end of iterations */
 
     free(Ni);
-
-    if (file_scl != NULL & sclcor > 0) {
-        fclose(fp_scl);
-    }
 
     /* compute full Green's function G = int R * f2(t) + f2(-t) */
     /* use f2 as operator on R in frequency domain */
