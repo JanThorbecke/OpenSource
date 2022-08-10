@@ -105,6 +105,7 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwa
 
     optn = optncr(n1);
     nfreq = optn/2 + 1;
+
     if (wav.nt != wav.ns) {
 		vmess("Sampling in wavelet is %e while for modeling is set to %e", wav.ds, mod.dt);
 		vmess("Wavelet sampling will be FFT-interpolated to sampling of modeling");
