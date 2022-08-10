@@ -704,6 +704,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			else wav->nx = 1;
 		}
 		if (wav->random) wav->nt = NINT(tlength/mod->dt)+1;
+		wav->ns = wav->nt;
 		src->tbeg = (float *)malloc(nsrc*sizeof(float));
 		src->tend = (float *)malloc(nsrc*sizeof(float));
 		wav->nsamp = (size_t *)malloc((nsrc+1)*sizeof(size_t));
@@ -906,6 +907,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			if (src->multiwav) wav->nx = nsrc;
 			else wav->nx = 1;
 			wav->nt = NINT(tlength/mod->dt)+1;
+			wav->ns = wav->nt;
 			wav->nsamp = (size_t *)malloc((wav->nx+1)*sizeof(size_t));
 			nsamp=0;
 			for (is=0; is<wav->nx; is++) {
