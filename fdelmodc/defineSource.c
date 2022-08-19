@@ -55,9 +55,9 @@ void seedCMWC4096(void);
 int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwav, int reverse, int verbose)
 {
     FILE   *fp;
-    size_t nread;
+    size_t nread, namp;
     int    optn, nfreq, i, j, k, iwmax, tracesToDo;
-    int    iw, n1, namp, optnscale, nfreqscale;
+    int    iw, n1, optnscale, nfreqscale;
     float  scl, d1, df, deltom, om, tshift;
     float  amp1, amp2, amp3;
     float  *trace, maxampl, scale;
