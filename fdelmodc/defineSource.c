@@ -130,6 +130,10 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwa
     for (i=0; i<wav.nx; i++) {
         if (wav.random) {
             randomWavelet(wav, src, &src_nwav[i][0], src.tbeg[i], src.tend[i], verbose);
+			maxampl=0.0;
+            for (j=0; j<wav.nt; j++) {
+				maxampl = MAX(maxampl,fabs(src_nwav[i][j]));
+			}
         }
         else {
             memset(&ctrace[0],0,nfreqscale*sizeof(complex));
