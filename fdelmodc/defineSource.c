@@ -64,7 +64,7 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwa
     complex *ctrace, tmp;
     segy   hdr;
     
-	scale = 1.0;
+    scale = 1.0;
     n1 = wav.ns;
     if (wav.random) { /* initialize random sequence */
         srand48(wav.seed+1);
@@ -107,17 +107,17 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwa
     nfreq = optn/2 + 1;
 
     if (wav.nt != wav.ns) {
-		vmess("Sampling in wavelet is %e while for modeling is set to %e", wav.ds, mod.dt);
-		vmess("Wavelet sampling will be FFT-interpolated to sampling of modeling");
-		vmess("file_src Nt=%d sampling after interpolation=%d", wav.ns, wav.nt);
-		optnscale  = wav.nt;
-		nfreqscale = optnscale/2 + 1;
-	}
-	else {
-		optnscale  = optn;
-		nfreqscale = optnscale/2 + 1;
-	}
-//	fprintf(stderr,"define S optn=%d ns=%d %e nt=%d %e\n", optn, wav.ns, wav.ds, optnscale, wav.dt);
+        vmess("Sampling in wavelet is %e while for modeling is set to %e", wav.ds, mod.dt);
+        vmess("Wavelet sampling will be FFT-interpolated to sampling of modeling");
+        vmess("file_src Nt=%d sampling after interpolation=%d", wav.ns, wav.nt);
+        optnscale  = wav.nt;
+        nfreqscale = optnscale/2 + 1;
+    }
+    else {
+        optnscale  = optn;
+        nfreqscale = optnscale/2 + 1;
+    }
+//    fprintf(stderr,"define S optn=%d ns=%d %e nt=%d %e\n", optn, wav.ns, wav.ds, optnscale, wav.dt);
 
     ctrace = (complex *)calloc(nfreqscale,sizeof(complex));
     trace = (float *)calloc(optnscale,sizeof(float));
@@ -130,6 +130,10 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwa
     for (i=0; i<wav.nx; i++) {
         if (wav.random) {
             randomWavelet(wav, src, &src_nwav[i][0], src.tbeg[i], src.tend[i], verbose);
+            maxampl=0.0;
+            for (j=0; j<wav.nsamp[i]; j++) {
+                maxampl = MAX(maxampl,fabs(src_nwav[i][j]));
+            }
         }
         else {
             memset(&ctrace[0],0,nfreqscale*sizeof(complex));
@@ -183,29 +187,29 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwa
             /* avoid a (small) spike in the last sample 
                this is done to avoid diffraction from last wavelet sample
                which will act as a pulse */
-    		maxampl=0.0;
+            maxampl=0.0;
             if (reverse) {
                 for (j=0; j<wav.nt; j++) {
-					src_nwav[i][j] = scl*(trace[wav.nt-j-1]-trace[0]);
-					maxampl = MAX(maxampl,fabs(src_nwav[i][j]));
-				}
+                    src_nwav[i][j] = scl*(trace[wav.nt-j-1]-trace[0]);
+                    maxampl = MAX(maxampl,fabs(src_nwav[i][j]));
+                }
             }
             else {
                 for (j=0; j<wav.nt; j++) {
-					src_nwav[i][j] = scl*(trace[j]-trace[wav.nt-1]);
-					maxampl = MAX(maxampl,fabs(src_nwav[i][j]));
-				}
+                    src_nwav[i][j] = scl*(trace[j]-trace[wav.nt-1]);
+                    maxampl = MAX(maxampl,fabs(src_nwav[i][j]));
+                }
             }
-			if (verbose > 3) vmess("Wavelet sampling (FFT-interpolated) done for trace %d", i);
+            if (verbose > 3) vmess("Wavelet sampling (FFT-interpolated) done for trace %d", i);
         }
     }
-	/* set values smaller than 1e-5 maxampl to zero */
-	maxampl *= 1e-5;
+    /* set values smaller than 1e-5 maxampl to zero */
+    maxampl *= 1e-5;
     for (i=0; i<wav.nx; i++) {
-        for (j=0; j<wav.nt; j++) {
-	        if (fabs(src_nwav[i][j]) < maxampl) src_nwav[i][j] = 0.0;
-	    }
-	}
+        for (j=0; j<wav.nsamp[i]; j++) {
+            if (fabs(src_nwav[i][j]) < maxampl) src_nwav[i][j] = 0.0;
+        }
+    }
     free(ctrace);
     free(trace);
 
@@ -384,46 +388,46 @@ int comp (const float *a, const float *b)
 
 int writesufilesrcnwav(char *filename, float **src_nwav, wavPar wav, int n1, int n2, float f1, float f2, float d1, float d2)
 {
-	FILE    *file_out;
-	size_t  nwrite, itrace;
-	float   *trace;
-	int     ns;
-	segy    *hdr;
+    FILE    *file_out;
+    size_t  nwrite, itrace;
+    float   *trace;
+    int     ns;
+    segy    *hdr;
 
 /* Read in parameters */
 
-	if (n1 > USHRT_MAX) {
-		vwarn("Output file %s: number of samples is truncated from %d to USHRT_MAX.", filename, n1);
-	}
-	ns = MIN(n1,USHRT_MAX);
+    if (n1 > USHRT_MAX) {
+        vwarn("Output file %s: number of samples is truncated from %d to USHRT_MAX.", filename, n1);
+    }
+    ns = MIN(n1,USHRT_MAX);
 
-	file_out = fopen( filename, "w+" );
-	assert( file_out );
+    file_out = fopen( filename, "w+" );
+    assert( file_out );
 
-	trace = (float *)malloc(n1*sizeof(float));
-	hdr = (segy *)calloc(1,TRCBYTES);
-	hdr->ns = ns;
-	hdr->dt = NINT(1000000*(d1));
-	hdr->d1 = d1;
-	hdr->d2 = d2;
-	hdr->f1 = f1;
-	hdr->f2 = f2;
-	hdr->fldr = 1;
-	hdr->trwf = n2;
+    trace = (float *)malloc(n1*sizeof(float));
+    hdr = (segy *)calloc(1,TRCBYTES);
+    hdr->ns = ns;
+    hdr->dt = NINT(1000000*(d1));
+    hdr->d1 = d1;
+    hdr->d2 = d2;
+    hdr->f1 = f1;
+    hdr->f2 = f2;
+    hdr->fldr = 1;
+    hdr->trwf = n2;
 
-	for (itrace=0; itrace<n2; itrace++) {
-		hdr->tracl = itrace+1;
-		nwrite = fwrite( hdr, 1, TRCBYTES, file_out );
-		assert (nwrite == TRCBYTES);
-		memset(trace, 0, n1*sizeof(float));
-		memcpy(trace, &src_nwav[itrace][0], wav.nsamp[itrace]*sizeof(float));
-		nwrite = fwrite( &trace[0], sizeof(float), ns, file_out );
-		assert (nwrite == ns);
-	} 
-	fclose(file_out);
-	free(hdr);
-	free(trace);
+    for (itrace=0; itrace<n2; itrace++) {
+        hdr->tracl = itrace+1;
+        nwrite = fwrite( hdr, 1, TRCBYTES, file_out );
+        assert (nwrite == TRCBYTES);
+        memset(trace, 0, n1*sizeof(float));
+        memcpy(trace, &src_nwav[itrace][0], wav.nsamp[itrace]*sizeof(float));
+        nwrite = fwrite( &trace[0], sizeof(float), ns, file_out );
+        assert (nwrite == ns);
+    } 
+    fclose(file_out);
+    free(hdr);
+    free(trace);
 
-	return 0;
+    return 0;
 }
 

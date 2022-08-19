@@ -10,6 +10,7 @@ ALLINC  = -I.
 #OPTC += -fopenmp -Waddress
 #OPTC +=  -qopt-report=5 -g
 #OPTC +=  -O1 -g
+#OPTC +=  -O1 -g -fsanitize=address -fsanitize=bounds-strict -fsanitize=object-size
 #OPTC =  -fp-trap=invalid,overflow -traceback -g -O1 -qopenmp
 #OPTC := $(subst -O3 -ffast-math, -O1 -g ,$(OPTC))
 #PGI options for compiler feedback
