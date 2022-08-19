@@ -275,14 +275,13 @@ int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx,
         }
 */
         if (verbose) vmess("Total number of linear array receivers: %d",nrcv);
-        if (!nrcv) {
+        if (Nx1) {
             free(xrcv1);
             free(xrcv2);
             free(zrcv1);
             free(zrcv2);
             free(dxr);
             free(dzr);
-            free(nlrcv);
         }
         rec->max_nrec+=nrcv;
     } 

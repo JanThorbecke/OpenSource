@@ -363,7 +363,7 @@ int main(int argc, char **argv)
 		}
 	}
 	else {
-        sizew=wav.nt*wav.nx;
+		sizew=wav.nt*wav.nx;
 		src_nwav = (float **)calloc(wav.nx,sizeof(float *));
 		src_nwav[0] = (float *)calloc(sizew,sizeof(float));
 		assert(src_nwav[0] != NULL);
