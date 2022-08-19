@@ -9,7 +9,7 @@ ALLINC  = -I.
 #OPTC = -g -Wall -fsignaling-nans -O0 -fopenmp
 #OPTC += -fopenmp -Waddress
 #OPTC +=  -qopt-report=5 -g
-#OPTC +=  -O1 -g
+OPTC +=  -O1 -g
 #OPTC =  -fp-trap=invalid,overflow -traceback -g -O1 -qopenmp
 #OPTC := $(subst -O3 -ffast-math, -O1 -g ,$(OPTC))
 #PGI options for compiler feedback
