@@ -29,7 +29,7 @@ file=shot0_rp.su
 sumax < $file mode=abs outpar=nep
 clipf1=`cat nep | awk '{print $1/7}'`
 file_base=${file%.su}
-supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+supsimage < $file hbox=6 wbox=4 labelsize=12 linewidth=0.0 \
       n1tic=2 x1end=1.4 f1=0 \
       label1="time [s]" label2="lateral distance [m]" \
       f2=-3000 f2num=-3000 d2num=1500 clip=$clipf1 > $file_base.eps
@@ -48,7 +48,7 @@ do
   for fldr in 1 2 3 4
   do
     suwind < $file key=fldr min=$fldr max=$fldr > shottmp.su
-    supsimage < shottmp.su hbox=4 wbox=4 labelsize=8 linewidth=0.0 \
+    supsimage < shottmp.su hbox=4 wbox=4 labelsize=12 linewidth=0.0 \
       n1tic=2 f1=0 \
       label1="depth [m]" label2="lateral distance [m]" \
       f2=-3000 f2num=-3000 d2num=1500 clip=$clipf1 > ${file_base}_$fldr.eps
@@ -66,7 +66,7 @@ then
     clipf1=`cat nep | awk '{print $1/9}'`
   
     file_base=${file%.su}
-    supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+    supsimage < $file hbox=6 wbox=4 labelsize=12 linewidth=0.0 \
         n1tic=2 x1beg=-1.5 x1end=1.5 f1=-2.044 \
         label1="time [s]" label2="lateral distance [m]" \
         f2=-3000 f2num=-3000 d2num=1500 clip=$clipf1 > $file_base.eps
@@ -97,14 +97,14 @@ then
   for file in mute05_001.su mute05_002.su mute0-5_001.su mute0-5_002.su mute0Basic_001.su
   do
     file_base=${file%.su}
-    supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+    supsimage < $file hbox=6 wbox=4 labelsize=12 linewidth=0.0 \
         n1tic=2 f1=0 \
         label1="time [s]" label2="lateral distance [m]" \
         f2=-3000 f2num=-3000 d2num=1500 wclip=0 bclip=1 > $file_base.eps
   
 	rotate file_in=$file file_out=nep.su
   
-    supsimage < nep.su hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+    supsimage < nep.su hbox=6 wbox=4 labelsize=12 linewidth=0.0 \
         n1tic=2 x1beg=-0.7 x1end=0.7 f1=-1.024 \
         label1="time [s]" label2="lateral distance [m]" \
         f2=-3000 f2num=-3000 d2num=1500 wclip=0 bclip=1 > ${file_base}_shift0.eps
@@ -118,7 +118,7 @@ then
   for file in ${srcname}0a120_rp.su fdplus${srcname}0a120.su 
   do 
     file_base=${file%.su}
-    supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+    supsimage < $file hbox=6 wbox=4 labelsize=12 linewidth=0.0 \
         n1tic=2 x1end=1.4 f1=0 \
         label1="time [s]" label2="lateral distance [m]" \
         f1=0 f2=-3000 f2num=-3000 d2num=1500 clip=$clipS > $file_base.eps
@@ -130,7 +130,7 @@ then
     clipf1=`cat nep | awk '{print $1/7}'`
 
     file_base=${file%.su}
-    supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+    supsimage < $file hbox=6 wbox=4 labelsize=12 linewidth=0.0 \
         n1tic=2 x1end=1.4 f1=0 \
         label1="time [s]" label2="lateral distance [m]" \
         f2=-3000 f2num=-3000 d2num=1500 clip=$clipS > $file_base.eps
@@ -145,7 +145,7 @@ then
   do 
 
     file_base=${file%.su}
-    supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+    supsimage < $file hbox=6 wbox=4 labelsize=12 linewidth=0.0 \
         n1tic=2 x1end=1.4 f1=0 \
         label1="time [s]" label2="lateral distance [m]" \
         f1=0 f2=-3000 f2num=-3000 d2num=1500 clip=$clipS > $file_base.eps
@@ -158,7 +158,7 @@ then
     clipf1=`cat nep | awk '{print $1/7}'`
   
     file_base=${file%.su}
-    supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+    supsimage < $file hbox=6 wbox=4 labelsize=12 linewidth=0.0 \
         n1tic=2 x1end=1.4 f1=0 \
         label1="time [s]" label2="lateral distance [m]" \
         f2=-3000 f2num=-3000 d2num=1500 clip=$clipS > $file_base.eps
@@ -173,7 +173,7 @@ then
     clipf1=`cat nep | awk '{print $1/9}'`
   
     file_base=${file%.su}
-    supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+    supsimage < $file hbox=6 wbox=4 labelsize=12 linewidth=0.0 \
         n1tic=2 x1beg=-0.7 x1end=0.7 \
         label1="time [s]" label2="lateral distance [m]" \
         f2=-3000 f2num=-3000 d2num=1500 clip=$clipS > $file_base.eps
@@ -186,7 +186,7 @@ then
   
     basop file_in=$file file_out=nep.su choice=shift shift=-2.048
     file_base=${file%.su}
-    supsimage < nep.su hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+    supsimage < nep.su hbox=6 wbox=4 labelsize=12 linewidth=0.0 \
         n1tic=2 x1beg=-0.7 x1end=0.7 f1=-2.048 \
         label1="time [s]" label2="lateral distance [m]" \
         f2=-3000 f2num=-3000 d2num=1500 clip=$clipS > $file_base.eps
