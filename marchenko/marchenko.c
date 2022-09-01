@@ -718,10 +718,36 @@ int main (int argc, char **argv)
         }
 
         if (file_gmin != NULL) {
+            /* rotate to get t=0 in the middle */
+            if (rotate==2) {
+                for (i = 0; i < n2; i++) {
+                    hdrs_out[i].f1     = -n1*0.5*dt;
+                    memcpy(&trace[0],&Gmin[l*size+i*nts],nts*sizeof(float));
+                    for (j = 0; j < n1/2; j++) {
+                        Gmin[l*size+i*nts+n1/2+j] = trace[j];
+                    }
+                    for (j = n1/2; j < n1; j++) {
+                        Gmin[l*size+i*nts+j-n1/2] = trace[j];
+                    }
+                }
+            }
             ret = writeData(fp_gmin, (float *)&Gmin[l*size], hdrs_out, n1, n2);
             if (ret < 0 ) verr("error on writing output file.");
         }
         if (file_gplus != NULL) {
+            /* rotate to get t=0 in the middle */
+            if (rotate==2) {
+                for (i = 0; i < n2; i++) {
+                    hdrs_out[i].f1     = -n1*0.5*dt;
+                    memcpy(&trace[0],&Gplus[l*size+i*nts],nts*sizeof(float));
+                    for (j = 0; j < n1/2; j++) {
+                        Gplus[l*size+i*nts+n1/2+j] = trace[j];
+                    }
+                    for (j = n1/2; j < n1; j++) {
+                        Gplus[l*size+i*nts+j-n1/2] = trace[j];
+                    }
+                }
+            }
             ret = writeData(fp_gplus, (float *)&Gplus[l*size], hdrs_out, n1, n2);
             if (ret < 0 ) verr("error on writing output file.");
         }
@@ -735,7 +761,7 @@ int main (int argc, char **argv)
         }
         if (file_f1plus != NULL) {
             /* rotate to get t=0 in the middle */
-            if (rotate==1) {
+            if (rotate>=1) {
                 for (i = 0; i < n2; i++) {
                     hdrs_out[i].f1     = -n1*0.5*dt;
                     memcpy(&trace[0],&f1plus[l*size+i*nts],nts*sizeof(float));
@@ -752,7 +778,7 @@ int main (int argc, char **argv)
         }
         if (file_f1min != NULL) {
             /* rotate to get t=0 in the middle */
-            if (rotate==1) {
+            if (rotate>=1) {
                 for (i = 0; i < n2; i++) {
                     hdrs_out[i].f1     = -n1*0.5*dt;
                     memcpy(&trace[0],&f1min[l*size+i*nts],nts*sizeof(float));
