@@ -4,6 +4,9 @@
 #include <math.h>
 #include "par.h"
 #include "segy.h"
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
