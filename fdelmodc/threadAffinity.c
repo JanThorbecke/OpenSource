@@ -16,6 +16,7 @@
 
 #define CPU_SETSIZE	1024
 #define SYSCTL_CORE_COUNT   "machdep.cpu.core_count"
+
 void vmess(char *fmt, ...);
 
 typedef struct cpu_set {

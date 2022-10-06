@@ -60,14 +60,15 @@ long defineSource3D(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_
     FILE    *fp;
     size_t  nread;
     long optn, nfreq, i, j, k, iwmax, tracesToDo;
-    long iw, n1, namp, optnscale, nfreqscale;
+    long iw, n1, optnscale, nfreqscale;
+    size_t namp;
     float scl, d1, df, deltom, om, tshift;
     float amp1, amp2, amp3;
     float *trace, maxampl, scale;
     complex *ctrace, tmp;
     segy hdr;
     
-	scale = 1.0;
+    scale = 1.0;
     n1 = wav.ns;
     if (wav.random) { /* initialize random sequence */
         srand48(wav.seed+1);
