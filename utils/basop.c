@@ -126,7 +126,7 @@ int main(int argc, char **argv)
 {
 	FILE	*fp_in, *fp_out;
 	int     nrec, nsam, ntmax, nxmax, error, ret, verbose, i, j, is;
-	int     opt, size, n1, n2, first, nrot; 
+	int     opt, size, n1, n2, first, nrot, killno; 
 	int     ntraces, ngath;
 	float   dt, dx, dy, c, rho, d1, d2, f1, f2; 
 	float   scl, xmin, xmax, trot;
@@ -170,6 +170,7 @@ int main(int argc, char **argv)
 	if(!getparint("ntmax", &ntmax)) ntmax = 1024;
 	if(!getparint("nxmax", &nxmax)) nxmax = 512;
 	if(!getparint("dim", &dim)) dim = 1;
+	if(!getparint("killno", &killno)) killno = 10;
 	n1 = 0;
 
 /* Opening input file */
@@ -441,6 +442,30 @@ int main(int argc, char **argv)
 				}
 			}
 			
+		}
+		else if (!strcmp(choice, "killno") || !strcmp(choice, "29")) {
+			if (verbose) vmess("Killing near offset in shot: %d",hdrs[0].fldr);
+			int it,ix;
+			for (ix=0;ix<nrec;ix++) { //Loop over receivers
+				//vmess("Trace %d, scale = %d",ix,t2k[ix]);
+				if (fabs(hdrs[0].fldr - ix) < killno) {
+					for (it=0;it<nsam;it++) { //Loop over time samples
+						data[ix*nsam+it] *= 0; 
+					}
+				}
+			}						
+		}
+		else if (!strcmp(choice, "killfo") || !strcmp(choice, "30")) {
+			if (verbose) vmess("Killing far offset in shot: %d",hdrs[0].fldr);
+			int it,ix;
+			for (ix=0;ix<nrec;ix++) { //Loop over receivers
+				//vmess("Trace %d, scale = %d",ix,t2k[ix]);
+				if (fabs(hdrs[0].fldr - ix) > killno) {
+					for (it=0;it<nsam;it++) { //Loop over time samples
+						data[ix*nsam+it] *= 0; 
+					}
+				}
+			}						
 		}
 
 		t2 = wallclock_time();
