@@ -17,7 +17,6 @@
 #define CPU_SETSIZE	1024
 #define SYSCTL_CORE_COUNT   "machdep.cpu.core_count"
 
-void vmess(char *fmt, ...);
 
 typedef struct cpu_set {
   uint32_t    count;
@@ -81,6 +80,8 @@ static char *cpuset_to_cstr(cpu_set_t *mask, char *str)
   *ptr = 0;
   return(str);
 }
+
+void vmess(char *fmt, ...);
 
 void threadAffinity(void)
 {
