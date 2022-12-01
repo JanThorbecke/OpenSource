@@ -4,7 +4,7 @@ export PATH=$HOME/src/OpenSource/bin:$PATH:
 export OMP_NUM_THREADS=8
 
 #mute all events below the first arrival to get the intial focusing field
-angle=3
+angle=0
 fmute file_shot=iniFocusPlane_a${angle}_rp.su file_out=p0plus.su above=-1 shift=-8 verbose=1 check=0 hw=8
 
 #apply the Marchenko algorithm

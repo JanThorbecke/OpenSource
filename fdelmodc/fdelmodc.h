@@ -44,6 +44,7 @@ typedef struct _snapshotPar { /* Snapshot Parameters */
 	compType type;
 	int nsnap;
 	int delay;
+	float t0;
 	int skipdt;
 	int skipdz;
 	int skipdx;

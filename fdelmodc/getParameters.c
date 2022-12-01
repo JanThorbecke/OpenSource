@@ -47,7 +47,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	float srcendx, srcendz, dx, dz;
 	float xsrc, zsrc, dxshot, dzshot, dtshot;
 	float dxrcv,dzrcv,dxspread,dzspread;
-	float tsnap1, tsnap2, dtsnap, dxsnap, dzsnap, dtrcv;
+	float tsnap1, tsnap2, dtsnap, dxsnap, dzsnap, dtrcv, snapt0, st0;
 	float xsnap1, xsnap2, zsnap1, zsnap2, xmax, zmax;
 	float xsrc1, xsrc2, zsrc1, zsrc2, tsrc1, tsrc2, tlength, tactive;
 	float src_angle, src_velo, p, grad2rad, rdelay, scaledt;
@@ -136,7 +136,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	/* define wavelet(s), modeling time and wavelet maximum frequency */
 
 	if (wav->file_src!=NULL) {
-		getWaveletInfo(wav->file_src, &wav->ns, &wav->nx, &wav->ds, &d2, &f1, &f2, &fmax, &ntraces, verbose);
+		getWaveletInfo(wav->file_src, &wav->ns, &wav->nx, &wav->ds, &d2, &st0, &f2, &fmax, &ntraces, verbose);
 		if (wav->ds <= 0.0) {
 			vwarn("dt in wavelet (file_src) equal to 0.0 or negative.");
 			vwarn("Use parameter dt= to overule dt from file_src.");
@@ -954,7 +954,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		vmess("*******************************************");
 		vmess("wav_nt   = %6d   wav_nx      = %d", wav->ns, wav->nx);
 		vmess("src_type = %6d   src_orient  = %d", src->type, src->orient);
-		vmess("fmax     = %8.2f", fmax);
+		vmess("fmax     = %8.2f t0          = %8.6f", fmax, st0);
 		fprintf(stderr,"    %s: Source type         : ",xargv[0]);
 		switch ( src->type ) {
 			case 1 : fprintf(stderr,"P "); break;
@@ -997,6 +997,12 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 
 	if (!getparfloat("tsnap1", &tsnap1)) tsnap1=0.1;
 	if (!getparfloat("tsnap2", &tsnap2)) tsnap2=0.0;
+	if (wav->file_src!=NULL) {
+	    if (!getparfloat("snapt0", &snapt0)) snapt0=st0;
+    }
+    else {
+	    if (!getparfloat("snapt0", &snapt0)) snapt0=0.0;
+    }
 	if (!getparfloat("dtsnap", &dtsnap)) dtsnap=0.1;
 	if (!getparfloat("dxsnap", &dxsnap)) dxsnap=dx;
 	if (!getparfloat("dzsnap", &dzsnap)) dzsnap=dz;
@@ -1034,6 +1040,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		sna->skipdx = MAX(1,NINT(dxsnap/dx));
 		sna->skipdz = MAX(1,NINT(dzsnap/dz));
 		sna->delay  = NINT(tsnap1/dt);
+		sna->t0     = snapt0;
 		isnapmax1   = (sna_nrsna-1)*sna->skipdt;
 		isnapmax2   = floor( (mod->nt-(sna->delay + 1))/sna->skipdt) * sna->skipdt;
 		isnapmax    = (sna->delay + 1) + MIN(isnapmax1,isnapmax2);
