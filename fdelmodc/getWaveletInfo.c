@@ -72,7 +72,8 @@ int getWaveletInfo(char *file_src, int *n1, int *n2, float *d1, float *d2, float
     *n1 = hdr.ns;
     if (hdr.trid == 1 || hdr.dt != 0) {
         *d1 = ((float) hdr.dt)*1.e-6;
-        *f1 = ((float) hdr.delrt)/1000.;
+        if (hdr.delrt != 0) *f1 = ((float) hdr.delrt)/1000.;
+        else *f1 = hdr.f1;
 		if (*d1 == 0.0) *d1 = hdr.d1;
     }
     else {

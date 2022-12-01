@@ -162,7 +162,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
             a = (float) (ib/(npml-1.0));
             sigmu[ib] = sigmax*pow(a,m);
             RA[ib] = (1.0)/(1.0+0.5*dt*sigmu[ib]);
-            if (verbose>=3) vmess("PML: sigmax=%e cp=%e sigmu[%d]=%e %e", sigmax, mod.cp_min, ib, sigmu[ib], a);
+            if (verbose>=4) vmess("PML: sigmax=%e cp=%e sigmu[%d]=%e %e", sigmax, mod.cp_min, ib, sigmu[ib], a);
         }
 }
     }

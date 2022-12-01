@@ -13,8 +13,8 @@ makemod sizex=10000 sizez=1400 dx=$dx dz=$dx cp0=1800 ro0=1000 \
 
 makewave fp=25 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=1
 
-export OMP_NUM_THREADS=8
-angle=3
+export OMP_NUM_THREADS=4
+angle=0
 
 fdelmodc \
     file_cp=modelup_cp.su ischeme=1 iorder=4 \
