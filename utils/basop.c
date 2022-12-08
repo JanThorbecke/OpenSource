@@ -78,6 +78,7 @@ char *sdoc[] = {
 "   eps=0.01 ................. stabilization for deghosting",
 "   dx=from_hdrs ............. spatial sampling interval",
 "   nrot=0 ................... sample rotation",
+"   ntfft=nt ................. number of output time samples, add zero's to shorter traces",
 "   nxmax=512 ................ maximum number of traces in input files",
 "   ntmax=1024 ............... maximum number of samples/trace in input files",
 "   verbose=0 ................ silent option; >0 display info",
@@ -129,7 +130,7 @@ NULL};
 int main(int argc, char **argv)
 {
 	FILE	*fp_in, *fp_out;
-	int     nrec, nsam, ntmax, nxmax, error, ret, verbose, i, j, is;
+	int     nrec, nsam, ntfft, ntmax, nxmax, error, ret, verbose, i, j, is;
 	int     opt, size, n1, n2, first, nrot, killno; 
 	int     ntraces, ngath;
 	float   dt, dx, dy, c, rho, d1, d2, f1, f2; 
@@ -505,7 +506,8 @@ void timeShift(float *data, int nsam, int nrec, float dt, float shift, float fmi
 	float	omin, omax, deltom, om, tom, df, *rdata, scl;
 	complex *cdata, *cdatascl;
 
-	optn = optncr(nsam);
+    if (!getparint("ntfft", &optn)) optn = optncr(nsam);
+	//optn = optncr(nsam);
 	nfreq = optn/2+1;
 	df    = 1.0/(optn*dt);
 
