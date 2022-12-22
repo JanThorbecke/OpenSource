@@ -2,8 +2,8 @@
 
 include ../Make_include
 
-#LIBS    += -L$L -lgenfft -lm $(LIBSM)
-#OPTC += -g -O0 -Wall 
+#LIBS += -L$L -lgenfft -lm $(LIBSM)
+OPTC += -g -O0 -Wall 
 #OPTC += -O0 -g -traceback #-check-pointers=rw -check-pointers-undimensioned
 
 
@@ -14,7 +14,7 @@ SRCJ	= fmute.c \
 		readData.c \
 		readTinvData.c \
 		applyMute.c \
-		applyMute_tshift.c \
+		applyMute_plane.c \
 		writeData.c \
 		wallclock_time.c \
 		mapj.c \
@@ -31,6 +31,7 @@ SRCH	= marchenko.c \
 		readTinvData.c \
 		applyMute.c \
 		applyMute_tshift.c \
+		applyMute_plane.c \
 		writeData.c \
 		writeDataIter.c \
 		wallclock_time.c \

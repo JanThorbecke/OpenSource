@@ -4,6 +4,25 @@ export PATH=$HOME/src/OpenSource/bin:$PATH:
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 
+basop file_in=iniFocus_rp.su file_out=iniFocusShift_rp.su choice=1 shift=0.3
+basop file_in=iniFocus_rp.su file_out=iniFocus-Shift_rp.su choice=1 shift=-0.3
+#mute all events below the first arrival to get the intial focusing field
+fmute file_shot=iniFocus_rp.su file_out=p0plus.su above=-1 shift=-8 verbose=1 check=0 hw=8
+fmute file_shot=iniFocusShift_rp.su file_out=p0plusS.su above=-1 shift=-8 verbose=1 check=0 hw=8
+fmute file_shot=iniFocus-Shift_rp.su file_out=p0plus-S.su above=-1 shift=-8 verbose=1 check=0 hw=8
+
+#apply the Marchenko algorithm
+#marchenko file_shot=shotsdx5_rp.su file_tinv=p0plus.su nshots=901 verbose=2 \
+	tap=0 niter=8 hw=8 shift=12 smooth=3 file_iter=iter.su \
+	file_green=pgreen.su file_gplus=Gplus0.su file_gmin=Gmin0.su  \
+	file_f1plus=f1plus0.su file_f1min=f1min0.su file_f2=f2.su 
+
+marchenko file_shot=shotsdx5_rp.su file_tinv=p0plusS.su file_tinvi=p0plus-S.su nshots=901 verbose=2 \
+	tap=0 niter=8 hw=8 shift=12 smooth=3 file_iter=iterS.su \
+	file_green=pgreenS.su file_gplus=Gplus0S.su file_gmin=Gmin0S.su  \
+	file_f1plus=f1plus0S.su file_f1min=f1min0S.su file_f2=f2S.su plane_wave=1 src_angle=0
+
+exit 
 #mute all events below the first arrival to get the intial focusing field
 fmute file_shot=iniFocus_rp.su file_out=p0plus.su above=-1 shift=-8 verbose=1 check=0 hw=8
 
@@ -11,7 +30,16 @@ fmute file_shot=iniFocus_rp.su file_out=p0plus.su above=-1 shift=-8 verbose=1 ch
 ../../marchenko file_shot=shotsdx5_rp.su file_tinv=p0plus.su nshots=901 verbose=2 \
 	tap=0 niter=8 hw=8 shift=12 smooth=3 file_iter=iter.su \
 	file_green=pgreen.su file_gplus=Gplus0.su file_gmin=Gmin0.su  \
-	file_f1plus=f1plus0.su file_f1min=f1min0.su file_f2=f2.su 
+	file_f1plus=f1plus0.su file_f1min=f1min0.su 
+
+basop file_in=iniFocus_rp.su file_out=iniFocus_rp_shift03.su choice=shift shift=0.3
+fmute file_shot=iniFocus_rp_shift03.su file_out=p0plusS.su above=-1 shift=-8 verbose=1 check=0 hw=8
+
+#apply the Marchenko algorithm
+../../marchenko file_shot=shotsdx5_rp.su file_tinv=p0plusS.su nshots=901 verbose=2 \
+	tap=0 niter=8 hw=8 shift=12 smooth=3 file_iter=iter.su \
+	file_green=pgreenS.su file_gplus=Gplus0S.su file_gmin=Gmin0S.su  \
+	file_f1plus=f1plus0S.su file_f1min=f1min0S.su 
 
 exit
 

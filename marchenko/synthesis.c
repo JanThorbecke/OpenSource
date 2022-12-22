@@ -73,6 +73,7 @@ void synthesis(complex *Refl, complex *Fop, float *Top, float *RNi, int nx, int 
      * scale dt for correlation/convolution along time, 
      * scale dx (or dxsrc) for integration over receiver (or shot) coordinates */
     scl   = 1.0*dt/((float)ntfft);
+    npe = 1;
 
 #ifdef _OPENMP
     npe   = omp_get_max_threads();
@@ -281,6 +282,7 @@ void synthesisp(complex *Refl, complex *Fop, float *Top, float *RNi, int nx, int
      * scale dt for correlation/convolution along time, 
      * scale dx (or dxsrc) for integration over receiver (or shot) coordinates */
     scl   = 1.0*dt/((float)ntfft);
+    npe = 1;
 
 #ifdef _OPENMP
     npe   = omp_get_max_threads();
@@ -444,8 +446,7 @@ void synthesisp(complex *Refl, complex *Fop, float *Top, float *RNi, int nx, int
 
 void synthesisPositions(int nx, int nt, int nxs, int nts, float dt, float *xsyn, int Nfoc, float *xrcv, float *xsrc, int *xnx, float fxse, float fxsb, float dxs, float dxsrc, float dx, int nshots, int *ixpos, int *npos, int *isxcount, int countmin, int reci, int verbose)
 {
-    int     i, j, l, ixsrc, ixrcv, dosrc, k, *count;
-    float   x0, x1;
+    int     j, ixsrc, k, *count;
     float   fxb, fxe;
 
     if (fxsb < 0) fxb = 1.001*fxsb;

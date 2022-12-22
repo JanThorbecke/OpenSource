@@ -41,6 +41,7 @@ void name_ext(char *filename, char *extension);
 
 void applyMute(float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *xrcvsyn, int npos, int shift, int *muteW);
 void applyMute_tshift( float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift, int iter, int *tsynW);
+void applyMute_plane( float *data, int *mute, int *mutei, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift, int iter);
 
 int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *ntraces);
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
@@ -122,19 +123,20 @@ int main (int argc, char **argv)
     FILE    *fp_gmin, *fp_gplus, *fp_f2, *fp_pmin;
     int     i, j, l, ret, nshots, Nfoc, nt, nx, nts, nxs, ngath;
     int     size, n1, n2, ntap, tap, di, ntraces, pad, rotate;
-    int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
+    int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn, *xnxsyni;
     int     reci, countmin, mode, n2out, verbose, ntfft;
-    int     iter, niter, tracf, *muteW, *muteWi, *tsynW, itmin;
+    int     iter, niter, tracf, *muteW, *muteWi, *tsynW;
     int     hw, smooth, above, shift, *ixpos, npos, ix, plane_wave;
     int     nshots_r, *isxcount, *reci_xsrc, *reci_xrcv;
-    float   fmin, fmax, *tapersh, *tapersy, fxf, dxf, *xsrc, *xrcv, *zsyn, *zsrc, *xrcvsyn;
+    float   fmin, fmax, *tapersh, *tapersy, fxf, dxf, *xsrc, *xrcv, *zsrc, *xrcvsyn;
+    float   *xrcvsyni, *G_di, *xsyni, *zsyni; 
     double  t0, t1, t2, t3, tsyn, tread, tfft, tcopy, energyNi, *energyN0;
-    float   d1, d2, f1, f2, fxsb, fxse, ft, fx, *xsyn, dxsrc;
+    float   d1, d2, f1, f2, fxsb, fxse, ft, fx, *xsyn, *zsyn, dxsrc;
     float   *green, *f2p, *pmin, *G_d, dt, dx, dxs, scl, mem;
     float   *f1plus, *f1min, *iRN, *Ni, *trace, *Gmin, *Gplus;
     float   xmin, xmax, scale, tsq, Q, f0;
     float   *ixmask;
-    float   grad2rad, p, src_angle, src_velo, tneg;
+    float   grad2rad, p, src_angle, src_velo;
     complex *Refl, *Fop;
     char    *file_tinv, *file_tinvi, *file_shot, *file_green, *file_iter;
     char    *file_f1plus, *file_f1min, *file_gmin, *file_gplus, *file_f2, *file_pmin;
@@ -224,8 +226,7 @@ int main (int argc, char **argv)
     Ni      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     G_d     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     muteW   = (int *)calloc(Nfoc*nxs,sizeof(int));
-    muteWi  = (int *)calloc(Nfoc*nxs,sizeof(int));
-    tsynW   = (int *)malloc(Nfoc*nxs*sizeof(int)); // time-shift for Giovanni's plane-wave on non-zero times
+    tsynW   = (int *)calloc(Nfoc*nxs,sizeof(int)); // time-shift for Giovanni's plane-wave on non-zero times
     energyN0= (double *)malloc(Nfoc*sizeof(double));
     trace   = (float *)malloc(ntfft*sizeof(float));
     xrcvsyn = (float *)calloc(Nfoc*nxs,sizeof(float)); // x-rcv postions of focal points
@@ -233,6 +234,12 @@ int main (int argc, char **argv)
     zsyn    = (float *)malloc(Nfoc*sizeof(float)); // z-src position of focal points
     xnxsyn  = (int *)calloc(Nfoc,sizeof(int)); // number of traces per focal point
     ixpos   = (int *)calloc(nxs,sizeof(int)); // x-position of source of shot in G_d domain (nxs with dxs)
+    G_di    = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
+    muteWi  = (int *)calloc(Nfoc*nxs,sizeof(int));
+    xrcvsyni= (float *)calloc(Nfoc*nxs,sizeof(float)); // x-rcv postions of focal points
+    xsyni   = (float *)malloc(Nfoc*sizeof(float)); // x-src position of focal points
+    zsyni   = (float *)malloc(Nfoc*sizeof(float)); // z-src position of focal points
+    xnxsyni = (int *)calloc(Nfoc,sizeof(int)); // number of traces per focal point
 
     Refl    = (complex *)malloc(nw*nx*nshots*sizeof(complex));
     xrcv    = (float *)calloc(nshots*nx,sizeof(float)); // x-rcv postions of shots
@@ -258,26 +265,27 @@ int main (int argc, char **argv)
                              
 	/* compute time shift for tilted plane waves */
 	if (plane_wave==1) {
+		if (Nfoc!=1) verr("For plane-wave focusing only one function can be computed at the same time");
 		if (file_tinvi != NULL) {
+            vmess("Reading file_tinvi = %s for lower mute window",file_tinvi);
+            ret = getFileInfo(file_tinvi, &n1, &n2, &ngath, &d1, &d2, &f1, &f2, &xmin, &xmax, &scl, &ntraces);
     		mode=-1; /* apply complex conjugate to read in data */
-    		readTinvData(file_tinvi, xrcvsyn, xsyn, zsyn, xnxsyn, Nfoc, nxs, ntfft, 
-         	mode, muteWi, G_d, hw, verbose);
+    		readTinvData(file_tinvi, xrcvsyni, xsyni, zsyni, xnxsyni, Nfoc, nxs, ntfft, 
+         	mode, muteWi, G_di, hw, verbose);
 		}
 		else {
-		}
-	    /* compute time shift for shifted plane waves */
-        grad2rad = 17.453292e-3;
-        p = sin(src_angle*grad2rad)/src_velo;
+	        /* compute time shift for shifted plane waves */
+            grad2rad = 17.453292e-3;
+            p = sin(src_angle*grad2rad)/src_velo;
 
-		/* compute mute window for plane waves */
-        for (i=0; i<nxs; i++) tsynW[i] = NINT((i-(nxs-1)/2)*dxs*p/dt);
-		if (Nfoc!=1) verr("For plane-wave focusing only one function can be computed at the same time");
-	}
-	else { /* just fill with zero's */
-		for (i=0; i<nxs*Nfoc; i++) {
-			tsynW[i] = 0;
+		    /* compute mute window for plane waves */
+            /* approximate by subtracting 2*ts of plane-wave angle */
+            for (i=0; i<nxs; i++) {
+				tsynW[i] = NINT((i-(nxs-1)/2)*dxs*p/dt);
+                muteWi[i] = muteW[i]-2*tsynW[i];
+            }
 		}
-    }
+	}
 
     /* define tapers to taper edges of acquisition */
     if (tap == 1 || tap == 3) {
@@ -498,7 +506,8 @@ int main (int argc, char **argv)
         /* apply mute window based on times of direct arrival (in muteW) */
 
         if ( plane_wave==1 ) { /* use an a-symmetric window for plane waves with non-zero angles */
-            applyMute_tshift(Ni, muteW, smooth, 0, Nfoc, nxs, nts, ixpos, npos, shift, iter, tsynW);
+            //applyMute_tshift(Ni, muteW, smooth, 0, Nfoc, nxs, nts, ixpos, npos, shift, iter, tsynW);
+            applyMute_plane(Ni, muteW, muteWi, smooth, 0, Nfoc, nxs, nts, ixpos, npos, shift, iter);
         }
         else {
             applyMute(Ni, muteW, smooth, -above, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
@@ -614,7 +623,8 @@ int main (int argc, char **argv)
         }
         /* Apply mute with window for Gmin */
 		if ( plane_wave==1 ) {
-            applyMute_tshift(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 1, tsynW);
+            //applyMute_tshift(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 1, tsynW);
+            applyMute_plane(Gmin, muteW, muteWi, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 1);
 		}
 		else {
             applyMute(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
@@ -644,7 +654,8 @@ int main (int argc, char **argv)
         }
         /* Apply mute with window for Gplus */
 		if ( plane_wave==1 ) {
-            applyMute_tshift(Gplus, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 0, tsynW);
+            //applyMute_tshift(Gplus, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 0, tsynW);
+            applyMute_plane(Gplus, muteW, muteWi, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 0);
         }
         else {
             applyMute(Gplus, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);

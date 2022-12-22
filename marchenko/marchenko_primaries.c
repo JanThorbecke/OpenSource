@@ -91,7 +91,7 @@ char *sdoc[] = {
 //"   countmin=0 ............... 0.3*nxrcv; minimum number of reciprocal traces for a contribution",
 " OUTPUT DEFINITION ",
 "   file_rr= ................. output file with primary only shot record",
-"   file_dd= ................. output file with input of the algorithm ",
+//"   file_dd= ................. output file with input of the algorithm ",
 "   file_iter= ............... output file with -Mi(-t) for each iteration: writes",
 "              ............... M0.su=M0 : initialisation of algorithm",
 "              ............... RMi: iterative terms ",
@@ -119,11 +119,10 @@ NULL};
 
 int main (int argc, char **argv)
 {
-    FILE    *fp_out, *fp_rr, *fp_w, *fp_ud;
-    FILE    *fp_um, *fp_up, *fp_vm, *fp_vp;
+    FILE    *fp_rr, *fp_w, *fp_ud;
 	size_t  nread, size;
     int     i, j, k, l, ret, nshots, Nfoc, nt, nx, nts, nxs, ngath, nacq;
-    int     n1, n2, ntap, tap, di, ntraces, tr;
+    int     n1, n2, ntap, tap, di, ntraces;
     int     nw, nw_low, nw_high, nfreq, *xnx, *xnxsyn;
     int     reci, countmin, mode, n2out, verbose, ntfft;
     int     iter, niter, niterec, recur, niterskip, niterrun, tracf, *muteW, *itmp;
@@ -134,8 +133,8 @@ int main (int argc, char **argv)
     double  t0, t1, t2, t3, t4, t5, ttime, tsyn, tread, tfft, tcopy, tii;
 	double  energyMi, *energyM0;
     float   tt0, d1, d2, f1, f2, fxsb, fxse, ft, fx, *xsyn, dxsrc;
-    float   *M0, *DD, *RR, *SRC, dt, dx, dxs, scl, mem, scltap;
-    float   *rtrace, *tmpdata, *k1min, *k1plus, *v1plus, *uv, *RMi, *Mi, *trace;
+    float   *M0, *DD, *RR, *SRC, dt, dx, dxs, scl, mem;
+    float   *rtrace, *tmpdata, *k1min, *k1plus, *v1plus, *uv, *RMi, *Mi;
 	float   *Mup, *Msp, *maxval;
     float   xmin, xmax, scale, tsq;
 	float   Q, f0, *ixmask, *costaper;
@@ -143,7 +142,7 @@ int main (int argc, char **argv)
     complex *Refl, *Fop, *ctrace, *cwave, csum, cwav;
     char    *file_tinv, *file_shot, *file_rr, *file_src, *file_iter, *file_update;
     char    *file_umin, *file_uplus, *file_vmin, *file_vplus;
-	char    *file_dd;
+//	char    *file_dd;
     segy    *hdrs_out, hdr;
 
     initargs(argc, argv);
@@ -156,7 +155,7 @@ int main (int argc, char **argv)
     if (!getparstring("file_tinv", &file_tinv)) file_tinv = NULL;
     if(!getparstring("file_src", &file_src)) file_src = NULL;
     if (!getparstring("file_rr", &file_rr)) verr("parameter file_rr not found");
-    if (!getparstring("file_dd", &file_rr)) file_dd = NULL;
+//    if (!getparstring("file_dd", &file_rr)) file_dd = NULL;
     if (!getparstring("file_iter", &file_iter)) file_iter = NULL;
     if (!getparstring("file_update", &file_update)) file_update = NULL;
     if (!getparstring("file_umin", &file_umin)) file_umin = NULL;
@@ -299,7 +298,6 @@ int main (int argc, char **argv)
     RR      = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     Mup     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
     Msp     = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
-    trace   = (float *)malloc(ntfft*sizeof(float));
     ixpos   = (int *)malloc(nacq*sizeof(int));
     energyM0= (double *)malloc(Nfoc*sizeof(double));
     xrcvsyn = (float *)calloc(Nfoc*nxs,sizeof(float));
