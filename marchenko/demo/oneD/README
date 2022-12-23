@@ -140,7 +140,7 @@ Note that the script epsIterwithLabels.scr produces the same figures, but with a
 
 To compute the marchenko results for 8 iterations.  
 
-==> run marchenko.scr This will take less than 1 minute. The generated files are:
+==> run './marchenko.scr basic' This will take less than 1 minute. The generated files are:
 	- pgreen.su, pgreen512.su
 	- diffref.su
 	- Gplus0.su
@@ -148,7 +148,6 @@ To compute the marchenko results for 8 iterations.
 	- f1plus0.su
 	- f1min0.su
 	- f2.su 
-
 
 At the end of the run the script will display in X11 a comparison of the middle trace. 
 
