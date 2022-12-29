@@ -237,8 +237,6 @@ int main (int argc, char **argv)
     if (!getparfloat("dt", &dt)) dt = d1;
     if(!getparint("istart", &istart)) istart=20;
     if(!getparint("iend", &iend)) iend=nt;
-    iend = MIN(iend, nt-shift-1);
-    istart = MIN(MAX(1,istart),iend);
 
     if (file_tinv == NULL) {/* 'M0' is one of the shot records */
         if(!getparint("ishot", &ishot)) ishot=1+(nshots-1)/2;
@@ -274,6 +272,9 @@ int main (int argc, char **argv)
 
     ntfft = optncr(MAX(nt+pad, nts+pad)); 
     nfreq = ntfft/2+1;
+    iend = MIN(iend, ntfft-shift-1);
+    istart = MIN(MAX(1,istart),iend);
+
     nw_low = (int)MIN((fmin*ntfft*dt), nfreq-1);
     nw_low = MAX(nw_low, 1);
     nw_high = MIN((int)(fmax*ntfft*dt), nfreq-1);
