@@ -42,7 +42,7 @@ void applyMute_plane( float *data, int *mute, int *mutei, int smooth, int above,
             imute = ixpos[i];
             tmute = mute[isyn*nxs+imute];
             tmutei = mutei[isyn*nxs+imute];
-            //fprintf(stderr,"i=%d tmute=%d ts=%d\n", i, tmute, ts);
+            //fprintf(stderr,"i=%d tmute=%d ts=%d\n", i, tmute, tmutei);
             for (j = 0; j < nt; j++) {
                 Nig[j]   = data[isyn*nxs*nt+i*nt+j];
             }
