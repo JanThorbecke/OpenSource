@@ -1,0 +1,17 @@
+#!/bin/bash
+
+suwind < p0plus.su itmax=1023 > nep.su
+basop file_in=nep.su choice=conjg file_out=nep.su
+basop file_in=nep.su choice=shift shift=-2.044 file_out=p0plusR.su
+
+for file in f1plus0.su f1min0.su Gmin0.su Gplus0.su p0plusR.su
+do
+      file_base=${file%.su}
+      sumax < $file mode=abs outpar=nep
+      clipf1=`cat nep | awk '{print $1/7}'`
+      supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+          n1tic=2 x1beg=-1.3 x1end=1.3 f1=-2.044 \
+          label1="time [s]" label2="lateral distance [m]" \
+          f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > $file_base.eps
+done
+
