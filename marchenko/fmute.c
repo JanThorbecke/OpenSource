@@ -28,7 +28,7 @@ int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 int disp_fileinfo(char *file, int n1, int n2, float f1, float f2, float d1, float d2, segy *hdrs);
 void applyMute(float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *xrcvsyn, int npos, int shift, int *muteW);
 void applyMute_plane( float *data, int *mute, int *mutei, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift, int iter);
-int findMax(float *data, int nt1, int nx1, int hw, int imax, int *maxval, int verbose);
+int findMax(float *data, int nt1, int nx1, int hw, int imax, int *muteW, float *maxv, int verbose);
 
 double wallclock_time(void);
 
@@ -87,7 +87,7 @@ int main (int argc, char **argv)
 
     if(!getparstring("file_mute", &file_mute)) file_mute=NULL;
     if(!getparstring("file_shot", &file_shot)) file_shot=NULL;
-	assert(file_shot!=NULL);
+    assert(file_shot!=NULL);
     if(!getparstring("file_mutei", &file_mutei)) file_mutei=NULL;
     if(!getparstring("file_out", &file_out)) file_out=NULL;
     if(!getparint("ntmax", &ntmax)) ntmax = 1024;
@@ -160,15 +160,8 @@ int main (int argc, char **argv)
             vmess("src_angle                      = %e ", src_angle);
             vmess("src_velo                       = %e ", src_velo);
             vmess("iter                           = %e ", iter);
-		}
+        }
     }
-
-/*================ initializations ================*/
-
-    muteW  = (int *)calloc(nx1,sizeof(int));
-    muteWi = (int *)calloc(nx1,sizeof(int));
-    tsynW  = (int *)calloc(nx1,sizeof(int));
-    xrcv   = (int *)calloc(nx1,sizeof(int));
 
 /* Reading input data for file_mute */
 
@@ -198,14 +191,12 @@ int main (int argc, char **argv)
         /* find consistent (one event) maximum related to maximum value */
     }
         
-    /* find maximum at source position */
-    dxrcv = (hdrs_in1[nx1-1].gx - hdrs_in1[0].gx)*sclsxgx/(float)(nx1-1);
-    imax = NINT(((hdrs_in1[0].sx-hdrs_in1[0].gx)*sclsxgx)/dxrcv);
-	/* make sure that the position fits into the receiver array */
-	imax = MIN(MAX(0,imax),nx1-1);
+/*================ initializations ================*/
 
-	findMax(tmpdata, nt1, nx1, hw, imax, muteW, verbose);
-
+    muteW  = (int *)calloc(nx1,sizeof(int));
+    muteWi = (int *)calloc(nx1,sizeof(int));
+    tsynW  = (int *)calloc(nx1,sizeof(int));
+    xrcv   = (int *)calloc(nx1,sizeof(int));
 
 /* Reading input data for file_mutei ; for plane wave opposite angle */
 
@@ -238,8 +229,8 @@ int main (int argc, char **argv)
         /* find maximum at source position */
         dxrcvi = (hdrs_ini[nx1-1].gx - hdrs_ini[0].gx)*sclsxgx/(float)(nxi-1);
         imaxi = NINT(((hdrs_ini[0].sx-hdrs_ini[0].gx)*sclsxgx)/dxrcvi);
-		/* make sure that the position fits into the receiver array */
-		imaxi = MIN(MAX(0,imaxi),nxi-1);
+        /* make sure that the position fits into the receiver array */
+        imaxi = MIN(MAX(0,imaxi),nxi-1);
     }
 
     
@@ -274,18 +265,18 @@ int main (int argc, char **argv)
 
         /* compute mute window for plane waves */
         for (i=0; i<nx1; i++) tsynW[i] = NINT((i-(nx1-1)/2)*dxs*p/dt);
-    	if (file_mutei != NULL) {
-		    findMax(tmpdatai, nti, nxi, hw, imaxi, muteWi, verbose);
+        if (file_mutei != NULL) {
+            findMax(tmpdatai, nti, nxi, hw, imaxi, muteWi, &xmax, verbose);
 //            for (i=0; i<nxi; i++) {
 //                fprintf(stderr,"muteWi[i] = %d approx=%d muteW=%d\n",muteWi[i], muteW[i]-2*tsynW[i], muteW[i]);
 //            }
-		}
-		else { /* approximate by subtracting 2*ts of plane-wave angle*/
+        }
+        else { /* approximate by subtracting 2*ts of plane-wave angle*/
             for (i=0; i<nx1; i++) {
                 muteWi[i] = muteW[i]-2*tsynW[i];
 //                fprintf(stderr,"muteWi[i]approx=%d muteW=%d\n",muteWi[i], muteW[i]);
             }
-		}
+        }
     }
     else { /* just fill with zero's */
         for (i=0; i<nx1; i++) {
@@ -302,9 +293,14 @@ int main (int argc, char **argv)
 
 /*================ loop over all shot records ================*/
 
+        /* find maximum at source position */
+        dxrcv = (hdrs_in1[nx1-1].gx - hdrs_in1[0].gx)*sclsxgx/(float)(nx1-1);
+        imax = NINT(((hdrs_in1[0].sx-hdrs_in1[0].gx)*sclsxgx)/dxrcv);
+        /* make sure that the position fits into the receiver array */
+        imax = MIN(MAX(0,imax),nx1-1);
+        findMax(tmpdata, nt1, nx1, hw, imax, muteW, &xmax, verbose);
 
-/* scale with maximum ampltiude */
-
+        /* scale with maximum ampltiude */
         if (scale==1) {
             for (i = 0; i < nx2; i++) {
                 lmax = fabs(tmpdata2[i*nt2+muteW[i]]);
@@ -325,10 +321,10 @@ int main (int argc, char **argv)
 
 /*================ apply mute window ================*/
 
-		if (plane_wave) {
+        if (plane_wave) {
             applyMute_plane(tmpdata2, muteW, muteWi, smooth, above, 1, nx2, nt2, xrcv, nx2, shift, iter);
-		}
-		else {
+        }
+        else {
             applyMute(tmpdata2, muteW, smooth, above, 1, nx2, nt2, xrcv, nx2, shift, tsynW);
         }
 
@@ -411,57 +407,58 @@ int main (int argc, char **argv)
 }
 
 
-int findMax(float *data, int nt1, int nx1, int hw, int imax, int *maxval, int verbose) 
+int findMax(float *data, int nt1, int nx1, int hw, int imax, int *muteW, float *maxv, int verbose) 
 {
     float tmax, xmax, lmax;
     int jmax, i, j, tstart, tend; 
-		/* make sure that the position fits into the receiver array */
-//		imax = MIN(MAX(0,imax),nx1-1);
+   /* make sure that the position fits into the receiver array */
+// imax = MIN(MAX(0,imax),nx1-1);
+    tmax=0.0;
+    jmax = 0;
+    xmax=0.0;
+    for (j = 0; j < nt1; j++) {
+        lmax = fabs(data[imax*nt1+j]);
+        if (lmax > tmax) {
+            jmax = j;
+            tmax = lmax;
+               if (lmax > xmax) {
+                   xmax=lmax;
+               }
+        }
+    }
+    *maxv = xmax;
+    muteW[imax] = jmax;
+    if (verbose >= 3) vmess("Mute max at src-trace %d is sample %d", imax, muteW[imax]);
+
+    /* search forward in trace direction from maximum in file */
+    for (i = imax+1; i < nx1; i++) {
+        tstart = (muteW[i-1]-hw);
+        tend   = (muteW[i-1]+hw);
+        jmax=tstart;
         tmax=0.0;
-        jmax = 0;
-        xmax=0.0;
-        for (j = 0; j < nt1; j++) {
-            lmax = fabs(data[imax*nt1+j]);
+        for(j = tstart; j <= tend; j++) {
+            lmax = fabs(data[i*nt1+mapj(j,nt1)]);
             if (lmax > tmax) {
                 jmax = j;
                 tmax = lmax;
-                   if (lmax > xmax) {
-                       xmax=lmax;
-                   }
             }
         }
-        maxval[imax] = jmax;
-        if (verbose >= 3) vmess("Mute max at src-trace %d is sample %d", imax, maxval[imax]);
-
-        /* search forward in trace direction from maximum in file */
-        for (i = imax+1; i < nx1; i++) {
-            tstart = (maxval[i-1]-hw);
-            tend   = (maxval[i-1]+hw);
-            jmax=tstart;
-            tmax=0.0;
-            for(j = tstart; j <= tend; j++) {
-                lmax = fabs(data[i*nt1+mapj(j,nt1)]);
-                if (lmax > tmax) {
-                    jmax = j;
-                    tmax = lmax;
-                }
+        muteW[i] = jmax;
+    }
+    /* search backward */
+    for (i = imax-1; i >=0; i--) {
+        tstart = (muteW[i+1]-hw);
+        tend   = (muteW[i+1]+hw);
+        jmax=tstart;
+        tmax=0.0;
+        for(j = tstart; j <= tend; j++) {
+            lmax = fabs(data[i*nt1+mapj(j,nt1)]);
+            if (lmax > tmax) {
+                jmax = j;
+                tmax = lmax;
             }
-            maxval[i] = jmax;
         }
-        /* search backward */
-        for (i = imax-1; i >=0; i--) {
-            tstart = (maxval[i+1]-hw);
-            tend   = (maxval[i+1]+hw);
-            jmax=tstart;
-            tmax=0.0;
-            for(j = tstart; j <= tend; j++) {
-                lmax = fabs(data[i*nt1+mapj(j,nt1)]);
-                if (lmax > tmax) {
-                    jmax = j;
-                    tmax = lmax;
-                }
-            }
-            maxval[i] = jmax;
-        }
+        muteW[i] = jmax;
+    }
     return 0;
 }
