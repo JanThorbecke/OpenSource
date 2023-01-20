@@ -28,7 +28,7 @@ int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 int disp_fileinfo(char *file, int n1, int n2, float f1, float f2, float d1, float d2, segy *hdrs);
 void applyMute(float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *xrcvsyn, int npos, int shift, int *muteW);
 void applyMute_plane( float *data, int *mute, int *mutei, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift, int iter);
-int findMax(float *data, int nt1, int nx1, int hw, int imax, int *muteW, float *maxv, int verbose);
+int findMax(float *data, int nt1, int nx1, int hw, int imax, int *muteW, float *maxv, int itb, int verbose);
 
 double wallclock_time(void);
 
@@ -49,12 +49,14 @@ char *sdoc[] = {
 "   file_mutei= .............. input file with event that defines the mute line for plane wave opposite angle",
 "   file_out= ................ output file",
 "   above=0 .................. mute above(1), around(0) or below(-1) the first travel times of file_mute",
-"   .......................... options 4 is the inverse of 0 and -1 the inverse of 1",
+"   .......................... options 4 is the inverse of 0 and -1 the inverse of 1, above=7 select the event around the window",
 "   shift=0 .................. number of points above(positive) / below(negative) maximum time for mute",
 "   check=0 .................. plots muting window on top of file_mute: output file check.su",
 "   scale=0 .................. scale data by dividing through maximum",
 "   hw=15 .................... number of time samples to look up and down in next trace for maximum",
 "   smooth=0 ................. number of points to smooth mute with cosine window",
+"   itb=0 .................... if !=0 time sample number to start searching for mute event ",
+"   ixb=0 .................... if !=0 spatial trace number to start searching for mute event ",
 "   plane_wave=0 ............. apply mute window as is done on plane-waves",
 "   src_angle=0 .............. angle of plane source array",
 "   src_velo=1500 ............ velocity to use in src_angle definition",
@@ -72,7 +74,7 @@ int main (int argc, char **argv)
     int     verbose, shift, k, nx1, nt1, nx2, nt2, nxi, nti, returnmask;
     int     ntmax, nxmax, ret, i, j, jmax, imax, imaxi, above, check, plane_wave, iter;
     int     size, ntraces, ngath, *muteW, *muteWi, *tsynW, hw, smooth;
-    int     scale, *xrcv;
+    int     scale, *xrcv, itb, ixb;
     float   dt, d2, f1, f2, t0, t1, f1b, f2b, d1, d1b, d2b;
     float   w1, w2, dxrcv, dxrcvi;
     float   grad2rad, p, src_angle, src_velo, dxs;
@@ -95,6 +97,8 @@ int main (int argc, char **argv)
     if(!getparint("above", &above)) above = 0;
     if(!getparint("check", &check)) check = 0;
     if(!getparint("scale", &scale)) scale = 0;
+    if(!getparint("itb", &itb)) itb = 0;
+    if(!getparint("ixb", &ixb)) ixb = 0;
     if(!getparint("plane_wave", &plane_wave)) plane_wave = 0;
     if(!getparfloat("src_angle",&src_angle)) src_angle=0.;
     if(!getparfloat("src_velo",&src_velo)) src_velo=1500.;
@@ -266,7 +270,7 @@ int main (int argc, char **argv)
         /* compute mute window for plane waves */
         for (i=0; i<nx1; i++) tsynW[i] = NINT((i-(nx1-1)/2)*dxs*p/dt);
         if (file_mutei != NULL) {
-            findMax(tmpdatai, nti, nxi, hw, imaxi, muteWi, &xmax, verbose);
+            findMax(tmpdatai, nti, nxi, hw, imaxi, muteWi, &xmax, itb, verbose);
 //            for (i=0; i<nxi; i++) {
 //                fprintf(stderr,"muteWi[i] = %d approx=%d muteW=%d\n",muteWi[i], muteW[i]-2*tsynW[i], muteW[i]);
 //            }
@@ -296,9 +300,10 @@ int main (int argc, char **argv)
         /* find maximum at source position */
         dxrcv = (hdrs_in1[nx1-1].gx - hdrs_in1[0].gx)*sclsxgx/(float)(nx1-1);
         imax = NINT(((hdrs_in1[0].sx-hdrs_in1[0].gx)*sclsxgx)/dxrcv);
+        if (ixb!=0) imax = ixb;
         /* make sure that the position fits into the receiver array */
         imax = MIN(MAX(0,imax),nx1-1);
-        findMax(tmpdata, nt1, nx1, hw, imax, muteW, &xmax, verbose);
+        findMax(tmpdata, nt1, nx1, hw, imax, muteW, &xmax, itb, verbose);
 
         /* scale with maximum ampltiude */
         if (scale==1) {
@@ -407,16 +412,17 @@ int main (int argc, char **argv)
 }
 
 
-int findMax(float *data, int nt1, int nx1, int hw, int imax, int *muteW, float *maxv, int verbose) 
+int findMax(float *data, int nt1, int nx1, int hw, int imax, int *muteW, float *maxv, int itb, int verbose)
 {
     float tmax, xmax, lmax;
     int jmax, i, j, tstart, tend; 
+
    /* make sure that the position fits into the receiver array */
-// imax = MIN(MAX(0,imax),nx1-1);
+    imax = MIN(MAX(0,imax),nx1-1);
     tmax=0.0;
     jmax = 0;
     xmax=0.0;
-    for (j = 0; j < nt1; j++) {
+    for (j = 0; j < nt1; j++) { /* find maximum value in trace=imax */
         lmax = fabs(data[imax*nt1+j]);
         if (lmax > tmax) {
             jmax = j;
@@ -427,8 +433,23 @@ int findMax(float *data, int nt1, int nx1, int hw, int imax, int *muteW, float *
         }
     }
     *maxv = xmax;
+
+    if (itb!=0) { /* search for local max around itb */
+        tmax = fabs(data[imax*nt1+itb]);
+        for (j = itb-hw; j < itb+hw; j++) {
+            lmax = fabs(data[imax*nt1+j]);
+            if (lmax > tmax) {
+            jmax = j;
+            tmax = lmax;
+               if (lmax > xmax) {
+                   xmax=lmax;
+               }
+           }
+       }
+    }
+
     muteW[imax] = jmax;
-    if (verbose >= 3) vmess("Mute max at src-trace %d is sample %d", imax, muteW[imax]);
+    if (verbose >= 3) vmess("Mute search starts at src-trace %d and sample %d", imax, muteW[imax]);
 
     /* search forward in trace direction from maximum in file */
     for (i = imax+1; i < nx1; i++) {
