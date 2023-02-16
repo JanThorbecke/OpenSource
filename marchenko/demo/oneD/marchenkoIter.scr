@@ -6,7 +6,7 @@ export OMP_NUM_THREADS=1
 #mute all events below the first arrival to get the intial focusing field
 fmute file_shot=iniFocus_rp.su file_out=p0plus.su above=-1 shift=-8 verbose=1 check=0 hw=4
 
-for (( iter=4; iter<=4; iter+=1 ))
+for (( iter=0; iter<=4; iter+=1 ))
 do
 echo "doing iteration $iter"
 piter=$(printf %03d $iter)

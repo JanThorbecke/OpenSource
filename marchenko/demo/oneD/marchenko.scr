@@ -37,8 +37,8 @@ echo $scale
 	suwind key=gx min=0 max=0 < referenceP_rp.su) | suxgraph  
 fi
 
-#suwind itmax=511 < pgreen.su > pgreen512.su 
-#suop2 pgreen512.su referenceP_rp.su op=diff w2=1 w1=$scale > diffref.su 
+suwind itmax=511 < pgreen.su > pgreen512.su 
+suop2 pgreen512.su referenceP_rp.su op=diff w2=1 w1=$scale > diffref.su 
 
 # plot for convergence rate, the values in conv.txt are collected from the output of the marchenko program with verbose=2
 #     marchenko:  - iSyn 0: Ni at iteration 0 has energy 6.234892e+02; relative to N0 1.000000e+00
