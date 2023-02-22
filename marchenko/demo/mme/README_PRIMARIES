@@ -1,3 +1,16 @@
+***
+The scripts in this directory reproduce the results in the paper:
+
+"Implementation of the Marchenko Multiple Elimination algorithm",
+Jan Thorbecke, Lele Zhang, Kees Wapenaar, Evert Slob,
+2021, Geophysics, Vol. 86, no. 2 (March-April); p. 1-15, doi: 10.1190/GEO2020-0196.1
+
+and can be downloaded from:
+
+https://www.keeswapenaar.nl/4_Journals/Geophysics/geo_21b.pdf
+***
+
+
 Description of files:
 
 

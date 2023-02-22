@@ -194,12 +194,12 @@ int main (int argc, char **argv)
     if (niterskip==0) niterskip=1;
 
     if (T>0) {
-		T=-1;
+		T=1;
 		isms = -shift;
 		isme = -1*MAX(0,shift-smooth);
 	}
     else {
-		T=1;
+		T=-1;
 		isms = MAX(0,shift-smooth);
 		isme = shift;
 	}
@@ -583,6 +583,7 @@ int main (int argc, char **argv)
         vmess("number of time samples fft nt nts = %d %d %d", ntfft, nt, nts);
         vmess("time sampling                   = %e ", dt);
         vmess("smoothing taper for time-window = %d ", smooth);
+        vmess("Transmission compensated reflection = %d ", T);
     	if (plane_wave) {
         	vmess("*** Plane-wave processing selected *** ");
         	vmess("plane-wave angle                = %f ", src_angle);
