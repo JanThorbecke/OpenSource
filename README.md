@@ -62,13 +62,16 @@ Jan Thorbecke, Lele Zhang, Kees Wapenaar, Evert Slob,
 -5- If you use the fdacrtmc code of Max Holicki please refer to the following paper:
 
 Acoustic directional snapshot wavefield decomposition
-Holicki, M., Drijkoningen, G., and Wapenaar, K., 2019, Acoustic directional snapshot wavefield decomposition: Geophysical
-Prospecting, Vol. 67, 32-51
+Holicki, M., Drijkoningen, G., and Wapenaar, K., 2019, Acoustic directional snapshot wavefield decomposition: 
+Geophysical Prospecting, Vol. 67, 32-51
 Download: http://homepage.tudelft.nl/t4n4v/4_Journals/Geophys.Prosp/GP_19a.pdf
 
 -6- If you use the vmar code of Johno van IJsseldijk please refer to the following paper:
 
-Paper in preparation.
+Extracting small time-lapse traveltime changes in a reservoir using primaries and internal multiples after Marchenko-based target zone isolation: 
+Van IJsseldijk, J., van der Neut, J., Thorbecke, J., and Wapenaar, K., 2023, 
+Geophysics, Vol. 88 (2), R135-R143.
+Download: https://keeswapenaar.nl/4_Journals/Geophysics/geo_23a.pdf
 
 -7- A reference to the extrapolation and migration programs is
 
