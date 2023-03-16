@@ -39,6 +39,8 @@ int writeData(FILE *fp, float *data, segy *hdrs, int n1, int n2);
 
 int Marchenko_Iterations(float *inif, float *WinA, float *WinB, float *rdatavp, float *rdatavm, float *rdatagm, float *rdatagp, complex *Reflw, complex *cjReflw, float fftscl, int ntfft, int nw, int nw_low, int nblock, size_t nstationA, size_t nstationB, int niter, int squaremat, int verbose);
 
+float Cost(float *Gmin, float *f1plus, int nx, int nt, float dx, float dt, int Nfoc, int verbose, int outfile, int squaremat);
+
 /*********************** self documentation **********************/
 char *sdoc[] = {
 " ",
@@ -71,13 +73,19 @@ char *sdoc[] = {
 "   scaling=1.0 .............. 1 => pressure norm and 0 => flux norm ",
 "   cjRefl=1 ................. -1 => apply complex conjugate to specific input",
 "   sclinif/Win*=1 ........... apply scaling factor to inif/WinA/WinB",
-"   sclRefl=2.0 / 1.0 ........ Scaling factor R (defaults: 2.0 for pressure / 1.0 for flux norm)",
+"   sclRefl=2.0 / 1.0 ........ scaling factor R (defaults: 2.0 for pressure / 1.0 for flux norm)",
 "   tranposeinif/Refl/Win*=0 . 1 => apply transpose to inif/Refl/WinA/WinB",
 " ITERATION PARAMETERS ",
-"   niter=20 ................. Number of iterations",
+"   niter=20 ................. number of iterations",
 "   ntap=0 ................... number of taper points matrix",
 "   ftap=0 ................... percentage for tapering",
 "   square=1 ................. square=0 => no. shots =/= no. receivers ",
+" SCALING TEST REFLECTION RESPONSE",
+"   sclcor=0 ................. 1 => estimate the reflection response scaling",
+"   nscl=11 .................. number of scaling steps in estimation",
+"   scl0=1.0 ................. starting value for estimation",
+"   scl1=2.0 ................. final value for estimation",
+"   file_scl= ................ output file for cost at each scale ",
 " OUTPUT DEFINITION ",
 "   verbose=0 ................ silent option; >0 displays info",
 " ",
@@ -95,7 +103,7 @@ NULL};
 
 int main (int argc, char **argv)
 {
-	FILE    *fpin, *fpout, *fmout, *gpout, *gmout;
+	FILE    *fpin, *fpout, *fmout, *gpout, *gmout, *fp_scl;
 	int		i, j, k, ret, tracf, nshots, ntraces;
 	int		size, n1, n2, ntfft, nf;
 	int     verbose, fullcorr, ncorstat, err;
@@ -116,7 +124,7 @@ int main (int argc, char **argv)
 
 	float   *rdatavp, *rdatavm, *rdatagp, *rdatagm;
 	double  t0, t1, t2, t3, tinit, twrite, tread, tdec;
-	char	*file_inif, *file_Refl, *file_WinA, *file_WinB, *file_fp, *file_fm, *file_gp, *file_gm, filename[1024], number[128];
+	char	*file_inif, *file_Refl, *file_WinA, *file_WinB, *file_fp, *file_fm, *file_gp, *file_gm, *file_scl, filename[1024], number[128];
 	int     pe=0, root_pe=0, npes=1, ipe, size_s, one_file;
 	segy 	*hdrs_out;
 	
@@ -124,6 +132,9 @@ int main (int argc, char **argv)
 	float   *inif, *WinA, *WinB;
 	float	fftscl;
 	int		niter, squaremat;
+	
+	float   scl0, scl1, dscl, corfac, cost0, cost1, costmin, sclfac0, sclfac1;
+	long	sclcor, nscl, iscl;
 	
 	t0 = wallclock_time();
 	initargs(argc, argv);
@@ -142,6 +153,14 @@ int main (int argc, char **argv)
 	if (!getparstring("file_fm", &file_fm)) file_fm=NULL;
 	if (!getparstring("file_gp", &file_gp)) file_gp=NULL;
 	if (!getparstring("file_gm", &file_gm)) file_gm=NULL;
+	
+	if (!getparstring("file_scl", &file_scl)) file_scl = NULL;
+	
+	if (!getparlong("sclcor", &sclcor)) sclcor = 0;
+    if (!getparlong("nscl", &nscl)) nscl = 11;
+    if (!getparfloat("scl0", &scl0)) scl0 = 1.0;
+    if (!getparfloat("scl1", &scl1)) scl1 = 2.0;
+	dscl = (scl1-scl0)/(nscl-1);
 	
 	if (!getparint("one_file", &one_file)) one_file = 1;
 
@@ -296,6 +315,14 @@ int main (int argc, char **argv)
         fprintf(stderr,"  nfreq  ........... : %ld\n", nfreq);
         fprintf(stderr,"  niter ............ : %d\n", niter);
         fprintf(stderr,"  square ........... : %d\n", squaremat);
+	    if (sclcor) {
+			fprintf(stderr,"  Estimating scaling correction of the reflection response: \n");
+			fprintf(stderr,"  Number of steps .. : %d\n", nscl);
+			fprintf(stderr,"  Starting value ... : %.3e\n", scl0);
+			fprintf(stderr,"  Final value ...... : %.3e\n", scl1);
+			fprintf(stderr,"  Step value ....... : %.3e\n", dscl);
+            if (file_scl != NULL) fprintf(stderr,"  Scl output file .. : %s\n", file_scl);
+        }
     }
 
 	t1 = wallclock_time();
@@ -346,9 +373,62 @@ int main (int argc, char **argv)
 	
 	t2 = wallclock_time();
 	tread += t2-t1; 
-	
-	/* Use CGEMM or CGEMV to iterate multidimensional marchenko equation */
-	Marchenko_Iterations(inif, WinA, WinB, rdatavp, rdatavm, rdatagm, rdatagp, Reflw, cjReflw, fftscl, ntfft, nfreq, nw_low, nshotB, nstationA, nstationB, niter, squaremat, verbose);
+
+	if (sclcor==1) {	
+		if (file_scl != NULL) {
+			fp_scl = fopen(file_scl, "w+");
+			fprintf(fp_scl,"Test Factor\tCost of test\tMin factor\tMin cost");
+		}
+		sclfac0 = 1.0;
+		for (iscl = 0; iscl < nscl; iscl++) {
+
+			sclfac1 = (iscl*dscl) + scl0;
+			vmess("Correction factor test %.3e",sclfac1);
+			vmess("Scaling Refl with %.3e",sclfac1/sclfac0);
+			for (i = 0; i < nstationB*nfreq*nshotB; i++){
+				Reflw[i].r *= sclfac1/sclfac0;
+				Reflw[i].i *= sclfac1/sclfac0;
+				cjReflw[i].r *= sclfac1/sclfac0;
+				cjReflw[i].i *= sclfac1/sclfac0;
+			}
+			sclfac0 = sclfac1;
+
+			
+			#pragma omp parallel for schedule(static) private(jstation) default(shared)
+			for (jstation=0; jstation<nshotA; jstation++) { 
+				memcpy(&rdatavp[jstation*ntfft*nstationA], &inif[jstation*ntfft*nstationA], sizeof(float)*nstationA*ntfft);		
+			}
+
+			Marchenko_Iterations(inif, WinA, WinB, rdatavp, rdatavm, rdatagm, rdatagp, Reflw, cjReflw, fftscl, ntfft, nfreq, nw_low, nshotB, nstationA, nstationB, 0, squaremat, verbose);
+			cost0 = Cost(rdatagm, rdatavp, nstationA, ntfft, dx, dt, nshotA, verbose, 0, squaremat);
+						
+			/* Use CGEMM or CGEMV to iterate multidimensional marchenko equation */
+			Marchenko_Iterations(inif, WinA, WinB, rdatavp, rdatavm, rdatagm, rdatagp, Reflw, cjReflw, fftscl, ntfft, nfreq, nw_low, nshotB, nstationA, nstationB, niter, squaremat, verbose);
+			
+			cost1 = Cost(rdatagm, rdatavp, nstationA, ntfft, dx, dt, nshotA, verbose, 1, squaremat);
+			cost1 /= cost0;
+			
+			vmess("Cost function for current step (min): %.2e (%.2e)",cost1,costmin);
+			
+			if (iscl == 0) {
+				costmin = cost1;
+				corfac = sclfac1;
+			}
+			else{
+				if (costmin>cost1){
+					costmin = cost1;
+					corfac = sclfac1;
+				}
+			}
+			if (file_scl != NULL) {
+				fprintf(fp_scl,"\n%.7e\t%.7e\t%.7e\t%.7e",sclfac1,cost1,corfac,costmin);
+			}
+		}
+	}
+	else {
+		/* Use CGEMM or CGEMV to iterate multidimensional marchenko equation */
+		Marchenko_Iterations(inif, WinA, WinB, rdatavp, rdatavm, rdatagm, rdatagp, Reflw, cjReflw, fftscl, ntfft, nfreq, nw_low, nshotB, nstationA, nstationB, niter, squaremat, verbose);
+	}
 	
 	fflush(stderr);
 	fflush(stdout);
@@ -360,6 +440,10 @@ int main (int argc, char **argv)
 		fprintf(stderr,"CPU-time read data         = %.3f\n", tread);
 		fprintf(stderr,"CPU-time Marchenko scheme  = %.3f\n", tdec);
 	}
+
+    if (file_scl != NULL & sclcor > 0) {
+        fclose(fp_scl);
+    }
 
 	free(inif);
 	free(WinA);

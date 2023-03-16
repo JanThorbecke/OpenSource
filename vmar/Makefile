@@ -28,6 +28,7 @@ SRCC =  $(PRG).c \
         readDataTD.c \
         writeData.c \
         Marchenko_Iterations.c \
+        Cost.c \
         getFileInfo.c \
         verbosepkg.c \
         name_ext.c \
