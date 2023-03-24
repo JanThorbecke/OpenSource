@@ -578,8 +578,6 @@ int main (int argc, char **argv)
 
     } /* end of iterations */
 
-    free(Ni);
-    free(G_d);
 
     /* compute full Green's function G = int R * f2(t) + f2(-t) = Pplus + Pmin */
     for (l = 0; l < Nfoc; l++) {
@@ -602,6 +600,7 @@ int main (int argc, char **argv)
     if (file_gmin != NULL) {
         Gmin = (float *)calloc(Nfoc*nxs*ntfft,sizeof(float));
 
+        if (niter == 0) memcpy(f1plus, G_d, Nfoc*nxs*ntfft*sizeof(float));
         /* use f1+ as operator on R in frequency domain */
         mode=1;
         synthesis(Refl, Fop, f1plus, iRN, nx, nt, nxs, nts, dt, xsyn, Nfoc, 
@@ -662,6 +661,8 @@ int main (int argc, char **argv)
         }
     } /* end if Gplus */
 
+    free(Ni);
+    free(G_d);
     free(muteW);
     free(tsynW);
     free(energyN0);
