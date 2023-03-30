@@ -276,6 +276,7 @@ int main (int argc, char **argv)
 //            }
         }
         else { /* approximate by subtracting 2*ts of plane-wave angle*/
+            findMax(tmpdata, nt1, nx1, hw, imax, muteW, &xmax, itb, verbose);
             for (i=0; i<nx1; i++) {
                 muteWi[i] = muteW[i]-2*tsynW[i];
 //                fprintf(stderr,"muteWi[i]approx=%d muteW=%d\n",muteWi[i], muteW[i]);
