@@ -34,6 +34,9 @@ void applyMute_plane( float *data, int *mute, int *mutei, int smooth, int above,
             costaper[i] = 0.5*(1.0+cos((i+1)*scl));
         }
     }
+    if (iter % 2 != 0) { // switch angle 
+        above*=-1;
+    }
 
     Nig = (float *)malloc(nt*sizeof(float));
 
@@ -46,12 +49,8 @@ void applyMute_plane( float *data, int *mute, int *mutei, int smooth, int above,
             for (j = 0; j < nt; j++) {
                 Nig[j]   = data[isyn*nxs*nt+i*nt+j];
             }
-            if (iter % 2 != 0) { // switch angle 
-                if (above==0) above=-1;
-                if (above==4) above=-4;
-            }
 
-            if (above==-1){ /* the above=0 implementation for plane-waves at odd iterations */
+            if (above==-1){ /* the above=1 implementation for plane-waves at odd iterations */
                 /* positive time axis mute below plane-wave first arrivals */
                 for (j = tmutei-shift-smooth,l=0; j < tmutei-shift; j++,l++) {
                     Nig[mapj(j,nt)] *= costaper[l];
@@ -63,7 +62,7 @@ void applyMute_plane( float *data, int *mute, int *mutei, int smooth, int above,
                     Nig[mapj(j,nt)] *= costaper[smooth-l-1];
                 }
             }
-            else if (above==0){
+            else if (above==1){
                 for (j = tmute-shift-smooth,l=0; j < tmute-shift; j++,l++) {
                     Nig[mapj(j,nt)] *= costaper[l];
                 }
@@ -74,7 +73,7 @@ void applyMute_plane( float *data, int *mute, int *mutei, int smooth, int above,
                     Nig[mapj(j,nt)] *= costaper[smooth-l-1];
                 }
             }
-            else if (above==4) { /* Psi gate which is the inverse of the Theta gate (above=0) */
+            else if (above==4) { /* Psi gate which is the inverse of the Theta gate (above=1) */
                 for (j = 1-tmutei+shift-smooth,l=0; j < 1-tmutei+shift; j++,l++) {
                     Nig[mapj(j,nt)] *= costaper[l];
                 }
@@ -85,11 +84,43 @@ void applyMute_plane( float *data, int *mute, int *mutei, int smooth, int above,
                    	Nig[mapj(j,nt)] *= costaper[smooth-l-1];
                 }
             }
-            else if (above==-4) { //Psi gate which is the inverse of the Theta gate (above=-1) for odd iterations
+            else if (above==-4) { //Psi gate which is the inverse of the Theta gate (above=4) for odd iterations
                 for (j = 1-tmute+shift-smooth,l=0; j < 1-tmute+shift; j++,l++) {
                     Nig[mapj(j,nt)] *= costaper[l];
                 }
                 for (j = 1-tmute+shift; j < tmutei-shift-smooth; j++) {
+                    Nig[mapj(j,nt)] = 0.0;
+                }
+                for (j = tmutei-shift-smooth,l=0; j < tmutei-shift; j++,l++) {
+                   	Nig[mapj(j,nt)] *= costaper[smooth-l-1];
+                }
+			}
+            else if (above==-11){ /* Single sided windows the above=11 implementation for plane-waves at odd iterations */
+                for (j = tmutei-shift-smooth,l=0; j < tmutei-shift; j++,l++) {
+                    Nig[mapj(j,nt)] *= costaper[l];
+                }
+                for (j = tmutei-shift; j < nt; j++) {
+                    Nig[mapj(j,nt)] = 0.0;
+                }
+            }
+            else if (above==11){
+                for (j = tmute-shift-smooth,l=0; j < tmute-shift; j++,l++) {
+                    Nig[mapj(j,nt)] *= costaper[l];
+                }
+                for (j = tmute-shift; j < nt; j++) {
+                    Nig[mapj(j,nt)] = 0.0;
+                }
+            }
+            else if (above==44) { /* Psi gate which is the inverse of the Theta gate (above=11) */
+                for (j = 0; j < tmute-shift-smooth; j++) {
+                    Nig[mapj(j,nt)] = 0.0;
+                }
+                for (j = tmute-shift-smooth,l=0; j < tmute-shift; j++,l++) {
+                   	Nig[mapj(j,nt)] *= costaper[smooth-l-1];
+                }
+            }
+            else if (above==-44) { //Psi gate which is the inverse of the Theta gate (above=-4) for odd iterations
+                for (j = 0; j < tmutei-shift-smooth; j++) {
                     Nig[mapj(j,nt)] = 0.0;
                 }
                 for (j = tmutei-shift-smooth,l=0; j < tmutei-shift; j++,l++) {
