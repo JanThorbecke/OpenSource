@@ -276,6 +276,12 @@ int main (int argc, char **argv)
 //            }
         }
         else { /* approximate by subtracting 2*ts of plane-wave angle*/
+            /* find maximum at source position */
+            dxrcv = (hdrs_in1[nx1-1].gx - hdrs_in1[0].gx)*sclsxgx/(float)(nx1-1);
+            imax = NINT(((hdrs_in1[0].sx-hdrs_in1[0].gx)*sclsxgx)/dxrcv);
+            if (ixb!=0) imax = ixb;
+            /* make sure that the position fits into the receiver array */
+            imax = MIN(MAX(0,imax),nx1-1);
             findMax(tmpdata, nt1, nx1, hw, imax, muteW, &xmax, itb, verbose);
             for (i=0; i<nx1; i++) {
                 muteWi[i] = muteW[i]-2*tsynW[i];
