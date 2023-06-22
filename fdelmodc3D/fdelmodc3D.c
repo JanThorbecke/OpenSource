@@ -56,6 +56,11 @@ long elastic4dc_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 	float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
     float ***rox, float ***roy, float ***roz, float ***l2m, float ***lam, float ***mul, long verbose);
 
+long elastic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, 
+	long ixsrc, long iysrc, long izsrc, float **src_nwav, float *vx, float *vy, float *vz, 
+	float *tzz, float *tyy, float *txx, float *txz, float *txy, float *tyz,
+    float ***rox, float ***roy, float ***roz, float ***l2m, float ***lam, float ***mul, long verbose);
+
 long getRecTimes3D(modPar mod, recPar rec, bndPar bnd, long itime, long isam,
 	float *vx, float *vy, float *vz, float *tzz, float *tyy, float *txx,
 	float *txz, float *txy, float *tyz, float ***l2m, float ***rox, float ***roy, float ***roz,
@@ -673,9 +678,9 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
 					break;
 				case 3 : /* Elastic FD kernel */
                     if (mod.iorder==4) {
-					// elastic4_3D(mod, src, wav, bnd, it, ixsrc, iysrc, izsrc, src_nwav,
+					 elastic4_3D(mod, src, wav, bnd, it, ixsrc, iysrc, izsrc, src_nwav,
 							vx, vy, vz, tzz, tyy, txx, txz, txy, tyz, rox, roy, roz, l2m, lam, mul, verbose);
-					 vmess("Elastic order 4 not yet available");
+					 vmess("****** Elastic order 4 not yet TESTED ******* ");
 					}
 					else if (mod.iorder==6) {
 						vmess("Elastic order 6 not yet available");
