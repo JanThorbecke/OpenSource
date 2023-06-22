@@ -18,13 +18,14 @@ void rc1fft(float *rdata, complex *cdata, int n, int sign);
 int compare(const void *a, const void *b) 
 { return (*(float *)b-*(float *)a); }
 
-int readShotData(char *filename, float xmin, float dx, float *xrcv, float *xsrc, int *xnx, complex *cdata, int nw, int nw_low, int ngath, int nx, int nxm, int ntfft, float alpha, float scale, float conjg, int transpose, int verbose)
+int readShotData(char *filename, float xmin, float dx, float *xrcv, float *xsrc, int *xnx, complex *cdata, int nw, int nw_low, int ngath, int nx, int nxm, int ntfft, float alpha, float scale, float conjg, int transpose, char *filemute, int verbose)
 {
-	FILE *fp;
+	FILE *fp, *fm;
 	segy hdr;
 	size_t nread;
 	int fldr_shot, sx_shot, itrace, one_shot, igath, iw, i, j, k;
 	int end_of_file, nt, ir, is;
+	int *mutedata;
 	float scl, dt, *trace;
 	complex *ctrace;
 
@@ -37,6 +38,20 @@ int readShotData(char *filename, float xmin, float dx, float *xrcv, float *xsrc,
 		perror("error in opening file: ");
 		fflush(stderr);
 		return -1;
+	}
+	if (filemute != NULL) {
+		fm = fopen(filemute,"r");
+		if (fm == NULL) {
+			fprintf(stderr,"Mute file %s has an error\n", filemute);
+			perror("error in opening file: ");
+			fflush(stderr);
+			return -1;
+		}
+		mutedata = (int *)malloc(2*nx*ngath*sizeof(int));
+		nread = fread(mutedata, sizeof(int), 2*nx*ngath, fm);
+		fclose(fm);
+		//fprintf(stderr,"Mute data first %d\n",mutedata[0]);
+		//fprintf(stderr,"Mute data last %d\n",mutedata[nx*ngath*2-1]);
 	}
 
 	fseek(fp, 0, SEEK_SET);
@@ -97,6 +112,14 @@ int readShotData(char *filename, float xmin, float dx, float *xrcv, float *xsrc,
 					trace[i*ntfft+j] *= exp(alpha*j*dt);
 				}
 			}
+			if (filemute != NULL) {
+				for (j=0; j<mutedata[nx*igath+i]; j++)
+					trace[i*ntfft+j] = 0.0;
+
+				for (j=mutedata[nx*ngath+nx*igath+i]; j<nt; j++)
+					trace[i*ntfft+j] = 0.0;
+			}
+			
         	for (j=nt; j<ntfft; j++) {
 				trace[i*ntfft+j] = 0.0;
 			}
