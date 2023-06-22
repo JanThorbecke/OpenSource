@@ -27,6 +27,7 @@ SRCC	= $(PRG).c \
 		acousticSH4_3D.c \
 		acoustic4_qr_3D.c \
 		elastic4dc_3D.c \
+		elastic4_3D.c \
 		defineSource3D.c  \
 		getParameters3D.c  \
 		getWaveletInfo3D.c  \
