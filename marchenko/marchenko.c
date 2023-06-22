@@ -40,7 +40,6 @@ int writeDataIter(char *file_iter, float *data, segy *hdrs, int n1, int n2, floa
 void name_ext(char *filename, char *extension);
 
 void applyMute(float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *xrcvsyn, int npos, int shift, int *muteW);
-void applyMute_tshift( float *data, int *mute, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift, int iter, int *tsynW);
 void applyMute_plane( float *data, int *mute, int *mutei, int smooth, int above, int Nfoc, int nxs, int nt, int *ixpos, int npos, int shift, int iter);
 
 int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *ntraces);
@@ -506,35 +505,12 @@ int main (int argc, char **argv)
         /* apply mute window based on times of direct arrival (in muteW) */
 
         if ( plane_wave==1 ) { /* use an a-symmetric window for plane waves with non-zero angles */
-            //applyMute_tshift(Ni, muteW, smooth, 0, Nfoc, nxs, nts, ixpos, npos, shift, iter, tsynW);
-            applyMute_plane(Ni, muteW, muteWi, smooth, 0, Nfoc, nxs, nts, ixpos, npos, shift, iter);
+            applyMute_plane(Ni, muteW, muteWi, smooth, 1, Nfoc, nxs, nts, ixpos, npos, shift, iter);
         }
         else {
             applyMute(Ni, muteW, smooth, -above, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
         }
-        //writeDataIter("amute.su", Ni, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, iter+1);
        
-
-    	/* for testing time-windows with dipping plane waves */
-/*
-            for (i = 0; i < npos; i++) {
-                for (j = 0; j < nts; j++) {
-                    Ni[i*nts+j]    = 1.0;
-				}
-			}
-            applyMute_tshift(Ni, muteW, smooth, 0, Nfoc, nxs, nts, ixpos, npos, shift, iter, tsynW);
-            //applyMute(Ni, muteW, smooth, -above, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
-            writeDataIter("mute0-5.su", Ni, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, iter+1);
-            for (i = 0; i < npos; i++) {
-                for (j = 0; j < nts; j++) {
-                    Ni[i*nts+j]    = 1.0;
-				}
-			}
-            applyMute_tshift(Ni, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, iter, tsynW);
-            //applyMute(Ni, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, tsynW);
-            writeDataIter("mute4-5.su", Ni, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixpos, npos, 0, iter+1);
-*/
-
         if (iter % 2 == 0) { /* even iterations update: => f_1^-(t) */
             for (l = 0; l < Nfoc; l++) {
                 for (i = 0; i < npos; i++) {
@@ -622,7 +598,6 @@ int main (int argc, char **argv)
         }
         /* Apply mute with window for Gmin */
 		if ( plane_wave==1 ) {
-            //applyMute_tshift(Gmin, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 1, tsynW);
             applyMute_plane(Gmin, muteW, muteWi, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 1);
 		}
 		else {
@@ -653,7 +628,6 @@ int main (int argc, char **argv)
         }
         /* Apply mute with window for Gplus */
 		if ( plane_wave==1 ) {
-            //applyMute_tshift(Gplus, muteW, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 0, tsynW);
             applyMute_plane(Gplus, muteW, muteWi, smooth, 4, Nfoc, nxs, nts, ixpos, npos, shift, 0);
         }
         else {
