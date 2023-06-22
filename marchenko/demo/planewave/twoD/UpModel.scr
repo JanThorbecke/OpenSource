@@ -1,0 +1,101 @@
+#!/bin/bash
+#PBS -N fdelmod
+#PBS -q long
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+
+
+#./model.scr
+dx=2.5
+dt=0.0005
+
+makemod sizex=6000 sizez=2000 dx=$dx dz=$dx cp0=1750  ro0=1200 \
+        orig=-3000,0 file_base=geup.su verbose=2 \
+    intt=def x=-3000,-2200,-1500,-500,0,720,1300,2100,3000 z=220,260,230,190,250,240,240,250,200 poly=2 cp=2100 ro=2800\
+        intt=def x=-3000,-2200,-1800,400,1300,2100,3000 z=320,360,380,340,380,350,400 poly=2 cp=2600 ro=3900\
+    intt=def x=-3000,-2700,-2400,-2200,-1900,-1500,-1000,-850,-700,-490,-320,-100,0,1300,2100,3000 z=520,570,540,580,540,490,480,520,510,580,620,630,610,620,600,500 poly=2 cp=1800 ro=1800
+
+
+makewave fp=25 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=1
+
+a=120
+var=600
+
+for angle in 0 5
+do
+
+  cat << EOF > slurm_$a.job 
+#!/bin/bash
+#SBATCH --cpus-per-task=4
+#SBATCH --ntasks=1
+#SBATCH -J mod_${a}
+#SBATCH -V
+#SBATCH -p max2h
+
+export PATH=\$HOME/src/OpenSource/bin:\$PATH:
+
+export OMP_NUM_THREADS=4
+varo=SourceUp${angle}a${a}.su
+varq=SourceUp_${angle}a${a}.su
+
+dx=2.5
+dt=0.0005
+
+fdelmodc \
+        file_cp=geup_cp.su ischeme=1 iorder=4 \
+        file_den=geup_ro.su \
+        file_src=wave.su \
+        file_rcv=\$varo \
+        src_type=1 \
+        src_orient=1 \
+        src_injectionrate=1 \
+        rec_type_vz=0 \
+        rec_type_p=1 \
+        rec_int_vz=2 \
+        rec_delay=0.1 \
+        dtrcv=0.004 \
+        verbose=2 \
+        tmod=2.500 \
+        dxrcv=10.0 \
+        plane_wave=1 nsrc=2400 src_angle=$angle src_velo=1500 src_window=81\
+        xrcv1=-3000 xrcv2=3000 \
+        zrcv1=0 zrcv2=0 \
+        xsrc=0 \
+        zsrc=$var \
+        left=2 right=2 top=2 bottom=2\
+
+
+fdelmodc \
+        file_cp=geup_cp.su ischeme=1 iorder=4 \
+        file_den=geup_ro.su \
+        file_src=wave.su \
+        file_rcv=\$varq \
+        src_type=1 \
+        src_orient=1 \
+        src_injectionrate=1 \
+        rec_type_vz=0 \
+        rec_type_p=1 \
+        rec_int_vz=2 \
+        rec_delay=0.1 \
+        dtrcv=0.004 \
+        verbose=2 \
+        tmod=2.500 \
+        dxrcv=10.0 \
+        plane_wave=1 nsrc=2400 src_angle=-$angle src_velo=1500 src_window=81\
+        xrcv1=-3000 xrcv2=3000 \
+        zrcv1=0 zrcv2=0 \
+        xsrc=0 \
+        zsrc=$var \
+        left=2 right=2 top=2 bottom=2\
+
+
+
+EOF
+
+sbatch slurm_$a.job
+
+done
+
