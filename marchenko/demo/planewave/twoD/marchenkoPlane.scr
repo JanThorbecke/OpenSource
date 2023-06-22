@@ -1,0 +1,131 @@
+#!/bin/bash -x
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+export OMP_NUM_THREADS=4
+
+#mute all events below the first arrival to get the intial focusing field
+#fmute file_shot=HCorrect_Source180_rp.su file_out=p0plus.su above=-1 shift=-6 verbose=1 check=0 hw=8
+#apply the Marchenko algorithm
+#/vardim/home/thorbcke/src/OpenSource/Tshift/marchenko_tshift  file_shot=shots/refl_rp.su file_tinv=p0plus.su nshots=601 verbose=2 \
+#	tap=3 ntap=11  niter=12 hw=8 shift=12 \
+#	src_angle=5 src_velo=1500 \
+#	file_green=pgreenPl.su file_gplus=GplusPl.su file_gmin=GminPl.su  \
+#	file_f1plus=f1plusPl.su file_f1min=f1minPl.su file_f2=f2Pl.su 
+
+
+# TCorrect DATASETS: src_angle=5, src_velo=1500:
+
+#0 degrees 
+inifile=Source0a120_rp.su
+base=${inifile%_rp.su}
+fmute file_shot=$inifile file_out=fdplus${base}.su above=-1 shift=-6 verbose=1 check=0 hw=2
+
+/vardim/home/thorbcke/src/OpenSource/marchenko/marchenko file_shot=shots/refl_rp.su file_tinv=fdplus${base}.su nshots=601 verbose=2 \
+        tap=3 niter=16 hw=2 shift=12 plane_wave=1 \
+        file_green=green${base}.su file_gplus=Gplus${base}.su file_gmin=Gmin${base}.su  \
+        file_f1plus=f1plus${base}.su file_f1min=f1min${base}.su file_f2=f2${base}.su
+
+#5 degrees dip without tshift for Gmin in marchenko program (recompiled)
+base=Source5a120_shifted
+/vardim/home/thorbcke/src/OpenSource/marchenko/marchenko file_shot=shots/refl_rp.su file_tinv=fdplusSource5a120.su nshots=601 verbose=2 \
+        tap=3 niter=16 hw=2 shift=12 plane_wave=1 src_angle=0 \
+        file_green=green${base}.su file_gplus=Gplus${base}.su file_gmin=Gmin${base}.su  \
+        file_f1plus=f1plus${base}.su file_f1min=f1min${base}.su file_f2=f2${base}.su
+
+for angle in 5 10
+do
+for dip in - ""
+do
+src_angle=$dip$angle
+
+inifile=Source${src_angle}a120_rp.su
+base=${inifile%_rp.su}
+fmute file_shot=$inifile file_out=fdplus${base}.su above=-1 shift=-6 verbose=1 check=0 hw=2
+
+/vardim/home/thorbcke/src/OpenSource/marchenko/marchenko file_shot=shots/refl_rp.su file_tinv=fdplus${base}.su nshots=601 verbose=2 \
+        tap=3 niter=16 hw=2 shift=12 plane_wave=1 src_angle=$src_angle \
+        file_green=green${base}.su file_gplus=Gplus${base}.su file_gmin=Gmin${base}.su  \
+        file_f1plus=f1plus${base}.su file_f1min=f1min${base}.su file_f2=f2${base}.su
+
+done
+done
+
+#source at dipping line in model all fired at t=0
+inifile=SourceDipa_rp.su
+base=${inifile%_rp.su}
+fmute file_shot=$inifile file_out=fdplus${base}.su above=-1 shift=-6 verbose=1 check=0 hw=2
+
+/vardim/home/thorbcke/src/OpenSource/marchenko/marchenko file_shot=shots/refl_rp.su file_tinv=fdplus${base}.su nshots=601 verbose=2 \
+        tap=3 niter=16 hw=2 shift=12 plane_wave=1 \
+        file_green=green${base}.su file_gplus=Gplus${base}.su file_gmin=Gmin${base}.su  \
+        file_f1plus=f1plus${base}.su file_f1min=f1min${base}.su file_f2=f2${base}.su
+
+exit
+
+fmute file_shot=TCorrect_Source150_rp.su file_out=p0plus.su above=-1 shift=-6 verbose=1 check=0 hw=8
+
+/vardim/home/thorbcke/src/OpenSource/marchenko/marchenko file_shot=shots/refl_rp.su file_tinv=p0plus.su nshots=601 verbose=2 \
+        tap=3  niter=12 hw=8 shift=12 plane_wave=1 \
+        file_green=pgreenPl.su file_gplus=GplusPl.su file_gmin=TGmin150.su  \
+        file_f1plus=f1plusPl.su file_f1min=f1minPl.su file_f2=f2Pl.su
+
+fmute file_shot=TCorrect_Source180_rp.su file_out=p0plus.su above=-1 shift=-6 verbose=1 check=0 hw=8
+
+/vardim/home/thorbcke/src/OpenSource/marchenko/marchenko file_shot=shots/refl_rp.su file_tinv=p0plus.su nshots=601 verbose=2 \
+        tap=3  niter=12 hw=8 shift=12 plane_wave=1 \
+        file_green=pgreenPl.su file_gplus=GplusPl.su file_gmin=TGmin180.su  \
+        file_f1plus=f1plusPl.su file_f1min=f1minPl.su file_f2=f2Pl.su
+
+# HCorrect DATASETS: src_angle=10, src_velo=1500:
+
+fmute file_shot=HCorrect_Source120_rp.su file_out=p0plus.su above=-1 shift=-6 verbose=1 check=0 hw=8
+
+/vardim/home/thorbcke/src/OpenSource/marchenko/marchenko file_shot=shots/refl_rp.su file_tinv=p0plus.su nshots=601 verbose=2 \
+        tap=3  niter=12 hw=8 shift=12 plane_wave=1 \
+        file_green=pgreenPl.su file_gplus=GplusPl.su file_gmin=HGmin120.su  \
+        file_f1plus=f1plusPl.su file_f1min=f1minPl.su file_f2=f2Pl.su
+
+fmute file_shot=HCorrect_Source150_rp.su file_out=p0plus.su above=-1 shift=-6 verbose=1 check=0 hw=8
+
+/vardim/home/thorbcke/src/OpenSource/marchenko/marchenko file_shot=shots/refl_rp.su file_tinv=p0plus.su nshots=601 verbose=2 \
+        tap=3  niter=12 hw=8 shift=12 plane_wave=1 \
+        file_green=pgreenPl.su file_gplus=GplusPl.su file_gmin=HGmin150.su  \
+        file_f1plus=f1plusPl.su file_f1min=f1minPl.su file_f2=f2Pl.su
+
+fmute file_shot=HCorrect_Source180_rp.su file_out=p0plus.su above=-1 shift=-6 verbose=1 check=0 hw=8
+
+/vardim/home/thorbcke/src/OpenSource/marchenko/marchenko file_shot=shots/refl_rp.su file_tinv=p0plus.su nshots=601 verbose=2 \
+        tap=3  niter=12 hw=8 shift=12 plane_wave=1 \
+        file_green=pgreenPl.su file_gplus=GplusPl.su file_gmin=HGmin180.su  \
+        file_f1plus=f1plusPl.su file_f1min=f1minPl.su file_f2=f2Pl.su
+
+#suximage< TGmin120.su x1end=1.4 perc=99&  img dTCorrect_Source120_rp.su x1end=1.4 perc=99&
+#suximage< TGmin150.su x1end=1.4 perc=99&  img dTCorrect_Source150_rp.su x1end=1.4 perc=99&
+#suximage< TGmin180.su x1end=1.4 perc=99&  img dTCorrect_Source180_rp.su x1end=1.4 perc=99&
+#suximage< TGmin120.su x1end=1.4 perc=99&  img dHCorrect_Source120_rp.su x1end=1.4 perc=99&
+#suximage< TGmin150.su x1end=1.4 perc=99&  img dHCorrect_Source150_rp.su x1end=1.4 perc=99&
+#suximage< TGmin180.su x1end=1.4 perc=99&  img dHCorrect_Source180_rp.su x1end=1.4 perc=99&
+
+
+supsimage < TGmin120.su title="Gmin: Depth=600, angle=5" label1="t(s)" label2="x(m)" x1beg=0 x1end=1.4 clip=4e5> TGmin120.eps
+supsimage < TGmin150.su title="Gmin: Depth=750, angle=5" label1="t(s)" label2="x(m)" x1beg=0 x1end=1.4 clip=4e5> TGmin150.eps
+supsimage < TGmin180.su title="Gmin: Depth=900, angle=5" label1="t(s)" label2="x(m)" x1beg=0 x1end=1.4 clip=4e5> TGmin180.eps
+supsimage < HGmin120.su title="Gmin: Depth=600, angle=10" label1="t(s)" label2="x(m)" x1beg=0 x1end=1.4 clip=4e5> HGmin120.eps
+supsimage < HGmin150.su title="Gmin: Depth=750, angle=10" label1="t(s)" label2="x(m)" x1beg=0 x1end=1.4 clip=4e5> HGmin150.eps
+supsimage < HGmin180.su title="Gmin: Depth=900, angle=10" label1="t(s)" label2="x(m)" x1beg=0 x1end=1.4 clip=4e5> HGmin180.eps
+
+supsimage < dTCorrect_Source120_rp.su title="Input: Depth=600, angle=5" label1="t(s)" label2="x(m)" x1beg=0 x1end=1.4 clip=4e5>
+T120.eps
+supsimage < dTCorrect_Source150_rp.su title="Input: Depth=750, angle=5" label1="t(s)" label2="x(m)" x1beg=0 x1end=1.4 clip=4e5>
+T150.eps
+supsimage < dTCorrect_Source180_rp.su title="Input: Depth=900, angle=5" label1="t(s)" label2="x(m)" x1beg=0 x1end=1.4 clip=4e5>
+T180.eps
+supsimage < dHCorrect_Source120_rp.su title="Input: Depth=600, angle=10" label1="t(s)" label2="x(m)" x1beg=0 x1end=1.4 clip=4e5>
+H120.eps
+supsimage < dHCorrect_Source150_rp.su title="Input: Depth=750, angle=10" label1="t(s)" label2="x(m)" x1beg=0 x1end=1.4 clip=4e5>
+H150.eps
+supsimage < dHCorrect_Source180_rp.su title="Input: Depth=900, angle=10" label1="t(s)" label2="x(m)" x1beg=0 x1end=1.4 clip=4e5>
+H180.eps
+
+
+

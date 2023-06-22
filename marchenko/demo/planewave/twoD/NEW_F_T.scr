@@ -1,0 +1,98 @@
+#!/bin/bash
+#PBS -N fdelmod
+#PBS -q long
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+
+
+#./model.scr
+
+mkdir -p shots
+mkdir -p jobs
+
+
+declare -i var=0
+
+
+for a in  `seq 1 400`
+do
+
+		echo $a
+var=$var+5
+
+  cat << EOF > jobs/pbs_$a.job 
+#!/bin/bash
+#SBATCH --cpus-per-task=4
+#SBATCH --ntasks=1
+#SBATCH -J mod_${a}
+#SBATCH -V
+
+export PATH=\$HOME/src/OpenSource/bin:\$PATH:
+
+	export OMP_NUM_THREADS=4
+varo=$(printf 'HCorrect_Source%03d.su' "$a")
+varq=$(printf 'dHCorrect_Source%03d.su' "$a")
+
+
+dx=2.5
+dt=0.0005
+
+
+fdelmodc \
+        file_cp=ge_cp.su ischeme=1 iorder=4 \
+        file_den=ge_ro.su \
+        file_src=wave.su \
+        file_rcv=\$varo \
+        src_type=1 \
+        src_orient=1 \
+        src_injectionrate=1 \
+        rec_type_vz=0 \
+        rec_type_p=1 \
+        rec_int_vz=2 \
+        rec_delay=0.1 \
+        dtrcv=0.004 \
+        verbose=2 \
+        tmod=2.500 \
+        dxrcv=10.0 \
+        plane_wave=1 nsrc=2400 src_angle=10 src_velo=1500 src_window=81\
+        xrcv1=-3000 xrcv2=3000 \
+        zrcv1=0 zrcv2=0 \
+        xsrc=0 \
+        zsrc=$var \
+        left=2 right=2 top=2 bottom=2\
+
+
+fdelmodc \
+        file_cp=ge_cp.su ischeme=1 iorder=4 \
+        file_den=ge_ro.su \
+        file_src=wave.su \
+        file_rcv=\$varq \
+        src_type=1 \
+        src_orient=1 \
+        src_injectionrate=1 \
+        rec_type_vz=0 \
+        rec_type_p=1 \
+        rec_int_vz=2 \
+        rec_delay=0.1 \
+        dtrcv=0.004 \
+        verbose=2 \
+        tmod=2.500 \
+        dxrcv=10.0 \
+        plane_wave=1 nsrc=2400 src_angle=-10 src_velo=1500 src_window=81\
+        xrcv1=-3000 xrcv2=3000 \
+        zrcv1=0 zrcv2=0 \
+        xsrc=0 \
+        zsrc=$var \
+        left=2 right=2 top=2 bottom=2\
+
+
+
+EOF
+
+sbatch jobs/pbs_$a.job
+
+done
+

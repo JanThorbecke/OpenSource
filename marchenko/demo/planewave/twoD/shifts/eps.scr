@@ -1,0 +1,36 @@
+#!/bin/bash
+
+#Direct field of transmission repsponse
+file=p0plus.su
+file_base=${file%.su}
+sumax < $file mode=abs outpar=nep
+clipref=`cat nep | awk '{print $1/2}'`
+
+for file in iniFocusShift_rp.su iniFocus_rp.su Gmin0.su Gplus0.su Gmin0S.su Gplus0S.su
+do
+file_base=${file%.su}
+sumax < $file mode=abs outpar=nep
+clipref=`cat nep | awk '{print $1/5}'`
+suwind key=gx min=-2250000 max=2250000 < $file | \
+    supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 \
+    label1="time (s)" label2="lateral distance (m)" \
+    n1tic=2 d2=5 x1beg=0 x1end=2.0 d1num=0.4 \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > $file_base.eps
+done
+
+basop file_in=p0plus.su file_out=nep.su choice=5
+rotate < nep.su> p0plusR.su
+basop file_in=p0plusS.su file_out=nep.su choice=5
+rotate < nep.su > p0plusSR.su
+
+for file in f1min0S.su f1plus0S.su f1min0.su f1plus0.su p0plusR.su p0plusSR.su
+do
+file_base=${file%.su}
+sumax < $file mode=abs outpar=nep
+clipref=`cat nep | awk '{print $1/5}'`
+supsimage hbox=6 wbox=4 labelsize=10 linewidth=0.0 < $file\
+    n1tic=2 d2=5 x1beg=-1.504 x1end=1.5 d1num=0.4 \
+    f2=-2250 f2num=-2000 d2num=1000 clip=$clipref > $file_base.eps
+done
+
+

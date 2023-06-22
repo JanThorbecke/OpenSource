@@ -1,0 +1,45 @@
+#!/bin/bash
+
+export PATH=$HOME/src/OpenSource/bin/:$PATH:
+
+dx=2.5
+dt=0.0005
+
+file_cp=model10_cp.su
+file_ro=model10_ro.su
+
+export OMP_NUM_THREADS=4
+
+# t=0 focal time is at 2.0445 seconds back=propagating
+# shift f2.su such that t=0 is positioned in the middle of the time axis
+# the extra shift of 0.000250 is needed because of the staggered time implementation of the Finite Difference program.
+#backpropagate f2.su and collect snapshots
+
+fdelmodc \
+    file_cp=ge_cp.su ischeme=1 iorder=4 \
+    file_den=ge_ro.su \
+    file_src=fdplusSource5a120.su \
+    src_multiwave=1 \
+	dt=$dt \
+    file_rcv=backprop_fd_z600.su \
+    grid_dir=0 \
+    src_type=1 \
+    src_injectionrate=1 \
+	src_orient=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.004 \
+	rec_delay=0.0 \
+    verbose=2 \
+    tmod=2.70 \
+    dxrcv=5.0 \
+    xrcv1=-3000 xrcv2=3000 \
+    zrcv1=600 zrcv2=600 \
+    npml=101 \
+	file_snap=backpropfd.su tsnap1=0.0 dtsnap=0.2 tsnap2=2.7 dxsnap=10 dzsnap=10 \
+    sna_type_vz=0 \
+    sna_type_p=1 \
+    left=2 right=2 top=2 bottom=2
+
+

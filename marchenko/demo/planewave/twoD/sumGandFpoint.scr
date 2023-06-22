@@ -1,0 +1,43 @@
+#!/bin/bash
+
+ROOT=$HOME/src
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+export OMP_NUM_THREADS=4
+exe=$ROOT/OpenSource/bin/marchenko
+inifile=SourcePointa160_rp.su
+base=${inifile%_rp.su}_shift
+fmute file_shot=$inifile file_out=fdplus${base}.su above=-1 shift=-6 verbose=1 check=0 hw=2
+$exe file_shot=shots/refl_rp.su file_tinv=fdplus${base}.su nshots=601 verbose=2 \
+      tap=3 niter=2 hw=2 shift=7 smooth=3 plane_wave=0 rotate=2 \
+      file_green=green${base}.su file_gplus=Gplus${base}.su file_gmin=Gmin${base}.su  \
+      file_f1plus=f1plus${base}.su file_f1min=f1min${base}.su file_f2=f2${base}.su
+      
+
+susum f1min${base}.su Gmin${base}.su > Point_SOMMA_M.su
+
+suflip flip=3 <f1plus${base}.su>td_f1plus${base}.su
+fmute file_shot=td_f1plus${base}.su file_out=t_f1plus${base}.su above=-1 shift=6 verbose=1 check=0 hw=2
+susum t_f1plus${base}.su  Gplus${base}.su > Point_SOMMA_P.su
+
+#exit
+
+
+#for lines in pictures
+fmute file_shot=fdplus${base}.su file_out=nep.su above=-1 shift=6 verbose=1 check=1 hw=2
+
+suwind key=gx min=-3000000 max=3000000 dt=0.004 < Point_SOMMA_M.su | \
+        supsimage hbox=5 wbox=4 labelsize=12 linewidth=0.0 \
+        label1="time in s." label2="lateral distance in m." \
+        curve=pslinepos.asci,pslineneg.asci npair=601,601 curvewidth=2,2 curvecolor=black,black curvedash=2,5 \
+        n1tic=2 d2=10 f1=-2.044 x1beg=-0.604 x1end=1.4 d1num=0.2 \
+        f2=-3000 f2num=-3000 d2num=1000 clip=1e3 > 1Point_SOMMA_M.eps
+
+#        curve=pslinepos.asci,pslineneg.asci npair=601,601 curvewidth=2,2 curvecolor=black,black curvedash=1 \
+#fmute file_shot=fdplus${base}.su file_out=nep.su above=-1 shift=6 verbose=1 check=1 hw=2
+suwind key=gx min=-3000000 max=3000000 dt=0.004 < Point_SOMMA_P.su | \
+        supsimage hbox=5 wbox=4 labelsize=12 linewidth=0.0 \
+        label1="time in s." label2="lateral distance in m." \
+        curve=pslinepos.asci,pslineneg.asci npair=601,601 curvewidth=2,2 curvecolor=black,black curvedash=2,5 \
+        n1tic=2 d2=10 f1=-2.044 x1beg=-0.604 x1end=1.4 d1num=0.2 \
+        f2=-3000 f2num=-3000 d2num=1000 clip=1e3 > 1Point_SOMMA_P.eps
+

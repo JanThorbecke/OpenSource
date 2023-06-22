@@ -1,0 +1,41 @@
+#!/bin/bash -x
+
+export OMP_NUM_THREADS=4
+
+src_angle=5
+inifile=SourceNew${src_angle}a160_rp.su
+base=${inifile%_rp.su}
+# for muteW use niter=2
+# change source code marchenko.c to generate mute windows. /* for testing time-windows with dipping plane waves */
+#base=MuteW
+
+#mute0Basic_001
+fmute file_shot=$inifile file_out=Pmute${src_angle}Basic_001.su above=-1 shift=7 verbose=1 \
+ check=0 hw=2 plane_wave=1 returnmask=1 src_angle=0
+
+#mute05_001
+fmute file_shot=$inifile file_out=fdplus${src_angle}.su above=-1 shift=-6 verbose=1 check=0 hw=2
+fmute file_shot=$inifile file_mute=fdplus${src_angle}.su file_out=Pmute${src_angle}_001.su above=0 shift=7 verbose=4 \
+ check=1 hw=2 plane_wave=1 returnmask=1 src_angle=${src_angle} iter=0
+
+#mute05_002
+fmute file_shot=$inifile file_mute=fdplus${src_angle}.su file_out=Pmute${src_angle}_002.su above=0 shift=7 verbose=4 \
+ check=1 hw=2 plane_wave=1 returnmask=1 src_angle=${src_angle} iter=1
+
+#with file_tinvi for opposite angle
+inifilei=SourceNew-${src_angle}a160_rp.su
+fmute file_shot=$inifilei file_out=fdplus-${src_angle}.su above=-1 shift=-6 verbose=1 check=0 hw=2
+set -x
+fmute file_shot=$inifile file_mute=fdplus${src_angle}.su file_mutei=fdplus-${src_angle}.su \
+	file_out=Pmutei${src_angle}_002.su above=0 shift=7 verbose=4 \
+	check=1 hw=2 plane_wave=1 returnmask=1 src_angle=${src_angle} iter=1
+
+#for testing mute window in manual  (B/W figures)
+#$exe file_shot=shots/refl_rp.su file_tinv=fdplus${base}.su nshots=601 verbose=2 \
+#        tap=3 niter=11 hw=2 shift=7 smooth=3 plane_wave=1 src_angle=$src_angle rotate=1 \
+#        file_green=green${base}.su file_gplus=Gplus${base}.su file_gmin=Gmin${base}.su  \
+#        file_f1plus=f1plus${base}.su file_f1min=f1min${base}.su file_f2=f2${base}.su file_iter=iter${base}.su 
+
+
+
+

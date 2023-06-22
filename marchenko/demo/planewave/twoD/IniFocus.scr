@@ -1,0 +1,105 @@
+#!/bin/bash
+#PBS -N fdelmod
+#PBS -q long
+#PBS -l nodes=1
+#PBS -k eo
+#PBS -j eo
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+
+
+#./model.scr
+dx=2.5
+dt=0.0005
+
+#makewave w=fw fmin=0 flef=5 frig=80 fmax=100  dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=0 scfft=1
+makewave fp=25 dt=$dt file_out=wave.su nt=4096 t0=0.1 scale=1
+
+#a=120
+#var=600
+a=160
+var=800
+
+for angle in 5 0 
+do
+
+  cat << EOF > slurm_$a.job 
+#!/bin/bash
+#SBATCH --cpus-per-task=4
+#SBATCH --ntasks=1
+#SBATCH -J mod_${a}
+#SBATCH -V
+#SBATCH -p max2h
+
+export PATH=\$HOME/src/OpenSource/bin:\$PATH:
+
+export OMP_NUM_THREADS=4
+varo=SourceSh${angle}a${a}.su
+varq=SourceSh-${angle}a${a}.su
+
+#June 10 2021 new negative time plane-wave modeling.
+varo=SourceNew${angle}a${a}.su
+varq=SourceNew-${angle}a${a}.su
+
+dx=2.5
+dt=0.0005
+
+fdelmodc \
+        file_cp=ge_cp.su ischeme=1 iorder=4 \
+        file_den=ge_ro.su \
+        file_src=wave.su \
+        file_rcv=\$varo \
+        src_type=1 \
+        src_orient=1 \
+        src_injectionrate=1 \
+        rec_type_vz=0 \
+        rec_type_p=1 \
+        rec_int_vz=2 \
+        rec_delay=0.1 \
+        dtrcv=0.004 \
+        verbose=2 \
+        tmod=2.500 \
+        dxrcv=10.0 \
+        tsnap1=0.1 tsnap2=0.5 file_snap=snap${angle}a${a}.su \
+        plane_wave=1 nsrc=2400 src_angle=$angle src_velo=1500 src_window=81 \
+        xrcv1=-3000 xrcv2=3000 \
+        zrcv1=0 zrcv2=0 \
+        xsrc=0 \
+        zsrc=$var \
+        left=2 right=2 top=2 bottom=2\
+
+
+fdelmodc \
+        file_cp=ge_cp.su ischeme=1 iorder=4 \
+        file_den=ge_ro.su \
+        file_src=wave.su \
+        file_rcv=\$varq \
+        src_type=1 \
+        src_orient=1 \
+        src_injectionrate=1 \
+        rec_type_vz=0 \
+        rec_type_p=1 \
+        rec_int_vz=2 \
+        rec_delay=0.1 \
+        dtrcv=0.004 \
+        verbose=2 \
+        tmod=2.500 \
+        dxrcv=10.0 \
+        tsnap1=0.1 tsnap2=0.5 file_snap=snap-${angle}a${a}.su \
+        plane_wave=1 nsrc=2400 src_angle=-$angle src_velo=1500 src_window=81 \
+        xrcv1=-3000 xrcv2=3000 \
+        zrcv1=0 zrcv2=0 \
+        xsrc=0 \
+        zsrc=$var \
+        left=2 right=2 top=2 bottom=2\
+
+
+
+EOF
+
+#sbatch slurm_$a.job
+chmod +x slurm_$a.job
+./slurm_$a.job
+
+done
+

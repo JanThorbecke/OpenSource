@@ -1,0 +1,17 @@
+#!/bin/bash
+#SBATCH --cpus-per-task=4
+#SBATCH --ntasks=1
+#SBATCH -J mod_160
+#SBATCH -V
+#SBATCH -p max2h
+
+export PATH=$HOME/src/OpenSource/bin:$PATH:
+
+export OMP_NUM_THREADS=4
+#June 10 2021 new negative time plane-wave modeling.
+varo=SourcePointa160.su
+
+dx=2.5
+dt=0.0005
+
+fdelmodc         file_cp=ge_cp.su ischeme=1 iorder=4         file_den=ge_ro.su         file_src=wave.su         file_rcv=$varo         src_type=1         src_orient=1         src_injectionrate=1         rec_type_vz=0         rec_type_p=1         rec_int_vz=2         rec_delay=0.1         dtrcv=0.004         verbose=2         tmod=2.500         dxrcv=10.0         plane_wave=0         xrcv1=-3000 xrcv2=3000         zrcv1=0 zrcv2=0         xsrc=0         zsrc=800         left=2 right=2 top=2 bottom=2
