@@ -1230,10 +1230,10 @@ long readModel3D(modPar mod, bndPar bnd, float ***rox, float ***roy, float ***ro
         	ixe = mod.iePx;
 	        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.ntap;
 	        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.ntap;
-        	iyo = mod.ioPy;
-        	iye = mod.ioPy+bnd.ntap;
-        	izo = mod.ioPz;
-        	ize = mod.iePz;
+        	iyo = mod.ioTy;
+        	iye = mod.ioTy+bnd.ntap;
+        	izo = mod.ioTz;
+        	ize = mod.ieTz;
             for (iy=iyo; iy<iye; iy++) {
         	    for (ix=ixo; ix<ixe; ix++) {
             	    for (iz=izo; iz<ize; iz++) {
