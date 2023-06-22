@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# Add interface line to postscript file of model 
+cat << EOF1 > line1
+400 -2500
+400 2500
+EOF1
+
+cat << EOF2 > line2
+700 -2500
+700 2500
+EOF2
+
+cat << EOF3 > line3
+1100 -2500
+1100 2500
+EOF3
+
+cat << EOF4 > focal
+900 -2500
+900 2500
+EOF4
+
+
+if [[ "$1" == "snapshots" ]];
+then
+#plane-wave snapshots
+for file in backa0_sp.su backa3_sp.su
+do
+  sumax < $file mode=abs outpar=nep
+  clipf1=`cat nep | awk '{print $1/7}'`
+
+  file_base=${file%.su}
+  for fldr in 20 22 24 26 21 23 25
+  do
+    suwind < $file key=fldr min=$fldr max=$fldr > shottmp.su
+    supsimage < shottmp.su hbox=4 wbox=4 labelsize=14 linewidth=0.0 \
+      n1tic=2 f1=0 \
+      curve=line1,line2,line3,focal npair=2,2,2,2 curvecolor=black,black,black,white curvedash=2,2,2,5 \
+      label1="depth [m]" label2="lateral distance [m]" \
+      f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > ${file_base}_$fldr.eps
+
+   done
+done
+exit
+fi
+
+
+if [[ "$1" == "plane" ]];
+then
+  for a in 0 3
+  do
+    for file in f1plusPla${a}.su backpropf1plus${a}_rp.su
+    do
+      file_base=${file%.su}
+      sumax < $file mode=abs outpar=nep
+      clipf1=`cat nep | awk '{print $1/3}'`
+      supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
+          n1tic=2 x1beg=-0.7 x1end=0.7 f1=-2.044 \
+          label1="time [s]" label2="lateral distance [m]" \
+          f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > $file_base.eps
+    done
+    for file in iniFocusPlane_a${a}_rp.su 
+    do
+      file_base=${file%.su}
+      sumax < $file mode=abs outpar=nep
+      clipf1=`cat nep | awk '{print $1/3}'`
+      supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
+          n1tic=2 x1end=1.4 f1=0 \
+          label1="time [s]" label2="lateral distance [m]" \
+          f1=0 f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > $file_base.eps
+    done
+  done
+  exit
+fi
+

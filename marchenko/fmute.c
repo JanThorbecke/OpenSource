@@ -351,10 +351,18 @@ int main (int argc, char **argv)
                 jmax = muteW[i]-shift;
                 tmpdata[i*nt1+jmax] = 2*xmax;
             }
-            if (above==0){
-                for (i = 0; i < nx1; i++) {
-                    jmax = nt2-muteW[i]+shift;
-                    tmpdata[i*nt1+jmax] = 2*xmax;
+            if (plane_wave) {
+                    for (i = 0; i < nx1; i++) {
+                        jmax=mapj(-muteWi[i]+shift,nt1);
+                        tmpdata[i*nt1+jmax] = 2*xmax;
+                    }
+            }
+            else {
+                if (above==0){
+                    for (i = 0; i < nx1; i++) {
+                        jmax = nt2-muteW[i]+shift;
+                        tmpdata[i*nt1+jmax] = 2*xmax;
+                    }
                 }
             }
             ret = writeData(fp_chk, tmpdata, hdrs_in1, nt1, nx1);
@@ -363,7 +371,8 @@ int main (int argc, char **argv)
                 jmax = muteW[i]-shift;
                 if (above==6) jmax = muteW[i]+shift;
                 ret = fprintf(fp_psline1, "%.5f %.5f \n",jmax*dt,hdrs_in1[i].gx*sclshot);
-                jmax =-muteW[i]+shift;
+                if (plane_wave) jmax=-muteWi[i]+shift;
+                else jmax =-muteW[i]+shift;
                 ret = fprintf(fp_psline2, "%.5f %.5f \n",jmax*dt,hdrs_in1[i].gx*sclshot);
             }
         }

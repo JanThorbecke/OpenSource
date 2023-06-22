@@ -1,0 +1,59 @@
+#!/bin/bash
+
+export PATH=$HOME/src/OpenSource/bin/:$PATH:
+
+dx=2.5
+dt=0.0005
+
+file_cp=model10_cp.su
+file_ro=model10_ro.su
+
+export OMP_NUM_THREADS=4
+
+# t=0 focal time is at 2.0445 seconds back=propagating
+# shift f2.su such that t=0 is positioned in the middle of the time axis
+# the extra shift of 0.000250 is needed because of the staggered time implementation of the Finite Difference program.
+ns=1024
+dtrcv=`surange < f2.su | grep dt | awk '{print $2/1000000.0}'`
+suwind key=gx min=-2250000 max=2250000 itmax=1023 < f2.su > nep.su
+shift=$(echo "scale=6; ($dtrcv*($ns/2.0-1)+$dt)" | bc -l)
+echo $shift
+basop choice=shift shift=$shift file_in=nep.su verbose=1 > pplus.su
+
+
+# the f2.su is sampled with 4ms the FD program need 0.5ms
+# time axis is interpolated by making use of FFT's: sinc interpolation
+#ftr1d file_in=pplus.su file_out=freq.su
+#sushw < freq.su key=nhs,dt a=8192,500 > fr.su
+#ftr1d file_in=fr.su n1=8194 file_out=pplusdt.su verbose=1
+#this is now done within the fdelmodc code: 
+
+#backpropagate f2.su and collect snapshots
+fdelmodc \
+    file_cp=$file_cp ischeme=1 iorder=4 \
+    file_den=$file_ro \
+    file_src=pplus.su \
+	dt=$dt \
+    file_rcv=backprop_f2_z900.su \
+    grid_dir=0 \
+    src_type=1 \
+    src_injectionrate=1 \
+	src_orient=1 \
+    rec_type_vz=0 \
+    rec_type_p=1 \
+    rec_int_vz=2 \
+    dtrcv=0.004 \
+	rec_delay=0.0 \
+    verbose=2 \
+    tmod=3.10 \
+    dxrcv=5.0 \
+    xrcv1=-2250 xrcv2=2250 \
+    zrcv1=900 zrcv2=900 \
+	zsrc=0 xsrc=0 \
+    npml=101 \
+	file_snap=backpropf2.su tsnap1=1.040 dtsnap=0.01 tsnap2=3.040 dxsnap=5 dzsnap=5 zsnap1=0 zsnap2=1250 xsnap1=-1000 xsnap2=1000 \
+    sna_type_vz=0 \
+    sna_type_p=1 \
+    left=2 right=2 top=2 bottom=2
+
+
