@@ -4,16 +4,14 @@
 #include <math.h>
 #include "par.h"
 #include "segy.h"
-#ifdef _OPENMP
-#include <omp.h>
-#endif
 
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
 #ifdef _OPENMP
-int omp_get_thread_num(void);
+#include <omp.h>
+//int omp_get_thread_num(void);
 #endif
 double wallclock_time(void);
 void name_ext(char *filename, char *extension);
@@ -27,7 +25,7 @@ int optncr(int n);
 
 int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *nxm);
 
-int readShotData(char *filename, float xmin, float dx, float *xrcv, float *xsrc, int *xnx, complex *cdata, int nw, int nw_low, int ngath, int nx, int nxm, int ntfft, float alpha, float scl, float conjg, int transpose, int verbose);
+int readShotData(char *filename, float xmin, float dx, float *xrcv, float *xsrc, int *xnx, complex *cdata, int nw, int nw_low, int ngath, int nx, int nxm, int ntfft, float alpha, float scl, float conjg, int transpose, char *filemute, int verbose);
 
 //int deconvolve(complex *cA, complex *cB, complex *cC, complex *oBB, int nfreq, int nblock, size_t nstationA, size_t nstationB, float eps_a, float eps_r, float numacc, int eigenvalues, float *eigen, int rthm, int mdd, int conjgA, int conjgB, int verbose);
 int deconvolve(complex *cA, complex *cB, complex *cC, complex *oBB, int nfreq, int nblock, size_t nstationA, size_t nstationB, float eps_a, float eps_r, float numacc, int eigenvalues, float *eigen, int rthm, int mdd, int conjgA, int conjgB, int lsqr_iter, float lsqr_damp, int k_iter, float TCscl, int verbose);
@@ -68,6 +66,7 @@ char *sdoc[] = {
 "   sclA/B/C=1 ............... apply scaling factor to A/B/C",
 "   tranposeA/B/C=0 .......... 1 => apply transpose to A/B/C",
 "   k_iter=5 ................. Iterations for MDD=6",
+"   file_muteA/B/C ........... Binary files with top and bottom mute",
 " MATRIX INVERSION CALCULATION ",
 "   conjgA=0 ................. apply complex conjugate-transpose to A",
 "   conjgB=1 ................. apply complex conjugate-transpose to B",
@@ -149,7 +148,7 @@ int main (int argc, char **argv)
  	complex *cdataout, *cTemp;
 
 	double  t0, t1, t2, t3, tinit, twrite, tread, tdec, tfft;
- 	char	*file_A, *file_B, *file_C, *file_out, *file_dmat, filename[1024], number[128], *rthmName;
+ 	char	*file_A, *file_B, *file_C, *file_out, *file_dmat, *file_muteA, *file_muteB, *file_muteC, filename[1024], number[128], *rthmName;
 	int     pe=0, root_pe=0, npes=1, ipe, size_s, one_file;
 	complex *cA, *cC, *oBB;
 	segy *hdr;
@@ -168,6 +167,10 @@ int main (int argc, char **argv)
  	assert(file_out != NULL);
 	if (!getparstring("file_dmat", &file_dmat)) file_dmat=NULL;
 	if (!getparint("one_file", &one_file)) one_file = 1;
+	
+	if (!getparstring("file_muteA", &file_muteA)) file_muteA=NULL;
+	if (!getparstring("file_muteB", &file_muteB)) file_muteB=NULL;
+	if (!getparstring("file_muteC", &file_muteC)) file_muteC=NULL;
 
 	if (!getparfloat("fmin", &fmin)) fmin = 0.0;
 	if (!getparint("rthm", &rthm)) rthm = 0;
@@ -382,21 +385,21 @@ int main (int argc, char **argv)
     xrcvA     = (float *)calloc(nshotA*nstationA,sizeof(float));
     xnx       = (int *)calloc(nshotA,sizeof(int));
 	alpha = 0.0;
-    readShotData(file_A, xmin, dx, xrcvA, xsrcA, xnx, cA, nw, nw_low, nshotA, nstationA, nstationA, ntfft, alpha, sclA, cjA, transposeA, verbose);
+    readShotData(file_A, xmin, dx, xrcvA, xsrcA, xnx, cA, nw, nw_low, nshotA, nstationA, nstationA, ntfft, alpha, sclA, cjA, transposeA, file_muteA, verbose);
     xsrcB     = (float *)calloc(nshotB,sizeof(float));
     xrcvB     = (float *)calloc(nshotB*nstationB,sizeof(float));
 	alpha = 0.0;
-    readShotData(file_B, xmin, dx, xrcvB, xsrcB, xnx, cB, nw, nw_low, nshotB, nstationB, nstationB, ntfft, alpha, sclB, cjB, transposeB, verbose);
+    readShotData(file_B, xmin, dx, xrcvB, xsrcB, xnx, cB, nw, nw_low, nshotB, nstationB, nstationB, ntfft, alpha, sclB, cjB, transposeB, file_muteB, verbose);
     if (file_C != NULL && mdd != 3) {
         xsrcC     = (float *)calloc(nshotC,sizeof(float));
         xrcvC     = (float *)calloc(nshotC*nstationC,sizeof(float));
         alpha = 0.0;
-        readShotData(file_C, xmin, dx, xrcvC, xsrcC, xnx, cC, nw, nw_low, nshotC, nstationC, nstationC, ntfft, alpha, sclC, cjC, transposeC, verbose);
+        readShotData(file_C, xmin, dx, xrcvC, xsrcC, xnx, cC, nw, nw_low, nshotC, nstationC, nstationC, ntfft, alpha, sclC, cjC, transposeC, file_muteC, verbose);
     } else if (file_C != NULL) {
         xsrcC     = (float *)calloc(nshotC,sizeof(float));
         xrcvC     = (float *)calloc(nshotC*nstationC,sizeof(float));
         alpha = 0.0;
-        readShotData(file_C, xmin, dx, xrcvC, xsrcC, xnx, cdataout, nw, nw_low, nshotC, nstationC, nstationC, ntfft, alpha, sclC, cjC, transposeC, verbose);
+        readShotData(file_C, xmin, dx, xrcvC, xsrcC, xnx, cdataout, nw, nw_low, nshotC, nstationC, nstationC, ntfft, alpha, sclC, cjC, transposeC, file_muteC, verbose);
     }
 
     if (ntapA != 0) {

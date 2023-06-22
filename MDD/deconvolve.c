@@ -4,6 +4,9 @@
 #include <math.h>
 #include <string.h>
 #include <par.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 #ifdef MKL
 #include<mkl_cblas.h>
 #endif
