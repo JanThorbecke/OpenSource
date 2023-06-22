@@ -90,11 +90,11 @@ On entry, LDC specifies the first dimension of C as declared in the calling (sub
 */
 
 // zLSQR implementation
-void zLSQR_(int *m, int *n, size_t *indw, void (*Aprod1)(int *,int *, complex *, complex *, size_t *), void (*Aprod2)(int *,int *, complex *, complex *, size_t *), complex *b, float *damp, int *wantse, complex *x, float *se, float *atol, float *btol, float* conlim,  int* itnlim, int *nout, int *istop, int *itn, float *Anorm, float *Acond, float *rnorm, float *Arnorm, float *xnorm); //, complex *w, complex *v);
+void zLSQR_(int *m, int *n, size_t *indw, void (*Aprod1)(int *,int *, float *, float *, unsigned long *), void (*Aprod2)(int *,int *, float *, float *, unsigned long *), complex *b, float *damp, int *wantse, complex *x, float *se, float *atol, float *btol, float* conlim,  int* itnlim, int *nout, int *istop, int *itn, float *Anorm, float *Acond, float *rnorm, float *Arnorm, float *xnorm); //, complex *w, complex *v);
 
 // C funcs as input for Fortran subroutines in zLSQR
-void Aprod1_(int *m, int *n, float *x, float *y, size_t *indw);
-void Aprod2_(int *m, int *n, float *x, float *y, size_t *indw);
+void Aprod1_(int *m, int *n, float *x, float *y, unsigned long *indw);
+void Aprod2_(int *m, int *n, float *x, float *y, unsigned long *indw);
 
 void computeMatrixInverse(complex *matrix, int nxm, int rthm, float eps_a, float eps_r, float numacc, int eigenvalues, float *eigen, int iw, int verbose);
 
@@ -288,7 +288,7 @@ private(iw, iwnA, iwnB, iwAB, iwBB)
 }
 
 
-void Aprod1_(int *m, int *n, float *x, float *y, size_t *indw) {
+void Aprod1_(int *m, int *n, float *x, float *y, unsigned long *indw) {
 	int ldc;
 	complex beta, alpha;
 	char *transa, *transb;
@@ -315,7 +315,7 @@ void Aprod1_(int *m, int *n, float *x, float *y, size_t *indw) {
 	*/
 }
 
-void Aprod2_(int *m, int* n, float *x, float *y, size_t *indw) {
+void Aprod2_(int *m, int* n, float *x, float *y, unsigned long *indw) {
 	int ldc;
 	complex beta, alpha;
 	char *transa, *transb;
