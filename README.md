@@ -44,27 +44,28 @@ Download: https://janth.home.xs4all.nl/Publications/Articles/ThorbeckeGPY2017.pd
 Virtual acoustics in inhomogeneous media with single-sided access:
  Wapenaar, K., Brackenhoff, J., Thorbecke, J., van der Neut, J., Slob, E., and Verschuur, E., 
 2018, Scientific Reports, Vol. 8, 2497. 
-Download: http://homepage.tudelft.nl/t4n4v/4_Journals/Nature/SR_18.pdf
+Download: https://www.keeswapenaar.nl/4_Journals/Nature/SR_18.pdf
 
 -4- When you are using the marchenko_primaries algorithm developed by Lele Zhang please refer to the following papers
 
 Free-surface and internal multiple elimination in one step without adaptive subtraction
 Lele Zhang and Evert Slob
 2019, Geophysics, Vol. 84, no. 1 (January-February); p. A7-A11, doi: 10.1190/GEO2018-0548.1
-Download: http://homepage.tudelft.nl/t4n4v/BeyondInterferometry/geo_19h.pdf
+Download: https://www.keeswapenaar.nl/BeyondInterferometry/geo_19h.pdf
 
 and
 
 Implementation of the Marchenko Multiple Elimination algorithm,
 Jan Thorbecke, Lele Zhang, Kees Wapenaar, Evert Slob,
 2021, Geophysics, Vol. 86, no. 2 (March-April); p. 1-15, doi: 10.1190/GEO2020-0196.1
+Download: https://www.keeswapenaar.nl/4_Journals/Geophysics/geo_21b.pdf
 
 -5- If you use the fdacrtmc code of Max Holicki please refer to the following paper:
 
 Acoustic directional snapshot wavefield decomposition
 Holicki, M., Drijkoningen, G., and Wapenaar, K., 2019, Acoustic directional snapshot wavefield decomposition: 
 Geophysical Prospecting, Vol. 67, 32-51
-Download: http://homepage.tudelft.nl/t4n4v/4_Journals/Geophys.Prosp/GP_19a.pdf
+Download: https://www.keeswapenaar.nl/4_Journals/Geophys.Prosp/GP_19a.pdf
 
 -6- If you use the vmar code of Johno van IJsseldijk please refer to the following paper:
 
@@ -78,7 +79,7 @@ Download: https://keeswapenaar.nl/4_Journals/Geophysics/geo_23a.pdf
 Design of one-way wavefield extrapolation operators, using smooth functions in WLSQ optimisation.
 Jan Thorbecke, Kees Wapenaar, Gerd Swinnen, 
 2004, Geophysics Vol 69, p. 1037-1045
-Download: http://homepage.tudelft.nl/t4n4v/4_Journals/Geophysics/geo_04.pdf
+Download: https://www.keeswapenaar.nl/4_Journals/Geophysics/geo_04.pdf
 
 INSTALLATION
 -------------
