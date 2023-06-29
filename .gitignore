@@ -3,6 +3,7 @@
 *.mod
 bin/*
 *.su
+*.toc
 *.aux
 *.log
 *.bin
