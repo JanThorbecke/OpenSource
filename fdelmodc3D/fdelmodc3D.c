@@ -680,7 +680,10 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
                     if (mod.iorder==4) {
 					 elastic4_3D(mod, src, wav, bnd, it, ixsrc, iysrc, izsrc, src_nwav,
 							vx, vy, vz, tzz, tyy, txx, txz, txy, tyz, rox, roy, roz, l2m, lam, mul, verbose);
+#pragma omp master
+{
 					 vmess("****** Elastic order 4 not yet TESTED ******* ");
+}
 					}
 					else if (mod.iorder==6) {
 						vmess("Elastic order 6 not yet available");
