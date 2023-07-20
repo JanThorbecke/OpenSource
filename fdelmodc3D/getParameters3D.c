@@ -144,6 +144,7 @@ long getParameters3D(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar 
 	mod->nfz = nz;
 	mod->nfx = nx;
 	mod->nfy = ny;
+
     /* check if 1D, 2D or full 3D gridded model is given as input model */
 	if (nx==1 && ny==1 ) { // 1D model 
         if (!getparlong("nx",&nx)) nx=nz;
