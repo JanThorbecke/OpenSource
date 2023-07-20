@@ -105,13 +105,15 @@ char *sdoc[] = {
 "   file_rcv=recv.su .. base name for receiver files",
 "   file_snap=snap.su . base name for snapshot files",
 "   file_beam=beam.su . base name for beam fields ",
+"   nx= ............... for 1D model input files extend model with nx samples",
 "   dx= ............... read from model file: if dx==0 then dx= can be used to set it",
+"   ny=nx ............. for 2D model input files extend model with ny samples",
 "   dy= ............... read from model file: if dy==0 then dy= can be used to set it",
 "   dz= ............... read from model file: if dz==0 then dz= can be used to set it",
 "   dt= ............... read from file_src: if dt is set it will interpolate file_src to dt sampling",
 "" ,
 " OPTIONAL PARAMETERS:",
-"   ischeme=3 ......... 1=acoustic, 2=visco-acoustic 3=elastic, 4=visco-elastic, 5=double-couple",
+"   ischeme=1 ......... 1=acoustic, 2=visco-acoustic 3=elastic, 4=visco-elastic, 5=double-couple",
 "   tmod=(nt-1)*dt .... total modeling time (nt from file_src)",
 "   ntaper=0 .......... length of taper in points at edges of model",
 "   npml=35 ........... length of PML layer in points at edges of model",
@@ -682,7 +684,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
 							vx, vy, vz, tzz, tyy, txx, txz, txy, tyz, rox, roy, roz, l2m, lam, mul, verbose);
 #pragma omp master
 {
-					 vmess("****** Elastic order 4 not yet TESTED ******* ");
+					 vmess("****** Elastic order 4 not yet fully TESTED ******* ");
 }
 					}
 					else if (mod.iorder==6) {
