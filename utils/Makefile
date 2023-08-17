@@ -3,7 +3,7 @@
 include ../Make_include
 
 #LIBS    += -L$L -lgenfft -lm $(LIBSM)
-LIBS    += -L$L -lgenfft -lzfp
+LIBS    += -lzfp
 #OPTC += -openmp 
 #OPTC += -g -O0
 
@@ -26,6 +26,7 @@ SRCM	= \
 		sinuousint.c \
 		spline.c \
 		name_ext.c  \
+		writeData.c \
 		allocs.c  \
 		verbosepkg.c  \
 		atopkge.c \
