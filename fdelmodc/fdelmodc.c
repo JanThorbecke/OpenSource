@@ -535,7 +535,7 @@ int main(int argc, char **argv)
 			it1=mod.nt+NINT(-mod.t0/mod.dt);
 			its=1;
 		}
-        perc=it1/100;if(!perc)perc=1;
+                perc=it1/100;if(!perc)perc=1;
 
 		/* Main loop over the number of time steps */
 		for (it=it0; it<it1; it++) {

@@ -19,7 +19,11 @@ ALLINC  = -I.
 #LDFLAGS += -Mprof=lines
 #LDFLAGS += -Wl,-z,muldefs
 
-all: fdelmodc 
+ifdef MPICC
+all: fdelmodc  fdelmodc_mpi
+else
+all: fdelmodc
+endif
 
 PRG = fdelmodc
 
@@ -66,7 +70,17 @@ SRCC	= $(PRG).c \
 OBJC	= $(SRCC:%.c=%.o)
 
 $(PRG):	$(OBJC) fdelmodc.h
+	$(CC) $(CFLAGS) $(OPTC) -c writeRec.c 
+	$(CC) $(CFLAGS) $(OPTC) -c fdelmodc.c 
 	$(CC) $(LDFLAGS) $(CFLAGS) $(OPTC) -o fdelmodc $(OBJC) $(LIBS)
+
+ifdef MPICC
+fdelmodc_mpi:
+	$(MPICC) -DMPI $(CFLAGS) $(OPTC) -c writeRec.c 
+	$(MPICC) -DMPI $(CFLAGS) $(OPTC) -c fdelmodc.c 
+	$(MPICC) -DMPI $(CFLAGS) $(OPTC) $(LDFLAGS) $(OBJC) $(LIBS) -o fdelmodc_mpi
+	cp -rp fdelmodc_mpi $B
+endif
 
 install: fdelmodc 
 	cp fdelmodc $B
