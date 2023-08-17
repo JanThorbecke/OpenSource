@@ -2,8 +2,8 @@
 
 include ../Make_include
 
-LIBS    += -L$L -lgenfft -lzfp $(LIBSM)
-CFLAGS  += 
+LIBS    += -lzfp 
+#CFLAGS  += 
 #OPTC += -g -O0 -Wall 
 
 #ALL: fmute marchenko marchenko2

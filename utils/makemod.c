@@ -10,10 +10,10 @@
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 #endif
 #ifndef MAX
-#define	MAX(x,y) ((x) > (y) ? (x) : (y))
+#define    MAX(x,y) ((x) > (y) ? (x) : (y))
 #endif
 #ifndef MIN
-#define	MIN(x,y) ((x) < (y) ? (x) : (y))
+#define    MIN(x,y) ((x) < (y) ? (x) : (y))
 #endif
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
@@ -44,13 +44,15 @@ void diffraction(float *x, float *z, int nxp, float dx, float dz, float **gridcp
 
 void randdf(float *x, float *z, int nxp, float dx, float dz, float **gridcp, float **gridcs, float **gridro, float **cp, float **cs, float **ro, float *interface, int *zp, int nx, float sizex, float sizez, int ndiff, int diffrwidth, int type);
 
+int writeNetCDF(char *filename, float *data, segy *hdrs, int n1, int n2);
+
 /*********************** self documentation **********************/
 char *sdoc[] = {
-  " 								",
+  "                                 ",
   " makemod - gridded subsurface model builder",
-  " 								",
+  "                                 ",
   " makemod file_base= cp0= sizex= sizez= dx= dz= [optional parameters] ",
-  " 							        ",
+  "                                     ",
   " Required parameters:",
   " ",
   "   file_base= ............... base name of the output file(s).",
@@ -142,14 +144,14 @@ int main(int argc, char **argv)
 {
   FILE *fpint, *fpcp, *fpcs, *fpro;
   int   example, verbose, writeint, nb;
-  int	above, diffrwidth, dtype, reflectivity, supersmooth;
+  int    above, diffrwidth, dtype, reflectivity, supersmooth;
   int   Ngp, Ngs, Ngr, Np, Ns, Nr, Ng, Ni, Nv, Nvi, No, Noi;
   int   jint, jcount, j, ix, iz, nx, nz, nxp, nzp, *zp, nmaxx, nminx, optgrad, poly, gradt; 
-  int	ncp, nro, ncs, nvel, skip, rayfile, store_int;
+  int    ncp, nro, ncs, nvel, skip, rayfile, store_int, netcdf;
   long lseed;
   size_t  nwrite;
   float *data_out, orig[2], cp0, cs0, ro0, Z1, Z2, sigma;
-  float	*x, *z, *var, *interface, **inter;
+  float    *x, *z, *var, *interface, **inter;
   float back[3], sizex, sizez, dx, dz;
   float **cp ,**cs, **ro, aver, gradlen, gradcp, gradcs, gradro;
   
@@ -177,6 +179,12 @@ int main(int argc, char **argv)
     if(!getparstring("file_base",&file_base))
       verr("file_base not specified.");
   }
+  if (strstr(file_base, ".nc") != NULL) netcdf=1;
+#ifndef _NETCDF
+  if (netcdf) {
+    verr("file_base defined for NetCDF output, but code not compiled for NetCDF support: recompile with -D_NETCDF.");
+  }
+#endif
   if(getparfloat("back", back)) {
     vwarn("parameters back is not used anymore");
     vwarn("it has changed into cp0 (ro0,cs0 are optional)");
@@ -251,10 +259,10 @@ int main(int argc, char **argv)
     if (strstr(intt,"rough") != NULL) Nvi++;
     if (strstr(intt,"fract") != NULL) Nvi++;
     if (strstr(intt,"elipse") != NULL) Nvi++;
-	if (strstr(intt,"random") != NULL) Nvi++;
-//	if (strstr(intt,"randdf") != NULL) Nvi++;
+    if (strstr(intt,"random") != NULL) Nvi++;
+//    if (strstr(intt,"randdf") != NULL) Nvi++;
     if (strstr(intt,"diffr") != NULL || strstr(intt,"randdf") != NULL) {
-	  Nvi++;
+      Nvi++;
 //      if (Ng != 0) Ng++; 
 //      if (No != 0) No++;
     }
@@ -395,8 +403,8 @@ int main(int argc, char **argv)
   
   for (jcount = 1; jcount <= Np; jcount++) {
     
-    /* for above interface definition reverse	*/
-    /* order of interfaces to scan 			*/
+    /* for above interface definition reverse    */
+    /* order of interfaces to scan             */
     if (above == 0) jint=jcount;
     else jint=Np+1-jcount;
     
@@ -452,7 +460,7 @@ int main(int argc, char **argv)
     free(z);
     x = (float *)malloc(nxp*sizeof(float));
     z = (float *)malloc(nzp*sizeof(float));
-	memset(interface, 0, nx*sizeof(float));
+    memset(interface, 0, nx*sizeof(float));
     
     getnparfloat(jint,"x",x);
     getnparfloat(jint,"z",z);
@@ -480,13 +488,13 @@ int main(int argc, char **argv)
     
     if (nvel != 1) {
       if (ncp == 1) {
-	for (j = 1; j < nvel; j++) cp[2][j] = cp[2][0];
+    for (j = 1; j < nvel; j++) cp[2][j] = cp[2][0];
       }
       if (ncs == 1) {
-	for (j = 1; j < nvel; j++) cs[2][j] = cs[2][0];
+    for (j = 1; j < nvel; j++) cs[2][j] = cs[2][0];
       }
       if (nro == 1) {
-	for (j = 1; j < nvel; j++) ro[2][j] = ro[2][0];
+    for (j = 1; j < nvel; j++) ro[2][j] = ro[2][0];
       }
     }
     
@@ -497,24 +505,24 @@ int main(int argc, char **argv)
       if (Ns) vmess("Interface gradient cs ... = %f", gradcs);
       if (Nr) vmess("Interface gradient ro ... = %f", gradro);
       if (verbose>=2) {
-	vmess("Polynomal ............... = %d", poly);
-	vmess("Number of (x,z) points... = %d", nxp);
-	vmess("P-wave velocities ....... = %d", ncp);
-	if (Ns) vmess("S-wave velocities ....... = %d", ncs);
-	if (Nr) vmess("Densities ............... = %d", nro);
+    vmess("Polynomal ............... = %d", poly);
+    vmess("Number of (x,z) points... = %d", nxp);
+    vmess("P-wave velocities ....... = %d", ncp);
+    if (Ns) vmess("S-wave velocities ....... = %d", ncs);
+    if (Nr) vmess("Densities ............... = %d", nro);
       }
       for (j = 0; j < nxp; j++) {
-	vmess("x = %6.1f \t z = %6.1f", x[j], z[j]);
-	if (nvel != 1) {
-	  vmess("    cp = %f", cp[2][j]);
-	  if (Ns) vmess("    cs = %f", cs[2][j]);
-	  if (Nr) vmess("   rho = %f", ro[2][j]);
-	}
+    vmess("x = %6.1f \t z = %6.1f", x[j], z[j]);
+    if (nvel != 1) {
+      vmess("    cp = %f", cp[2][j]);
+      if (Ns) vmess("    cs = %f", cs[2][j]);
+      if (Nr) vmess("   rho = %f", ro[2][j]);
+    }
       }
       if (nvel == 1) {
-	vmess("    cp = %f", cp[2][0]);
-	if (Ns) vmess("    cs = %f", cs[2][0]);
-	if (Nr) vmess("    rho = %f", ro[2][0]);
+    vmess("    cp = %f", cp[2][0]);
+    if (Ns) vmess("    cs = %f", cs[2][0]);
+    if (Nr) vmess("    rho = %f", ro[2][0]);
       }
     }
     
@@ -529,21 +537,21 @@ int main(int argc, char **argv)
     if (gradlen > 0) optgrad = gradt;
     else optgrad = 3;
     
-	if (strstr(intt,"random") != NULL) {
-		Nv = countnparval(Nvi,"var");
-		if (Nv != 1) verr("Random interface must have 1 variables.");
-		getnparfloat(Nvi,"var", var);
-		lseed = (long)var[0];
-		srand48(lseed);
-		gradcp=gradcs=gradro=var[0];
-		optgrad = 4;
+    if (strstr(intt,"random") != NULL) {
+        Nv = countnparval(Nvi,"var");
+        if (Nv != 1) verr("Random interface must have 1 variables.");
+        getnparfloat(Nvi,"var", var);
+        lseed = (long)var[0];
+        srand48(lseed);
+        gradcp=gradcs=gradro=var[0];
+        optgrad = 4;
         if (above == 0) Noi++; else Noi--;
         if (above == 0) Nvi++; else Nvi--;
-	}
-	  
+    }
+      
     if ((strstr(intt,"diffr") == NULL) && (strstr(intt,"randdf") == NULL)) {
       interpolation(x, z, nxp, nx, poly, &nminx, &nmaxx, dx, 
-		    cp, cs, ro, nvel, interface);
+            cp, cs, ro, nvel, interface);
     }
 
     if ( (strstr(intt,"def") != NULL) || (strstr(intt,"random") != NULL) ) {
@@ -572,62 +580,62 @@ int main(int argc, char **argv)
       if (Nv != 6) verr("Fractal interface must have 6 variables.");
       getnparfloat(Nvi,"var", var);
       fractint(zp, nminx, nmaxx, dx, dz, interface, var[0], var[1], 
-	       var[2], var[3], var[4], var[5]);
+           var[2], var[3], var[4], var[5]);
       if (above == 0) Noi++; else Noi--;
       if (above == 0) Nvi++; else Nvi--;
     }
     if ((strstr(intt,"elipse") != NULL) || (strstr(intt,"diffr") != NULL) || (strstr(intt,"randdf") != NULL)) {
-   	    if (strstr(intt,"randdf") != NULL) {
-        	Nv = countnparval(Nvi, "var");
-			if (Nv != 2) verr("randdf interface must have 2 variables: number of points, width.");
-			getnparfloat(Nvi,"var", var);
-        	if(!getparint("dtype", &dtype)) dtype = -1;
+           if (strstr(intt,"randdf") != NULL) {
+            Nv = countnparval(Nvi, "var");
+            if (Nv != 2) verr("randdf interface must have 2 variables: number of points, width.");
+            getnparfloat(Nvi,"var", var);
+            if(!getparint("dtype", &dtype)) dtype = -1;
         
-        	randdf(x, z, nxp, dx, dz, gridcp, gridcs, gridro, cp, cs, ro,
-           	   interface, zp, nx, sizex, sizez, var[0], (int)var[1], dtype);
+            randdf(x, z, nxp, dx, dz, gridcp, gridcs, gridro, cp, cs, ro,
+                  interface, zp, nx, sizex, sizez, var[0], (int)var[1], dtype);
 
-			if (above == 0) Noi++; else Noi--;
-			if (above == 0) Nvi++; else Nvi--;
-		}
-		if (strstr(intt,"elipse") != NULL) {
-			Nv = countnparval(Nvi, "var");
-			if (Nv != 2) verr("Elipse interface must have 2 variables.");
-			getnparfloat(Nvi,"var", var);
-			elipse(x, z, nxp, dx, dz, gridcp, gridcs, gridro, 
-				cp, cs, ro, interface, zp, nz, nx, var[0], var[1], gradcp, gradcs, gradro);
-			if (above == 0) Noi++; else Noi--;
-			if (above == 0) Nvi++; else Nvi--;
-		}
-		else if ((strstr(intt,"diffr") != NULL)) {
-			Nv = countnparval(Nvi, "var");
-        	if (Nv == 2 || Nv == 1) {
-           		getnparfloat(Nvi,"var", var);
-           		diffrwidth=(int)var[0];
-           		if (Nv==1) {
-           			if(!getparint("dtype", &dtype)) dtype = 0;
-			}
-           		else dtype=(int)var[1];
-        	}
-        	else {
-           		verr("diffr interface must have 1 or 2 variables: width,type.");
-        	}
-        	
-			diffraction(x, z, nxp, dx, dz, gridcp, gridcs, gridro,
-				cp, cs, ro, interface, zp, nx, diffrwidth, dtype);
-			if (above == 0) Noi++; else Noi--;
-			if (above == 0) Nvi++; else Nvi--;
-		}
-	}
+            if (above == 0) Noi++; else Noi--;
+            if (above == 0) Nvi++; else Nvi--;
+        }
+        if (strstr(intt,"elipse") != NULL) {
+            Nv = countnparval(Nvi, "var");
+            if (Nv != 2) verr("Elipse interface must have 2 variables.");
+            getnparfloat(Nvi,"var", var);
+            elipse(x, z, nxp, dx, dz, gridcp, gridcs, gridro, 
+                cp, cs, ro, interface, zp, nz, nx, var[0], var[1], gradcp, gradcs, gradro);
+            if (above == 0) Noi++; else Noi--;
+            if (above == 0) Nvi++; else Nvi--;
+        }
+        else if ((strstr(intt,"diffr") != NULL)) {
+            Nv = countnparval(Nvi, "var");
+            if (Nv == 2 || Nv == 1) {
+                   getnparfloat(Nvi,"var", var);
+                   diffrwidth=(int)var[0];
+                   if (Nv==1) {
+                       if(!getparint("dtype", &dtype)) dtype = 0;
+            }
+                   else dtype=(int)var[1];
+            }
+            else {
+                   verr("diffr interface must have 1 or 2 variables: width,type.");
+            }
+            
+            diffraction(x, z, nxp, dx, dz, gridcp, gridcs, gridro,
+                cp, cs, ro, interface, zp, nx, diffrwidth, dtype);
+            if (above == 0) Noi++; else Noi--;
+            if (above == 0) Nvi++; else Nvi--;
+        }
+    }
     else {
-		if (above == 0) {
-			grid(gridcp, gridcs, gridro, zp, cp, cs, ro, nminx, nmaxx, 
-				optgrad, gradlen, gradcp, gradcs, gradro, dx, dz, nz);
-		} 
-		else {
-			gridabove(gridcp, gridcs, gridro, zp, cp, cs, ro, nminx, nmaxx, 
-				optgrad, gradlen, gradcp, gradcs, gradro, dx, dz, nz);
-		}
-	}
+        if (above == 0) {
+            grid(gridcp, gridcs, gridro, zp, cp, cs, ro, nminx, nmaxx, 
+                optgrad, gradlen, gradcp, gradcs, gradro, dx, dz, nz);
+        } 
+        else {
+            gridabove(gridcp, gridcs, gridro, zp, cp, cs, ro, nminx, nmaxx, 
+                optgrad, gradlen, gradcp, gradcs, gradro, dx, dz, nz);
+        }
+    }
     
     if (store_int == 1) {
       for(j = 0; j < nminx; j++) inter[jint-1][j] = 0.0;
@@ -643,26 +651,26 @@ int main(int argc, char **argv)
 /* apply supersampled data smoothing operator according to Zeng and West (1996) */
   
   if (supersmooth==1) {
-	float Wsmooth[5][5], C, iC, xx, xz, *dataS, smooth;
-	int ixi, izi, nxout, nzout;
+    float Wsmooth[5][5], C, iC, xx, xz, *dataS, smooth;
+    int ixi, izi, nxout, nzout;
 
-	C=0;
-	sigma = -1.0*log(sigma)/(dx*(powf(0.25*2.0,2.0)));
+    C=0;
+    sigma = -1.0*log(sigma)/(dx*(powf(0.25*2.0,2.0)));
     for(ixi = -2; ixi < 3; ixi++) {
       for(izi = -2; izi < 3; izi++) {
         xx = 0.25*ixi;
         xz = 0.25*izi;
         Wsmooth[ixi+2][izi+2] = exp(-sigma*dx*(xx*xx+xz*xz) );
-		//fprintf(stderr,"Wsmooth[%d][%d] = %f\n", ixi, izi, Wsmooth[ixi+2][izi+2]);
-		C += Wsmooth[ixi+2][izi+2];
-	  }
+        //fprintf(stderr,"Wsmooth[%d][%d] = %f\n", ixi, izi, Wsmooth[ixi+2][izi+2]);
+        C += Wsmooth[ixi+2][izi+2];
+      }
     }
     iC = 1.0/C;
-	//fprintf(stderr,"sigma=%f %f C=%f\n",sigma, exp(-sigma*dx*powf(0.25*2.0,2.0)),C);
+    //fprintf(stderr,"sigma=%f %f C=%f\n",sigma, exp(-sigma*dx*powf(0.25*2.0,2.0)),C);
 
-	nxout = (nx-1)/4+1;
-	nzout = (nz-1)/4+1;
-	//fprintf(stderr,"nxout=%d nzout=%d nx=%d nz=%d \n",nxout,nzout, nx, nz);
+    nxout = (nx-1)/4+1;
+    nzout = (nz-1)/4+1;
+    //fprintf(stderr,"nxout=%d nzout=%d nx=%d nz=%d \n",nxout,nzout, nx, nz);
     dataS = malloc(nxout*nzout*sizeof(float));
     for(ix = 0; ix < nxout-1; ix++) {
       for(iz = 0; iz < nzout-1; iz++) {
@@ -670,17 +678,17 @@ int main(int argc, char **argv)
         for(ixi = -2; ixi < 3; ixi++) {
           for(izi = -2; izi < 3; izi++) {
             smooth += Wsmooth[ixi+2][izi+2]/gridcp[4*ix+2+ixi][4*iz+2+izi];
-	      }
+          }
         }
         dataS[ix*nzout+iz] = 1.0/(iC*smooth);
-	  }
+      }
       iz = nzout-1;
       dataS[ix*nzout+iz] = dataS[ix*nzout+iz-1];
     }
     ix = nxout-1;
     for(iz = 0; iz < nzout-1; iz++) {
       dataS[ix*nzout+iz] = dataS[(ix-1)*nzout+iz];
-	}
+    }
     ix = nxout-1; iz = nzout-1;
     dataS[ix*nzout+iz] = dataS[(ix-1)*nzout+iz-1];
 
@@ -698,17 +706,17 @@ int main(int argc, char **argv)
           for(ixi = -2; ixi < 3; ixi++) {
             for(izi = -2; izi < 3; izi++) {
               smooth += Wsmooth[ixi+2][izi+2]*gridro[4*ix+2+ixi][4*iz+2+izi];
-	        }
+            }
           }
           dataS[ix*nzout+iz] = iC*smooth;
-	    }
+        }
         iz = nzout-1;
         dataS[ix*nzout+iz] = dataS[ix*nzout+iz-1];
       }
       ix = nxout-1;
       for(iz = 0; iz < nzout-1; iz++) {
         dataS[ix*nzout+iz] = dataS[(ix-1)*nzout+iz];
-	  }
+      }
       ix = nxout-1; iz = nzout-1;
       dataS[ix*nzout+iz] = dataS[(ix-1)*nzout+iz-1];
 
@@ -719,24 +727,24 @@ int main(int argc, char **argv)
       }
     }
     nx = nxout;
-	nz = nzout;
+    nz = nzout;
     dx = dx*4;
     dz = dz*4;
-	free(dataS);
+    free(dataS);
   }
 
   if (verbose) vmess("Writing data to disk.");
   
   hdrs = (segy *) calloc(nx,sizeof(segy));
   for(j = 0; j < nx; j++) {
-	hdrs[j].f1= orig[1];
-	hdrs[j].f2= orig[0];
-	hdrs[j].d1= dz;
-	hdrs[j].d2= dx;
+    hdrs[j].f1= orig[1];
+    hdrs[j].f2= orig[0];
+    hdrs[j].d1= dz;
+    hdrs[j].d2= dx;
     hdrs[j].ns= nz;
-	hdrs[j].trwf= nx;
-	hdrs[j].tracl= j;
-	hdrs[j].tracf= j;
+    hdrs[j].trwf= nx;
+    hdrs[j].tracl= j;
+    hdrs[j].tracf= j;
     hdrs[j].gx = (orig[0] + j*dx)*1000;
     hdrs[j].scalco = -1000;
     hdrs[j].timbas = 25;
@@ -744,12 +752,12 @@ int main(int argc, char **argv)
   }
 
   /* due to bug in SU, int-file has to be opened before other files are closed */
-	if (writeint == 1) {
-		strcpy(filename, file_base);
-		name_ext(filename, "_int");
-		fpint = fopen(filename,"w");
-		assert(fpint != NULL);
-	}
+    if (writeint == 1) {
+        strcpy(filename, file_base);
+        name_ext(filename, "_int");
+        fpint = fopen(filename,"w");
+        assert(fpint != NULL);
+    }
 
  
   /* write P-velocities in file */
@@ -758,17 +766,21 @@ int main(int argc, char **argv)
   fpcp = fopen(filename,"w");
   assert(fpcp != NULL);
   
+#ifdef _NETCDF
+  writeNetCDF(filename, &gridcp[0][0], hdrs, nz, nx);
+#else
   data_out = (float *)malloc(nx*nz*sizeof(float));
   for(ix = 0; ix < nx; ix++) {
     for(iz = 0; iz < nz; iz++) {
       data_out[ix*nz+iz] = gridcp[ix][iz];
-	}
+    }
     nwrite = fwrite( &hdrs[ix], 1, TRCBYTES, fpcp);
     assert(nwrite == TRCBYTES);
     nwrite = fwrite( &data_out[ix*nz], sizeof(float), nz, fpcp);
     assert(nwrite == nz);
   }
   fclose(fpcp);
+#endif
 
   /* write reflectivity of the interfaces */
   if (reflectivity == 1) {
@@ -781,9 +793,9 @@ int main(int argc, char **argv)
       for(iz = 0; iz < nz-1; iz++) {
          Z1=gridro[ix][iz]*gridcp[ix][iz];
          Z2=gridro[ix][iz+1]*gridcp[ix][iz+1];
-	     data_out[ix*nz+iz] = (Z2-Z1)/(Z2+Z1);
+         data_out[ix*nz+iz] = (Z2-Z1)/(Z2+Z1);
       }
-	  data_out[ix*nz+nz-1] = 0.0;
+      data_out[ix*nz+nz-1] = 0.0;
       nwrite = fwrite( &hdrs[ix], 1, TRCBYTES, fpro);
       assert(nwrite == TRCBYTES);
       nwrite = fwrite( &data_out[ix*nz], sizeof(float), nz, fpro);
@@ -791,7 +803,7 @@ int main(int argc, char **argv)
     }
     ix = nx-1;
     for(iz = 0; iz < nz; iz++) {
-	   data_out[ix*nz+iz] = 0.0;
+       data_out[ix*nz+iz] = 0.0;
     }
     nwrite = fwrite( &hdrs[ix], 1, TRCBYTES, fpro);
     assert(nwrite == TRCBYTES);
@@ -809,9 +821,12 @@ int main(int argc, char **argv)
     fpcs = fopen(filename,"w");
     assert(fpcs != NULL);
     
+#ifdef _NETCDF
+    writeNetCDF(filename, &gridcs[0][0], hdrs, nz, nx);
+#else
     for(ix = 0; ix < nx; ix++) {
       for(iz = 0; iz < nz; iz++) {
-	     data_out[ix*nz+iz] = gridcs[ix][iz];
+         data_out[ix*nz+iz] = gridcs[ix][iz];
       }
       nwrite = fwrite( &hdrs[ix], 1, TRCBYTES, fpcs);
       assert(nwrite == TRCBYTES);
@@ -819,6 +834,7 @@ int main(int argc, char **argv)
       assert(nwrite == nz);
     }
     fclose(fpcs);
+#endif
     free2float(gridcs);
     
   } /* end of writing S-velocity file */
@@ -830,9 +846,12 @@ int main(int argc, char **argv)
     fpro = fopen(filename,"w");
     assert(fpro != NULL);
     
+#ifdef _NETCDF
+    writeNetCDF(filename, &gridro[0][0], hdrs, nz, nx);
+#else
     for(ix = 0; ix < nx; ix++) {
       for(iz = 0; iz < nz; iz++) {
-	     data_out[ix*nz+iz] = gridro[ix][iz];
+         data_out[ix*nz+iz] = gridro[ix][iz];
       }
       nwrite = fwrite( &hdrs[ix], 1, TRCBYTES, fpro);
       assert(nwrite == TRCBYTES);
@@ -840,6 +859,7 @@ int main(int argc, char **argv)
       assert(nwrite == nz);
     }
     fclose(fpro);
+#endif
     free2float(gridro);
   } /* end of writing density file */
   
@@ -851,15 +871,15 @@ int main(int argc, char **argv)
     for(j = 0; j < Np; j++) {
       hdrs[j].fldr = 1;
       hdrs[j].timbas = 25;
-	  hdrs[j].f1= orig[0];
-	  hdrs[j].f2= 0.0;
-	  hdrs[j].d1= dx;
-	  hdrs[j].d2= dz;
-	  hdrs[j].ns= nx;
-	  hdrs[j].trwf= Np;
-	  hdrs[j].tracl= j;
-	  hdrs[j].tracf= j;
-	  hdrs[j].trid= TRID_DEPTH;
+      hdrs[j].f1= orig[0];
+      hdrs[j].f2= 0.0;
+      hdrs[j].d1= dx;
+      hdrs[j].d2= dz;
+      hdrs[j].ns= nx;
+      hdrs[j].trwf= Np;
+      hdrs[j].tracl= j;
+      hdrs[j].tracf= j;
+      hdrs[j].trid= TRID_DEPTH;
     }
     
     /* note that due to bug in SU, interface file has already been opened */
@@ -870,7 +890,7 @@ int main(int argc, char **argv)
     data_out = (float *)malloc(nx*Np*sizeof(float));
     for(jint = 0; jint < Np; jint++) {
       for(j = 0; j < nx; j++) {
-	    data_out[jint*nx+j] = inter[jint][j]+orig[1];
+        data_out[jint*nx+j] = inter[jint][j]+orig[1];
       }
       nwrite = fwrite( &hdrs[jint], 1, TRCBYTES, fpint);
       assert(nwrite == TRCBYTES);
@@ -878,10 +898,10 @@ int main(int argc, char **argv)
       assert(nwrite == nx);
     }
     
-	for(j = 0; j < Np; j++) hdrs[j].fldr = 2;
+    for(j = 0; j < Np; j++) hdrs[j].fldr = 2;
     for(jint = 0; jint < Np; jint++) {
       for(j = 0; j < nx; j++) {
-	     data_out[jint*nx+j] = inter[jint+Np][j]+orig[1];
+         data_out[jint*nx+j] = inter[jint+Np][j]+orig[1];
       }
       nwrite = fwrite( &hdrs[jint], 1, TRCBYTES, fpint);
       assert(nwrite == TRCBYTES);
@@ -904,39 +924,39 @@ int main(int argc, char **argv)
     fprintf(fpout,"x=0,%.1f\n", sizex);
     fprintf(fpout,"z=0.,0.\n");
     
-    /*		for(i = 1; i <= Np; i++) {
-		fprintf(fpout,"\n# %d th interface\n\nx=",i);
-		nxp = countnparval(i,"x");
-		nzp = countnparval(i,"z");
-		free(x);
-		free(z);
-		x = (float *)malloc(nxp*sizeof(float));
-		z = (float *)malloc(nzp*sizeof(float));
-		getnparfloat(i,"x",x);
-		getnparfloat(i,"z",z);
-		for(j = 0; j < (nxp-1); j ++) fprintf(fpout,"%.1f,", x[j]);
-		fprintf(fpout,"%.1f\nz=", x[nxp-1]);
-		for(j = 0; j < (nxp-1); j ++) fprintf(fpout,"%.1f,", z[j]);
-		fprintf(fpout,"%.1f\n", z[nxp-1]);
-		}
+    /*        for(i = 1; i <= Np; i++) {
+        fprintf(fpout,"\n# %d th interface\n\nx=",i);
+        nxp = countnparval(i,"x");
+        nzp = countnparval(i,"z");
+        free(x);
+        free(z);
+        x = (float *)malloc(nxp*sizeof(float));
+        z = (float *)malloc(nzp*sizeof(float));
+        getnparfloat(i,"x",x);
+        getnparfloat(i,"z",z);
+        for(j = 0; j < (nxp-1); j ++) fprintf(fpout,"%.1f,", x[j]);
+        fprintf(fpout,"%.1f\nz=", x[nxp-1]);
+        for(j = 0; j < (nxp-1); j ++) fprintf(fpout,"%.1f,", z[j]);
+        fprintf(fpout,"%.1f\n", z[nxp-1]);
+        }
     */
-	for(jint = 0; jint < Np; jint++) {
-		fprintf(fpout,"\n# %d th interface\n\nx=0",jint+1);
-		sprintf(filename,"curve%d",jint+1);
-		fpcurve = fopen(filename, "w+");
-		if (verbose) vmess("writing %d th interface to ascii file %s for usage in su(ps/x)image ",jint+1, filename);
-		for(j = 0; j < nx; j += skip)  {
-			fprintf(fpout,",%.1f", (float)j*dx);
-			fprintf(fpcurve,"%.1f %.1f\n", inter[jint][j], orig[0]+(float)j*dx);
-		}
-		fclose(fpcurve);
+    for(jint = 0; jint < Np; jint++) {
+        fprintf(fpout,"\n# %d th interface\n\nx=0",jint+1);
+        sprintf(filename,"curve%d",jint+1);
+        fpcurve = fopen(filename, "w+");
+        if (verbose) vmess("writing %d th interface to ascii file %s for usage in su(ps/x)image ",jint+1, filename);
+        for(j = 0; j < nx; j += skip)  {
+            fprintf(fpout,",%.1f", (float)j*dx);
+            fprintf(fpcurve,"%.1f %.1f\n", inter[jint][j], orig[0]+(float)j*dx);
+        }
+        fclose(fpcurve);
       
-		fprintf(fpout,"\nz=%.1f", inter[jint][0]);
-		for(j = skip; j < nx; j += skip) 
-			fprintf(fpout,",%.1f", inter[jint][j]);
-		fprintf(fpout,"\n");
-	}
-	fprintf(fpout,"\n# %d th interface\n\nx=0",jint+1);
+        fprintf(fpout,"\nz=%.1f", inter[jint][0]);
+        for(j = skip; j < nx; j += skip) 
+            fprintf(fpout,",%.1f", inter[jint][j]);
+        fprintf(fpout,"\n");
+    }
+    fprintf(fpout,"\n# %d th interface\n\nx=0",jint+1);
     for(j = skip; j < nx; j += skip) 
       fprintf(fpout,",%.1f", (float)j*dx);
     
@@ -953,7 +973,7 @@ int main(int argc, char **argv)
       ncp = countnparval(jint,"cp");
       getnparfloat(jint,"cp",cp[2]);
       for(j = 0; j < ncp; j++) 
-	aver += cp[2][j];
+    aver += cp[2][j];
       aver = aver/((float)ncp);
       if (jint == Np ) fprintf(fpout,"%.1f", aver);
       else fprintf(fpout,"%.1f,", aver);

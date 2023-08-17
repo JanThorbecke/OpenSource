@@ -31,6 +31,10 @@ void name_ext(char *filename, char *extension)
 		sprintf(ext,"%s.hdf", extension);
 		strcpy(strstr(filename, ".hdf"), ext);
 	}
+	else if (strstr(filename, ".nc") != NULL) {
+		sprintf(ext,"%s.nc", extension);
+		strcpy(strstr(filename, ".nc"), ext);
+	}
 	else if (strrchr(filename, '.') != NULL) {
 		sprintf(ext,"%s.su", extension);
 		strcpy(strrchr(filename, '.'), ext);
