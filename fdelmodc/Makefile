@@ -9,7 +9,7 @@ ALLINC  = -I.
 #OPTC = -g -Wall -fsignaling-nans -O0 -fopenmp
 #OPTC += -fopenmp -Waddress
 #OPTC +=  -qopt-report=5 -g
-#OPTC +=  -O1 -g
+OPTC +=  -O1 -g
 #OPTC +=  -O1 -g -fsanitize=address -fsanitize=bounds-strict -fsanitize=object-size
 #OPTC =  -fp-trap=invalid,overflow -traceback -g -O1 -qopenmp
 #OPTC := $(subst -O3 -ffast-math, -O1 -g ,$(OPTC))
@@ -46,10 +46,8 @@ SRCC	= $(PRG).c \
 		getRecTimes.c  \
 		getBeamTimes.c  \
 		writeSnapTimes.c  \
-		writeRec.c  \
 		writeSrcRecPos.c  \
 		decomposition.c  \
-		fileOpen.c  \
 		recvPar.c  \
 		readModel.c  \
 		sourceOnSurface.c  \
@@ -70,20 +68,27 @@ SRCC	= $(PRG).c \
 OBJC	= $(SRCC:%.c=%.o)
 
 $(PRG):	$(OBJC) fdelmodc.h
+	$(CC) $(CFLAGS) $(OPTC) -c fileOpen.c 
 	$(CC) $(CFLAGS) $(OPTC) -c writeRec.c 
 	$(CC) $(CFLAGS) $(OPTC) -c fdelmodc.c 
-	$(CC) $(LDFLAGS) $(CFLAGS) $(OPTC) -o fdelmodc $(OBJC) $(LIBS)
+	$(CC) $(LDFLAGS) $(CFLAGS) $(OPTC) -o fdelmodc $(OBJC) fileOpen.o writeRec.o $(LIBS)
 
 ifdef MPICC
-fdelmodc_mpi:
+fdelmodc_mpi: $(OBJC) fdelmodc.h
+	$(MPICC) -DMPI $(CFLAGS) $(OPTC) -c fileOpen.c 
 	$(MPICC) -DMPI $(CFLAGS) $(OPTC) -c writeRec.c 
 	$(MPICC) -DMPI $(CFLAGS) $(OPTC) -c fdelmodc.c 
-	$(MPICC) -DMPI $(CFLAGS) $(OPTC) $(LDFLAGS) $(OBJC) $(LIBS) -o fdelmodc_mpi
+	$(MPICC) -DMPI $(CFLAGS) $(OPTC) $(LDFLAGS) -o fdelmodc_mpi $(OBJC) fileOpen.o writeRec.o $(LIBS)
 	cp -rp fdelmodc_mpi $B
 endif
 
+ifdef MPICC
+install: fdelmodc fdelmodc_mpi
+	cp fdelmodc $B
+else
 install: fdelmodc 
 	cp fdelmodc $B
+endif
 
 clean:
 		rm -f core $(OBJC) $(OBJM) fdelmodc 
