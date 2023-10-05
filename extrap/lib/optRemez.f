@@ -65,8 +65,9 @@ C      XT=J-1
 C  222 IEXT(J)=XT*TEMP+1.0
 C      IEXT(NFCNS+1)=NGRID
 
-      DO 222 J=1,NFCNS+1
-  222 IEXT(J)=EXT(J)
+      DO J=1,NFCNS+1
+      EXT(J)=EXT(J)
+      END DO
 
 C      OPEN (1, FILE='out', STATUS='OLD')
 C	  write(1,*)'nfcs=',NFCNS
@@ -90,24 +91,30 @@ C
       IEXT(NZZ)=NGRID+1
       NITER=NITER+1
       IF(NITER.GT.ITRMAX) GO TO 400
-      DO 110 J=1,NZ
+      DO J=1,NZ
       JXT=IEXT(J)
       DTEMP=GRID(JXT)
       DTEMP=DCOS(DTEMP*PI2)
-  110 X(J)=DTEMP
+      X(J)=DTEMP
+      END DO
+
       JET=(NFCNS-1)/15+1
-      DO 120 J=1,NZ
-  120 AD(J)=DD(J,NZ,JET)
+      DO J=1,NZ
+      AD(J)=DD(J,NZ,JET)
+      END DO
+
       DNUM=0.0
       DDEN=0.0
       K=1
-      DO 130 J=1,NZ
+      DO J=1,NZ
       L=IEXT(J)
       DTEMP=AD(J)*DES(L)
       DNUM=DNUM+DTEMP
       DTEMP=FLOAT(K)*AD(J)/WT(L)
       DDEN=DDEN+DTEMP
-  130 K=-K
+      K=-K
+      END DO
+
       DEV=DNUM/DDEN
 C      WRITE(1,131) DEV
 C  131 FORMAT(1X,12HDEVIATION = ,F12.9)
@@ -115,11 +122,12 @@ C  131 FORMAT(1X,12HDEVIATION = ,F12.9)
       IF(DEV.GT.0.0) NU=-1
       DEV=-FLOAT(NU)*DEV
       K=NU
-      DO 140 J=1,NZ
+      DO J=1,NZ
       L=IEXT(J)
       DTEMP=FLOAT(K)*DEV/WT(L)
       Y(J)=DES(L)+DTEMP
-  140 K=-K
+      K=-K
+      END DO
       IF(DEV.GT.DEVL) GO TO 150
       NITER = -1
 C      CALL OUCH
@@ -235,15 +243,18 @@ C
       LUCK=LUCK+10
       GO TO 235
   340 IF(LUCK.EQ.6) GO TO 370
-      DO 345 J=1,NFCNS
+      DO J=1,NFCNS
       NZZMJ=NZZ-J
       NZMJ=NZ-J
-  345 IEXT(NZZMJ)=IEXT(NZMJ)
+      IEXT(NZZMJ)=IEXT(NZMJ)
+      END DO
       IEXT(1)=K1
       GO TO 100
   350 KN=IEXT(NZZ)
-      DO 360 J=1,NFCNS
-  360 IEXT(J)=IEXT(J+1)
+      DO J=1,NFCNS
+      IEXT(J)=IEXT(J+1)
+      END DO
+
       IEXT(NZ)=KN
       GO TO 100
   370 IF(JCHNGE.GT.0) GO TO 100
@@ -291,19 +302,22 @@ C
   430 CONTINUE
       GRID(1)=GTEMP
       DDEN=PI2/CN
-      DO 510 J=1,NFCNS
+      DO J=1,NFCNS
       DTEMP=0.0
       DNUM=J-1
       DNUM=DNUM*DDEN
       IF(NM1.LT.1) GO TO 505
-      DO 500 K=1,NM1
+      DO K=1,NM1
       DAK=A(K+1)
       DK=K
-  500 DTEMP=DTEMP+DAK*DCOS(DNUM*DK)
+      DTEMP=DTEMP+DAK*DCOS(DNUM*DK)
+      END DO
   505 DTEMP=2.0*DTEMP+A(1)
-  510 ALPHA(J)=DTEMP
-      DO 550 J=2,NFCNS
-  550 ALPHA(J)=2.0*ALPHA(J)/CN
+      ALPHA(J)=DTEMP
+      END DO
+      DO J=2,NFCNS
+      ALPHA(J)=2.0*ALPHA(J)/CN
+      END DO
       ALPHA(1)=ALPHA(1)/CN
       IF(KKK.EQ.1) GO TO 545
       P(1)=2.0*ALPHA(NFCNS)*BB+ALPHA(NM1)
@@ -315,24 +329,29 @@ C
       BB=0.5*BB
   515 CONTINUE
       P(J+1)=0.0
-      DO 520 K=1,J
+      DO K=1,J
       A(K)=P(K)
-  520 P(K)=2.0*BB*A(K)
+      P(K)=2.0*BB*A(K)
+      END DO
       P(2)=P(2)+A(1)*2.0*AA
       JM1=J-1
-      DO 525 K=1,JM1
-  525 P(K)=P(K)+Q(K)+AA*A(K+1)
+      DO K=1,JM1
+      P(K)=P(K)+Q(K)+AA*A(K+1)
+      END DO
       JP1=J+1
-      DO 530 K=3,JP1
-  530 P(K)=P(K)+AA*A(K-1)
+      DO K=3,JP1
+      P(K)=P(K)+AA*A(K-1)
+      END DO
       IF(J.EQ.NM1) GO TO 540
-      DO 535 K=1,J
-  535 Q(K)=-A(K)
+      DO K=1,J
+      Q(K)=-A(K)
+      END DO
       NF1J=NFCNS-1-J
       Q(1)=Q(1)+ALPHA(NF1J)
   540 CONTINUE
-      DO 543 J=1,NFCNS
-  543 ALPHA(J)=P(J)
+      DO J=1,NFCNS
+      ALPHA(J)=P(J)
+      END DO
   545 CONTINUE
 
 C
@@ -345,40 +364,45 @@ C
 
       IF(NEG) 600,600,620
   600 IF(NODD.EQ.0) GO TO 610
-      DO 605 J=1,NM1
+      DO J=1,NM1
       NZMJ=NZ-J
-  605 OPX(J)=0.5*ALPHA(NZMJ)
+      OPX(J)=0.5*ALPHA(NZMJ)
+      END DO
       OPX(NFCNS)=ALPHA(1)
       GO TO 645
   610 OPX(1)=0.25*ALPHA(NFCNS)
-      DO 615 J=2,NM1
+      DO J=2,NM1
       NZMJ=NZ-J
       NF2J=NFCNS+2-J
-  615 OPX(J)=0.25*(ALPHA(NZMJ)+ALPHA(NF2J))
+      OPX(J)=0.25*(ALPHA(NZMJ)+ALPHA(NF2J))
+      END DO
       OPX(NFCNS)=0.5*ALPHA(1)+0.25*ALPHA(2)
       GO TO 645
   620 IF(NODD.EQ.0) GO TO 630
       OPX(1)=0.25*ALPHA(NFCNS)
       OPX(2)=0.25*ALPHA(NM1)
-      DO 625 J=3,NM1
+      DO J=3,NM1
       NZMJ=NZ-J
       NF3J=NFCNS+3-J
-  625 OPX(J)=0.25*(ALPHA(NZMJ)-ALPHA(NF3J))
+      OPX(J)=0.25*(ALPHA(NZMJ)-ALPHA(NF3J))
+      END DO
       OPX(NFCNS)=0.5*ALPHA(1)-0.25*ALPHA(3)
       OPX(NZ)=0.0
       GO TO 645
   630 OPX(1)=0.25*ALPHA(NFCNS)
-      DO 635 J=2,NM1
+      DO J=2,NM1
       NZMJ=NZ-J
       NF2J=NFCNS+2-J
-  635 OPX(J)=0.25*(ALPHA(NZMJ)-ALPHA(NF2J))
+      OPX(J)=0.25*(ALPHA(NZMJ)-ALPHA(NF2J))
+      END DO
       OPX(NFCNS)=0.5*ALPHA(1)-0.25*ALPHA(2)
 
   645 CONTINUE
 C      CLOSE(1)
       NI = NITER
-      DO 777 J=1,NFCNS+1
-  777 EXT(J)=IEXT(J)
+      DO J=1,NFCNS+1
+      EXT(J)=IEXT(J)
+      END DO
 
       IF(NFCNS.GT.3) RETURN
       ALPHA(NFCNS+1)=0.0
@@ -430,11 +454,12 @@ C
       XF=GRID(K)
       XF=DCOS(PI2*XF)
       D=0.0
-      DO 1 J=1,N
+      DO J=1,N
       C=XF-X(J)
       C=AD(J)/C
       D=D+C
-    1 P=P+C*Y(J)
+      P=P+C*Y(J)
+      END DO
       GEED=P/D
       RETURN
       END
