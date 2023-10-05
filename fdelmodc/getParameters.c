@@ -4,6 +4,9 @@
 #include<assert.h>
 #include"par.h"
 #include"fdelmodc.h"
+#ifdef MPI
+#include <mpi.h>
+#endif
 
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
@@ -64,6 +67,13 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	char *src_positions, tmpname[1024];
 	char* src_txt;
 	FILE *fp;
+	int  pe;
+
+#ifdef MPI
+	MPI_Comm_rank( MPI_COMM_WORLD, &pe );
+#else
+        pe=0;
+#endif
 
 	if (!getparint("verbose",&verbose)) verbose=0;
 	if (!getparint("disable_check",&disable_check)) disable_check=0;
@@ -218,7 +228,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	xmax = sub_x0+(nx-1)*dx;
 	zmax = sub_z0+(nz-1)*dz;
 
-	if (verbose) {
+	if (verbose && pe==0) {
 		vmess("*******************************************");
 		vmess("************** general info ***************");
 		vmess("*******************************************");
@@ -261,7 +271,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		if ( (cmin<1e-20) || (cp_min<cs_min) ) cmin=cp_min;
 	}
 
-	if (verbose) {
+	if (verbose && pe==0) {
 		vmess("*******************************************");
 		vmess("******** dispersion and stability *********");
 		vmess("*******************************************");
@@ -530,7 +540,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		bnd->surface[ix] = ioPz;
 	}
 
-	if (verbose) {
+	if (verbose && pe==0) {
 		vmess("*******************************************");
 		vmess("************* boundary info ***************");
 		vmess("*******************************************");
@@ -625,7 +635,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		for (ix=0; ix<ncsrc; ix++) {
 			src->x[ix] = NINT((oxsrc-sub_x0+rsrc*cos(((ix*dphisrc)/360.0)*(2.0*M_PI)))/dx);
 			src->z[ix] = NINT((ozsrc-sub_z0+rsrc*sin(((ix*dphisrc)/360.0)*(2.0*M_PI)))/dz);
-			if (verbose>4) fprintf(stderr,"Source on Circle: xsrc[%d]=%d zsrc=%d\n", ix, src->x[ix], src->z[ix]);
+			if (verbose>4 && pe==0) fprintf(stderr,"Source on Circle: xsrc[%d]=%d zsrc=%d\n", ix, src->x[ix], src->z[ix]);
 		}
 		
 	}
@@ -732,7 +742,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 				wav->nsamp[is] = wav->nt;
 			}
 			nsamp += wav->nsamp[is];
-			if (verbose>3) {
+			if (verbose>3 && pe==0) {
 				vmess("Random xsrc=%f zsrc=%f src_tbeg=%f src_tend=%f nsamp=%ld",src->x[is]*dx, src->z[is]*dz, src->tbeg[is], src->tend[is], wav->nsamp[is]);
 			}
 		}
@@ -741,7 +751,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 
 /* write time and length of source signals */
 
-		if (verbose>3) {
+		if (verbose>3 && pe==0) {
 			float *dum;
 			dum = (float *)calloc(mod->nt, sizeof(float));
 			for (is=0; is<nsrc; is++) {
@@ -768,7 +778,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
             while (!feof(fp)) if (fgetc(fp)=='\n') nsrctext++;
             fseek(fp,-1,SEEK_CUR);
             if (fgetc(fp)!='\n') nsrctext++; /* Checks if last line terminated by /n */
-            if (verbose) vmess("Number of sources in src_txt file: %d",nsrctext);
+            if (verbose && pe==0) vmess("Number of sources in src_txt file: %d",nsrctext);
             rewind(fp);
 		    nsrc=nsrctext;
         }
@@ -800,7 +810,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			src->z[is] = NINT((zsrca[is]-sub_z0)/dz);
 			src->tbeg[is] = 0.0;
 			src->tend[is] = (wav->nt-1)*wav->dt;
-			if (verbose>3) fprintf(stderr,"Source Array: xsrc[%d]=%f zsrc=%f\n", is, xsrca[is], zsrca[is]);
+			if (verbose>3 && pe==0) fprintf(stderr,"Source Array: xsrc[%d]=%f zsrc=%f\n", is, xsrca[is], zsrca[is]);
 		}
 
 		src->random = 1;
@@ -852,12 +862,12 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			if (src->src_at_rcv>0){
 				src->x[is] = NINT((gx[is]-sub_x0)/dx);
 				src->z[is] = NINT((gelev[is]-sub_z0)/dz);
-				if (verbose>3) fprintf(stderr,"Source Array: xsrc[%d]=%f %d zsrc=%f %d\n", is, gx[is], src->x[is], gelev[is], src->z[is]);
+				if (verbose>3 && pe==0) fprintf(stderr,"Source Array: xsrc[%d]=%f %d zsrc=%f %d\n", is, gx[is], src->x[is], gelev[is], src->z[is]);
 			}
 			else {
                 src->x[is]=NINT((sx[is]-sub_x0)/dx);
                 src->z[is]=NINT((selev[is]-sub_z0)/dz);
-				if (verbose>3) fprintf(stderr,"Source Array: xsrc[%d]=%f %d zsrc=%f %d\n", is, sx[is], src->x[is], selev[is], src->z[is]);
+				if (verbose>3 && pe==0) fprintf(stderr,"Source Array: xsrc[%d]=%f %d zsrc=%f %d\n", is, sx[is], src->x[is], selev[is], src->z[is]);
 			}
 			src->tbeg[is] = 0.0;
 			src->tend[is] = (wav->nt-1)*wav->dt;
@@ -948,7 +958,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	src->n=nsrc;
 
 
-	if (verbose) {
+	if (verbose && pe==0) {
 		vmess("*******************************************");
 		vmess("************* wavelet info ****************");
 		vmess("*******************************************");
@@ -1055,7 +1065,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		sna->nx=1+(((sna->x2-sna->x1))/sna->skipdx);
 		sna->nz=1+(((sna->z2-sna->z1))/sna->skipdz);
 
-		if (verbose) {
+		if (verbose && pe==0) {
 			vmess("*******************************************");
 			vmess("************* snap shot info **************");
 			vmess("*******************************************");
@@ -1083,7 +1093,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	}
 	else {
 		sna->nsnap = 0;
-		if (verbose) vmess("*************** no snapshots **************");
+		if (verbose && pe==0) vmess("*************** no snapshots **************");
 	}
 	if (sna->beam) {
 		sna->skipdx = MAX(1,NINT(dxsnap/dx));
@@ -1097,7 +1107,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		sna->nx=1+(((sna->x2-sna->x1))/sna->skipdx);
 		sna->nz=1+(((sna->z2-sna->z1))/sna->skipdz);
 
-		if (verbose) {
+		if (verbose && pe==0) {
 			vmess("*******************************************");
 			vmess("**************** beam info ****************");
 			vmess("*******************************************");
@@ -1120,7 +1130,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		}
 	}
 	else {
-		if (verbose) vmess("**************** no beams *****************");
+		if (verbose && pe==0) vmess("**************** no beams *****************");
 	}
 
 	/* define receivers */
@@ -1195,7 +1205,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		rec->int_vz=3;
 	}
 
-	if (verbose) {
+	if (verbose && pe==0) {
 		if (rec->n) {
 			dxrcv = rec->xr[MIN(1,rec->n-1)]-rec->xr[0];
 			dzrcv = rec->zr[MIN(1,rec->n-1)]-rec->zr[0];

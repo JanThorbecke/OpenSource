@@ -11,6 +11,9 @@
 #include "segy.h"
 #include "fdelmodc.h"
 #include <genfft.h>
+#ifdef MPI
+#include<mpi.h>
+#endif
 
 #ifndef COMPLEX
 typedef struct _complexStruct { /* complex number */
@@ -29,28 +32,37 @@ typedef struct _dcomplexStruct { /* complex number */
 *           The Netherlands 
 **/
 
+#ifdef MPI
+static MPI_File fpvx, fpvz, fptxx, fptzz, fptxz, fpp, fppp, fpss, fpup, fpdown, fpdxvx, fpdzvz;
+MPI_File fileOpen(char *file, char *ext, int append);
+int traceWrite(segy *hdr, float *data, int n, long long offset, MPI_File fh);
+void fileClose(MPI_File fh);
+static int opened;
+#else
+static FILE *fpvx, *fpvz, *fptxx, *fptzz, *fptxz, *fpp, *fppp, *fpss, *fpup, *fpdown, *fpdxvx, *fpdzvz;
 FILE *fileOpen(char *file, char *ext, int append);
-int traceWrite(segy *hdr, float *data, int n, FILE *fp) ;
+int traceWrite(segy *hdr, float *data, int n, long long offset, FILE *fp);
+void fileClose(FILE *fp);
+#endif
 void name_ext(char *filename, char *extension);
 void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
                int nkx, float dx, int nt, float dt, float fmin, float fmax,
                float cp, float rho, int vznorm, int verbose);
 
-
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
-int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsrc, int nsam, int ishot, int fileno, 
+int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsrc, int nsam, int ishot, int nshots, int fileno, 
              float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
              float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, float *rec_dxvx, float *rec_dzvz, int verbose)
 {
-    FILE    *fpvx, *fpvz, *fptxx, *fptzz, *fptxz, *fpp, *fppp, *fpss, *fpup, *fpdown, *fpdxvx, *fpdzvz;
     float *rec_up, *rec_down, *trace, *rec_vze, *rec_pe;
     float dx, dt, cp, rho, fmin, fmax;
     complex *crec_vz, *crec_p, *crec_up, *crec_dw;
     int irec, ntfft, nfreq, nkx, xorig, ix, iz, it, ibndx;
     int append, vznorm, sx;
+    long long offset;
     double ddt;
     char number[16], filename[1024];
     segy hdr;
@@ -66,15 +78,15 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
         sprintf(number,"_%03d",fileno);
         name_ext(filename, number);
     }
-#ifdef MPI
-    sx = (int)mod.x0+ixsrc*mod.dx;
-    sprintf(number,"_%06d",sx);
-    name_ext(filename, number);
-#endif
 
     if (verbose>2) vmess("Writing receiver data to file %s", filename);
     if (nsam != rec.nt && verbose) vmess("Number of samples written to last file = %d",nsam);
 
+#ifdef MPI
+    int pe;
+    MPI_Comm_rank( MPI_COMM_WORLD, &pe );
+    if (verbose>2) vmess("PE %d writes to file %s", pe, filename);
+#endif
     memset(&hdr,0,TRCBYTES);
     ddt = (double)mod.dt;/* to avoid rounding in 32 bit precision */
     dt  = (float)ddt*rec.skipdt;
@@ -88,8 +100,8 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
     hdr.fldr   = ishot+1;
     hdr.trid   = 1;
     hdr.ns     = nsam;
-    hdr.trwf   = rec.n;
-    hdr.ntr    = rec.n;
+    hdr.trwf   = 0;
+    hdr.ntr    = nshots*rec.n;
     if (mod.grid_dir) { /* reverse time modeling */
         hdr.f1 = (-mod.nt+1)*mod.dt;
     }
@@ -100,6 +112,9 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
     hdr.d2     = (rec.x[1]-rec.x[0])*mod.dx;
     hdr.f2     = mod.x0+rec.x[0]*mod.dx;
 
+#ifdef MPI
+    if (!opened) {
+#endif 
     if (rec.type.vx)  fpvx  = fileOpen(filename, "_rvx", append);
     if (rec.type.vz)  fpvz  = fileOpen(filename, "_rvz", append);
     if (rec.type.p)   fpp   = fileOpen(filename, "_rp", append);
@@ -110,11 +125,17 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
     if (rec.type.dzvz) fpdzvz = fileOpen(filename, "_rdzvz", append);
     if (rec.type.pp)  fppp  = fileOpen(filename, "_rpp", append);
     if (rec.type.ss)  fpss  = fileOpen(filename, "_rss", append);
-
-    /* decomposed wavefield */
     if (rec.type.ud && (mod.ischeme==1 || mod.ischeme==2) )  {
         fpup   = fileOpen(filename, "_ru", append);
         fpdown = fileOpen(filename, "_rd", append);
+    }
+#ifdef MPI
+    opened=1;
+    }
+#endif 
+
+    /* decomposed wavefield */
+    if (rec.type.ud && (mod.ischeme==1 || mod.ischeme==2) )  {
         ntfft = optncr(nsam);
         nfreq = ntfft/2+1;
         fmin = 0.0;
@@ -178,61 +199,95 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
         hdr.tracl  = ishot*rec.n+irec+1;
         hdr.gx     = 1000*(mod.x0+rec.x[irec]*mod.dx);
         hdr.offset = (rec.x[irec]-ixsrc)*mod.dx;
+        hdr.cdp    = (hdr.gx + hdr.sx)/2;
         hdr.gelev  = (int)(-1000*(mod.z0+rec.z[irec]*mod.dz));
+	offset     = (ishot*rec.n+irec)*(TRCBYTES+rec.nt*sizeof(float));
 
         if (rec.type.vx) {
-            traceWrite( &hdr, &rec_vx[irec*rec.nt], nsam, fpvx) ;
+            traceWrite( &hdr, &rec_vx[irec*rec.nt], nsam, offset, fpvx) ;
         }
         if (rec.type.vz) {
-            traceWrite( &hdr, &rec_vz[irec*rec.nt], nsam, fpvz) ;
+            traceWrite( &hdr, &rec_vz[irec*rec.nt], nsam, offset, fpvz) ;
         }
         if (rec.type.p) {
-            traceWrite( &hdr, &rec_p[irec*rec.nt], nsam, fpp) ;
+            traceWrite( &hdr, &rec_p[irec*rec.nt], nsam, offset, fpp) ;
         }
         if (rec.type.txx) {
-            traceWrite( &hdr, &rec_txx[irec*rec.nt], nsam, fptxx) ;
+            traceWrite( &hdr, &rec_txx[irec*rec.nt], nsam, offset, fptxx) ;
         }
         if (rec.type.tzz) {
-            traceWrite( &hdr, &rec_tzz[irec*rec.nt], nsam, fptzz) ;
+            traceWrite( &hdr, &rec_tzz[irec*rec.nt], nsam, offset, fptzz) ;
         }
         if (rec.type.txz) {
-            traceWrite( &hdr, &rec_txz[irec*rec.nt], nsam, fptxz) ;
+            traceWrite( &hdr, &rec_txz[irec*rec.nt], nsam, offset, fptxz) ;
         }
         if (rec.type.dxvx) {
-            traceWrite( &hdr, &rec_dxvx[irec*rec.nt], nsam, fpdxvx) ;
+            traceWrite( &hdr, &rec_dxvx[irec*rec.nt], nsam, offset, fpdxvx) ;
         }
         if (rec.type.dzvz) {
-            traceWrite( &hdr, &rec_dzvz[irec*rec.nt], nsam, fpdzvz) ;
+            traceWrite( &hdr, &rec_dzvz[irec*rec.nt], nsam, offset, fpdzvz) ;
         }
         if (rec.type.pp) {
-            traceWrite( &hdr, &rec_pp[irec*rec.nt], nsam, fppp) ;
+            traceWrite( &hdr, &rec_pp[irec*rec.nt], nsam, offset, fppp) ;
         }
         if (rec.type.ss) {
-            traceWrite( &hdr, &rec_ss[irec*rec.nt], nsam, fpss) ;
+            traceWrite( &hdr, &rec_ss[irec*rec.nt], nsam, offset, fpss) ;
         }
         if (rec.type.ud && mod.ischeme==1)  {
-            traceWrite( &hdr, &rec_up[irec*rec.nt], nsam, fpup) ;
-            traceWrite( &hdr, &rec_down[irec*rec.nt], nsam, fpdown) ;
+            traceWrite( &hdr, &rec_up[irec*rec.nt], nsam, offset, fpup) ;
+            traceWrite( &hdr, &rec_down[irec*rec.nt], nsam, offset, fpdown) ;
         }
     }
 
-    if (rec.type.vx) fclose(fpvx);
-    if (rec.type.vz) fclose(fpvz);
-    if (rec.type.p) fclose(fpp);
-    if (rec.type.txx) fclose(fptxx);
-    if (rec.type.tzz) fclose(fptzz);
-    if (rec.type.txz) fclose(fptxz);
-    if (rec.type.dxvx) fclose(fpdxvx);
-    if (rec.type.dzvz) fclose(fpdzvz);
-    if (rec.type.pp) fclose(fppp);
-    if (rec.type.ss) fclose(fpss);
+//#ifdef MPI
+//	    fprintf(stderr,"PE %d has writen to file %s\n", pe, filename);
+//	    fflush(stderr);
+//#endif
+
+#ifndef MPI
+    if (rec.type.vx) fileClose(fpvx);
+    if (rec.type.vz) fileClose(fpvz);
+    if (rec.type.p) fileClose(fpp);
+    if (rec.type.txx) fileClose(fptxx);
+    if (rec.type.tzz) fileClose(fptzz);
+    if (rec.type.txz) fileClose(fptxz);
+    if (rec.type.dxvx) fileClose(fpdxvx);
+    if (rec.type.dzvz) fileClose(fpdzvz);
+    if (rec.type.pp) fileClose(fppp);
+    if (rec.type.ss) fileClose(fpss);
     if (rec.type.ud) {
-        fclose(fpup);
-        fclose(fpdown);
+        fileClose(fpup);
+        fileClose(fpdown);
         free(rec_up);
         free(rec_down);
     }
+#else
+    if (rec.type.ud) {
+        free(rec_up);
+        free(rec_down);
+    }
+#endif
 
     return 0;
 }
 
+#ifdef MPI
+int closeRec(recPar rec) 
+{
+    if (rec.type.vx) fileClose(fpvx);
+    if (rec.type.vz) fileClose(fpvz);
+    if (rec.type.p) fileClose(fpp);
+    if (rec.type.txx) fileClose(fptxx);
+    if (rec.type.tzz) fileClose(fptzz);
+    if (rec.type.txz) fileClose(fptxz);
+    if (rec.type.dxvx) fileClose(fpdxvx);
+    if (rec.type.dzvz) fileClose(fpdzvz);
+    if (rec.type.pp) fileClose(fppp);
+    if (rec.type.ss) fileClose(fpss);
+    if (rec.type.ud) {
+        fileClose(fpup);
+        fileClose(fpdown);
+    }
+    return 0;
+}
+#endif

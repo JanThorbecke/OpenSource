@@ -59,7 +59,7 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
     float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
     float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, float *rec_dxvx, float *rec_dzvz, int verbose);
 
-int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsrc, int nsam, int ishot, int fileno, 
+int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsrc, int nsam, int ishot, int nshots, int fileno, 
 			 float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
 			 float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, float *rec_dxvx, float *rec_dzvz, int verbose);
 
@@ -78,6 +78,9 @@ int allocStoreSourceOnSurface(srcPar src);
 
 int freeStoreSourceOnSurface(void);
 
+#ifdef MPI
+int closeRec(recPar rec);
+#endif
 /* Self documentation */
 char *sdoc[] = {
 " ",
@@ -294,14 +297,13 @@ int main(int argc, char **argv)
 	int it0, it1, its, it, fileno, isam;
 	int ixsrc, izsrc, is0, is1;
 	int verbose;
-#ifdef MPI
-	int     npes, pe;
+	int npes, pe;
 
+#ifdef MPI
 	MPI_Init( &argc, &argv );
 	MPI_Comm_size( MPI_COMM_WORLD, &npes );
 	MPI_Comm_rank( MPI_COMM_WORLD, &pe );
 #else
-	int     npes, pe;
 	npes = 1;
 	pe   = 0;
 #endif
@@ -417,7 +419,7 @@ int main(int argc, char **argv)
 	}
 
 	t1= wallclock_time();
-	if (verbose) {
+	if (verbose && pe==0) {
 		tinit = t1-t0;
 		vmess("*******************************************");
 		vmess("************* runtime info ****************");
@@ -448,7 +450,7 @@ int main(int argc, char **argv)
 		rec.z[ir]=iz+rec.sinkdepth;
 		rec.zr[ir]=rec.zr[ir]+(rec.z[ir]-iz)*mod.dz;
 //		rec.zr[ir]=rec.z[ir]*mod.dz;
-		if (verbose>3) vmess("receiver position %d at grid[ix=%d, iz=%d] = (x=%f z=%f)", ir, ix+ioPx, rec.z[ir]+ioPz, rec.xr[ir]+mod.x0, rec.zr[ir]+mod.z0);
+		if (verbose>3 && pe==0) vmess("receiver position %d at grid[ix=%d, iz=%d] = (x=%f z=%f)", ir, ix+ioPx, rec.z[ir]+ioPz, rec.xr[ir]+mod.x0, rec.zr[ir]+mod.z0);
 	}
 
 /* sink sources to value different than zero */
@@ -464,7 +466,7 @@ int main(int argc, char **argv)
 		iz = ioPz;
 		while(l2m[(ix+ioPx)*n1+iz] == 0.0) iz++;
 		bnd.surface[ix+ioPx] = iz;
-		if ((verbose>3) && (iz != ioPz)) vmess("Topography surface x=%.2f z=%.2f", mod.x0+mod.dx*ix, mod.z0+mod.dz*(iz-ioPz));
+		if ((verbose>3 && pe==0) && (iz != ioPz)) vmess("Topography surface x=%.2f z=%.2f", mod.x0+mod.dx*ix, mod.z0+mod.dz*(iz-ioPz));
 	}
 	for (ix=0; ix<ioPx; ix++) {
 		bnd.surface[ix] = bnd.surface[ioPx];
@@ -472,14 +474,14 @@ int main(int argc, char **argv)
 	for (ix=ioPx+mod.nx; ix<mod.iePx; ix++) {
 		bnd.surface[ix] = bnd.surface[mod.iePx-1];
 	}
-	if (verbose>3) writeSrcRecPos(&mod, &rec, &src, &shot);
+	if (verbose>3 && pe==0) writeSrcRecPos(&mod, &rec, &src, &shot);
 
 	/* Outer loop over number of shots */
 #ifdef MPI
     npeshot = MAX((((float)shot.n)/((float)npes)), 1.0);
     is0=ceil(pe*npeshot);
     is1=MIN(ceil((pe+1)*npeshot), shot.n);
-    if (verbose>1) vmess("MPI: pe=%d does shots is0 %d - is1 %d\n", pe, is0, is1);
+    if (verbose>0) vmess("MPI: pe=%d does shot numbers %d to %d", pe, is0, is1-1);
 #else
 	is0=0;
 	is1=shot.n;
@@ -506,7 +508,7 @@ int main(int argc, char **argv)
 			memset(p,0,sizem*sizeof(float));
 			memset(q,0,sizem*sizeof(float));
 		}
-		if (verbose) {
+		if (verbose && pe==0) {
 			if (!src.random) {
 				vmess("Modeling source %d at gridpoints ix=%d iz=%d", ishot, shot.x[ishot], shot.z[ishot]);
 				vmess(" which are actual positions x=%.2f z=%.2f", mod.x0+mod.dx*shot.x[ishot], mod.z0+mod.dz*shot.z[ishot]);
@@ -549,7 +551,7 @@ shared(rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, rec_p, rec_pp, rec_ss) \
 shared (tt, t2, t3, isam) \
 shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 {
-			if (it==it0 && verbose>2) {
+			if (it==it0 && verbose>2 && pe==0) {
 				threadAffinity();
 			}
 			switch ( mod.ischeme ) {
@@ -633,7 +635,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 				/* at the end of modeling a shot, write receiver array to output file(s) */
 				if (writeToFile && (it+rec.skipdt <= it1-1) ) {
 					fileno = ( ((it-rec.delay)/rec.skipdt)+1)/rec.nt;
-					writeRec(rec, mod, bnd, wav, ixsrc, izsrc, isam+1, ishot, fileno,
+					writeRec(rec, mod, bnd, wav, ixsrc, izsrc, isam+1, ishot, shot.n, fileno,
 						rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
 						rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, rec_dxvx, rec_dzvz, verbose);
 				}
@@ -655,7 +657,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 					
 #pragma omp master
 {
-			if (verbose) {
+		if (verbose && pe==0) {
                 if(!((it1-it)%perc)) fprintf(stderr,"\b\b\b\b%3d%%",it*100/(it1-it0));
                 if(it==100)t3=wallclock_time();
                 if(it==500){
@@ -696,9 +698,10 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 				}
 			}
 		}
-		writeRec(rec, mod, bnd, wav, ixsrc, izsrc, isam+1, ishot, fileno,
+		writeRec(rec, mod, bnd, wav, ixsrc, izsrc, isam+1, ishot, shot.n, fileno,
 			rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
 			rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, rec_dxvx, rec_dzvz, verbose);
+			
 		
 		writeBeams(mod, sna, ixsrc, izsrc, ishot, fileno, 
 				   beam_vx, beam_vz, beam_txx, beam_tzz, beam_txz, 
@@ -718,12 +721,20 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 		    memset(rec_udvz,0,mod.nax*rec.nt*sizeof(float));
 		    memset(rec_udp ,0,mod.nax*rec.nt*sizeof(float));
 	    }
-
+#ifdef MPI
+            if (verbose>0) vmess("MPI: pe=%d done with shot %d", pe, ishot);
+#endif
 	} /* end of loop over number of shots */
 
+/* close files that where opened to write data */
+#ifdef MPI
+//    vmess("MPI: pe=%d before barrier", pe);
+//    MPI_Barrier(MPI_COMM_WORLD);
+    closeRec(rec);
+#endif
 
 	t1= wallclock_time();
-	if (verbose) {
+	if (verbose && pe==0) {
         fprintf(stderr,"\b\b\b\b%3d%%\n",100);
 		vmess("Total compute time FD modelling = %.2f s.", t1-t0);
 	}
