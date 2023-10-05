@@ -317,7 +317,7 @@ int main (int argc, char **argv)
         fprintf(stderr,"  square ........... : %d\n", squaremat);
 	    if (sclcor) {
 			fprintf(stderr,"  Estimating scaling correction of the reflection response: \n");
-			fprintf(stderr,"  Number of steps .. : %d\n", nscl);
+			fprintf(stderr,"  Number of steps .. : %ld\n", nscl);
 			fprintf(stderr,"  Starting value ... : %.3e\n", scl0);
 			fprintf(stderr,"  Final value ...... : %.3e\n", scl1);
 			fprintf(stderr,"  Step value ....... : %.3e\n", dscl);

@@ -52,13 +52,7 @@ void fht(REAL *fz,int n);
 #define SQRT2_2   0.70710678118654752440084436210484
 #define SQRT2   2*0.70710678118654752440084436210484
 
-#ifdef PROTOTYPE
 void fht(REAL *fz,int n)
-#else
-void fht(fz,n)
-int n;
-REAL *fz;
-#endif
 {
  int i,k,k1,k2,k3,k4,kx;
  REAL *fi,*fn,*gi;
@@ -203,13 +197,7 @@ REAL *fz;
 }
 
 
-#ifdef PROTOTYPE
 void ifft(int n,REAL *real,REAL *imag)
-#else
-void ifft(n,real,imag)
-int n;
-REAL *real,*imag;
-#endif
 {
  REAL a,b,c,d;
  REAL q,r,s,t;
@@ -224,13 +212,7 @@ REAL *real,*imag;
  }
 }
 
-#ifdef PROTOTYPE
 void realfft(int n,REAL *real)
-#else
-void realfft(n,real)
-int n;
-REAL *real;
-#endif
 {
  REAL a,b;
  int i,j,k;
@@ -243,13 +225,7 @@ REAL *real;
  }
 }
 
-#ifdef PROTOTYPE
 void fft(int n,REAL *real,REAL *imag)
-#else
-void fft(n,real,imag)
-int n;
-REAL *real,*imag;
-#endif
 {
  REAL a,b,c,d;
  REAL q,r,s,t;
@@ -264,13 +240,7 @@ REAL *real,*imag;
  fht(imag,n);
 }
 
-#ifdef PROTOTYPE
 void realifft(int n,REAL *real)
-#else
-void realifft(n,real)
-int n;
-REAL *real;
-#endif
 {
  REAL a,b;
  int i,j,k;

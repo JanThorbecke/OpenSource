@@ -409,7 +409,7 @@ int main (int argc, char **argv)
         for (j = ntapA; j < nstationA-ntapA; j++)
             taper[j] = 1.0;
         for (j = nstationA-ntapA; j < nstationA; j++)
-            taper[j] = taper[abs(j-nstationA)-1];//(cos(M_PI*(j-(nstationA-ntap))/ntap)+1)/2.0;
+            taper[j] = taper[(j-nstationA)-1];//(cos(M_PI*(j-(nstationA-ntap))/ntap)+1)/2.0;
         for (istation = 0; istation < nstationA; istation++) {  // Swap for jstation?
             for (jstation = 0; jstation < nshotA; jstation++) {
                 for (iw=0; iw<nw; iw++) {
@@ -427,7 +427,7 @@ int main (int argc, char **argv)
         for (j = ntapB; j < nstationA-ntapB; j++)
             taper[j] = 1.0;
         for (j = nstationA-ntapB; j < nstationA; j++)
-            taper[j] = taper[abs(j-nstationA)-1];//(cos(M_PI*(j-(nstationA-ntap))/ntap)+1)/2.0;
+            taper[j] = taper[(j-nstationA)-1];//(cos(M_PI*(j-(nstationA-ntap))/ntap)+1)/2.0;
         for (jstation = 0; jstation < statB; jstation++) {  // Swap for jstation?
             for (istation = 0; istation < nshotA; istation++) {
                 for (iw=0; iw<nw; iw++) {
