@@ -114,7 +114,7 @@ GEOPHYSICS, VOL. 59, NO. 9 (SEPTEMBER 1994); P. 1444-1456
 	/* calculate vx for all grid points except on the virtual boundary*/
 #pragma omp for private (ix, iz) nowait schedule(guided,1)
 	for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
-#pragma ivdep
+#pragma simd
 		for (iz=mod.ioXz; iz<mod.ieXz; iz++) {
 			vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 						c1*(txx[ix*n1+iz]     - txx[(ix-1)*n1+iz] +
@@ -127,7 +127,7 @@ GEOPHYSICS, VOL. 59, NO. 9 (SEPTEMBER 1994); P. 1444-1456
 	/* calculate vz for all grid points except on the virtual boundary */
 #pragma omp for private (ix, iz)  schedule(guided,1)
 	for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
-#pragma ivdep
+#pragma simd
 		for (iz=mod.ioZz; iz<mod.ieZz; iz++) {
 			vz[ix*n1+iz] -= roz[ix*n1+iz]*(
 						c1*(tzz[ix*n1+iz]     - tzz[ix*n1+iz-1] +
@@ -148,18 +148,18 @@ GEOPHYSICS, VOL. 59, NO. 9 (SEPTEMBER 1994); P. 1444-1456
 	/* calculate Txx/Tzz for all grid points except on the virtual boundary */
 #pragma omp	for private (ix, iz) nowait schedule(guided,1)
 	for (ix=mod.ioPx; ix<mod.iePx; ix++) {
-#pragma ivdep
+#pragma simd
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			dxvx[iz] = c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
 					   c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]);
 		}
-#pragma ivdep
+#pragma simd
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			dzvz[iz] = c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
 					   c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]);
 		}
 		/* help variables to let the compiler vectorize the loops */
-#pragma ivdep
+#pragma simd
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			Tpp[iz] = tep[ix*n1+iz]*tss[ix*n1+iz];
 			Tss[iz] = tes[ix*n1+iz]*tss[ix*n1+iz];
@@ -168,24 +168,24 @@ GEOPHYSICS, VOL. 59, NO. 9 (SEPTEMBER 1994); P. 1444-1456
 			Tlp[iz] = l2m[ix*n1+iz]*Tpp[iz];
 			Tus[iz] = mul[ix*n1+iz]*Tss[iz];
 		}
-#pragma ivdep
+#pragma simd
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			Tt1[iz] = 1.0/(ddt+0.5*tss[ix*n1+iz]);
 			Tt2[iz] = ddt-0.5*tss[ix*n1+iz];
 		}
 
 		/* the update with the relaxation correction */
-#pragma ivdep
+#pragma simd
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			txx[ix*n1+iz] -= Tlp[iz]*dxvx[iz] + (Tlp[iz]-2.0*Tus[iz])*dzvz[iz] + q[ix*n1+iz];
 			tzz[ix*n1+iz] -= Tlp[iz]*dzvz[iz] + (Tlp[iz]-2.0*Tus[iz])*dxvx[iz] + p[ix*n1+iz];
 		}
-#pragma ivdep
+#pragma simd
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			q[ix*n1+iz] = (Tt2[iz]*q[ix*n1+iz] - Tmu[iz]*dzvz[iz] + Tlm[iz]*(dxvx[iz]+dzvz[iz]))*Tt1[iz];
 			txx[ix*n1+iz] -= q[ix*n1+iz];
 		}
-#pragma ivdep
+#pragma simd
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			p[ix*n1+iz] = (Tt2[iz]*p[ix*n1+iz] - Tmu[iz]*dxvx[iz] + Tlm[iz]*(dxvx[iz]+dzvz[iz]))*Tt1[iz];
 			tzz[ix*n1+iz] -= p[ix*n1+iz];
@@ -193,17 +193,17 @@ GEOPHYSICS, VOL. 59, NO. 9 (SEPTEMBER 1994); P. 1444-1456
 
 		/* calculate Txz for all grid points except on the virtual boundary */
 		if (ix >= mod.ioTx) {
-#pragma ivdep
+#pragma simd
             for (iz=mod.ioTz; iz<mod.ieTz; iz++) {
 				dzvx[iz] = c1*(vx[ix*n1+iz]     - vx[ix*n1+iz-1]) +
 						   c2*(vx[ix*n1+iz+1]   - vx[ix*n1+iz-2]);
 			}
-#pragma ivdep
+#pragma simd
             for (iz=mod.ioTz; iz<mod.ieTz; iz++) {
 				dxvz[iz] = c1*(vz[ix*n1+iz]     - vz[(ix-1)*n1+iz]) +
 						   c2*(vz[(ix+1)*n1+iz] - vz[(ix-2)*n1+iz]);
 			}
-#pragma ivdep
+#pragma simd
             for (iz=mod.ioTz; iz<mod.ieTz; iz++) {
 				txz[ix*n1+iz] -= Tus[iz]*(dzvx[iz]+dxvz[iz]) + r[ix*n1+iz];
 				r[ix*n1+iz] = (Tt2[iz]*r[ix*n1+iz] + 0.5*Tmu[iz]*(dzvx[iz]+dxvz[iz]))*Tt1[iz];

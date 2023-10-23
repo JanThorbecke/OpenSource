@@ -24,7 +24,8 @@
 
 
 FILE *fileOpen(char *file, char *ext, int append);
-int traceWrite(segy *hdr, float *data, int n, FILE *fp);
+int traceWrite(segy *hdr, float *data, int n, long long offset, FILE *fp);
+
 
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
@@ -36,6 +37,7 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, wavPar wav, int ixsrc, in
 	int append, isnap;
 	static int first=1;
 	int n1, ibndx, ibndz, ixs, izs, ize, i, j;
+    long long offset;
 	int ix, iz, ix2;
 	float *snap, sdx, stime;
 	segy hdr;
@@ -143,37 +145,37 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, wavPar wav, int ixsrc, in
 				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
 					snap[j] = vx[ix2*n1+iz];
 				}
-				traceWrite(&hdr, snap, sna.nz, fpvx);
+				traceWrite(&hdr, snap, sna.nz, offset, fpvx);
 			}
 			if (sna.type.vz) {
 				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
 					snap[j] = vz[ix*n1+iz+1];
 				}
-				traceWrite(&hdr, snap, sna.nz, fpvz);
+				traceWrite(&hdr, snap, sna.nz, offset, fpvz);
 			}
 			if (sna.type.p) {
 				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
 					snap[j] = tzz[ix*n1+iz];
 				}
-				traceWrite(&hdr, snap, sna.nz, fpp);
+				traceWrite(&hdr, snap, sna.nz, offset, fpp);
 			}
 			if (sna.type.tzz) {
 				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
 					snap[j] = tzz[ix*n1+iz];
 				}
-				traceWrite(&hdr, snap, sna.nz, fptzz);
+				traceWrite(&hdr, snap, sna.nz, offset, fptzz);
 			}
 			if (sna.type.txx) {
 				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
 					snap[j] = txx[ix*n1+iz];
 				}
-				traceWrite(&hdr, snap, sna.nz, fptxx);
+				traceWrite(&hdr, snap, sna.nz, offset, fptxx);
 			}
 			if (sna.type.txz) {
 				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
 					snap[j] = txz[ix2*n1+iz+1];
 				}
-				traceWrite(&hdr, snap, sna.nz, fptxz);
+				traceWrite(&hdr, snap, sna.nz, offset, fptxz);
 			}
 			/* calculate divergence of velocity field */
 			if (sna.type.pp) {
@@ -181,7 +183,7 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, wavPar wav, int ixsrc, in
 					snap[j] = sdx*((vx[(ix+1)*n1+iz]-vx[ix*n1+iz])+
 									(vz[ix*n1+iz+1]-vz[ix*n1+iz]));
 				}
-				traceWrite(&hdr, snap, sna.nz, fppp);
+				traceWrite(&hdr, snap, sna.nz, offset, fppp);
 			}
 			/* calculate rotation of velocity field */
 			if (sna.type.ss) {
@@ -189,7 +191,7 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, wavPar wav, int ixsrc, in
 					snap[j] = sdx*((vx[ix*n1+iz]-vx[ix*n1+iz-1])-
 									(vz[ix*n1+iz]-vz[(ix-1)*n1+iz]));
 				}
-				traceWrite(&hdr, snap, sna.nz, fpss);
+				traceWrite(&hdr, snap, sna.nz, offset, fpss);
 			}
 
 		}

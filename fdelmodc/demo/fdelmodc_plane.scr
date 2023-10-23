@@ -23,6 +23,7 @@ export filero=model_ro.su
 
 export OMP_NUM_THREADS=1
 
+set -x
 time ../fdelmodc \
 	file_cp=$filecp file_cs=$filecs file_den=$filero \
 	ischeme=3 \

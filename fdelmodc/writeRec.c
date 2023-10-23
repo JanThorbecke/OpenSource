@@ -201,7 +201,7 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
         hdr.offset = (rec.x[irec]-ixsrc)*mod.dx;
         hdr.cdp    = (hdr.gx + hdr.sx)/2;
         hdr.gelev  = (int)(-1000*(mod.z0+rec.z[irec]*mod.dz));
-	offset     = (ishot*rec.n+irec)*(TRCBYTES+rec.nt*sizeof(float));
+        offset     = (ishot*rec.n+irec)*(TRCBYTES+rec.nt*sizeof(float));
 
         if (rec.type.vx) {
             traceWrite( &hdr, &rec_vx[irec*rec.nt], nsam, offset, fpvx) ;
