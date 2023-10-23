@@ -79,7 +79,7 @@ float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float
 	/* calculate vx for all grid points except on the virtual boundary*/
 #pragma omp for private (ix, iz) nowait schedule(guided,1)
 	for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
-#pragma ivdep
+#pragma simd
 		for (iz=mod.ioXz; iz<mod.ieXz; iz++) {
 			vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 						c1*(txx[ix*n1+iz]     - txx[(ix-1)*n1+iz] +
@@ -92,7 +92,7 @@ float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float
 	/* calculate vz for all grid points except on the virtual boundary */
 #pragma omp for private (ix, iz)  schedule(guided,1)
 	for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
-#pragma ivdep
+#pragma simd
 		for (iz=mod.ioZz; iz<mod.ieZz; iz++) {
 			vz[ix*n1+iz] -= roz[ix*n1+iz]*(
 						c1*(tzz[ix*n1+iz]     - tzz[ix*n1+iz-1] +
@@ -114,7 +114,7 @@ float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float
 	/* calculate Txx/tzz for all grid points except on the virtual boundary */
 #pragma omp	for private (ix, iz, dvx, dvz) nowait schedule(guided,1)
 	for (ix=mod.ioPx; ix<mod.iePx; ix++) {
-#pragma ivdep
+#pragma simd
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			dvx = c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
 			      c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]);
@@ -130,7 +130,7 @@ float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float
 	/* calculate Txz for all grid points except on the virtual boundary */
 #pragma omp	for private (ix, iz)  schedule(guided,1)
 	for (ix=mod.ioTx; ix<mod.ieTx; ix++) {
-#pragma ivdep
+#pragma simd
 		for (iz=mod.ioTz; iz<mod.ieTz; iz++) {
 			txz[ix*n1+iz] -= mul[ix*n1+iz]*(
 					c1*(vx[ix*n1+iz]     - vx[ix*n1+iz-1] +

@@ -22,7 +22,7 @@
 
 
 FILE *fileOpen(char *file, char *ext, int append);
-int traceWrite(segy *hdr, float *data, int n, FILE *fp);
+int traceWrite(segy *hdr, float *data, int n, long long offset, FILE *fp);
 void name_ext(char *filename, char *extension);
 void vmess(char *fmt, ...);
 
@@ -108,6 +108,7 @@ int writeBeams(modPar mod, snaPar sna, int ixsrc, int izsrc, int ishot, int file
 {
 	FILE    *fpvx, *fpvz, *fptxx, *fptzz, *fptxz, *fpp, *fppp, *fpss;
 	int append;
+	long long offset;
 	int ix;
 	char number[16], filename[1024];
 	segy hdr;
@@ -156,28 +157,28 @@ int writeBeams(modPar mod, snaPar sna, int ixsrc, int izsrc, int ishot, int file
 		hdr.gx     = 1000*(mod.x0+(sna.x1+ix)*mod.dx);
 
 		if (sna.type.vx) {
-			traceWrite( &hdr, &beam_vx[ix*sna.nz], sna.nz, fpvx) ;
+			traceWrite( &hdr, &beam_vx[ix*sna.nz], sna.nz, offset, fpvx) ;
 		}
 		if (sna.type.vz) {
-			traceWrite( &hdr, &beam_vz[ix*sna.nz], sna.nz, fpvz) ;
+			traceWrite( &hdr, &beam_vz[ix*sna.nz], sna.nz, offset, fpvz) ;
 		}
 		if (sna.type.p) {
-			traceWrite( &hdr, &beam_p[ix*sna.nz], sna.nz, fpp) ;
+			traceWrite( &hdr, &beam_p[ix*sna.nz], sna.nz, offset, fpp) ;
 		}
 		if (sna.type.tzz) {
-			traceWrite( &hdr, &beam_tzz[ix*sna.nz], sna.nz, fptzz) ;
+			traceWrite( &hdr, &beam_tzz[ix*sna.nz], sna.nz, offset, fptzz) ;
 		}
 		if (sna.type.txx) {
-			traceWrite( &hdr, &beam_txx[ix*sna.nz], sna.nz, fptxx) ;
+			traceWrite( &hdr, &beam_txx[ix*sna.nz], sna.nz, offset, fptxx) ;
 		}
 		if (sna.type.txz) {
-			traceWrite( &hdr, &beam_txz[ix*sna.nz], sna.nz, fptxz) ;
+			traceWrite( &hdr, &beam_txz[ix*sna.nz], sna.nz, offset, fptxz) ;
 		}
 		if (sna.type.pp) {
-			traceWrite( &hdr, &beam_pp[ix*sna.nz], sna.nz, fppp) ;
+			traceWrite( &hdr, &beam_pp[ix*sna.nz], sna.nz, offset, fppp) ;
 		}
 		if (sna.type.ss) {
-			traceWrite( &hdr, &beam_ss[ix*sna.nz], sna.nz, fpss) ;
+			traceWrite( &hdr, &beam_ss[ix*sna.nz], sna.nz, offset, fpss) ;
 		}
 
 	}

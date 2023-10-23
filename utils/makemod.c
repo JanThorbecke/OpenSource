@@ -179,6 +179,7 @@ int main(int argc, char **argv)
     if(!getparstring("file_base",&file_base))
       verr("file_base not specified.");
   }
+  netcdf=0;
   if (strstr(file_base, ".nc") != NULL) netcdf=1;
 #ifndef _NETCDF
   if (netcdf) {
