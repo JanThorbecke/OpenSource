@@ -79,7 +79,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 
 	if (bnd.top==3) { /* rigid surface at top */
 #pragma omp for private (ix, iz) nowait
-#pragma ivdep
+#pragma simd
 		for (ix=1; ix<=nx; ix++) {
 			vx[ix*n1+ibnd] = 0.0;
 			vz[ix*n1+ibnd] = -vz[ix*n1+ibnd+1];
@@ -89,7 +89,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 	}
 	if (bnd.rig==3) { /* rigid surface at right */
 #pragma omp for private (ix, iz) nowait
-#pragma ivdep
+#pragma simd
 		for (iz=1; iz<=nz; iz++) {
 			vz[(nx+ibnd-1)*n1+iz] = 0.0;
 			vx[(nx+ibnd)*n1+iz]   = -vx[(nx+ibnd-1)*n1+iz];
@@ -102,7 +102,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 	}
 	if (bnd.bot==3) { /* rigid surface at bottom */
 #pragma omp for private (ix, iz) nowait
-#pragma ivdep
+#pragma simd
 		for (ix=1; ix<=nx; ix++) {
 			vx[ix*n1+nz+ibnd-1] = 0.0;
 			vz[ix*n1+nz+ibnd]   = -vz[ix*n1+nz+ibnd-1];
@@ -115,7 +115,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 	}
 	if (bnd.lef==3) { /* rigid surface at left */
 #pragma omp for private (ix, iz) nowait
-#pragma ivdep
+#pragma simd
 		for (iz=1; iz<=nz; iz++) {
 			vz[ibnd*n1+iz] = 0.0;
 			vx[ibnd*n1+iz] = -vx[(ibnd+1)*n1+iz];
@@ -190,7 +190,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
             /* PML Vz-component same as default kernel */
 #pragma omp for private (ix, iz)
             for (ix=mod.ioZx-npml; ix<mod.ioZx; ix++) {
-#pragma ivdep
+#pragma simd
                 for (iz=mod.ioZz; iz<mod.ieZz; iz++) {
                     vz[ix*n1+iz] -= roz[ix*n1+iz]*(
                                     c1*(p[ix*n1+iz]   - p[ix*n1+iz-1]) +
@@ -250,7 +250,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
             /* PML Vz-component same as default kernel */
 #pragma omp for private (ix, iz)
             for (ix=mod.ieZx; ix<mod.ieZx+npml; ix++) {
-#pragma ivdep
+#pragma simd
                 for (iz=mod.ioZz; iz<mod.ieZz; iz++) {
                     vz[ix*n1+iz] -= roz[ix*n1+iz]*(
                                     c1*(p[ix*n1+iz]   - p[ix*n1+iz-1]) +
@@ -310,7 +310,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
             /* PML top Vx-component same as default kernel */
 #pragma omp for private (ix, iz)
             for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
-#pragma ivdep
+#pragma simd
                 for (iz=mod.ioXz-npml; iz<mod.ioXz; iz++) {
                     vx[ix*n1+iz] -= rox[ix*n1+iz]*(
                                     c1*(p[ix*n1+iz]     - p[(ix-1)*n1+iz]) +
@@ -338,7 +338,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
             /* PML bottom Vx-component same as default kernel */
 #pragma omp for private (ix, iz)
             for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
-#pragma ivdep
+#pragma simd
                 for (iz=mod.ieXz; iz<mod.ieXz+npml; iz++) {
                     vx[ix*n1+iz] -= rox[ix*n1+iz]*(
                                     c1*(p[ix*n1+iz]     - p[(ix-1)*n1+iz]) +
@@ -437,7 +437,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ib = (bnd.ntap+izo-1);
 #pragma omp for private(ix,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iz=izo; iz<ize; iz++) {
 					vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 									c1*(tzz[ix*n1+iz]	 - tzz[(ix-1)*n1+iz]) +
@@ -454,7 +454,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 				ibx = (ixo);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 									c1*(tzz[ix*n1+iz]	 - tzz[(ix-1)*n1+iz]) +
@@ -472,7 +472,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 									c1*(tzz[ix*n1+iz]	 - tzz[(ix-1)*n1+iz]) +
@@ -493,7 +493,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ib = (bnd.ntap+izo-1);
 #pragma omp for private (ix, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iz=izo; iz<ize; iz++) {
 					vz[ix*n1+iz] -= roz[ix*n1+iz]*(
 								c1*(tzz[ix*n1+iz]   - tzz[ix*n1+iz-1]) +
@@ -510,7 +510,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 				ibx = (ixo);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vz[ix*n1+iz] -= roz[ix*n1+iz]*(
 									c1*(tzz[ix*n1+iz]   - tzz[ix*n1+iz-1]) +
@@ -528,7 +528,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vz[ix*n1+iz] -= roz[ix*n1+iz]*(
 									c1*(tzz[ix*n1+iz]   - tzz[ix*n1+iz-1]) +
@@ -551,7 +551,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ib = (bnd.ntap+izo-1);
 #pragma omp for private(ix,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iz=izo; iz<ize; iz++) {
 					vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 								c1*(txx[ix*n1+iz]	 - txx[(ix-1)*n1+iz] +
@@ -570,7 +570,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 				ibx = (ixo);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 									c1*(txx[ix*n1+iz]	 - txx[(ix-1)*n1+iz] +
@@ -590,7 +590,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 									c1*(txx[ix*n1+iz]	 - txx[(ix-1)*n1+iz] +
@@ -612,7 +612,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ib = (bnd.ntap+izo-1);
 #pragma omp for private (ix, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iz=izo; iz<ize; iz++) {
 					vz[ix*n1+iz] -= roz[ix*n1+iz]*(
 								c1*(tzz[ix*n1+iz]	 - tzz[ix*n1+iz-1] +
@@ -631,7 +631,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 				ibx = (ixo);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 					vz[ix*n1+iz] -= roz[ix*n1+iz]*(
 								c1*(tzz[ix*n1+iz]	 - tzz[ix*n1+iz-1] +
@@ -651,7 +651,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vz[ix*n1+iz] -= roz[ix*n1+iz]*(
 								c1*(tzz[ix*n1+iz]	 - tzz[ix*n1+iz-1] +
@@ -684,7 +684,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ib = (ize-bnd.ntap);
 #pragma omp for private(ix,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iz=izo; iz<ize; iz++) {
 					vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 								c1*(tzz[ix*n1+iz]	 - tzz[(ix-1)*n1+iz]) +
@@ -700,7 +700,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 				ibx = (ixo);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 									c1*(tzz[ix*n1+iz]	 - tzz[(ix-1)*n1+iz]) +
@@ -718,7 +718,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 									c1*(tzz[ix*n1+iz]	 - tzz[(ix-1)*n1+iz]) +
@@ -739,7 +739,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ib = (ize-bnd.ntap);
 #pragma omp for private (ix, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iz=izo; iz<ize; iz++) {
 					vz[ix*n1+iz] -= roz[ix*n1+iz]*(
 								c1*(tzz[ix*n1+iz]   - tzz[ix*n1+iz-1]) +
@@ -755,7 +755,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 				ibx = (ixo);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vz[ix*n1+iz] -= roz[ix*n1+iz]*(
 									c1*(tzz[ix*n1+iz]   - tzz[ix*n1+iz-1]) +
@@ -773,7 +773,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vz[ix*n1+iz] -= roz[ix*n1+iz]*(
 									c1*(tzz[ix*n1+iz]   - tzz[ix*n1+iz-1]) +
@@ -797,7 +797,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ib = (ize-bnd.ntap);
 #pragma omp for private(ix,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iz=izo; iz<ize; iz++) {
 					vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 								c1*(txx[ix*n1+iz]	 - txx[(ix-1)*n1+iz] +
@@ -816,7 +816,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 				ibx = (ixo);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 								c1*(txx[ix*n1+iz]	 - txx[(ix-1)*n1+iz] +
@@ -840,7 +840,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 				
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 								c1*(txx[ix*n1+iz]	 - txx[(ix-1)*n1+iz] +
@@ -862,7 +862,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ib = (ize-bnd.ntap);
 #pragma omp for private (ix, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iz=izo; iz<ize; iz++) {
 					vz[ix*n1+iz] -= roz[ix*n1+iz]*(
 								c1*(tzz[ix*n1+iz]	 - tzz[ix*n1+iz-1] +
@@ -881,7 +881,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 				ibx = (ixo);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vz[ix*n1+iz] -= roz[ix*n1+iz]*(
 								c1*(tzz[ix*n1+iz]	 - tzz[ix*n1+iz-1] +
@@ -901,7 +901,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vz[ix*n1+iz] -= roz[ix*n1+iz]*(
 								c1*(tzz[ix*n1+iz]	 - tzz[ix*n1+iz-1] +
@@ -935,7 +935,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ib = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iz=izo; iz<ize; iz++) {
 					vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 								c1*(tzz[ix*n1+iz]	 - tzz[(ix-1)*n1+iz]) +
@@ -954,7 +954,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ib = (bnd.ntap+ixo-1);
 #pragma omp for private (ix, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iz=izo; iz<ize; iz++) {
 					vz[ix*n1+iz] -= roz[ix*n1+iz]*(
 								c1*(tzz[ix*n1+iz]   - tzz[ix*n1+iz-1]) +
@@ -976,7 +976,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ib = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iz=izo; iz<ize; iz++) {
 					vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 								c1*(txx[ix*n1+iz]	 - txx[(ix-1)*n1+iz] +
@@ -997,7 +997,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ib = (bnd.ntap+ixo-1);
 #pragma omp for private (ix, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iz=izo; iz<ize; iz++) {
 					vz[ix*n1+iz] -= roz[ix*n1+iz]*(
 								c1*(tzz[ix*n1+iz]	 - tzz[ix*n1+iz-1] +
@@ -1028,7 +1028,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ib = (ixe-bnd.ntap);
 #pragma omp for private(ix,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iz=izo; iz<ize; iz++) {
 					vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 								c1*(tzz[ix*n1+iz]	 - tzz[(ix-1)*n1+iz]) +
@@ -1047,7 +1047,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ib = (ixe-bnd.ntap);
 #pragma omp for private (ix, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iz=izo; iz<ize; iz++) {
 					vz[ix*n1+iz] -= roz[ix*n1+iz]*(
 								c1*(tzz[ix*n1+iz]   - tzz[ix*n1+iz-1]) +
@@ -1069,7 +1069,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ib = (ixe-bnd.ntap);
 #pragma omp for private(ix,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iz=izo; iz<ize; iz++) {
 					vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 								c1*(txx[ix*n1+iz]	 - txx[(ix-1)*n1+iz] +
@@ -1089,7 +1089,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ib = (ixe-bnd.ntap);
 #pragma omp for private (ix, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iz=izo; iz<ize; iz++) {
 					vz[ix*n1+iz] -= roz[ix*n1+iz]*(
 								c1*(tzz[ix*n1+iz]	 - tzz[ix*n1+iz-1] +

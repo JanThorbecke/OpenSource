@@ -99,7 +99,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 	/* calculate vx for all grid points except on the virtual boundary*/
 #pragma omp for private (ix, iz) nowait
 	for (ix=ioXx; ix<nx+1; ix++) {
-#pragma ivdep
+#pragma simd
 		for (iz=ioXz; iz<nz+1; iz++) {
 			tx[ix*n1+iz] -= mul[ix*n1+iz]*(
 						c1*(vz[ix*n1+iz]     - vz[(ix-1)*n1+iz]) +
@@ -110,7 +110,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 	/* calculate vz for all grid points except on the virtual boundary */
 #pragma omp for private (ix, iz) 
 	for (ix=ioZx; ix<nx+1; ix++) {
-#pragma ivdep
+#pragma simd
 		for (iz=ioZz; iz<nz+1; iz++) {
 			tz[ix*n1+iz] -= mul[ix*n1+iz]*(
 						c1*(vz[ix*n1+iz]   - vz[ix*n1+iz-1]) +
@@ -126,9 +126,9 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 
 	/* calculate p/tzz for all grid points except on the virtual boundary */
 #pragma omp	for private (ix, iz)
-#pragma ivdep
+#pragma simd
 	for (ix=ioPx; ix<nx+1; ix++) {
-#pragma ivdep
+#pragma simd
 		for (iz=ioPz; iz<nz+1; iz++) {
 			vz[ix*n1+iz] -= ro[ix*n1+iz]*(
 						c1*(tx[(ix+1)*n1+iz] - tx[ix*n1+iz]) +
@@ -292,7 +292,7 @@ int taperEdges(modPar mod, bndPar bnd, float *vx, float *vz, int verbose)
         ib = (ntaper+ibnd-1);
 #pragma omp for private(ix,iz)
         for (ix=ibnd; ix<nx+ibnd; ix++) {
-#pragma ivdep
+#pragma simd
             for (iz=ibnd; iz<ibnd+ntaper; iz++) {
                 vx[ix*n1+iz] *= bnd.tapx[ib-iz];
                 vz[ix*n1+iz+1] *= bnd.tapz[ib-iz];
@@ -305,7 +305,7 @@ int taperEdges(modPar mod, bndPar bnd, float *vx, float *vz, int verbose)
         ib = (nx+ibnd-ntaper);
 #pragma omp for private(ix,iz)
         for (ix=nx+ibnd-ntaper; ix<nx+ibnd; ix++) {
-#pragma ivdep
+#pragma simd
             for (iz=ibnd; iz<nz+ibnd; iz++) {
                 vx[ix*n1+iz] *= bnd.tapx[ix-ib];
                 vz[ix*n1+iz] *= bnd.tapz[ix-ib];
@@ -318,7 +318,7 @@ int taperEdges(modPar mod, bndPar bnd, float *vx, float *vz, int verbose)
         ib = (nz+ibnd-ntaper);
 #pragma omp for private(ix,iz)
         for (ix=ibnd; ix<nx+ibnd; ix++) {
-#pragma ivdep
+#pragma simd
             for (iz=nz+ibnd-ntaper; iz<nz+ibnd; iz++) {
                 vx[ix*n1+iz]   *= bnd.tapx[iz-ib];
                 vz[ix*n1+iz+1] *= bnd.tapz[iz-ib];
@@ -331,7 +331,7 @@ int taperEdges(modPar mod, bndPar bnd, float *vx, float *vz, int verbose)
         ib = (ntaper+ibnd-1);
 #pragma omp for private(ix,iz)
         for (ix=ibnd; ix<ntaper+ibnd; ix++) {
-#pragma ivdep
+#pragma simd
             for (iz=ibnd; iz<nz+ibnd; iz++) {
                 vx[ix*n1+iz] *= bnd.tapx[ib-ix];
                 vz[ix*n1+iz] *= bnd.tapz[ib-ix];

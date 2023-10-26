@@ -148,7 +148,7 @@ int acoustic4_qr(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int 
 		for (iz=ioXz; iz<ieXz; iz++) {
             timep[iz] = vx[ix*n1+iz];
 		}
-#pragma ivdep
+#pragma simd
 		for (iz=ioXz; iz<ieXz; iz++) {
 			vx[ix*n1+iz] -= rox[ix*n1+iz]*(
 				c1*(p[ix*n1+iz]     - p[(ix-1)*n1+iz]) +
@@ -165,7 +165,7 @@ int acoustic4_qr(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int 
 		for (iz=ioZz; iz<ieZz; iz++) {
             timep[iz] = vz[ix*n1+iz];
 		}
-#pragma ivdep
+#pragma simd
 		for (iz=ioZz; iz<ieZz; iz++) {
             //timep = vz[ix*n1+iz];
 			vz[ix*n1+iz] -= roz[ix*n1+iz]*(
@@ -240,12 +240,12 @@ int acoustic4_qr(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int 
 
 	/* calculate p/tzz for all grid points except on the virtual boundary */
 #pragma omp	for private (ix, iz)
-#pragma ivdep
+#pragma simd
 	for (ix=ioPx; ix<iePx; ix++) {
 		for (iz=ioXz; iz<ieXz; iz++) {
             timep[iz] = p[ix*n1+iz];
 		}
-#pragma ivdep
+#pragma simd
 		for (iz=ioPz; iz<iePz; iz++) {
 			p[ix*n1+iz] -= l2m[ix*n1+iz]*(
 						c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +

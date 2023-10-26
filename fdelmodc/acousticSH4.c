@@ -82,7 +82,7 @@ int acousticSH4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 	/* calculate vx for all grid points except on the virtual boundary*/
 #pragma omp for private (ix, iz) nowait
 	for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
-#pragma ivdep
+#pragma simd
 		for (iz=mod.ioXz; iz<mod.ieXz; iz++) {
 			tx[ix*n1+iz] -= mul[ix*n1+iz]*(
 						c1*(vz[ix*n1+iz]     - vz[(ix-1)*n1+iz]) +
@@ -93,7 +93,7 @@ int acousticSH4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 	/* calculate vz for all grid points except on the virtual boundary */
 #pragma omp for private (ix, iz) 
 	for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
-#pragma ivdep
+#pragma simd
 		for (iz=mod.ioZz; iz<mod.ieZz; iz++) {
 			tz[ix*n1+iz] -= mul[ix*n1+iz]*(
 						c1*(vz[ix*n1+iz]   - vz[ix*n1+iz-1]) +
@@ -111,9 +111,9 @@ int acousticSH4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 
 	/* calculate p/tzz for all grid points except on the virtual boundary */
 #pragma omp	for private (ix, iz)
-#pragma ivdep
+#pragma simd
 	for (ix=mod.ioPx; ix<mod.iePx; ix++) {
-#pragma ivdep
+#pragma simd
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			vz[ix*n1+iz] -= rox[ix*n1+iz]*(
 						c1*(tx[(ix+1)*n1+iz] - tx[ix*n1+iz]) +
