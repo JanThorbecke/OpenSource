@@ -139,6 +139,8 @@ int main (int argc, char **argv)
 	fp_in1 = fopen(file_in1, "r");
 	if (fp_in1 == NULL) verr("error on opening input file_in1=%s", file_in1);
 
+	if (dt == 0.0) vwarn("dt==0 in file_in1 trying to use dt in file_in2");
+
 	size = ntmax * nxmax;
 	tmpdata = (float *)malloc(size*sizeof(float));
 	hdrs_in1 = (segy *) calloc(nxmax,sizeof(segy));
@@ -155,10 +157,10 @@ int main (int argc, char **argv)
 		disp_fileinfo(file_in1, nt1, nx1, f1,  f2,  dt,  d2, hdrs_in1);
 	}
 
-
 /* Reading input data for file_in2 */
 
 	if (autoco) {
+	    if (dt == 0.0) verr("dt==0 in file_in1 and used in autocorrelation: please set the hdr dt in file_in1 ! ");
 		data1 = (float *)malloc(nt1*nx1*sizeof(float));
 		data2 = (float *)malloc(nt1*nx1*sizeof(float));
 		hdrs_out = (segy *) calloc(nx1,sizeof(segy));
@@ -203,6 +205,13 @@ int main (int argc, char **argv)
 		f2b = hdrs_in2[0].f2;
 		d1b = (float)hdrs_in2[0].dt*1e-6;
 		
+	    if (dt == 0.0 && d1b!=0.0) {
+		    dt=d1b;
+		}
+		else {
+            verr("dt==0 in file_in1 and file_in2: please set the hdr dt in file_in1 !");
+        }
+
 		/* save start of first axis */
 		tmin2=f1;
 		if (verbose) {
