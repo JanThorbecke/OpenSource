@@ -385,7 +385,7 @@ void rcdft(REAL *rdata, complex *cdata, int n, int sign)
 		nc = (n+2)/2;
 		csval[id] = (double *) malloc(2*n*nc*sizeof(double));
 		for (i=0; i<nc; i++) {
-	    	#pragma ivdep
+	    	#pragma simd
 			for (j=0; j<n; j++) {
 				csval[id][2*i*j] = cos(scl*(i*j));
 				csval[id][2*i*j+1] = sin(scl*(i*j));
@@ -397,7 +397,7 @@ void rcdft(REAL *rdata, complex *cdata, int n, int sign)
 	nc = (n+2)/2;
 	for (i=0; i<nc; i++) {
 		sumr = sumi = 0.0;
-	    #pragma ivdep
+	    #pragma simd
 		for (j=0; j<n; j++) {
 			sumr += rdata[j]*csval[id][2*i*j];
 			sumi += sign*rdata[j]*csval[id][2*i*j+1];
@@ -429,7 +429,7 @@ void crdft(complex *cdata, REAL *rdata, int n, int sign)
 		nc = (n+2)/2;
 		csval[id] = (double *) malloc(2*n*nc*sizeof(double));
 		for (i=0; i<n; i++) {
-	    	#pragma ivdep
+	    	#pragma simd
 			for (j=0; j<nc; j++) {
 				csval[id][2*i*j] = cos(scl*(i*j));
 				csval[id][2*i*j+1] = sin(scl*(i*j));
@@ -440,10 +440,10 @@ void crdft(complex *cdata, REAL *rdata, int n, int sign)
 
 	nc = (n+2)/2;
 	scl = (2.0*M_PI)/((double)n);
-	#pragma ivdep
+	#pragma simd
 	for (i=0; i<n; i++) {
 		sumr = 0.0;
-		#pragma ivdep
+		#pragma simd
 		for (j=0; j<nc; j++) {
 			sumr += cdata[j].r*csval[id][2*i*j]-sign*cdata[j].i*csval[id][2*i*j+1];
 //            sumr += cdata[j].r*cos(scl*i*j)-sign*cdata[j].i*sin(scl*i*j);
