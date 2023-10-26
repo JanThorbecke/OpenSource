@@ -205,17 +205,17 @@ long acoustic4_qr_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 #pragma omp for private (ix, iy, iz) nowait
 	for (iy=ioXy; iy<ieXy; iy++) {
 	    for (ix=ioXx; ix<ieXx; ix++) {
-#pragma ivdep
+#pragma simd
             for (iz=ioXz; iz<ieXz; iz++) {
                 timep[iz] = vx[iy*n2*n1+ix*n1+iz];
             }
-#pragma ivdep
+#pragma simd
             for (iz=ioXz; iz<ieXz; iz++) {
                 vx[iy*n2*n1+ix*n1+iz] -= rox[iy][ix][iz]*(
                     c1*(p[iy*n2*n1+ix*n1+iz]     - p[iy*n2*n1+(ix-1)*n1+iz]) +
                     c2*(p[iy*n2*n1+(ix+1)*n1+iz] - p[iy*n2*n1+(ix-2)*n1+iz]));
             }
-#pragma ivdep
+#pragma simd
             for (iz=ioXz; iz<ieXz; iz++) {
                 vx[iy*n2*n1+ix*n1+iz] += 0.5*(vx[iy*n2*n1+ix*n1+iz]+timep[iz])*mod.qr;
             }
@@ -226,17 +226,17 @@ long acoustic4_qr_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 #pragma omp for private (ix, iy, iz) 
 	for (iy=ioYy; iy<ieYy; iy++) { 
 	    for (ix=ioYx; ix<ieYx; ix++) {
-#pragma ivdep
+#pragma simd
             for (iz=ioYz; iz<ieYz; iz++) {
                 timep[iz] = vy[iy*n2*n1+ix*n1+iz];
             }
-#pragma ivdep
+#pragma simd
             for (iz=ioYz; iz<ieYz; iz++) {
                 vy[iy*n2*n1+ix*n1+iz] -= roy[iy][ix][iz]*(
                             c1*(p[iy*n2*n1+ix*n1+iz]     - p[(iy-1)*n2*n1+ix*n1+iz]) +
                             c2*(p[(iy+1)*n2*n1+ix*n1+iz] - p[(iy-2)*n2*n1+ix*n1+iz]));
             }
-#pragma ivdep
+#pragma simd
             for (iz=ioYz; iz<ieYz; iz++) {
                 vy[iy*n2*n1+ix*n1+iz] += 0.5*(vy[iy*n2*n1+ix*n1+iz]+timep[iz])*mod.qr;
             }
@@ -247,17 +247,17 @@ long acoustic4_qr_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 #pragma omp for private (ix, iy, iz) 
 	for (iy=ioZy; iy<ieZy; iy++) { 
 	    for (ix=ioZx; ix<ieZx; ix++) {
-#pragma ivdep
+#pragma simd
             for (iz=ioZz; iz<ieZz; iz++) {
                 timep[iz] = vz[iy*n2*n1+ix*n1+iz];
             }
-#pragma ivdep
+#pragma simd
             for (iz=ioZz; iz<ieZz; iz++) {
                 vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
                             c1*(p[iy*n2*n1+ix*n1+iz]   - p[iy*n2*n1+ix*n1+iz-1]) +
                             c2*(p[iy*n2*n1+ix*n1+iz+1] - p[iy*n2*n1+ix*n1+iz-2]));
             }
-#pragma ivdep
+#pragma simd
             for (iz=ioZz; iz<ieZz; iz++) {
                 vz[iy*n2*n1+ix*n1+iz] += 0.5*(vz[iy*n2*n1+ix*n1+iz]+timep[iz])*mod.qr;
             }
@@ -277,11 +277,11 @@ long acoustic4_qr_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 #pragma omp	for private (ix, iy, iz)
 	for (iy=ioPy; iy<iePy; iy++) {
 	    for (ix=ioPx; ix<iePx; ix++) {
-#pragma ivdep
+#pragma simd
             for (iz=ioXz; iz<ieXz; iz++) {
                 timep[iz] = p[iy*n2*n1+ix*n1+iz];
             }
-#pragma ivdep
+#pragma simd
             for (iz=ioPz; iz<iePz; iz++) {
                 p[iy*n2*n1+ix*n1+iz] -= l2m[iy][ix][iz]*(
                             c1*(vx[iy*n2*n1+(ix+1)*n1+iz] - vx[iy*n2*n1+ix*n1+iz]) +
@@ -291,7 +291,7 @@ long acoustic4_qr_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
                             c1*(vz[iy*n2*n1+ix*n1+iz+1]   - vz[iy*n2*n1+ix*n1+iz]) +
                             c2*(vz[iy*n2*n1+ix*n1+iz+2]   - vz[iy*n2*n1+ix*n1+iz-1]));
             }
-#pragma ivdep
+#pragma simd
             for (iz=ioXz; iz<ieXz; iz++) {
                 p[iy*n2*n1+ix*n1+iz] += 0.5*(p[iy*n2*n1+ix*n1+iz]+timep[iz])*mod.qr;
             }

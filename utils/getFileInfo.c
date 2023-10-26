@@ -54,6 +54,7 @@ int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *
     else {
         *d1 = hdr.d1;
         *f1 = hdr.f1;
+		if (verbose) vwarn("trid != 1 setting dt and f1 to",*d1, *f1);
     }
     *f2 = hdr.f2;
 

@@ -105,7 +105,7 @@ MID 	left 	mid 	mid
 	if (bnd.top==3) { /* rigid surface at top */
 #pragma omp for private (ix, iy, iz) nowait
         for (iy=1; iy<=ny; iy++) {
-        	#pragma ivdep
+        	#pragma simd
             for (ix=1; ix<=nx; ix++) {
                 vx[iy*n2*n1+ix*n1+ibnd] = 0.0;
                 vy[iy*n2*n1+ix*n1+ibnd] = 0.0;
@@ -118,7 +118,7 @@ MID 	left 	mid 	mid
 	if (bnd.rig==3) { /* rigid surface at right */
 #pragma omp for private (ix, iy, iz) nowait
         for (iy=1; iy<=ny; iy++) {
-        	#pragma ivdep
+        	#pragma simd
             for (iz=1; iz<=nz; iz++) {
                 vz[iy*n2*n1+(nx+ibnd-1)*n1+iz] = 0.0;
                 vy[iy*n2*n1+(nx+ibnd-1)*n1+iz] = 0.0;
@@ -132,7 +132,7 @@ MID 	left 	mid 	mid
         }
 	}if (bnd.bac==3) { /* rigid surface at back */
 #pragma omp for private (ix, iy, iz) nowait
-#pragma ivdep
+#pragma simd
         for (ix=1; ix<=nx; ix++) {
             for (iz=1; iz<=nz; iz++) {
                 vz[(ny+ibnd-1)*n2*n1+ix*n1+iz] = 0.0;
@@ -148,7 +148,7 @@ MID 	left 	mid 	mid
 	}
 	if (bnd.bot==3) { /* rigid surface at bottom */
 #pragma omp for private (ix, iy, iz) nowait
-#pragma ivdep
+#pragma simd
         for (iy=1; iy<=ny; iy++) {
             for (ix=1; ix<=nx; ix++) {
                 vx[iy*n2*n1+ix*n1+nz+ibnd-1] = 0.0;
@@ -164,7 +164,7 @@ MID 	left 	mid 	mid
 	}
 	if (bnd.lef==3) { /* rigid surface at left */
 #pragma omp for private (ix, iy, iz) nowait
-#pragma ivdep
+#pragma simd
         for (iy=1; iy<=ny; iy++) {
             for (iz=1; iz<=nz; iz++) {
                 vz[iy*n2*n1+ibnd*n1+iz] = 0.0;
@@ -180,7 +180,7 @@ MID 	left 	mid 	mid
 	}
     if (bnd.fro==3) { /* rigid surface at front */
 #pragma omp for private (ix, iy, iz) nowait
-#pragma ivdep
+#pragma simd
         for (ix=1; ix<=nx; ix++) {
             for (iz=1; iz<=nz; iz++) {
                 vz[ibnd*n2*n1+ix*n1+iz] = 0.0;
@@ -221,7 +221,7 @@ MID 	left 	mid 	mid
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
 				for (iy=iyo; iy<iye; iy++) {
-					#pragma ivdep
+					#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
 										c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[iy*n1*n2+(ix-1)*n1+iz]) +
@@ -242,7 +242,7 @@ MID 	left 	mid 	mid
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 					for (iy=iyo; iy<iye; iy++) {
-						#pragma ivdep
+						#pragma simd
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
 										c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[iy*n1*n2+(ix-1)*n1+iz]) +
@@ -262,7 +262,7 @@ MID 	left 	mid 	mid
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
 						for (iy=iyo; iy<iye; iy++) {
-							#pragma ivdep
+							#pragma simd
 							for (iz=izo; iz<ize; iz++) {
 								vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
 											c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[iy*n1*n2+(ix-1)*n1+iz]) +
@@ -283,7 +283,7 @@ MID 	left 	mid 	mid
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
 						for (iy=iyo; iy<iye; iy++) {
-							#pragma ivdep
+							#pragma simd
 							for (iz=izo; iz<ize; iz++) {
 								vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
 											c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[iy*n1*n2+(ix-1)*n1+iz]) +
@@ -312,7 +312,7 @@ MID 	left 	mid 	mid
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 					for (iy=iyo; iy<iye; iy++) {
-						#pragma ivdep
+						#pragma simd
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
 										c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[iy*n1*n2+(ix-1)*n1+iz]) +
@@ -331,7 +331,7 @@ MID 	left 	mid 	mid
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
 						for (iy=iyo; iy<iye; iy++) {
-							#pragma ivdep
+							#pragma simd
 							for (iz=izo; iz<ize; iz++) {
 								vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
 											c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[iy*n1*n2+(ix-1)*n1+iz]) +
@@ -352,7 +352,7 @@ MID 	left 	mid 	mid
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
 						for (iy=iyo; iy<iye; iy++) {
-							#pragma ivdep
+							#pragma simd
 							for (iz=izo; iz<ize; iz++) {
 								vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
 											c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[iy*n1*n2+(ix-1)*n1+iz]) +
@@ -377,7 +377,7 @@ MID 	left 	mid 	mid
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 					for (iy=iyo; iy<iye; iy++) {
-						#pragma ivdep
+						#pragma simd
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
 										c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[iy*n1*n2+(ix-1)*n1+iz]) +
@@ -399,7 +399,7 @@ MID 	left 	mid 	mid
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 					for (iy=iyo; iy<iye; iy++) {
-						#pragma ivdep
+						#pragma simd
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
 										c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[iy*n1*n2+(ix-1)*n1+iz]) +
@@ -425,7 +425,7 @@ MID 	left 	mid 	mid
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
 				for (iy=iyo; iy<iye; iy++) {
-					#pragma ivdep
+					#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
 										c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[(iy-1)*n1*n2+ix*n1+iz]) +
@@ -446,7 +446,7 @@ MID 	left 	mid 	mid
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 					for (iy=iyo; iy<iye; iy++) {
-						#pragma ivdep
+						#pragma simd
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
 										c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[(iy-1)*n1*n2+ix*n1+iz]) +
@@ -464,7 +464,7 @@ MID 	left 	mid 	mid
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
 						for (iy=iyo; iy<iye; iy++) {
-							#pragma ivdep
+							#pragma simd
 							for (iz=izo; iz<ize; iz++) {
 								vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
 											c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[(iy-1)*n1*n2+ix*n1+iz]) +
@@ -486,7 +486,7 @@ MID 	left 	mid 	mid
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
 						for (iy=iyo; iy<iye; iy++) {
-							#pragma ivdep
+							#pragma simd
 							for (iz=izo; iz<ize; iz++) {
 								vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
 											c1*(tzz[iy*n1*n2+ix*n1+iz]	   - tzz[(iy-1)*n1*n2+ix*n1+iz]) +
@@ -514,7 +514,7 @@ MID 	left 	mid 	mid
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -533,7 +533,7 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -553,7 +553,7 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -576,7 +576,7 @@ MID 	left 	mid 	mid
 				iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -596,7 +596,7 @@ MID 	left 	mid 	mid
 				iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -622,7 +622,7 @@ MID 	left 	mid 	mid
 			ib = (bnd.ntap+izo-1);
 #pragma omp for private (ix, iy, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -641,7 +641,7 @@ MID 	left 	mid 	mid
 				ibx = (ixo);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -659,7 +659,7 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -678,7 +678,7 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -707,7 +707,7 @@ MID 	left 	mid 	mid
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -725,7 +725,7 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -744,7 +744,7 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -767,7 +767,7 @@ MID 	left 	mid 	mid
 				iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -787,7 +787,7 @@ MID 	left 	mid 	mid
 				iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -816,7 +816,7 @@ MID 	left 	mid 	mid
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
 				for (iy=iyo; iy<iye; iy++) {
-					#pragma ivdep
+					#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
 										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
@@ -841,7 +841,7 @@ MID 	left 	mid 	mid
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 					for (iy=iyo; iy<iye; iy++) {
-						#pragma ivdep
+						#pragma simd
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
 										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
@@ -864,9 +864,9 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
+//#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
-							#pragma ivdep
+							#pragma simd
 							for (iz=izo; iz<ize; iz++) {
 								vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
 										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
@@ -890,9 +890,9 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
+//#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
-							#pragma ivdep
+							#pragma simd
 							for (iz=izo; iz<ize; iz++) {
 								vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
 										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
@@ -924,9 +924,9 @@ MID 	left 	mid 	mid
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
+//#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
-						#pragma ivdep
+						#pragma simd
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
 										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
@@ -948,9 +948,9 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
+//#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
-							#pragma ivdep
+							#pragma simd
 							for (iz=izo; iz<ize; iz++) {
 								vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
 										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
@@ -974,9 +974,9 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
+//#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
-							#pragma ivdep
+							#pragma simd
 							for (iz=izo; iz<ize; iz++) {
 								vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
 										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
@@ -1004,9 +1004,9 @@ MID 	left 	mid 	mid
 				iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
+//#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
-						#pragma ivdep
+						#pragma simd
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
 										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
@@ -1031,9 +1031,9 @@ MID 	left 	mid 	mid
 				iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
+//#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
-						#pragma ivdep
+						#pragma simd
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
 										c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
@@ -1062,9 +1062,9 @@ MID 	left 	mid 	mid
 			ib = (bnd.ntap+izo-1);
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
+//#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
-					#pragma ivdep
+					#pragma simd
 					for (iz=izo; iz<ize; iz++) {
 						vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
 										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
@@ -1088,9 +1088,9 @@ MID 	left 	mid 	mid
 				ibx = (ixo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
+//#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
-						#pragma ivdep
+						#pragma simd
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
 										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
@@ -1111,9 +1111,9 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
+//#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
-							#pragma ivdep
+							#pragma simd
 							for (iz=izo; iz<ize; iz++) {
 								vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
 										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
@@ -1138,9 +1138,9 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
+//#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
-							#pragma ivdep
+							#pragma simd
 							for (iz=izo; iz<ize; iz++) {
 								vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
 										c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
@@ -1172,7 +1172,7 @@ MID 	left 	mid 	mid
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -1195,7 +1195,7 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -1219,7 +1219,7 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -1246,7 +1246,7 @@ MID 	left 	mid 	mid
 				iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -1270,7 +1270,7 @@ MID 	left 	mid 	mid
 				iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -1300,7 +1300,7 @@ MID 	left 	mid 	mid
 			ib = (bnd.ntap+izo-1);
 #pragma omp for private (ix, iy, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -1323,7 +1323,7 @@ MID 	left 	mid 	mid
 				ibx = (ixo);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -1345,7 +1345,7 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -1368,7 +1368,7 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -1401,7 +1401,7 @@ MID 	left 	mid 	mid
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 								vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -1423,7 +1423,7 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -1446,7 +1446,7 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -1473,7 +1473,7 @@ MID 	left 	mid 	mid
 				iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -1497,7 +1497,7 @@ MID 	left 	mid 	mid
 				iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -1536,7 +1536,7 @@ MID 	left 	mid 	mid
 			ib = (ize-bnd.ntap);
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -1555,7 +1555,7 @@ MID 	left 	mid 	mid
 				ibx = (ixo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -1573,7 +1573,7 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -1592,7 +1592,7 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -1621,7 +1621,7 @@ MID 	left 	mid 	mid
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -1639,7 +1639,7 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -1658,7 +1658,7 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -1681,7 +1681,7 @@ MID 	left 	mid 	mid
 				iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -1701,7 +1701,7 @@ MID 	left 	mid 	mid
 				iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -1727,7 +1727,7 @@ MID 	left 	mid 	mid
 			ib = (ize-bnd.ntap);
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -1746,7 +1746,7 @@ MID 	left 	mid 	mid
 				ibx = (ixo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -1764,7 +1764,7 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -1783,7 +1783,7 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -1811,7 +1811,7 @@ MID 	left 	mid 	mid
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -1829,7 +1829,7 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -1848,7 +1848,7 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -1871,7 +1871,7 @@ MID 	left 	mid 	mid
 				iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -1891,7 +1891,7 @@ MID 	left 	mid 	mid
 				iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -1916,7 +1916,7 @@ MID 	left 	mid 	mid
 			ib = (ize-bnd.ntap);
 #pragma omp for private (ix, iy, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -1936,7 +1936,7 @@ MID 	left 	mid 	mid
 				ibx = (ixo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -1955,7 +1955,7 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -1977,7 +1977,7 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -2006,9 +2006,9 @@ MID 	left 	mid 	mid
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
+//#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
-						#pragma ivdep
+						#pragma simd
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
 										c1*(tzz[iy*n1*n2+ix*n1+iz]   - tzz[iy*n1*n2+ix*n1+iz-1]) +
@@ -2026,7 +2026,7 @@ MID 	left 	mid 	mid
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
 						for (iy=iyo; iy<iye; iy++) {
-							#pragma ivdep
+							#pragma simd
 							for (iz=izo; iz<ize; iz++) {
 								vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
 											c1*(tzz[iy*n1*n2+ix*n1+iz]	 - tzz[iy*n1*n2+ix*n1+iz-1]) +
@@ -2044,7 +2044,7 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -2067,7 +2067,7 @@ MID 	left 	mid 	mid
 				iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -2087,7 +2087,7 @@ MID 	left 	mid 	mid
 				iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -2115,7 +2115,7 @@ MID 	left 	mid 	mid
 			ib = (ize-bnd.ntap);
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -2138,7 +2138,7 @@ MID 	left 	mid 	mid
 				ibx = (ixo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -2160,7 +2160,7 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -2183,7 +2183,7 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -2216,7 +2216,7 @@ MID 	left 	mid 	mid
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -2238,7 +2238,7 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -2261,7 +2261,7 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -2288,7 +2288,7 @@ MID 	left 	mid 	mid
 				iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -2312,7 +2312,7 @@ MID 	left 	mid 	mid
 				iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -2342,7 +2342,7 @@ MID 	left 	mid 	mid
 			ib = (ize-bnd.ntap);
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -2365,7 +2365,7 @@ MID 	left 	mid 	mid
 				ibx = (ixo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -2387,7 +2387,7 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -2410,7 +2410,7 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -2442,7 +2442,7 @@ MID 	left 	mid 	mid
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -2464,7 +2464,7 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -2487,7 +2487,7 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -2514,7 +2514,7 @@ MID 	left 	mid 	mid
 				iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -2538,7 +2538,7 @@ MID 	left 	mid 	mid
 				iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -2567,7 +2567,7 @@ MID 	left 	mid 	mid
 			ib = (ize-bnd.ntap);
 #pragma omp for private (ix, iy, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -2592,7 +2592,7 @@ MID 	left 	mid 	mid
 				ibx = (ixo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -2615,7 +2615,7 @@ MID 	left 	mid 	mid
 					iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -2641,7 +2641,7 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -2674,9 +2674,9 @@ MID 	left 	mid 	mid
 				ibx = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-//#pragma ivdep
+//#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
-						#pragma ivdep
+						#pragma simd
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
 								c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
@@ -2698,7 +2698,7 @@ MID 	left 	mid 	mid
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
 						for (iy=iyo; iy<iye; iy++) {
-							#pragma ivdep
+							#pragma simd
 							for (iz=izo; iz<ize; iz++) {
 								vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
 									c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
@@ -2720,7 +2720,7 @@ MID 	left 	mid 	mid
 					iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 					for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 						for (iy=iyo; iy<iye; iy++) {
 							for (iz=izo; iz<ize; iz++) {
 								vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -2747,7 +2747,7 @@ MID 	left 	mid 	mid
 				iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -2771,7 +2771,7 @@ MID 	left 	mid 	mid
 				iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -2813,7 +2813,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -2832,7 +2832,7 @@ MID 	left 	mid 	mid
 				iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -2852,7 +2852,7 @@ MID 	left 	mid 	mid
 				iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -2877,7 +2877,7 @@ MID 	left 	mid 	mid
 			ib = (bnd.ntap+ixo-1);
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -2896,7 +2896,7 @@ MID 	left 	mid 	mid
 				iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -2916,7 +2916,7 @@ MID 	left 	mid 	mid
 				iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -2942,7 +2942,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private (ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -2961,7 +2961,7 @@ MID 	left 	mid 	mid
 				iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -2981,7 +2981,7 @@ MID 	left 	mid 	mid
 				iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -3011,7 +3011,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -3034,7 +3034,7 @@ MID 	left 	mid 	mid
 				iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -3058,7 +3058,7 @@ MID 	left 	mid 	mid
 				iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -3088,7 +3088,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -3111,7 +3111,7 @@ MID 	left 	mid 	mid
 				iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 						vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -3135,7 +3135,7 @@ MID 	left 	mid 	mid
 				iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -3165,7 +3165,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private (ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -3188,7 +3188,7 @@ MID 	left 	mid 	mid
 				iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -3212,7 +3212,7 @@ MID 	left 	mid 	mid
 				iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -3253,7 +3253,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -3273,7 +3273,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -3294,7 +3294,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -3320,7 +3320,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -3340,7 +3340,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -3361,7 +3361,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -3388,7 +3388,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private (ix,iy,iz) 
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -3408,7 +3408,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -3429,7 +3429,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -3458,7 +3458,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -3482,7 +3482,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -3507,7 +3507,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -3537,7 +3537,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -3561,7 +3561,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -3586,7 +3586,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -3617,7 +3617,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private (ix,iy,iz) 
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -3641,7 +3641,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -3666,7 +3666,7 @@ MID 	left 	mid 	mid
 
 #pragma omp for private(ix,iy,iz)
 				for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 					for (iy=iyo; iy<iye; iy++) {
 						for (iz=izo; iz<ize; iz++) {
 							vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -3706,7 +3706,7 @@ MID 	left 	mid 	mid
 			iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -3730,7 +3730,7 @@ MID 	left 	mid 	mid
 			iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -3754,7 +3754,7 @@ MID 	left 	mid 	mid
 			iby = (bnd.ntap+iyo-1);
 #pragma omp for private (ix,iy,iz) 
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -3781,7 +3781,7 @@ MID 	left 	mid 	mid
 			iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -3809,7 +3809,7 @@ MID 	left 	mid 	mid
 			iby = (bnd.ntap+iyo-1);
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -3837,7 +3837,7 @@ MID 	left 	mid 	mid
 			iby = (bnd.ntap+iyo-1);
 #pragma omp for private (ix,iy,iz) 
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -3875,7 +3875,7 @@ MID 	left 	mid 	mid
 			iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -3899,7 +3899,7 @@ MID 	left 	mid 	mid
 			iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -3923,7 +3923,7 @@ MID 	left 	mid 	mid
 			iby = (iyo);
 #pragma omp for private (ix,iy,iz) 
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
@@ -3950,7 +3950,7 @@ MID 	left 	mid 	mid
 			iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vx[iy*n1*n2+ix*n1+iz] -= rox[iy][ix][iz]*(
@@ -3978,7 +3978,7 @@ MID 	left 	mid 	mid
 			iby = (iyo);
 #pragma omp for private(ix,iy,iz)
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vy[iy*n1*n2+ix*n1+iz] -= roy[iy][ix][iz]*(
@@ -4006,7 +4006,7 @@ MID 	left 	mid 	mid
 			iby = (iyo);
 #pragma omp for private (ix,iy,iz) 
 			for (ix=ixo; ix<ixe; ix++) {
-#pragma ivdep
+#pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
 						vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(

@@ -120,7 +120,7 @@ long acoustic2_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 #pragma omp for private (ix, iy, iz) schedule(guided,1) 
 	for (iy=ioXy; iy<ieXy; iy++) {
 	    for (ix=ioXx; ix<ieXx; ix++) {
-            #pragma ivdep 
+            #pragma simd 
             for (iz=ioXz; iz<ieXz; iz++) {
                 vx[iy*n2*n1+ix*n1+iz] -=
                     rox[iy][ix][iz]*(p[iy*n2*n1+ix*n1+iz] - p[iy*n2*n1+(ix-1)*n1+iz]);
@@ -132,7 +132,7 @@ long acoustic2_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 #pragma omp for private (ix, iy, iz) schedule(guided,1) 
 	for (iy=ioYy; iy<ieYy; iy++) {
         for (ix=ioYx; ix<ieYx; ix++) {
-            #pragma ivdep 
+            #pragma simd 
             for (iz=ioYz; iz<ieYz; iz++) {
                 vy[iy*n2*n1+ix*n1+iz] -=
                     roy[iy][ix][iz]*(p[iy*n2*n1+ix*n1+iz] - p[(iy-1)*n2*n1+ix*n1+iz]);
@@ -144,7 +144,7 @@ long acoustic2_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 #pragma omp for private (ix, iy, iz) schedule(guided,1) 
 	for (iy=ioZy; iy<ieZy; iy++) {
         for (ix=ioZx; ix<ieZx; ix++) {
-            #pragma ivdep 
+            #pragma simd 
             for (iz=ioZz; iz<ieZz; iz++) {
                 vz[iy*n2*n1+ix*n1+iz] -=
                     roz[iy][ix][iz]*(p[iy*n2*n1+ix*n1+iz] - p[iy*n2*n1+ix*n1+iz-1]);
@@ -173,7 +173,7 @@ long acoustic2_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime,
 #pragma omp for private (ix, iy, iz) schedule(guided,1) 
 	for (iy=ioPy; iy<iePy; iy++) {
 	    for (ix=ioPx; ix<iePx; ix++) {
-            #pragma ivdep 
+            #pragma simd 
             for (iz=ioPz; iz<iePz; iz++) {
                 p[iy*n2*n1+ix*n1+iz] -= l2m[iy][ix][iz]*(
                             (vx[iy*n2*n1+(ix+1)*n1+iz] - vx[iy*n2*n1+ix*n1+iz]) +

@@ -54,7 +54,7 @@ void computeMatrixInverse(complex *matrix, int nxm, int rthm, float eps_a, float
 		}
 		if (verbose>1) fprintf(stderr,"energy=%e eps_r=%e eps_a=%e\n", energy, eps_r*energy, eps_a);
 		/* add small value at diagonal */
-#pragma ivdep
+#pragma simd
 		for (i=0; i<nxm; i++) {
 			tmp.r = eps_r*energy+eps_a;
 			matrix[i*nxm+i].r+=tmp.r;
@@ -66,7 +66,7 @@ void computeMatrixInverse(complex *matrix, int nxm, int rthm, float eps_a, float
 		assert (info == 0);
 		/* fill lower part of inverse matrix */
 		for (i=0; i<nxm; i++) {
-#pragma ivdep
+#pragma simd
 			for (j=i+1; j<nxm; j++) {
 					matrix[i*nxm+j].r=matrix[j*nxm+i].r;
 					matrix[i*nxm+j].i=-1.0*matrix[j*nxm+i].i;
