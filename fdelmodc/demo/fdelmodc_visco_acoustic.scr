@@ -39,7 +39,7 @@ export fileqs=relax_cs.su
 
 
 export OMP_NUM_THREADS=4
-../fdelmodc \
+time ../fdelmodc \
 	file_cp=$filecp file_cs=$filecs file_den=$filero \
 	ischeme=2 \
 	file_qp=$fileqp file_qs=$fileqs \
@@ -78,7 +78,8 @@ export fileqp=relax_cp.su
 export fileqs=relax_cs.su
 
 
-../fdelmodc \
+which fdelmodc
+time fdelmodc \
 	file_cp=$filecp file_cs=$filecs file_den=$filero \
 	ischeme=2 \
 	file_qp=$fileqp file_qs=$fileqs \
