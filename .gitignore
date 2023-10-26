@@ -57,6 +57,7 @@ marchenko_full/fmute
 marchenko_full/marchenko
 corrvir/corrvir
 fdemmodc/fdemmodc
+fdelmodc/fdelmodc_mpi
 FFTlib/test/cc1test
 FFTlib/test/cc2dtest
 FFTlib/test/ccmtest
