@@ -88,7 +88,7 @@ long elastic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lon
 #pragma omp for private (ix, iy, iz) nowait schedule(guided,1)
     for (iy=mod.ioXy; iy<mod.ieXy; iy++) {
 	    for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
-#pragma ivdep
+#pragma simd
             for (iz=mod.ioXz; iz<mod.ieXz; iz++) {
                 vx[iy*n2*n1+ix*n1+iz] -= rox[iy][ix][iz]*(
                             c1*(txx[iy*n2*n1+ix*n1+iz]     - txx[iy*n2*n1+(ix-1)*n1+iz] +
@@ -105,7 +105,7 @@ long elastic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lon
 #pragma omp for private (ix, iy, iz)  schedule(guided,1)
 	for (iy=mod.ioYy; iy<mod.ieYy; iy++) {
 	    for (ix=mod.ioYx; ix<mod.ieYx; ix++) {
-#pragma ivdep
+#pragma simd
             for (iz=mod.ioYz; iz<mod.ieYz; iz++) {
                 vy[iy*n2*n1+ix*n1+iz] -= roy[iy][ix][iz]*(
                             c1*(tyy[iy*n2*n1+ix*n1+iz]     - tyy[(iy-1)*n2*n1+ix*n1+iz] +
@@ -122,7 +122,7 @@ long elastic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lon
 #pragma omp for private (ix, iy, iz)  schedule(guided,1)
 	for (iy=mod.ioZy; iy<mod.ieZy; iy++) {
 	    for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
-#pragma ivdep
+#pragma simd
             for (iz=mod.ioZz; iz<mod.ieZz; iz++) {
                 vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
                             c1*(tzz[iy*n2*n1+ix*n1+iz]     - tzz[iy*n2*n1+ix*n1+iz-1] +
@@ -147,7 +147,7 @@ long elastic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lon
 #pragma omp	for private (ix, iy, iz, dvx, dvy, dvz) nowait schedule(guided,1)
 	for (iy=mod.ioPy; iy<mod.iePy; iy++) {
 	    for (ix=mod.ioPx; ix<mod.iePx; ix++) {
-#pragma ivdep
+#pragma simd
             for (iz=mod.ioPz; iz<mod.iePz; iz++) {
                 dvx =   c1*(vx[iy*n2*n1+(ix+1)*n1+iz] - vx[iy*n2*n1+ix*n1+iz]) +
                         c2*(vx[iy*n2*n1+(ix+2)*n1+iz] - vx[iy*n2*n1+(ix-1)*n1+iz]);
@@ -168,7 +168,7 @@ long elastic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lon
 #pragma omp	for private (ix, iy, iz)  schedule(guided,1)
 	for (iy=mod.ioTy; iy<mod.ieTy; iy++) {
         for (ix=mod.ioTx; ix<mod.ieTx; ix++) {
-    #pragma ivdep
+    #pragma simd
             for (iz=mod.ioTz; iz<mod.ieTz; iz++) {
                 txz[iy*n2*n1+ix*n1+iz] -= mul[iy][ix][iz]*(
                         c1*(vx[iy*n2*n1+ix*n1+iz]     - vx[iy*n2*n1+ix*n1+iz-1] +
@@ -183,7 +183,7 @@ long elastic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lon
 #pragma omp	for private (ix, iy, iz)  schedule(guided,1)
 	for (iy=mod.ioTy; iy<mod.ieTy; iy++) {
         for (ix=mod.ioTx; ix<mod.ieTx; ix++) {
-    #pragma ivdep
+    #pragma simd
             for (iz=mod.ioTz; iz<mod.ieTz; iz++) {
                 txy[iy*n2*n1+ix*n1+iz] -= mul[iy][ix][iz]*(
                         c1*(vx[iy*n2*n1+ix*n1+iz]     - vx[(iy-1)*n2*n1+ix*n1+iz] +
@@ -198,7 +198,7 @@ long elastic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lon
 #pragma omp	for private (ix, iy, iz)  schedule(guided,1)
 	for (iy=mod.ioTy; iy<mod.ieTy; iy++) {
         for (ix=mod.ioTx; ix<mod.ieTx; ix++) {
-    #pragma ivdep
+    #pragma simd
             for (iz=mod.ioTz; iz<mod.ieTz; iz++) {
                 tyz[iy*n2*n1+ix*n1+iz] -= mul[iy][ix][iz]*(
                         c1*(vz[iy*n2*n1+ix*n1+iz]     - vz[(iy-1)*n2*n1+ix*n1+iz] +

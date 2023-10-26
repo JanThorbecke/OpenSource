@@ -102,7 +102,7 @@ long viscoacoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itim
 #pragma omp for private (ix, iy, iz) nowait schedule(guided,1)
 	for (iy=mod.ioXy; iy<mod.ieXy; iy++) {
 		for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
-#pragma ivdep
+#pragma simd
 			for (iz=mod.ioXz; iz<mod.ieXz; iz++) {
 				vx[iy*n2*n1+ix*n1+iz] -= rox[iy*n2*n1+ix*n1+iz]*(
 							c1*(p[iy*n2*n1+ix*n1+iz]     - p[iy*n2*n1+(ix-1)*n1+iz]) +
@@ -115,7 +115,7 @@ long viscoacoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itim
 #pragma omp for private (ix, iy, iz)  schedule(guided,1)
 	for (iy=mod.ioYy; iy<mod.ieYy; iy++) {
 		for (ix=mod.ioYx; ix<mod.ieYx; ix++) {
-#pragma ivdep
+#pragma simd
 			for (iz=mod.ioYz; iz<mod.ieYz; iz++) {
 				vy[iy*n2*n1+ix*n1+iz] -= roy[iy*n2*n1+ix*n1+iz]*(
 							c1*(p[iy*n2*n1+ix*n1+iz]     - p[(iy-1)*n2*n1+ix*n1+iz]) +
@@ -128,7 +128,7 @@ long viscoacoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itim
 #pragma omp for private (ix, iy, iz)  schedule(guided,1)
 	for (iy=mod.ioZy; iy<mod.ieZy; iy++) {
 		for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
-#pragma ivdep
+#pragma simd
 			for (iz=mod.ioZz; iz<mod.ieZz; iz++) {
 				vz[iy*n2*n1+ix*n1+iz] -= roz[iy*n2*n1+ix*n1+iz]*(
 							c1*(p[iy*n2*n1+ix*n1+iz]   - p[iy*n2*n1+ix*n1+iz-1]) +
@@ -149,7 +149,7 @@ long viscoacoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itim
 #pragma omp	for private (iz, iy, ix, Tpp) nowait schedule(guided,1)
 	for (iy=mod.ioPy; iy<mod.iePy; iy++) {
 		for (ix=mod.ioPx; ix<mod.iePx; ix++) {
-#pragma ivdep
+#pragma simd
 			for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 				dxvx[iz] = c1*(vx[iy*n2*n1+(ix+1)*n1+iz] - vx[iy*n2*n1+ix*n1+iz]) +
 						   c2*(vx[iy*n2*n1+(ix+2)*n1+iz] - vx[iy*n2*n1+(ix-1)*n1+iz]);
@@ -160,7 +160,7 @@ long viscoacoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itim
 			}
 
 			/* help variables to let the compiler vectorize the loops */
-#pragma ivdep
+#pragma simd
 			for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 				Tpp     = tep[iy*n2*n1+ix*n1+iz]*tss[iy*n2*n1+ix*n1+iz];
 				Tlm[iz] = (1.0-Tpp)*tss[iy*n2*n1+ix*n1+iz]*l2m[iy*n2*n1+ix*n1+iz]*0.5;
@@ -170,11 +170,11 @@ long viscoacoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itim
 			}   
 
 			/* the update with the relaxation correction */
-#pragma ivdep
+#pragma simd
 			for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 				p[iy*n2*n1+ix*n1+iz] -= Tlp[iz]*(dzvz[iz]+dxvx[iz]) + q[ix*n1+iz];
 			}
-#pragma ivdep
+#pragma simd
 			for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 				q[iy*n2*n1+ix*n1+iz] = (Tt2[iz]*q[iy*n2*n1+ix*n1+iz] + Tlm[iz]*(dxvx[iz]+dyvy[iz]+dzvz[iz]))*Tt1[iz];
 				p[iy*n2*n1+ix*n1+iz] -= q[iy*n2*n1+ix*n1+iz];

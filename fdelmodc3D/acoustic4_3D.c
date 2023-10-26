@@ -87,7 +87,7 @@ long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lo
 #pragma omp for private (ix, iy, iz) nowait schedule(guided,1)
 	for (iy=mod.ioXy; iy<mod.ieXy; iy++) {
         for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
-       #pragma ivdep 
+       #pragma simd 
             for (iz=mod.ioXz; iz<mod.ieXz; iz++) {
                 vx[iy*n2*n1+ix*n1+iz] -= rox[iy][ix][iz]*(
                     c1*(p[iy*n2*n1+ix*n1+iz]     - p[iy*n2*n1+(ix-1)*n1+iz]) +
@@ -100,7 +100,7 @@ long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lo
 #pragma omp for private (ix, iy, iz) nowait schedule(guided,1)
 	for (iy=mod.ioYy; iy<mod.ieYy; iy++) {
         for (ix=mod.ioYx; ix<mod.ieYx; ix++) {
-            #pragma ivdep
+            #pragma simd
             for (iz=mod.ioYz; iz<mod.ieYz; iz++) {
                 vy[iy*n2*n1+ix*n1+iz] -= roy[iy][ix][iz]*(
                     c1*(p[iy*n2*n1+ix*n1+iz]     - p[(iy-1)*n2*n1+ix*n1+iz]) +
@@ -113,7 +113,7 @@ long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lo
 #pragma omp for private (ix, iy, iz) schedule(guided,1) 
 	for (iy=mod.ioZy; iy<mod.ieZy; iy++) {
         for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
-            #pragma ivdep 
+            #pragma simd 
             for (iz=mod.ioZz; iz<mod.ieZz; iz++) {
                 vz[iy*n2*n1+ix*n1+iz] -= roz[iy][ix][iz]*(
                     c1*(p[iy*n2*n1+ix*n1+iz]   - p[iy*n2*n1+ix*n1+iz-1]) +
@@ -143,10 +143,10 @@ long acoustic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lo
 
 	/* calculate p/tzz for all grid points except on the virtual boundary */
 #pragma omp for private (ix, iy, iz) schedule(guided,1) 
-#pragma ivdep
+#pragma simd
 	for (ix=mod.ioPx; ix<mod.iePx; ix++) {
 		for (iy=mod.ioPy; iy<mod.iePy; iy++) {
-            #pragma ivdep
+            #pragma simd
             for (iz=mod.ioPz; iz<mod.iePz; iz++) {
                 p[iy*n1*n2+ix*n1+iz] -= l2m[iy][ix][iz]*(
                             c1*(vx[iy*n1*n2+(ix+1)*n1+iz] - vx[iy*n1*n2+ix*n1+iz]) +
