@@ -205,12 +205,14 @@ int main (int argc, char **argv)
 		f2b = hdrs_in2[0].f2;
 		d1b = (float)hdrs_in2[0].dt*1e-6;
 		
+		/*
 	    if (dt == 0.0 && d1b!=0.0) {
 		    dt=d1b;
 		}
 		else {
             verr("dt==0 in file_in1 and file_in2: please set the hdr dt in file_in1 !");
         }
+		*/
 
 		/* save start of first axis */
 		tmin2=f1;
