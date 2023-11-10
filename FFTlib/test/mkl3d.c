@@ -28,26 +28,27 @@ int main (int argc, char **argv)
     nt=8;
     nft=nt;
     nf=nft/2+1;
-    nkx=2;
-    nky=3;
+    nkx=4;
+    nky=4;
     xorig=0;
     yorig=0;
     rdata        = (float *)calloc(nkx*nky*nft,sizeof(float));
     cdata        = (complex *)calloc(nkx*nky*nf,sizeof(complex));
-    rdata[1] = 1.0;
+    rdata[0] = 1.0;
 
 
     dim_sizes[0] = nft; dim_sizes[1]=nkx; dim_sizes[2]=nky;
-//    strides_out[0] = 0; strides_out[1]=nkx*nf; strides_out[2]=nf; strides_out[3]=1;
-    strides_out[0] = 0; strides_out[1]=1; strides_out[2]=nf; strides_out[3]=nkx*nf;
-
-    strides_in[0] = 0; strides_in[1]=1; strides_in[2]=nft; strides_in[3]=nkx*nft;
+    //strides_in[0] = 0; strides_in[1]=1; strides_in[2]=nft; strides_in[3]=nkx*nft;
+    //strides_out[0] = 0; strides_out[1]=1; strides_out[2]=nf; strides_out[3]=nkx*nf;
+    dim_sizes[0] = nky; dim_sizes[1]=nkx; dim_sizes[2]=nft;
+    strides_in[0] = 0; strides_in[1]=nkx*nft; strides_in[2]=nft; strides_in[3]=1;
+    strides_out[0] = 0; strides_out[1]=nkx*nf; strides_out[2]=nf; strides_out[3]=1;
 
     status = DftiCreateDescriptor(&my_desc_handle, DFTI_SINGLE, DFTI_REAL, 3, dim_sizes);
     status = DftiSetValue(my_desc_handle, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
     status = DftiSetValue(my_desc_handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
-    //status = DftiSetValue(my_desc_handle, DFTI_OUTPUT_STRIDES, strides_out);
-    //status = DftiSetValue(my_desc_handle, DFTI_INPUT_STRIDES, strides_in);
+    status = DftiSetValue(my_desc_handle, DFTI_OUTPUT_STRIDES, strides_out);
+    status = DftiSetValue(my_desc_handle, DFTI_INPUT_STRIDES, strides_in);
 
     status = DftiCommitDescriptor(my_desc_handle);
 
@@ -74,7 +75,7 @@ for (it=0; it<nft; it++) {
 
 memset(&cdata[0].r, 0, sizeof(complex)*nkx*nky*nf);
 memset(&rdata[0], 0, sizeof(float)*nkx*nky*nft);
-rdata[1] = 1.0;
+rdata[0] = 1.0;
 
 status = DftiComputeForward(my_desc_handle, rdata, (MKL_Complex8 *)&cdata[0]);
 
@@ -102,7 +103,11 @@ for (ix=0; ix<nkx; ix++) {
 
 memset(&rdata[0], 0, sizeof(float)*nkx*nky*nft);
 strides_in[0] = 0; strides_in[1]=1; strides_in[2]=nf; strides_in[3]=nkx*nf;
-//status = DftiSetValue(my_desc_handle, DFTI_INPUT_STRIDES, strides_in);
+    strides_out[0] = 0; strides_out[1]=nkx*nft; strides_out[2]=nft; strides_out[3]=1;
+    strides_in[0] = 0; strides_in[1]=nkx*nf; strides_in[2]=nf; strides_in[3]=1;
+    status = DftiSetValue(my_desc_handle, DFTI_INPUT_STRIDES, strides_in);
+    status = DftiSetValue(my_desc_handle, DFTI_OUTPUT_STRIDES, strides_out);
+    status = DftiCommitDescriptor(my_desc_handle);
 status = DftiComputeBackward(my_desc_handle, (MKL_Complex8 *)&cdata[0], rdata);
 
 fprintf(stderr,"*** MKL after backward transform [nky][nkx][nt] ***\n");
