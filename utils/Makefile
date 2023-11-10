@@ -7,7 +7,7 @@ LIBS    += -lzfp
 #OPTC += -openmp 
 #OPTC += -g -O0
 
-ALL: makemod makewave extendModel fconv correigen green green3D basop syn2d mat2su ftr1d mutesnap padmodel truncate combine combine_induced reshape_su HomG snap2shot makeR1D pwshift convhomg changevalue extend3D smooth
+ALL: makemod makewave extendModel fconv correigen green green3D basop syn2d mat2su ftr1d mutesnap padmodel truncate combine combine_induced reshape_su HomG snap2shot makeR1D pwshift convhomg changevalue extend3D smooth rc3dtest
 
 SRCM	= \
 		makemod.c  \
@@ -223,7 +223,7 @@ SRCSS   = snap2shot.c \
         wallclock_time.c \
         atopkge.c \
         docpkge.c \
-		name_ext.c \
+	name_ext.c \
         readSnapData3D.c
 
 SRCPW	= pwshift.c \
@@ -233,7 +233,7 @@ SRCPW	= pwshift.c \
 		getpars.c \
 		verbosepkg.c \
 		atopkge.c \
-        docpkge.c \
+        	docpkge.c \
 		readSnapData3D.c 
 
 SRCCH	= convhomg.c \
@@ -243,7 +243,7 @@ SRCCH	= convhomg.c \
 		getpars.c \
 		verbosepkg.c \
 		atopkge.c \
-        docpkge.c \
+        	docpkge.c \
 		readSnapData3D.c 
 
 SRCVL	= changevalue.c \
@@ -251,7 +251,7 @@ SRCVL	= changevalue.c \
 		getpars.c \
 		verbosepkg.c \
 		atopkge.c \
-        docpkge.c 
+        	docpkge.c 
 
 SRCEX	= \
 		extend3D.c  \

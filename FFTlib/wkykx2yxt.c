@@ -42,7 +42,7 @@ void wkykx2yxt(complex *cdata, REAL *rdata, long nt, long nx, long ny, long ldt,
     cdum = (complex *)malloc(ld1*ldx*ldy*sizeof(complex));    
 
 	sign = -1;
-	// ctrans [nkx][nf][nky]
+	// cdum [nkx][nf][nky] Tranform over nky
 	for (i = 0; i < ldx; i++) {
 		for (j = 0; j < ld1; j++) {
 			for (k = 0; k < ldy; k++) {
@@ -52,7 +52,7 @@ void wkykx2yxt(complex *cdata, REAL *rdata, long nt, long nx, long ny, long ldt,
 		ccmfft(&cdum[i*ld1*ldy], ny, ld1, ldy, sign);
 	}
 
-	// cdata [nf][nky][nkx]
+	// cdata [nf][nky][nkx] Tranform over nkx
 	for (k = 0; k < ldy; k++) {
 		for (j = 0; j < ld1; j++) {
 			for (i = 0; i < ldx; i++) {
@@ -66,7 +66,7 @@ void wkykx2yxt(complex *cdata, REAL *rdata, long nt, long nx, long ny, long ldt,
 	cdum = (complex *)malloc(ld1*nx*ny*sizeof(complex));
 	if (cdum == NULL) fprintf(stderr,"wkx2xt: memory allocation error\n");
 	
-    //cdum [ny][nx][nf]
+    //cdum [ny][nx][nf] rearrange nkx and nky with respect to x(y)orig
 	for (j = 0; j < ld1; j++) {
         for (k = 0; k < nyorig; k++) {
             for (i = 0; i < nxorig; i++) {
@@ -78,10 +78,10 @@ void wkykx2yxt(complex *cdata, REAL *rdata, long nt, long nx, long ny, long ldt,
         }
         for (k = 0; k < yorig; k++) {
             for (i = 0; i < nxorig; i++) {
-                cdum[k*nx*ld1+(i+xorig)*ld1+j] = cdata[k*ld1*ldx+j*ldx+i];
+                cdum[k*nx*ld1+(i+xorig)*ld1+j] = cdata[(k+nyorig)*ld1*ldx+j*ldx+i];
             }
             for(i = 0; i < xorig; i++) {
-                cdum[k*nx*ld1+i*ld1+j] = cdata[k*ld1*ldx+j*ldx+i+nxorig];
+                cdum[k*nx*ld1+i*ld1+j] = cdata[(k+nyorig)*ld1*ldx+j*ldx+i+nxorig];
             }
         }
 	}
