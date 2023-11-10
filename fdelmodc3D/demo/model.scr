@@ -4,7 +4,7 @@
 #SBATCH --ntasks-per-node=8
 #SBATCH --time=0:15:00
 
-cd /vardim/home/thorbcke/src/OpenSource/fdelmodc3D/demo
+cd /palmyra/data/jthorbecke/OpenSource/fdelmodc3D/demo
 
 cp=2000
 rho=1000
