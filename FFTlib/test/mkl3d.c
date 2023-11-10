@@ -88,6 +88,7 @@ for (it=0; it<nf; it++) {
 }
 
 /* tranpose to [nf][nky][nkx] */
+/* the data organisation of MKL is strange, also the signs will be different than in yxt2wkykx(time forward -1 x,y 1) */
 cdataT        = (complex *)calloc(nkx*nky*nf,sizeof(complex));
 fprintf(stderr,"*** MKL after forward transform tranposed to [nf][nky][nkx] ***\n");
 for (it=0; it<nf; it++) {
