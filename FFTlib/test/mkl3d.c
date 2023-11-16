@@ -32,6 +32,8 @@ int main (int argc, char **argv)
     nky=4;
     xorig=0;
     yorig=0;
+    xorig=nx/2;
+    yorig=ny/2;
     rdata        = (float *)calloc(nkx*nky*nft,sizeof(float));
     cdata        = (complex *)calloc(nkx*nky*nf,sizeof(complex));
     rdata[1] = 1.0;
@@ -102,7 +104,6 @@ int main (int argc, char **argv)
     }
 
     /* backward transform from MKL */
-    strides_in[0] = 0; strides_in[1]=1; strides_in[2]=nf; strides_in[3]=nkx*nf;
     strides_out[0] = 0; strides_out[1]=nkx*nft; strides_out[2]=nft; strides_out[3]=1;
     strides_in[0] = 0; strides_in[1]=nkx*nf; strides_in[2]=nf; strides_in[3]=1;
     status = DftiSetValue(my_desc_handle, DFTI_INPUT_STRIDES, strides_in);
