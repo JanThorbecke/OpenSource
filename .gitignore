@@ -8,6 +8,8 @@ bin/*
 *.log
 *.bin
 *.asci
+*.pyc
+*.nc
 */.DS*
 **/.DS*
 .DS*
@@ -78,6 +80,8 @@ raytime3d/raytime3d
 raytime/Raytime
 MDD/mdd
 vmar/vmar
+vmar/demo/paper/Figure*.pdf
+vmar/demo/paper/4d
 marchenko3D/fmute3D
 marchenko3D/marchenko3D
 marchenko3D/marchenko3DME

@@ -95,6 +95,11 @@ int main (int argc, char **argv)
     nkx = optncc(nx);
     nky = optncc(ny);
 
+    //nft = nt;
+    //nkx = nx;
+    //nky = ny;
+
+    fprintf(stderr,"input nt=%d nx=%d ny=%d ldt=%d nkx=%d nky=%d\n", nt, nx, ny, nft, nkx, nky);
     rdata        = (float *)calloc(nkx*nky*nft,sizeof(float));
     cdata        = (complex *)calloc(nkx*nky*nf,sizeof(complex));
 
@@ -329,19 +334,19 @@ void pad3d_data(float *data, long nt, long nx, long ny, long ntout, long nxout, 
     for (iy=0;iy<ny;iy++) {
         for (ix=0;ix<nx;ix++) {
             for (it=0;it<nt;it++)
-                datout[iy*nx*nt+ix*nt+it]=data[iy*nx*nt+ix*nt+it];
+                datout[iy*nxout*ntout+ix*ntout+it]=data[iy*nx*nt+ix*nt+it];
             for (it=nt;it<ntout;it++)
-                datout[iy*nx*nt+ix*nt+it]=0.0;
+                datout[iy*nxout*ntout+ix*ntout+it]=0.0;
         }
         for (ix=nx;ix<nxout;ix++) {
             for (it=0;it<ntout;it++)
-                datout[iy*nx*nt+ix*nt+it]=0.0;
+                datout[iy*nxout*ntout+ix*ntout+it]=0.0;
         }
     }
     for (iy=ny;iy<nyout;iy++) {
         for (ix=0;ix<nxout;ix++) {
             for (it=0;it<ntout;it++)
-                datout[iy*nx*nt+ix*nt+it]=0.0;
+                datout[iy*nxout*ntout+ix*ntout+it]=0.0;
         }
     }
 }
