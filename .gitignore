@@ -90,6 +90,7 @@ fdacrtmc/fdacrtmc
 marchenko3D/TWtransform
 utils/mutesnap
 utils/snap2shot
+utils/testfft3d
 extrap/main/cfpmod
 extrap/main/extrap
 extrap/main/migr
