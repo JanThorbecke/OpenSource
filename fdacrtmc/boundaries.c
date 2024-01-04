@@ -290,7 +290,7 @@ int boundariesP(modPar *mod, bndPar *bnd, wavPar *wav, size_t itime, int verbose
 			/* PML bottom Vz-component */
 #pragma omp for private (ix, iz, dpz, Jz, ipml)
 			for(ix=mod->ieZx;ix<mod->ieZxb;ix++){
-				for (iz=mod->ieZz,ipml=0;iz<mod->ieZzb;iz++){
+				for (iz=mod->ieZz,ipml=0;iz<mod->ieZzb;iz++,ipml++){
 					dpz=(c1*(p[ix*mod->naz+iz]  -p[ix*mod->naz+iz-1])+
 					     c2*(p[ix*mod->naz+iz+1]-p[ix*mod->naz+iz-2]));
 					Jz=RA[ipml]*(dpz-mod->dt*Vzpml[mod->nax*bnd->ntap+ix*bnd->ntap+ipml]);
