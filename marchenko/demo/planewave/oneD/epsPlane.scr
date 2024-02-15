@@ -34,13 +34,18 @@ do
   for fldr in 20 22 24 26 21 23 25
   do
     suwind < $file key=fldr min=$fldr max=$fldr > shottmp.su
-    supsimage < shottmp.su hbox=4 wbox=4 labelsize=14 linewidth=0.0 \
+    supsimage < shottmp.su hbox=4 wbox=4 labelsize=18 linewidth=0.0 \
       n1tic=2 f1=0 \
-      curve=line1,line2,line3,focal npair=2,2,2,2 curvecolor=black,black,black,white curvedash=2,2,2,5 \
+      curve=line1,line2,line3,focal npair=2,2,2,2 curvecolor=black,black,black,white curvedash=2,2,2,5 curvewidth=1,1,1,2 \
       label1="depth [m]" label2="lateral distance [m]" \
       f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > ${file_base}_$fldr.eps
 
-   done
+  done
+  #remove depth[m] label
+  for fldr in 21 22 24 
+  do
+	 sed -i '' 's/depth \[m\]//g' ${file_base}_$fldr.eps
+  done
 done
 exit
 fi
@@ -55,8 +60,8 @@ then
       file_base=${file%.su}
       sumax < $file mode=abs outpar=nep
       clipf1=`cat nep | awk '{print $1/3}'`
-      supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
-          n1tic=2 x1beg=-0.7 x1end=0.7 f1=-2.044 \
+      supsimage < $file hbox=6 wbox=4 labelsize=18 linewidth=0.0 \
+          n1tic=2 x1beg=-0.7 x1end=0.7 f1=-2.044 d1num=0.2 \
           label1="time [s]" label2="lateral distance [m]" \
           f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > $file_base.eps
     done
@@ -65,8 +70,8 @@ then
       file_base=${file%.su}
       sumax < $file mode=abs outpar=nep
       clipf1=`cat nep | awk '{print $1/3}'`
-      supsimage < $file hbox=6 wbox=4 labelsize=14 linewidth=0.0 \
-          n1tic=2 x1end=1.4 f1=0 \
+      supsimage < $file hbox=6 wbox=4 labelsize=18 linewidth=0.0 \
+          n1tic=2 x1end=1.4 f1=0 d1num=0.2 \
           label1="time [s]" label2="lateral distance [m]" \
           f1=0 f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > $file_base.eps
     done

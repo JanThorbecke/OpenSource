@@ -78,6 +78,47 @@ cd marchenko/demo/planewave/twoD
 
 #Figure 13 Troll data field
 Not provided have to ask permission for sharing data to Equinor
+Data stored at /palmyra/data/jthorbecke/Johno/data
+
+#Imaging bash script
+iangle=0
+nangle=1
+startangle=0
+while (( iangle < nangle ))
+do
+  (( angle = ${startangle} + ${iangle}*${dangle} ))
+  echo angle=$angle
+  filegm=gmplanes$angle.su
+  filefd=fdplanes$angle.su
+  invangle=$((angle * -1))
+
+  # data with internal multiples
+  syn2d file_syn=fdplanes$angle.su file_shot=$Rdata nshots=481 file_cfp=Rfocus$angle.su fmax=110 verbose=1
+  fconv file_in1=fdplanes$invangle.su file_in2=Rfocus$angle.su file_out=Rimage$angle.su fmax=110 verbose=1 mode=cor2
+  # scale with 5e-5 * dt (0.004) = 2e-7
+  sugain < Rimage$angle.su scale=2e-7 > nep.su
+  mv nep.su Rimage$angle.su
+  suwind < Rimage$angle.su itmin=0 itmax=0 | sustrip > Rimage366x481_$angle.bin
+
+  # data after Marchenko 
+  fconv file_in1=fdplanes$invangle.su file_in2=gmplanes$angle.su file_out=Gimage$angle.su fmax=110 verbose=1 mode=cor2
+  suwind < Gimage$angle.su itmin=0 itmax=0 | sustrip > Gimage366x481_$angle.bin
+  (( iangle = $iangle + 1))
+done
+
+#generate eps files 
+for angle in -3 0 3
+do
+for file in Rimage366x481_$angle.su Gimage366x481_$angle.su GRdiff366x481_$angle.su
+do
+    file_base=${file%.su}
+    supsimage < $file hbox=3 wbox=4 labelsize=12 linewidth=0.0 \
+          n1tic=2 x1beg=0 x1end=2005 f1=200 f1num=0 d1=5 d1num=500 \
+          label1="depth [m]" label2="lateral distance [m]" \
+          f2=2000 f2num=2000 d2num=1000 d2=12.5 clip=1e8 > $file_base.eps
+done
+done
+
 
 
 --------------------------
