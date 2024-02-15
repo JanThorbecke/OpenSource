@@ -2,7 +2,7 @@
 
 # Add interface line to postscript file of model run makemod with rayfile=1
 
-Focul level
+#Focul level
 cat << EOF1 > line1
 800 -3000
 800 3000
@@ -18,16 +18,20 @@ do
   clipf1=`cat nep | awk '{print $1/7}'`
 
   file_base=${file%.su}
-  for fldr in 20 22 24 26
+  for fldr in 20 22 24 26 21
   do
     suwind < $file key=fldr min=$fldr max=$fldr > shottmp.su
-    supsimage < shottmp.su hbox=4 wbox=4 labelsize=14 linewidth=0.0 \
+    supsimage < shottmp.su hbox=4 wbox=4 labelsize=18 linewidth=0.0 \
       n1tic=2 f1=0 \
-      curve=curve1,curve2,curve3,curve4,line1 npair=481,481,481,481,2 curvecolor=black,black,black,black,white curvedash=2,2,2,2,5 \
+      curve=curve1,curve2,curve3,curve4,line1 npair=481,481,481,481,2 curvecolor=black,black,black,black,white curvedash=2,2,2,2,5 curvewidth=1,1,1,1,2 \
       label1="depth [m]" label2="lateral distance [m]" \
       f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > ${file_base}_$fldr.eps
 
-   done
+  done
+  for fldr in 21 22 24 
+  do
+	 sed -i '' 's/depth \[m\]//g' ${file_base}_$fldr.eps
+  done
 done
 exit
 fi
@@ -43,8 +47,8 @@ for file in ${srcname}${a}a160_rp.su fdplus${srcname}${a}a160.su Gmin${srcname}$
 do 
 
   file_base=${file%.su}
-  supsimage < $file hbox=6 wbox=4 labelsize=12 linewidth=0.0 \
-	  n1tic=2 x1end=1.4 f1=0 \
+  supsimage < $file hbox=6 wbox=4 labelsize=16 linewidth=0.0 \
+	  n1tic=2 x1end=1.4 f1=0 d1num=0.2 \
 	  label1="time [s]" label2="lateral distance [m]" \
 	  f1=0 f2=-3000 f2num=-3000 d2num=1500 clip=$clipf1 > $file_base.eps
 
@@ -64,8 +68,8 @@ for file in ${srcname}${a}a160_rp.su fdplus${srcname}${a}a160.su Gmin${srcname}$
 do 
 
   file_base=${file%.su}
-  supsimage < $file hbox=6 wbox=4 labelsize=12 linewidth=0.0 \
-	  n1tic=2 x1end=1.4 f1=0 \
+  supsimage < $file hbox=6 wbox=4 labelsize=16 linewidth=0.0 \
+	  n1tic=2 x1end=1.4 f1=0 d1num=0.2 \
 	  label1="time [s]" label2="lateral distance [m]" \
 	  f1=0 f2=-3000 f2num=-3000 d2num=1500 clip=$clipf1 > $file_base.eps
 done
@@ -82,8 +86,8 @@ for file in ${srcname}${a}a160_rp.su fdplus${srcname}${a}a160.su Gmin${srcname}$
 do 
 
   file_base=${file%.su}
-  supsimage < $file hbox=6 wbox=4 labelsize=12 linewidth=0.0 \
-	  n1tic=2 x1end=1.4 f1=0 \
+  supsimage < $file hbox=6 wbox=4 labelsize=16 linewidth=0.0 \
+	  n1tic=2 x1end=1.4 f1=0 d1num=0.2 \
 	  label1="time [s]" label2="lateral distance [m]" \
 	  f1=0 f2=-3000 f2num=-3000 d2num=1500 clip=$clipf1 > $file_base.eps
 done
@@ -99,8 +103,8 @@ then
       clipf1=`cat nep | awk '{print $1/7}'`
 
       basop file_in=$file file_out=nep.su choice=shift shift=-2.048
-      supsimage < nep.su hbox=6 wbox=4 labelsize=12 linewidth=0.0 \
-          n1tic=2 x1beg=-0.7 x1end=0.7 f1=-2.048 \
+      supsimage < nep.su hbox=6 wbox=4 labelsize=16 linewidth=0.0 \
+          n1tic=2 x1beg=-0.7 x1end=0.7 f1=-2.048 f1num=-0.6 d1num=0.2 \
           label1="time [s]" label2="lateral distance [m]" \
           f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > $file_base.eps
     done
@@ -110,8 +114,8 @@ then
       sumax < $file mode=abs outpar=nep
       clipf1=`cat nep | awk '{print $1/7}'`
 
-      supsimage < $file hbox=6 wbox=4 labelsize=12 linewidth=0.0 \
-          n1tic=2 x1beg=-0.7 x1end=0.7 f1=-2.048 \
+      supsimage < $file hbox=6 wbox=4 labelsize=16 linewidth=0.0 \
+          n1tic=2 x1beg=-0.7 x1end=0.7 f1=-2.048 f1num=-0.6 d1num=0.2 \
           label1="time [s]" label2="lateral distance [m]" \
           f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > $file_base.eps
     done

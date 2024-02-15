@@ -4,12 +4,12 @@
 if [[ "$1" == "model" ]];
 then
 
-supsimage hbox=4 wbox=6 labelsize=12 < ge_cp.su \
+supsimage hbox=4 wbox=6 labelsize=16 < ge_cp.su \
         x1beg=0 x1end=1400.0 d1num=200 lstyle=vertright legend=1 threecolor=0 \
         label1="depth (m)" label2="lateral distance (m)" \
         n1tic=5 x2beg=-3000 f2num=-3000 d2num=1500 x2end=3000 > ge_cp.eps
 
-supsimage hbox=4 wbox=6 labelsize=12 < ge_ro.su \
+supsimage hbox=4 wbox=6 labelsize=16 < ge_ro.su \
         x1beg=0 x1end=1400.0 d1num=200 lstyle=vertright legend=1 threecolor=0 \
         label1="depth (m)" label2="lateral distance (m)" \
         n1tic=5 x2beg=-3000 f2num=-3000 d2num=1500 x2end=3000 > ge_ro.eps
@@ -28,7 +28,7 @@ file=shot0_rp.su
 sumax < $file mode=abs outpar=nep
 clipf1=`cat nep | awk '{print $1/7}'`
 file_base=${file%.su}
-supsimage < $file hbox=6 wbox=4 labelsize=8 linewidth=0.0 \
+supsimage < $file hbox=6 wbox=4 labelsize=12 linewidth=0.0 \
       n1tic=2 x1end=1.4 f1=0 \
       label1="time [s]" label2="lateral distance [m]" \
       f2=-3000 f2num=-3000 d2num=1500 clip=$clipf1 > $file_base.eps
@@ -45,16 +45,16 @@ then
 for file in mute5_001.su mute5_002.su mute5Basic_001.su
 do
   file_base=${file%.su}
-  supsimage < $file hbox=5 wbox=4 labelsize=12 linewidth=0.0 \
-      n1tic=2 f1=0 \
+  supsimage < $file hbox=5 wbox=4 labelsize=14 linewidth=0.0 \
+      n1tic=2 f1=0 d1num=0.2 \
       label1="time [s]" label2="lateral distance [m]" \
       f2=-3000 f2num=-3000 d2num=1500 wclip=0 bclip=1 > $file_base.eps
 
 #	rotate file_in=$file file_out=nep.su
     basop file_in=$file file_out=nep.su choice=shift shift=-1.2 ntfft=601
 
-  supsimage < nep.su hbox=5 wbox=4 labelsize=12 linewidth=0.0 \
-      n1tic=2 x1beg=-0.7 x1end=0.7 f1=-1.2 \
+  supsimage < nep.su hbox=5 wbox=4 labelsize=14 linewidth=0.0 \
+      n1tic=2 x1beg=-0.7 x1end=0.7 f1=-1.2 f1num=-0.6 d1num=0.2 \
       label1="time [s]" label2="lateral distance [m]" \
       f2=-3000 f2num=-3000 d2num=1500 wclip=0 bclip=1 > ${file_base}_shift0.eps
 done
