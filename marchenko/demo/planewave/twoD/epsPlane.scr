@@ -106,7 +106,7 @@ then
       supsimage < nep.su hbox=6 wbox=4 labelsize=16 linewidth=0.0 \
           n1tic=2 x1beg=-0.7 x1end=0.7 f1=-2.048 f1num=-0.6 d1num=0.2 \
           label1="time [s]" label2="lateral distance [m]" \
-          f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > $file_base.eps
+          f2=-3000 f2num=-3000 d2num=1500 clip=$clipf1 > $file_base.eps
     done
     for file in f1plus${srcname}5a160.su f1min${srcname}5a160.su 
     do
@@ -117,7 +117,7 @@ then
       supsimage < $file hbox=6 wbox=4 labelsize=16 linewidth=0.0 \
           n1tic=2 x1beg=-0.7 x1end=0.7 f1=-2.048 f1num=-0.6 d1num=0.2 \
           label1="time [s]" label2="lateral distance [m]" \
-          f2=-2250 f2num=-2000 d2num=1000 clip=$clipf1 > $file_base.eps
+          f2=-3000 f2num=-3000 d2num=1500 clip=$clipf1 > $file_base.eps
     done
   rm nep.su
   exit
