@@ -56,9 +56,12 @@ int getWaveletInfo(char *file_src, int *n1, int *n2, float *d1, float *d2, float
         *n1 = (int)(bytes/sizeof(float));
         *f1 = 0.0;
         *f2 = 0.0;
-        *n2 = *nxm = 1;
+        ntraces = 1;
+		if(!getparint("ntraces",&ntraces)) vwarn("For binary file_src ntraces is set to 1");
 		if(!getparfloat("dt",d1)) verr("For binary file_src dt must be given");
 		if(!getparfloat("fmax",fmax)) verr("For binary file_src fmax in wavelet must be given");
+        *n2 = *nxm = ntraces;
+        *n1 = *n1 / ntraces;
 		*d2 = 1.0;
 		return 0;
     }

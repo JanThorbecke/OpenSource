@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <math.h>
 #include "segy.h"
+#include "par.h"
 
 /**
 *  reads file which contain the source wavelets and reads receiver positions  
@@ -21,8 +22,13 @@ int getWaveletHeaders(char *file_src, int n1, int n2, float *gx, float *sx, floa
 	size_t trace_sz;
 	off_t offset;
 	float scl, scll;
+	char* src_txt;
     segy hdr;
     
+    if (strstr(file_src, ".su") == NULL) { /* assume a binary file is read in and read number of samples in file */
+        vwarn("file_src is a binary file use src_txt for source coordinates");
+        if (!getparstring("src_txt",&src_txt)) verr("src_txt to define source positions not defined for binary file_src");
+    }
     if (file_src == NULL) return 0; /* Input pipe can not be handled */
     else fp = fopen( file_src, "r" );
     assert( fp != NULL);
