@@ -16,7 +16,7 @@ makemod sizex=6000 sizez=2000 dx=5 dz=5 cp0=$cp ro0=1000 file_base=fault.su orig
 
 makewave w=g2 fmax=45 t0=0.10 dt=$dt nt=4096 db=-40 file_out=G2.su verbose=1
 
-mpirun -np 20 ../fdelmodc_mpi \
+mpirun -np 20 fdelmodc_mpi \
     file_cp=fault_cp.su ischeme=1 \
     file_den=fault_ro.su \
     file_rcv=shots.su \
