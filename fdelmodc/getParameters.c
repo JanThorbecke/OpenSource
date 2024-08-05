@@ -858,23 +858,25 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		src->tend = (float *)malloc(nsrc*sizeof(float));
 		wav->nsamp = (size_t *)malloc((nsrc+1)*sizeof(size_t));
 		nsamp=0;
-		for (is=0; is<nsrc; is++) {
-			if (src->src_at_rcv>0){
-				src->x[is] = NINT((gx[is]-sub_x0)/dx);
-				src->z[is] = NINT((gelev[is]-sub_z0)/dz);
-				if (verbose>3 && pe==0) fprintf(stderr,"Source Array: xsrc[%d]=%f %d zsrc=%f %d\n", is, gx[is], src->x[is], gelev[is], src->z[is]);
-			}
-			else {
-                src->x[is]=NINT((sx[is]-sub_x0)/dx);
-                src->z[is]=NINT((selev[is]-sub_z0)/dz);
-				if (verbose>3 && pe==0) fprintf(stderr,"Source Array: xsrc[%d]=%f %d zsrc=%f %d\n", is, sx[is], src->x[is], selev[is], src->z[is]);
-			}
-			src->tbeg[is] = 0.0;
-			src->tend[is] = (wav->nt-1)*wav->dt;
-			wav->nsamp[is] = (size_t)(NINT((src->tend[is]-src->tbeg[is])/mod->dt)+1);
-			nsamp += wav->nsamp[is];
-		}
-		wav->nsamp[nsrc] = nsamp; /* put total number of samples in last position */
+	    if (src_txt==NULL) { /* get source positions from SU headers gx or sx */
+		    for (is=0; is<nsrc; is++) {
+			    if (src->src_at_rcv>0){
+				    src->x[is] = NINT((gx[is]-sub_x0)/dx);
+				    src->z[is] = NINT((gelev[is]-sub_z0)/dz);
+				    if (verbose>3 && pe==0) fprintf(stderr,"Source Array: xsrc[%d]=%f %d zsrc=%f %d\n", is, gx[is], src->x[is], gelev[is], src->z[is]);
+			    }
+			    else {
+                    src->x[is]=NINT((sx[is]-sub_x0)/dx);
+                    src->z[is]=NINT((selev[is]-sub_z0)/dz);
+				    if (verbose>3 && pe==0) fprintf(stderr,"Source Array: xsrc[%d]=%f %d zsrc=%f %d\n", is, sx[is], src->x[is], selev[is], src->z[is]);
+			    }
+			    src->tbeg[is] = 0.0;
+			    src->tend[is] = (wav->nt-1)*wav->dt;
+			    wav->nsamp[is] = (size_t)(NINT((src->tend[is]-src->tbeg[is])/mod->dt)+1);
+			    nsamp += wav->nsamp[is];
+		    }
+		    wav->nsamp[nsrc] = nsamp; /* put total number of samples in last position */
+        }
 		free(gx);
 		free(sx);
 		free(gelev);
