@@ -77,8 +77,14 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwa
         fp = fopen( wav.file_src, "r" );
         assert( fp != NULL);
         if (strstr(wav.file_src, ".su") == NULL) { /* assume a binary file is given */
-                memset(&src_nwav[0][0],0,wav.nt*sizeof(float));
-                nread = fread(&src_nwav[0][0], sizeof(float), n1, fp);
+            tracesToDo = wav.nx;
+            i = 0;
+            while (tracesToDo) {
+                memset(&src_nwav[i][0],0,wav.nt*sizeof(float));
+                nread = fread(&src_nwav[i][0], sizeof(float), n1, fp);
+                tracesToDo--;
+                i++;
+            }
         }
         else {
             /* read first header and last byte to get file size */
