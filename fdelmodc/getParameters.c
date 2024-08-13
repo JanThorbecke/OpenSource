@@ -785,6 +785,9 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         else {
 		    nsrc=nxsrc;
         }
+        if (wav->nx > 1) {
+            if (!getparint("src_multiwav",&src->multiwav)) src->multiwav=1;
+        }
 		/* Allocate arrays */
 		src->x = (int *)malloc(nsrc*sizeof(int));
 		src->z = (int *)malloc(nsrc*sizeof(int));
@@ -796,6 +799,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			/* Read in source coordinates */
 			for (i=0;i<nsrc;i++) {
 				if (fscanf(fp,"%e %e\n",&xsrca[i],&zsrca[i])!=2) vmess("Source Text File: Can not parse coordinates on line %d.",i);
+		//	    fprintf(stderr,"Source Array from src_txt: xsrc[%d]=%f zsrc=%f\n", is, xsrca[is], zsrca[is]);
 			}
 			/* Close file */
 			fclose(fp);
@@ -954,7 +958,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			vwarn("last trace in file_src will be repeated.");
 		}
 		else {
-			if (wav->file_src != NULL) vmess("Using all traces in file_src for areal shot");
+			if (wav->file_src != NULL) vmess("Using all %d traces in file_src for multi-wave shot",wav->nx);
 		}
 	}
 	src->n=nsrc;
