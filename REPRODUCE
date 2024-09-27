@@ -11,20 +11,20 @@ Jan Thorbecke and Deyan Draganov
 2011, Geophysics, Vol. 76, no. 6 (November-December); p H1--H18, doi: 10.1190/GEO2010-0039.1
 Download: https://janth.home.xs4all.nl/Publications/Articles/ThorbeckeDraganov2012.pdf
 
-*** To reproduce the Figures shown in the GEOPHYICS manuscript "Finite-difference modeling experiments for seismic interferometry" the scripts in fdelmodc/FiguresPaper directory can be used. Please read the README in the FiguresPaper directory for more instructions and guidelines. 
+*** To reproduce the Figures shown in the GEOPHYSICS manuscript "Finite-difference modeling experiments for seismic interferometry" the scripts in fdelmodc/FiguresPaper directory can be used. Please read the README in the FiguresPaper directory for more instructions and guidelines. 
 
 
--2- If the Machenko code has helped you in your research please refer to this paper in your publications:
+-2- If the Marchenko code has helped you in your research please refer to this paper in your publications:
 
 Implementation of the Marchenko method
 Jan Thorbecke, Evert Slob, Joeri Brackenhoff, Joost van der Neut, and Kees Wapenaar
 2017, Geophysics, Vol. 82, no. 6 (November-December); p. WB29--WB45, doi: 10.1190/GEO2017-0108.1
 Download: https://janth.home.xs4all.nl/Publications/Articles/ThorbeckeGPY2017.pdf
 
-*** To reproduce the Figures shown in the GEOPHYICS paper "Implementation of the Marchenko method" the scripts in marchenko/demo/oneD directory can be used. The README in this directory gives more instructions and guidelines. 
+*** To reproduce the Figures shown in the GEOPHYSICS paper "Implementation of the Marchenko method" the scripts in marchenko/demo/oneD directory can be used. The README in this directory gives more instructions and guidelines. 
 
 
--3- If you used the code to construct homogenoeus Green's functions, please refeer to this paper in your related publications:
+-3- If you used the code to construct homogeneous Green's functions, please refeer to this paper in your related publications:
 
 Virtual acoustics in inhomogeneous media with single-sided access:
  Wapenaar, K., Brackenhoff, J., Thorbecke, J., van der Neut, J., Slob, E., and Verschuur, E., 
@@ -47,7 +47,7 @@ Jan Thorbecke, Lele Zhang, Kees Wapenaar, Evert Slob,
 2021, Geophysics, Vol. 86, no. 2 (March-April); p. 1-15, doi: 10.1190/GEO2020-0196.1
 Download: https://www.keeswapenaar.nl/4_Journals/Geophysics/geo_21b.pdf
 
-*** To reproduce the Figures shown in the GEOPHYICS paper "Implementation of the Marchenko Multiple Elimination algorithm" the scripts in marchenko/demo/mme directory can be used. The README_PRIMARIES in this directory gives more instructions and guidelines. 
+*** To reproduce the Figures shown in the GEOPHYSICS paper "Implementation of the Marchenko Multiple Elimination algorithm" the scripts in marchenko/demo/mme directory can be used. The README_PRIMARIES in this directory gives more instructions and guidelines. 
 
 
 -5- If you use the fdacrtmc code of Max Holicki please refer to the following paper:
@@ -57,3 +57,12 @@ Holicki, M., Drijkoningen, G., and Wapenaar, K., 2019, Acoustic directional snap
 Prospecting, Vol. 67, 32-51
 Download: http://homepage.tudelft.nl/t4n4v/4_Journals/Geophys.Prosp/GP_19a.pdf
 
+
+-6- The Marchenko plane-wave method is explained in 
+
+Design, implementation and application of the Marchenko Plane-wave algorithm.
+Jan Thorbecke, Mohammed Almobarak, Johno van IJsseldijk, Joeri Brackenhoff, Giovanni Meles, Kees Wapenaar,
+2024 Computers & Geosciences 187 (2024) 105577
+Download: https://www.keeswapenaar.nl/4_Journals/Comp.Geosc/CS_24.pdf
+
+*** The instructions in marchenko/demo/planewave explain how to reproduce the results in this paper.
