@@ -33,13 +33,13 @@ cat << EOF > jobs/slurm_$ishot.job
 #SBATCH --output="jobs/outfiles/slurm_iniF_1100_${xsrc}.out"
 
 export PATH=\$HOME/src/OpenSource/bin:\$PATH:
-cd \$SLURM_SUBMIT_DIR
+cd \$PWD
 
 export OMP_NUM_THREADS=8
 
 fdelmodc \
         file_cp=smooth_cp.su ischeme=1 iorder=4 fmax=80 \
-        file_den=hom_ro.su \
+        file_den=smooth_ro.su \
         file_src=wavefw_fd.su \
         file_rcv=$file_rcv \
         src_type=1 \
@@ -60,7 +60,9 @@ fdelmodc \
         left=2 right=2 top=2 bottom=2
 EOF
 
-    sbatch jobs/slurm_$ishot.job
+    chmod +x jobs/slurm_$ishot.job
+    #sbatch jobs/slurm_$ishot.job
+    jobs/slurm_$ishot.job
 	
 
 	(( ishot = $ishot + 1))
