@@ -1,7 +1,7 @@
 Runtime Matlab scripts to reproduce the results presented in:
 
 
-Proceedings of the Royal Society America
+Proceedings of the Royal Society A.
 
 
 The animations that belong to this paper can be found on
