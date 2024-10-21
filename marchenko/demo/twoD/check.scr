@@ -15,7 +15,7 @@ do
 	if [ ! -e "$file_rcv" ]
 	then	 
 	echo $xsrc is missing 
-      sbatch jobs/slurm_$ishot.job
+      #sbatch jobs/slurm_$ishot.job
 	fi	
 	
 	(( ishot = $ishot + 1))
