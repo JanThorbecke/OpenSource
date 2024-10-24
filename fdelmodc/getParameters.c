@@ -573,8 +573,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparfloat("Fangle",&Fangle)) Fangle=45;
     /*
 	grad2rad = 17.453292e-3;
-    src->wx = sin(Fangle*grad2rad/sqrt(2));
-    src->wz = cos(Fangle*grad2rad/sqrt(2));
+    src->wx = sin(Fangle*grad2rad);
+    src->wz = cos(Fangle*grad2rad);
     */
     /* to make sure summed amplitude of Fa source is equavalent to 1.0 */
     /* 4 sources are added together Fx(ix) + Fx(ix+1) + Fz(iz) + Fz(iz+1) */
