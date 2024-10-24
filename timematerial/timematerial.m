@@ -1,20 +1,20 @@
 close all
 clear all
 
-disp('For generating Green.mp4, choose 1')
-disp('For generating Tud.mp4, choose 2')
-disp('For generating Wuv.mp4, choose 3')
+disp('For generating Green.avi, choose 1')
+disp('For generating Tud.avi, choose 2')
+disp('For generating Wuv.avi, choose 3')
 l=input('Your choice:  ');
 
 axis tight manual
 if l==1 
-v=VideoWriter('Green.mp4','Motion JPEG AVI');
+v=VideoWriter('Green','Motion JPEG AVI');
 end
 if l==2 
-v=VideoWriter('Tud.mp4','Motion JPEG AVI');
+v=VideoWriter('Tud','Motion JPEG AVI');
 end
 if l==3 
-v=VideoWriter('Wuv.mp4','Motion JPEG AVI');
+v=VideoWriter('Wuv','Motion JPEG AVI');
 end
 
 colormap('default');
