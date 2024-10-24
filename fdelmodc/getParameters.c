@@ -568,6 +568,11 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparfloat("dip",&src->dip)) src->dip=0.0;
 	if (!getparfloat("strike",&strike)) strike=90.0;
 	if (!getparfloat("rake",&rake)) rake=90.0;
+	if (!getparfloat("wx",&src->wx)) src->wx=0.5;
+	if (!getparfloat("wz",&src->wz)) src->wz=0.5;
+    /* to make sure summed amplitude of Fa source is equavalent to 1.0 */
+    src->wx *= 0.5;
+    src->wz *= 0.5;
 	strike = M_PI*(strike/180.0);
 	rake   = M_PI*(rake/180.0);
 	dip    = M_PI*(dip/180.0);
@@ -946,8 +951,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			wav->nst = nsamp; /* put total number of samples in nst part */
 		}
 	}
-    if (src->type==7) { /* set also src_injectionrate=1  */
-		vwarn("For src_type=7 injectionrate is always set to 1");
+    if (src->type==7 || src->type==6 || src->type==12 ) { /* set also src_injectionrate=1  */
+		vwarn("For src_type=6,7 or 12 injectionrate is always set to 1");
         src->injectionrate=1;
     }
 
@@ -984,6 +989,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			case 9 : fprintf(stderr,"double-couple"); break;
 			case 10 : fprintf(stderr,"Fz on P grid with +/-"); break;
 			case 11 : fprintf(stderr,"moment tensor"); break;
+			case 12 : fprintf(stderr,"Fa source with wx and wz"); break;
 		}
 		fprintf(stderr,"\n");
 		if (src->type==9) vmess("strike %.2f rake %.2f dip %.2f",180.0*strike/M_PI,180.0*rake/M_PI,180.0*dip/M_PI);
