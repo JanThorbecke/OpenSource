@@ -157,6 +157,8 @@ typedef struct _sourcePar { /* Source Array Parameters */
     int injectionrate;
 	int sinkdepth;
 	int src_at_rcv; /* Indicates that wavefield should be injected at receivers */
+    float wx;
+    float wz;
 } srcPar;
 
 typedef struct _shotPar { /* Shot Parameters */

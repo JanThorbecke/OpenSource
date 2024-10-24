@@ -165,6 +165,12 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 		else if (src.type == 10) { /* scale with 1/(ro*2dx) note that roz=dt/(ro*dx) */
 		    tzz[ix*n1+iz-1] -= src_ampl*roz[ix*n1+iz]/(2.0*mod.dt);
 		    tzz[ix*n1+iz+1] += src_ampl*roz[ix*n1+iz]/(2.0*mod.dt);
+        } 
+		else if (src.type == 12) { /* scale with 1/(ro*2dx) note that roz=dt/(ro*dx) */
+			vx[ ix   *n1+iz  ] += src.wx * src_ampl * rox[ ix   *n1+iz  ]/(l2m[ ix   *n1+iz  ]);
+			vx[(ix+1)*n1+iz  ] += src.wx * src_ampl * rox[(ix+1)*n1+iz  ]/(l2m[(ix+1)*n1+iz  ]);
+			vz[ ix   *n1+iz  ] += src.wz * src_ampl * roz[ ix   *n1+iz  ]/(l2m[ ix   *n1+iz  ]);
+			vz[ ix   *n1+iz+1] += src.wz * src_ampl * roz[ ix   *n1+iz+1]/(l2m[ ix   *n1+iz+1]);
         } /* src.type */
 
         
