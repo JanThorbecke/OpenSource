@@ -63,7 +63,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	int nxsrc, nzsrc, nhx;
 	int largeSUfile;
 	int is,ntraces,length_random;
-	float rand;
+	float rand, Fangle;
 	char *src_positions, tmpname[1024];
 	char* src_txt;
 	FILE *fp;
@@ -570,9 +570,17 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparfloat("rake",&rake)) rake=90.0;
 	if (!getparfloat("wx",&src->wx)) src->wx=0.5;
 	if (!getparfloat("wz",&src->wz)) src->wz=0.5;
+	if (!getparfloat("Fangle",&Fangle)) Fangle=45;
+    /*
+	grad2rad = 17.453292e-3;
+    src->wx = sin(Fangle*grad2rad/sqrt(2));
+    src->wz = cos(Fangle*grad2rad/sqrt(2));
+    */
     /* to make sure summed amplitude of Fa source is equavalent to 1.0 */
+    /* 4 sources are added together Fx(ix) + Fx(ix+1) + Fz(iz) + Fz(iz+1) */
     src->wx *= 0.5;
     src->wz *= 0.5;
+
 	strike = M_PI*(strike/180.0);
 	rake   = M_PI*(rake/180.0);
 	dip    = M_PI*(dip/180.0);
@@ -989,7 +997,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			case 9 : fprintf(stderr,"double-couple"); break;
 			case 10 : fprintf(stderr,"Fz on P grid with +/-"); break;
 			case 11 : fprintf(stderr,"moment tensor"); break;
-			case 12 : fprintf(stderr,"Fa source with wx and wz"); break;
+			case 12 : fprintf(stderr,"Fa source with wx(%.1f) and wz(%.1f)", src->wx, src->wz); break;
 		}
 		fprintf(stderr,"\n");
 		if (src->type==9) vmess("strike %.2f rake %.2f dip %.2f",180.0*strike/M_PI,180.0*rake/M_PI,180.0*dip/M_PI);
