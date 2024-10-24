@@ -49,9 +49,9 @@ makewave w=g2 fmax=45 t0=0.10 dt=$dt nt=4096 db=-40 file_out=G2.su verbose=1
 
 ../fdelmodc \
 	ischeme=3 \
-    file_cp=vel2_edge_cp.su \
-    file_cs=vel2_edge_cs.su \
-    file_den=vel2_edge_ro.su \
+    file_cp=real2_cp.su \
+    file_cs=real2_cs.su \
+    file_den=real2_ro.su \
     file_rcv=shot_obc_x5000_topo.su \
     file_src=G2.su \
     dtrcv=0.004 \

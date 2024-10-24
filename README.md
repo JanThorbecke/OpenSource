@@ -1,9 +1,9 @@
-# Open Source: Geophysical 3D/2D Finite DIfference Modeling and Marchenko Algorithms
+# Open Source: Geophysical 3D/2D Finite Difference Modeling and Marchenko Algorithms
 
 This repository contains tools for geophysical modeling, including:
-- 3D/2D Finate Difference (FD) modeling
+- 3D/2D Finite Difference (FD) modeling
 - Marchenko algorithms
-- 2D/3D x-w migration utilites
+- 2D/3D x-w migration utilities
 
 These tools are essential for seismic exploration, imaging, and multiple elimination tasks in inhomogeneous media. The code supports seismic interferometry and other advanced geophysical techniques.
 
@@ -18,9 +18,10 @@ Table of Contents
     - [Marchenko Method: Marchenko](#marchenko-method--marchenko)
 - [References](#references)
 - [License](#license)
-- Additonal Installations
-    - [Multidemensional Deconvolution](#mdd)
-    - [Math Kernal Library](#mkl-libraries)
+
+- Additional Installations
+    - [Multidimensional Deconvolution](#mdd)
+    - [Math Kernel Library](#mkl-libraries)
     - [Seismic Unix](#su)
     - [zfp](#zfp)
     - [FDACRTMC](#fdacrtmc)
@@ -39,12 +40,12 @@ FEATURES
 
 INSTALLATION
 -------------
-See the seperate INSTALL file.
+See the separate INSTALL file.
 
 
 REPRODUCING
 ----------
-Almost all Figures in the papers mentioned above can be reproduced with the sofwtare in this repository. Please see the file REPRODUCE for further instructions
+Almost all Figures in the papers mentioned above can be reproduced with the software in this repository. Please see the file REPRODUCE for further instructions
 
 
 
@@ -53,31 +54,32 @@ Finite Difference Modeling: FDELMODC
 To run a demo for finite difference modeling, navigate to the fdelmodc/demo directory and execute the following script:
 
 
-> ./fdelmodc_plane.scr
 
 The demo directory contains many scripts which demonstrate the different possibilities of the modeling program.
 
-To reproduce the Figures shown in the GEOPHYICS manuscript "Finite-difference modeling experiments for seismic interferometry" the scripts in FiguresPaper directory can be used. Please read the README in the FiguresPaper directory for more instructions and guidelines.
+To reproduce the Figures shown in the GEOPHYSICS manuscript "Finite-difference modeling experiments for seismic interferometry" the scripts in FiguresPaper directory can be used. Please read the README in the FiguresPaper directory for more instructions and guidelines.
 
 An extensive manual of fdelmodc can be found in doc/fdelmodcManual.pdf
 
 Marchenko method : MARCHENKO
 ----------------------------
-To run the demos for the Marchenko method, navigate to the bin/marchenko directory and run the scripts foudn in:
 
+To run the demos for the Marchenko method, navigate to the bin/marchenko directory and run the scripts found in:
 
 marchenko/demo/oneD
-
 
 marchenko/demo/twoD
 
 
-To reproduce the Figures shown in the GEOPHYICS paper "Implementation of the Marchenko method" the scripts in marchenko/demo/oneD directory can be used. The README in this directory gives more instructions and guidelines.
+To reproduce the Figures shown in the GEOPHYSICS paper "Implementation of the Marchenko method" the scripts in marchenko/demo/oneD directory can be used. The README in this directory gives more instructions and guidelines.
 
 To reproduce the Figures shown in the Scientific Reports paper "Virtual acoustics in inhomogeneous media with single-sided access" the scripts in marchenko/demo/ScientificReports directory can be used. The README in this directory gives more instructions and guidelines.
 
-To reproduce the Figures shown in the GEOPHYICS paper "Implementation of the Marchenko Multiple Elimination algorithm" the scripts in marchenko/demo/mme directory can be used. The README_PRIMARIES in this directory gives more instructions and guidelines.
-A bried manual about the MME program 'marchencko_primaries' can be found in doc/MMEmanual.pdf
+To reproduce the Figures shown in the GEOPHYSICS paper "Implementation of the Marchenko Multiple Elimination algorithm" the scripts in marchenko/demo/mme directory can be used. The README_PRIMARIES in this directory gives more instructions and guidelines.
+
+A brief manual about the MME program 'marchenko_primaries' can be found in doc/MMEmanual.pdf
+
+A more extensive manual about Marchenko can be found in doc/marchenkoManual.pdf
 
 
 MDD
@@ -96,8 +98,8 @@ https://stanford.edu/group/SOL/software/lsqr/
 
 MKL libraries
 -------------
-The Math Kernal Libray (MKL) is a set of mathematical routines designed to accelerate performance on Intel processors. It helps optimize perofrmance for x64_86 achitectures.
 
+The Math Kernel Library (MKL) is a set of mathematical routines designed to accelerate performance on Intel processors. It helps optimize performance for x84_64 architectures.
 
 If you are running on x64_86 processors you can download (for free) Intel's highly optimised MKL package:
 
@@ -120,7 +122,9 @@ In case MKL is installed on your system there is no need to install the netlib p
 
 SEISMIC UNIX
 -----------
-.su files are generated from the date used in seismic processing. These files can be opened and processed with Seismic Unix Software.
+
+The output file format is based on Seismic Unix (SU) with a file extension '.su'. These files can be opened and processed with Seismic Unix Software.
+
 If you want to use the .su files with SU from CWP:
 git clone https://github.com/JohnWStockwellJr/SeisUnix
 
@@ -141,13 +145,15 @@ make xtremake
 
 ZFP
 ---
-The fdacrtmc and the 3D Marchenko code makes use of ZFP compression to store snaphots in CPU memory or do effient IO. This package is included in this repository for your convenience. The latest package and detailed explanation can be found on:
+The fdacrtmc and the 3D Marchenko code makes use of ZFP compression to store snapshots in CPU memory or do efficient IO. This package is included in this repository for your convenience. The latest package and detailed explanation can be found on:
+
 
 
 https://github.com/LLNL/zfp
 
 
-and written by Peter Lindstrom
+and written by Peter Lindstrom.
+
 
 
 FDACRTMC
@@ -210,7 +216,8 @@ Jan Thorbecke and Deyan Draganov
 Download: https://janth.home.xs4all.nl/Publications/Articles/ThorbeckeDraganov2012.pdf
 
 
--2- If the Machenko code has helped you in your research please refer to this paper in your publications:
+
+-2- If the Marchenko code has helped you in your research please refer to this paper in your publications:
 
 
 Implementation of the Marchenko method
@@ -219,7 +226,7 @@ Jan Thorbecke, Evert Slob, Joeri Brackenhoff, Joost van der Neut, and Kees Wapen
 Download: https://janth.home.xs4all.nl/Publications/Articles/ThorbeckeGPY2017.pdf
 
 
--3- If you used the code to construct homogenoeus Green's functions, please refer to this paper in your related publications:
+-3- If you used the code to construct homogeneous Green's functions, please refer to this paper in your related publications:
 
 
 Virtual acoustics in inhomogeneous media with single-sided access:
@@ -271,6 +278,17 @@ Design of one-way wavefield extrapolation operators, using smooth functions in W
 Jan Thorbecke, Kees Wapenaar, Gerd Swinnen,
 2004, Geophysics Vol 69, p. 1037-1045
 Download: https://www.keeswapenaar.nl/4_Journals/Geophysics/geo_04.pdf
+
+
+-8- The Marchenko plane-wave algorithm is explained in
+
+Design, implementation and application of the Marchenko Plane-wave algorithm.
+Jan Thorbecke, Mohammed Almobarak, Johno van IJsseldijk, Joeri Brackenhoff, Giovanni Meles, Kees Wapenaar,
+2024 Computers & Geosciences 187 (2024) 105577
+Download: https://www.keeswapenaar.nl/4_Journals/Comp.Geosc/CS_24.pdf
+
+The instructions in marchenko/demo/planewave explain how to reproduce the results in this paper.
+
 
 
 UPDATES AND LATEST VERSION

@@ -1,0 +1,29 @@
+Runtime Matlab scripts to reproduce the results discussed in:
+
+"Green’s functions, propagation invariants, reciprocity theorems, wave-field representations and propagator matrices in 2D time-dependent materials"
+author: Kees Wapenaar
+
+The manuscript is submitted to 
+
+Proceedings of the Royal Society A.
+
+
+The animations that belong to this paper can be found on
+
+https://www.keeswapenaar.nl/TimeMaterial/Green.mp4
+
+https://www.keeswapenaar.nl/TimeMaterial/TUD.mp4
+
+https://www.keeswapenaar.nl/TimeMaterial/Wuv.mp4
+
+The provided matlab scripts reproduce fig2a, 4a en 4b of the manuscript and the 3 animations.
+
+The Main script to run is timematerial.m . The script provides 3 options to choose from:
+
+For generating Green.mp4, choose 1   => + generates figure2.eps
+For generating Tud.mp4, choose 2
+For generating Wuv.mp4, choose 3   => + generates figure3.eps and figure4.eps
+
+
+
+
