@@ -159,17 +159,17 @@ if l==1
 % plot Green's function (equation 11.22) as z,t diagram 
 figure(2)
 wiggle(-Wuv(:,1:10:nt),[dx,10*dt],[-nz/2*dx,0],5,1,'k-')
-print -deps figure2.eps
+print -deps figure2a.eps
 end
 
 if l==3
 % plot component Wuv function as z,t diagram
 figure(3)
 wiggle(Wuv(:,1:10:nt),[dx,10*dt],[-nz/2*dx,0],5,1,'k-')
-print -deps figure3.eps
+print -deps figure4a.eps
 % extract and plot Green's function (equation 11.22) as z,t diagram 
 Wuv(:,1:resam)=zeros(nz,resam);
 figure(4)
 wiggle(-Wuv(:,1:10:nt),[dx,10*dt],[-nz/2*dx,0],5,1,'k-')
-print -deps figure4.eps
+print -deps figure4b.eps
 end
