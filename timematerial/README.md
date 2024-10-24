@@ -20,11 +20,11 @@ The provided matlab scripts reproduce fig2a, 4a en 4b of the manuscript and the 
 
 The Main script to run is timematerial.m . The script provides 3 options to choose from:
 
-For generating Green.mp4, choose 1   => Figure 1 (snapshots) + figure2a.eps
+For generating Green.avi, choose 1   => Figure 1 (snapshots) + figure2a.eps
 
-For generating Tud.mp4, choose 2  => Figure 3 (snapshots)
+For generating Tud.avi, choose 2  => Figure 3 (snapshots)
 
-For generating Wuv.mp4, choose 3   => + generates figure4a.eps and figure4b.eps
+For generating Wuv.avi, choose 3   => + generates figure4a.eps and figure4b.eps
 
 
 
