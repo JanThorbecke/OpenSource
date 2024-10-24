@@ -130,7 +130,7 @@ char *sdoc[] = {
 "   verbose=0 ......... silent mode; =1: display info",
 " ",
 " SHOT AND GENERAL SOURCE DEFINITION:",
-"   src_type=1 ........ 1=P 2=Txz 3=Tzz 4=Txx 5=S-pot 6=Fx 7=Fz 8=P-pot 9=double-couple 10=Fz by P 11=moment tensor",
+"   src_type=1 ........ 1=P 2=Txz 3=Tzz 4=Txx 5=S-pot 6=Fx 7=Fz 8=P-pot 9=double-couple 10=Fz by P 11=moment tensor 12=Fa",
 "   src_orient=1 ...... orientation of the source",
 "                     - 1=monopole",
 "                     - 2=dipole +/- vertical oriented",
