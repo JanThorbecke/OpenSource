@@ -3,6 +3,11 @@
 makemod par=syncline.makemod
 
 makewave \
-	fmax=60 db=-30 shift=1 \
+	fmax=60 db=-30 shift=0 \
 	dt=0.004 nt=512 file_out=ricker.su
+
+
+suspike nt=512 ntr=301 nspk=1 ix1=150 it1=200 | sushw key=gx,scalco a=0,-1000 b=10000,0 c=0,0 j=301,301 > spikes.su
+
+fconv file_in1=ricker.su file_in2=spikes.su file_out=ricker_shift.su
 

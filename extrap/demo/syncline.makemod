@@ -3,9 +3,9 @@ file_base=syncline.su
 cp0=2000
 ro0=1500
 sizex=3000
-sizez=2000
-dx=2.5
-dz=2.5
+sizez=1500
+dx=10
+dz=5
 orig=0,0
 writeint=1
 
