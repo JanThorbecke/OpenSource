@@ -424,7 +424,10 @@ int main(int argc, char *argv[])
 		vmess("velocity model distance  dx    = %.2f", dxm);
 		vmess("velocity model distance  dz    = %.2f", dzm);
 		vmess("extrapolation aperture         = %d", ixa);
-		if (zomigr)  vmess("zero-offset migration");
+		if (zomigr)  {
+            vmess("zero-offset migration");
+            vmess("number of depth steps     = %d", ndepth);
+        }
 		vmess("minimum velocity               = %.2f", cmin);
 		vmess("maximum velocity               = %.2f", cmax);
 		vmess("dz can be as large as          = %.2f", cmin/(2*fmax));
