@@ -1,16 +1,16 @@
 #!/bin/bash
 
-../bin/cfpmod file_vel=syncline_cp.su xsrc1=1500 zsrc1=1200 ntap=30 file_src=ricker.su file_out=green.su
+../../bin/cfpmod file_vel=syncline_cp.su xsrc1=1500 zsrc1=1200 ntap=30 file_src=ricker.su file_out=green.su
 
-../bin/extrap file_in=green.su file_vel=syncline_cp.su verbose=1 beam=1 conjg=1 | suximage 
+../../bin/extrap file_in=green.su file_vel=syncline_cp.su verbose=1 beam=1 conjg=1 | suximage 
 
-../bin/extrap file_in=green.su file_vel=syncline_cp.su verbose=1 snap=1 conjg=1 tsnap1=-0.512 dtsnap=0.128 | suximage 
+../../bin/extrap file_in=green.su file_vel=syncline_cp.su verbose=1 snap=1 conjg=1 tsnap1=-0.512 dtsnap=0.128 | suximage 
 
-../bin/extrap file_in=green.su file_vel=syncline_cp.su verbose=1 mode=-1 zrcv=1200 | suximage 
+../../bin/extrap file_in=green.su file_vel=syncline_cp.su verbose=1 mode=-1 zrcv=1200 | suximage 
 
-../bin/cfpmod file_vel=syncline_cp.su xsrc1=1500 zsrc1=0 zrcv=1200 ntap=30 file_src=ricker.su file_out=deep.su
+../../bin/cfpmod file_vel=syncline_cp.su xsrc1=1500 zsrc1=0 zrcv=1200 ntap=30 file_src=ricker.su file_out=deep.su
 
-../bin/extrap file_in=deep.su file_vel=syncline_cp.su verbose=1 zrcv=0 zstart=1200 reverse=1 mode=-1 verbose=1 | suximage 
+../../bin/extrap file_in=deep.su file_vel=syncline_cp.su verbose=1 zrcv=0 zstart=1200 reverse=1 mode=-1 verbose=1 | suximage 
 
 rm green.su deep.su
 
