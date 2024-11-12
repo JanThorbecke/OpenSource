@@ -1,0 +1,7 @@
+ The scripts in this directory can reproduce the figure in doc/OpenExtrap.pdf
+
+-1- model.scr : generates the velocity model and a zero-offset data-set that contains one non-zero trace to generate a puls response.
+
+-2- migr.scr : an example of ZO migration with different extrapolation operators
+
+-3- extrap.scr : examples how to use the extrap program
