@@ -426,11 +426,11 @@ int main(int argc, char *argv[])
 		vmess("extrapolation aperture         = %d", ixa);
 		if (zomigr)  {
             vmess("zero-offset migration");
-            vmess("number of depth steps     = %d", ndepth);
         }
 		vmess("minimum velocity               = %.2f", cmin);
 		vmess("maximum velocity               = %.2f", cmax);
 		vmess("dz can be as large as          = %.2f", cmin/(2*fmax));
+        vmess("number of depth steps          = %d", ndepth);
 		vmess("first model position           = %.2f", ox);
 		vmess("last model position            = %.2f", fxm);
 		vmess("orig of model (x, z)           = %.2f, %.2f", ox, oz);
