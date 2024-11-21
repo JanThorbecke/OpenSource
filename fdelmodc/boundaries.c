@@ -81,7 +81,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 #pragma omp for private (ix, iz) nowait
 #pragma simd
 		for (ix=1; ix<=nx; ix++) {
-			vx[ix*n1+ibnd] = 0.0;
+			//vx[ix*n1+ibnd] = 0.0;
 			vz[ix*n1+ibnd] = -vz[ix*n1+ibnd+1];
 			if (mod.iorder >= 4) vz[ix*n1+ibnd-1] = -vz[ix*n1+ibnd+2];
 			if (mod.iorder >= 6) vz[ix*n1+ibnd-2] = -vz[ix*n1+ibnd+3];
@@ -91,7 +91,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 #pragma omp for private (ix, iz) nowait
 #pragma simd
 		for (iz=1; iz<=nz; iz++) {
-			vz[(nx+ibnd-1)*n1+iz] = 0.0;
+			//vz[(nx+ibnd-1)*n1+iz] = 0.0;
 			vx[(nx+ibnd)*n1+iz]   = -vx[(nx+ibnd-1)*n1+iz];
 			if (mod.iorder == 4) vx[(nx+2)*n1+iz] = -vx[(nx-1)*n1+iz];
 			if (mod.iorder == 6) {
@@ -104,7 +104,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 #pragma omp for private (ix, iz) nowait
 #pragma simd
 		for (ix=1; ix<=nx; ix++) {
-			vx[ix*n1+nz+ibnd-1] = 0.0;
+			//vx[ix*n1+nz+ibnd-1] = 0.0;
 			vz[ix*n1+nz+ibnd]   = -vz[ix*n1+nz+ibnd-1];
 			if (mod.iorder == 4) vz[ix*n1+nz+2] = -vz[ix*n1+nz-1];
 			if (mod.iorder == 6) {
@@ -117,7 +117,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 #pragma omp for private (ix, iz) nowait
 #pragma simd
 		for (iz=1; iz<=nz; iz++) {
-			vz[ibnd*n1+iz] = 0.0;
+			//vz[ibnd*n1+iz] = 0.0;
 			vx[ibnd*n1+iz] = -vx[(ibnd+1)*n1+iz];
 			if (mod.iorder == 4) vx[0*n1+iz] = -vx[3*n1+iz];
 			if (mod.iorder == 6) {
