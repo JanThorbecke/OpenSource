@@ -453,7 +453,7 @@ int main(int argc, char **argv)
 			int it,ix;
 			for (ix=0;ix<nrec;ix++) { //Loop over receivers
 				//vmess("Trace %d, scale = %d",ix,t2k[ix]);
-				if (fabs(hdrs[0].fldr - ix) < killno) {
+				if (abs(hdrs[0].fldr - ix) < killno) {
 					for (it=0;it<nsam;it++) { //Loop over time samples
 						data[ix*nsam+it] *= 0; 
 					}
@@ -465,7 +465,7 @@ int main(int argc, char **argv)
 			int it,ix;
 			for (ix=0;ix<nrec;ix++) { //Loop over receivers
 				//vmess("Trace %d, scale = %d",ix,t2k[ix]);
-				if (fabs(hdrs[0].fldr - ix) > killno) {
+				if (abs(hdrs[0].fldr - ix) > killno) {
 					for (it=0;it<nsam;it++) { //Loop over time samples
 						data[ix*nsam+it] *= 0; 
 					}
