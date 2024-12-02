@@ -17,7 +17,7 @@
 *           The Netherlands 
 **/
 
-int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *vx, float *vz, float *tzz, float *txx, float *txz, float *l2m, float *lam, float *rox, float *roz, float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, float *rec_dxvx, float *rec_dzvz, int verbose)
+int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *vx, float *vz, float *tzz, float *txx, float *txz, float *q, float *l2m, float *lam, float *rox, float *roz, float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, float *rec_p, float *rec_pp, float *rec_ss, float *rec_q, float *rec_udp, float *rec_udvz, float *rec_dxvx, float *rec_dzvz, int verbose)
 {
 	int n1, ibndx, ibndz;
 	int irec, ix, iz, ix2, iz2, ix1, iz1;
@@ -249,6 +249,9 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 				rec_ss[irec*rec.nt+isam] += (vx[ix2*n1+iz2]-vx[ix2*n1+iz] -
 										   (vz[ix2*n1+iz2]-vz[ix*n1+iz2]))/mod.dx;
 			}
+			if (rec.type.q) {
+				rec_q[irec*rec.nt+isam] += q[ix*n1+iz];
+            }
 			if (rec.type.vz) {
 /* interpolate vz to vx position to the right and above of vz */
 				if (rec.int_vz == 1) {

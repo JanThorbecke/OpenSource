@@ -1192,6 +1192,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparint("rec_type_ud", &rec->type.ud)) rec->type.ud=0;
 	if (!getparint("rec_type_dxvx", &rec->type.dxvx)) rec->type.dxvx=0;
 	if (!getparint("rec_type_dzvz", &rec->type.dzvz)) rec->type.dzvz=0;
+	if (!getparint("rec_type_q", &rec->type.q)) rec->type.q=0;
 	if (mod->ischeme!=1 &&  rec->type.ud==1) {
 		warn("Receiver decomposition only implemented for acoustis scheme (1)");
 	}
@@ -1274,6 +1275,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 			if (rec->type.dzvz) fprintf(stderr,"Vz/dz ");
 			if (rec->type.dxvx) fprintf(stderr,"Vx/dx ");
 			if (rec->type.p) fprintf(stderr,"p ");
+			if (rec->type.q) fprintf(stderr,"q ");
     		if (rec->type.ud==1) fprintf(stderr,"P+ P- Pressure normalized");
     		if (rec->type.ud==2) fprintf(stderr,"P+ P- Particle Velocity normalized");
     		if (rec->type.ud==3) fprintf(stderr,"P+ P- Flux normalized");

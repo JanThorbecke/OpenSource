@@ -66,7 +66,7 @@ int viscoacoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, in
 	float c1, c2;
 	int   ix, iz;
 	int   n1;
-	float ddt, Tpp, *Tlm, *Tlp, *Tt1, *Tt2, *dxvx, *dzvz;
+	float ddt, Tpp, Tlm, *dxvx, *dzvz, nom;
 
 
 	c1 = 9.0/8.0; 
@@ -76,10 +76,6 @@ int viscoacoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, in
 
 	dxvx = (float *)malloc(n1*sizeof(float));
 	dzvz = (float *)malloc(n1*sizeof(float));
-	Tlm = (float *)malloc(n1*sizeof(float));
-	Tlp = (float *)malloc(n1*sizeof(float));
-	Tt1 = (float *)malloc(n1*sizeof(float));
-	Tt2 = (float *)malloc(n1*sizeof(float));
 
 	/* calculate vx for all grid points except on the virtual boundary*/
 #pragma omp for private (ix, iz) nowait schedule(guided,1)
@@ -112,7 +108,7 @@ int viscoacoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, in
 	boundariesP(mod, bnd, vx, vz, p, NULL, NULL, rox, roz, l2m, NULL, NULL, itime, verbose);
 
 	/* calculate p/tzz for all grid points except on the virtual boundary */
-#pragma omp	for private (iz,ix, Tpp) nowait schedule(guided,1)
+#pragma omp	for private (iz,ix, Tpp, Tlm, nom) nowait schedule(guided,1)
 	for (ix=mod.ioPx; ix<mod.iePx; ix++) {
 #pragma simd
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
@@ -125,28 +121,20 @@ int viscoacoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, in
 					   c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]);
 		}
 
-		/* help variables to let the compiler vectorize the loops */
+        /* The memory variable (q) is used to correct P. The correction is applied 
+         * before the time step is applied to 1 and after the time-step of q 
+         * see equation (13) of Robertson (1994). 
+         */
 #pragma simd
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			Tpp     = tep[ix*n1+iz]*tss[ix*n1+iz];
-			Tlm[iz] = (1.0-Tpp)*tss[ix*n1+iz]*l2m[ix*n1+iz]*0.5;
-			Tlp[iz] = l2m[ix*n1+iz]*Tpp;
-		}   
-#pragma simd
-		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
-			Tt1[iz] = 1.0/(ddt+0.5*tss[ix*n1+iz]);
-			Tt2[iz] = ddt-0.5*tss[ix*n1+iz];
-		}   
+			p[ix*n1+iz] -= l2m[ix*n1+iz]*Tpp*(dzvz[iz]+dxvx[iz]) + q[ix*n1+iz];
+			Tlm = (1.0-Tpp)*tss[ix*n1+iz]*l2m[ix*n1+iz];
+            nom = 1.0/(1.0+0.5*tss[ix*n1+iz]*mod.dt);
 
-		/* the update with the relaxation correction */
-#pragma simd
-		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
-			p[ix*n1+iz] -= Tlp[iz]*(dzvz[iz]+dxvx[iz]) + q[ix*n1+iz];
-		}
-#pragma simd
-		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
-			q[ix*n1+iz] = (Tt2[iz]*q[ix*n1+iz] + Tlm[iz]*(dxvx[iz]+dzvz[iz]))*Tt1[iz];
-			p[ix*n1+iz] -= q[ix*n1+iz];
+            q[ix*n1+iz] = nom*( q[ix*n1+iz] - 0.5*tss[ix*n1+iz]*mod.dt*q[ix*n1+iz] + 0.5*Tlm*(dxvx[iz]+dzvz[iz])*mod.dt );
+            p[ix*n1+iz] -= q[ix*n1+iz];
+
 		}
 	}
 
@@ -166,10 +154,6 @@ int viscoacoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, in
 
 	free(dxvx);
 	free(dzvz);
-	free(Tlm);
-	free(Tlp);
-	free(Tt1);
-	free(Tt2);
 
 	return 0;
 }

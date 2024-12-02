@@ -14,6 +14,7 @@ typedef struct _compType { /* Receiver Type */
 	int pp;
 	int ss;
 	int ud;
+	int q;
 } compType;
 
 typedef struct _receiverPar { /* Receiver Parameters */
