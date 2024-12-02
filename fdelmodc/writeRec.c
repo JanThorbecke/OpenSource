@@ -33,7 +33,7 @@ typedef struct _dcomplexStruct { /* complex number */
 **/
 
 #ifdef MPI
-static MPI_File fpvx, fpvz, fptxx, fptzz, fptxz, fpp, fppp, fpss, fpup, fpdown, fpdxvx, fpdzvz;
+static MPI_File fpvx, fpvz, fptxx, fptzz, fptxz, fpp, fppp, fpss, fpup, fpdown, fpdxvx, fpdzvz, fpq;
 MPI_File fileOpen(char *file, char *ext, int append);
 int traceWrite(segy *hdr, float *data, int n, long long offset, MPI_File fh);
 void fileClose(MPI_File fh);
