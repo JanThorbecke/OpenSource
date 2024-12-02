@@ -54,14 +54,14 @@ int elastic6(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsr
     float **src_nwav, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, 
     float *roz, float *l2m, float *lam, float *mul, int verbose);
 
-int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *vx, float *vz, float *tzz, float *txx, 
+int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *vx, float *vz, float *tzz, float *txx, float *q,
     float *txz, float *l2m, float *lam, float *rox, float *roz, 
     float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
-    float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, float *rec_dxvx, float *rec_dzvz, int verbose);
+    float *rec_p, float *rec_pp, float *rec_ss, float *rec_q, float *rec_udp, float *rec_udvz, float *rec_dxvx, float *rec_dzvz, int verbose);
 
 int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsrc, int nsam, int ishot, int nshots, int fileno, 
 			 float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
-			 float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, float *rec_dxvx, float *rec_dzvz, int verbose);
+			 float *rec_p, float *rec_pp, float *rec_ss, float *rec_q, float *rec_udp, float *rec_udvz, float *rec_dxvx, float *rec_dzvz, int verbose);
 
 int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, wavPar wav,int ixsrc, int izsrc, int itime, 
 				   float *vx, float *vz, float *tzz, float *txx, float *txz, int verbose);
@@ -240,6 +240,7 @@ char *sdoc[] = {
 "   rec_type_dxvx=0 ... dxVx registration _rdxvx",
 "   rec_type_pp=0 ..... P (divergence) registration _rP",
 "   rec_type_ss=0 ..... S (curl) registration _rS",
+"   rec_type_q=0 ...... memory-variable of visco-acoustic modeling",
 "   rec_type_ud=0 ..... 1:pressure normalized decomposition in up and downgoing waves _ru, _rd",
 "   ................... 2:particle velocity normalized decomposition in up and downgoing waves _ru, _rd",
 "   ................... 3:flux normalized decomposition in up and downgoing waves _flup, _flip",
@@ -286,7 +287,7 @@ int main(int argc, char **argv)
 	float *vx, *vz, *tzz, *txz, *txx;
 	float *rec_vx, *rec_vz, *rec_p;
 	float *rec_txx, *rec_tzz, *rec_txz;
-	float *rec_pp, *rec_ss;
+	float *rec_pp, *rec_ss, *rec_q;
 	float *rec_udp, *rec_udvz;
 	float *rec_dxvx, *rec_dzvz;
 	float *beam_vx, *beam_vz, *beam_p;
@@ -400,6 +401,7 @@ int main(int argc, char **argv)
 	if (rec.type.dzvz) rec_dzvz = (float *)calloc(size,sizeof(float));
 	if (rec.type.pp)  rec_pp  = (float *)calloc(size,sizeof(float));
 	if (rec.type.ss)  rec_ss  = (float *)calloc(size,sizeof(float));
+	if (rec.type.q)  rec_q  = (float *)calloc(size,sizeof(float));
     if (rec.type.ud) { 
 		rec_udvz  = (float *)calloc(mod.nax*rec.nt,sizeof(float));
 		rec_udp   = (float *)calloc(mod.nax*rec.nt,sizeof(float));
@@ -550,7 +552,7 @@ shared (rox, roz, l2m, lam, mul, txx, txz, tzz, vx, vz) \
 shared (tss, tep, tes, r, q, p) \
 shared (tinit, it0, it1, its) \
 shared(beam_vx, beam_vz, beam_txx, beam_tzz, beam_txz, beam_p, beam_pp, beam_ss) \
-shared(rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, rec_p, rec_pp, rec_ss) \
+shared(rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, rec_p, rec_pp, rec_ss, rec_q) \
 shared (tt, t2, t3, isam) \
 shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 {
@@ -630,17 +632,17 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 				isam        = (it-rec.delay-itwritten+NINT(mod.t0/mod.dt))/rec.skipdt+1;
 				if (isam < 0) isam = rec.nt+isam;
 				/* store time at receiver positions */
-				getRecTimes(mod, rec, bnd, it, isam, vx, vz, tzz, txx, txz, 
+				getRecTimes(mod, rec, bnd, it, isam, vx, vz, tzz, txx, txz, q, 
 					l2m, lam, rox, roz, 
 					rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
-					rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, rec_dxvx, rec_dzvz, verbose);
+					rec_p, rec_pp, rec_ss, rec_q, rec_udp, rec_udvz, rec_dxvx, rec_dzvz, verbose);
 
 				/* at the end of modeling a shot, write receiver array to output file(s) */
 				if (writeToFile && (it+rec.skipdt <= it1-1) ) {
 					fileno = ( ((it-rec.delay)/rec.skipdt)+1)/rec.nt;
 					writeRec(rec, mod, bnd, wav, ixsrc, izsrc, isam+1, ishot, shot.n, fileno,
 						rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
-						rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, rec_dxvx, rec_dzvz, verbose);
+						rec_p, rec_pp, rec_ss, rec_q, rec_udp, rec_udvz, rec_dxvx, rec_dzvz, verbose);
 				}
 			}
 
@@ -703,7 +705,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 		}
 		writeRec(rec, mod, bnd, wav, ixsrc, izsrc, isam+1, ishot, shot.n, fileno,
 			rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
-			rec_p, rec_pp, rec_ss, rec_udp, rec_udvz, rec_dxvx, rec_dzvz, verbose);
+			rec_p, rec_pp, rec_ss, rec_q, rec_udp, rec_udvz, rec_dxvx, rec_dzvz, verbose);
 			
 		
 		writeBeams(mod, sna, ixsrc, izsrc, ishot, fileno, 
@@ -720,6 +722,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 	    if (rec.type.txz) memset(rec_txz ,0,size*sizeof(float));
 	    if (rec.type.pp)  memset(rec_pp ,0,size*sizeof(float));
 	    if (rec.type.ss)  memset(rec_ss ,0,size*sizeof(float));
+	    if (rec.type.q)  memset(rec_q ,0,size*sizeof(float));
         if (rec.type.ud) { 
 		    memset(rec_udvz,0,mod.nax*rec.nt*sizeof(float));
 		    memset(rec_udp ,0,mod.nax*rec.nt*sizeof(float));
@@ -762,6 +765,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 	if (rec.type.txz) free(rec_txz);
 	if (rec.type.pp)  free(rec_pp);
 	if (rec.type.ss)  free(rec_ss);
+	if (rec.type.q)   free(rec_q);
 	if (rec.type.ud)  {
 		free(rec_udvz);
 		free(rec_udp);

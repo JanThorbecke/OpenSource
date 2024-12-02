@@ -39,7 +39,7 @@ int traceWrite(segy *hdr, float *data, int n, long long offset, MPI_File fh);
 void fileClose(MPI_File fh);
 static int opened;
 #else
-static FILE *fpvx, *fpvz, *fptxx, *fptzz, *fptxz, *fpp, *fppp, *fpss, *fpup, *fpdown, *fpdxvx, *fpdzvz;
+static FILE *fpvx, *fpvz, *fptxx, *fptzz, *fptxz, *fpp, *fppp, *fpss, *fpup, *fpdown, *fpdxvx, *fpdzvz, *fpq;
 FILE *fileOpen(char *file, char *ext, int append);
 int traceWrite(segy *hdr, float *data, int n, long long offset, FILE *fp);
 void fileClose(FILE *fp);
@@ -55,7 +55,7 @@ void kxwdecomp(complex *rp, complex *rvz, complex *up, complex *down,
 
 int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsrc, int nsam, int ishot, int nshots, int fileno, 
              float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
-             float *rec_p, float *rec_pp, float *rec_ss, float *rec_udp, float *rec_udvz, float *rec_dxvx, float *rec_dzvz, int verbose)
+             float *rec_p, float *rec_pp, float *rec_ss, float *rec_q, float *rec_udp, float *rec_udvz, float *rec_dxvx, float *rec_dzvz, int verbose)
 {
     float *rec_up, *rec_down, *trace, *rec_vze, *rec_pe;
     float dx, dt, cp, rho, fmin, fmax;
@@ -125,6 +125,7 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
     if (rec.type.dzvz) fpdzvz = fileOpen(filename, "_rdzvz", append);
     if (rec.type.pp)  fppp  = fileOpen(filename, "_rpp", append);
     if (rec.type.ss)  fpss  = fileOpen(filename, "_rss", append);
+    if (rec.type.q)  fpq  = fileOpen(filename, "_rq", append);
     if (rec.type.ud && (mod.ischeme==1 || mod.ischeme==2) )  {
         fpup   = fileOpen(filename, "_ru", append);
         fpdown = fileOpen(filename, "_rd", append);
@@ -232,6 +233,9 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
         }
         if (rec.type.ss) {
             traceWrite( &hdr, &rec_ss[irec*rec.nt], nsam, offset, fpss) ;
+        }
+        if (rec.type.q) {
+            traceWrite( &hdr, &rec_q[irec*rec.nt], nsam, offset, fpq) ;
         }
         if (rec.type.ud && mod.ischeme==1)  {
             traceWrite( &hdr, &rec_up[irec*rec.nt], nsam, offset, fpup) ;
