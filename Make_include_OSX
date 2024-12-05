@@ -20,12 +20,12 @@ L = $(ROOT)/lib
 #GNU 
 #CC = gcc-mp-5 
 #CC = gcc
+#FC = 
 #FC = gfortran
 # Linux gcc version 4.x
 #OPTC = -O3 -ffast-math
-#to include parallelisation with OpenMP
+##to include parallelisation with OpenMP
 #OPTC += -fopenmp
-
 # for better performing code you can try:
 #OPTC = -O3 -fno-trapping-math -ffast-math -funroll-all-loops -mavx -fomit-frame-pointer -mfpmath=sse -ftree-vectorizer-verbose=1
 # Linux gcc version 3.x
@@ -45,15 +45,14 @@ L = $(ROOT)/lib
 #CC = icc
 #FC = ifort
 ### Linux
-##OPTC = -O3 -no-prec-div -qopt-report-phase=vec,openmp
-##OPTF = -O3 -no-prec-div -qopt-report-phase=vec,openmp
-#OPTC = -O3 -no-prec-div -xCORE-AVX2 
-#OPTF = -O3 -no-prec-div -xCORE-AVX2
-##to include parallelisation with OpenMP
+##OPTC = -O3 -qopt-report-phase=vec,openmp
+##OPTF = -O3 -qopt-report-phase=vec,openmp
+#OPTC = -O3 -xCORE-AVX2 
+#OPTF = -O3 -xCORE-AVX2
+###to include parallelisation with OpenMP
 #OPTC += -qopenmp
-
-# Apple OSX intel 11.1.076 snow leopard 10.6.2
-#OPTC = -O3 -msse3 -no-prec-div -vec-report2 -fno-builtin-__sprintf_chk 
+## for static linking uncomment the following
+#LDFLAGS = -static-intel -qopenmp-link=static
 
 #PGI 
 #CC = pgcc
@@ -63,18 +62,14 @@ L = $(ROOT)/lib
 #OPTF = -fast
 #LDFLAGS = -fast -Minfo=vect -Mvect=simd:256 -Msafeptr 
 
-#Pathscale 
-#CC = cc
-#FC = ftn
-#OPTC = -Ofast -OPT:Ofast -fno-math-errno
-#OPTF = -Ofast -OPT:Ofast -fno-math-errno
-
 #Apple OSX clang/gcc (10.9) llvm
 CC = clang
+FC = gfortran-mp-13
+#FC = 
 OPTC = -Ofast
 LDFLAGS = -Ofast
 
-#AMD Open64
+#AMD Open64 this will be replaced with the latest AOCC compilers
 #CC = opencc
 #FC = openf95
 #OPTC = -Ofast
@@ -83,33 +78,48 @@ LDFLAGS = -Ofast
 
 #############################################################################
 # BLAS and LAPACK libraries 
-# and FFT LIBRARIES
-MKLLIB=${MKLROOT}/lib
-OPTC += -DMKL -I$(MKLROOT)/include -I$(MKLROOT)/include/fftw
-#for GNU compilers
-#you might need to add intel64 to : ${MKLROOT}/lib/intel64
-#BLAS = -L${MKLROOT}/lib/ -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
-#for GNU/clang on OSX
-BLAS = -Wl,-rpath ${MKLLIB} -L${MKLROOT}/lib/ -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
-#on linux you want to use groups and MKL is in lib/intel64
-#MKLLIB=${MKLROOT}/lib/intel64
-#BLAS = -Wl,-rpath ${MKLLIB} -Wl,--start-group -L${MKLLIB} -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group -lpthread -lm -ldl
-#for intel compilers
-#BLAS = -mkl
-
-#############################################################################
-# AMD ACML 4.4.0
-#AMDROOT = /home/thorbcke/amdsdk/v1.0/acml/open64_64
-#OPTC += -DACML440 -I$(AMDROOT)/include
-#BLAS = -L$(AMDROOT)/lib -lacml -lfortran -lffio -lrt -lm
-#Intel MKL
+#MKLROOT=/opt/intel/mkl/
+#MKLROOT=
+ifneq ($(strip $(MKLROOT)),)
+    ifeq ($(CC),icc)
+        #for intel compilers
+        OPTC += -DMKL -I$(MKLROOT)/include -I$(MKLROOT)/include/fftw
+        BLAS = -mkl
+    else
+        #for GNU and other compilers
+        #on linux you want to use groups and MKL is in lib/intel64
+        MKLLIB=${MKLROOT}/lib/intel64
+        OPTC += -DMKL -I$(MKLROOT)/include -I$(MKLROOT)/include/fftw
+        BLAS = -Wl,-rpath ${MKLLIB} -Wl,--start-group -L${MKLLIB} -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -Wl,--end-group -lpthread -lm -ldl
+    endif
+else
+    BLAS = -llapack -lblas 
+    BLAS = /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk//usr/lib/liblapack.tbd /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk//usr/lib/libblas.tbd
+endif
 
 #LIBARIES
-LIBS= -L$L -lgenfft $(BLAS)
+LIBS= -L$L -lgenfft 
+ifeq ($(FC),ifort)
+   LIBS += -lifcore
+# for static linking with Intel compiler
+# LDFLAGS = -static-intel -qopenmp-link=static
+endif
+
+##ifeq ($(findstring gfortran,$(FC)),gfortran))
+
+ifeq ($(FC),gfortran)
+   LIBS += -lgfortran
+endif
+
+#MATH library: on some linux distributions the math (cos, sin, ..) must be excluded explicitely
+#if that's needed uncomment the following line
+#LIBSM= -lm
+
+
 
 ########################################################################
 # standard CFLAGS
-CFLAGS = -I$I -I. 
+CFLAGS = -I$I -I.
 
 #############################################################################
 # the archiver
