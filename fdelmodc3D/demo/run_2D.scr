@@ -1,0 +1,40 @@
+#!/bin/bash
+#
+makewave file_out=wavelet2.su dt=0.00005 \
+             nt=2048 fp=20 shift=1 w=g2 verbose=1
+
+makemod file_base=model3.su \
+        cp0=1700 ro0=2000 cs0=240 sizex=750 sizez=800 \
+        dx=0.5 dz=0.5 orig=0,0 verbose=4 above=0 \
+        intt=def cp=1600 ro=1000 cs=180 x=0,750 z=12,12 \
+        intt=def cp=1700 ro=1000 cs=310 x=0,750 z=18,18 \
+        intt=def cp=1700 ro=1000 cs=340 x=0,750 z=50,50 \
+        intt=def cp=2400 ro=2000 cs=1200 x=0,750 z=270,270 
+
+#        intt=def cp=2500 ro=2000 cs=1200 x=0,1500 z=270,270 \
+#       intt=def cp=2500 ro=2000 cs=1200 x=0,1500 z=1580,1580
+
+export filecp=model3_cp.su
+export filecs=model3_cs.su
+export filero=model3_ro.su
+
+export OMP_NUM_THREADS=4
+ulimit -c unlimited
+ulimit -s unlimited
+
+../fdelmodc3D \
+       file_cp=$filecp file_den=$filero \
+       ischeme=1 \
+       src_type=7 tmod=1\
+       file_src=wavelet2.su verbose=2 \
+       file_rcv=rev-3.su \
+       xrcv1=375 xrcv2=698 dxrcv=2\
+       yrcv1=0 yrcv2=0 dyrcv=1 \
+       zrcv1=2 zrcv2=2\
+       rec_type_vx=1 rec_type_dxvx=1 rec_type_vz=1 rec_type_dzvz=1 rec_int_vx=1 \
+       dtrcv=0.004 \
+       zsrc=0 xsrc=548 \
+       ntaper=250\
+       left=4 right=4 bottom=4 top=4
+
+
