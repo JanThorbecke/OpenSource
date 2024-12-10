@@ -13,6 +13,7 @@ CSRC = \
 	getModelInfo.c \
 	readData.c \
 	writeData.c \
+	name_ext.c \
 	forwExtr.c \
 	getrecextr.c \
 	getrecvsp.c \

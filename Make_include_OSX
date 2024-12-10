@@ -94,7 +94,7 @@ ifneq ($(strip $(MKLROOT)),)
     endif
 else
     BLAS = -llapack -lblas 
-    BLAS = /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk//usr/lib/liblapack.tbd /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk//usr/lib/libblas.tbd
+    BLAS = /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/liblapack.tbd /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libblas.tbd
 endif
 
 #LIBARIES
