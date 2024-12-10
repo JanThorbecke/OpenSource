@@ -6,6 +6,9 @@
 #ifdef MKL
 #include<mkl_cblas.h>
 #endif
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 typedef struct { /* complex number */
 	float r,i;

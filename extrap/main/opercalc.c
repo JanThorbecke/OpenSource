@@ -17,6 +17,7 @@ void shortoper(complex *kxwop, int nkx, complex *xwop, int opl, float dx,
 			float kw, float alfa1_w, float alfa2_w, float scale, int filter);
 
 int writeData(char *filename, float *data, segy *hdrs, int n2);
+void name_ext(char *filename, char *extension);
 
 /*********************** self documentation **********************/
 char *sdoc[] = {
@@ -296,12 +297,8 @@ int main(int argc, char **argv)
 		writeData(NULL, data_out, hdrs, n2);
 	}
 	else {
-		s = file_out;
-		q = &filename[0];
-		while (*s != '.') *q++ = *s++;
-		*q++ = '_'; *q++ = 'k'; *q++ = 'x';
-		while (*s != '\0') *q++ = *s++;
-		*q = '\0';
+        strcpy(filename, file_out);
+        name_ext(filename, "_kx");
 
 		if(verbose) vmess("Writing Kx-results to file %s", filename);
 		writeData(filename, data_out, hdrs, n2);
@@ -343,12 +340,8 @@ int main(int argc, char **argv)
 		writeData(NULL, data_out, hdrs, n2);
 	}
 	else {
-		s = file_out;
-		q = &filename[0];
-		while (*s != '.') *q++ = *s++;
-		*q++ = '_'; *q++ = 'x';
-		while (*s != '\0') *q++ = *s++;
-		*q = '\0';
+        strcpy(filename, file_out);
+        name_ext(filename, "_x");
 
 		if(verbose) vmess("Writing X-results to file %s", filename);
 		writeData(filename, data_out, hdrs, n2);

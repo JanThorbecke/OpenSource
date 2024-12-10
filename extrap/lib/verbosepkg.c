@@ -5,6 +5,9 @@
 #ifdef _CRAYMPP
 #include <intrinsics.h>
 #endif
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 void verr(char *fmt, ...)
 {
