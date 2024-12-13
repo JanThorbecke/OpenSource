@@ -1,13 +1,10 @@
 # Makefile for ...FFT
 
-FC = gfortran-mp-13
-LIB = libslatec.a
-FFLAGS= -ffree-form -O2
-FFLAGS= -O2
+include ../../Make_include
 
-RANLIB = ar -s
-#LIB = $L/libdgenfft.a
-#OPTC += -DDOUBLE
+#FC = gfortran-mp-13
+LIB = libslatec.a
+FFLAGS= -O2
 
 FSRC =			\
 	d1mach.f \
@@ -81,11 +78,11 @@ realclean:
 	-rm -f $(LIB) 
 #	@cd test ; $(MAKE) realclean 
 
-.o.a    :
-	$(AR) $(ARFLAGS) $@ $*.o
-	rm -f $*.o
-.f.o    :
-	$(FC) -c $(FFLAGS) $(OPTF) $<
+#.o.a    :
+#	$(AR) $(ARFLAGS) $@ $*.o
+#	rm -f $*.o
+#.f.o    :
+#	$(FC) -c $(FFLAGS) $(OPTF) $<
 
 .PRECIOUS:	 $(LIB)
 
