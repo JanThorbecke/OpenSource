@@ -40,9 +40,9 @@ export fileqs=relax_cs.su
 
 export OMP_NUM_THREADS=4
 time ../fdelmodc \
-	file_cp=$filecp file_cs=$filecs file_den=$filero \
+	file_cp=$filecp file_den=$filero \
 	ischeme=2 \
-	file_qp=$fileqp file_qs=$fileqs \
+	file_qp=$fileqp  \
 	file_src=wavelet.su verbose=1 \
 	file_rcv=recv.su \
 	fmax=40 \

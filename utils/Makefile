@@ -76,6 +76,7 @@ SRCC	= correigen.c \
 
 
 SRCG	= green.c \
+		H12.c \
 		getFileInfo.c  \
 		getrecpos.c  \
 		readData.c \
@@ -303,7 +304,7 @@ correigen:	$(OBJC)
 OBJG	= $(SRCG:%.c=%.o)
 
 green:	$(OBJG) 
-	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o green $(OBJG) $(LIBS)
+	$(FC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o green $(OBJG) $(LIBS) -Lzbesh/ -lslatec 
 
 OBJG3	= $(SRCG3:%.c=%.o)
 

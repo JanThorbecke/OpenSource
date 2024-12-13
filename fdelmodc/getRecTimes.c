@@ -261,7 +261,7 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 				}
 /* interpolate vz to Txx/Tzz position by taking the mean of 2 values */
 				else if (rec.int_vz == 2) {
-					if (mod.ischeme == 1) { /* interpolate Vz times +1/2 Dt forward to P times */
+					if (mod.ischeme <= 2) { /* interpolate Vz times +1/2 Dt forward to P times */
                         field = vz[ix*n1+iz] - 0.5*roz[ix*n1+iz]*(
                         	c1*(tzz[ix*n1+iz]   - tzz[ix*n1+iz-1]) +
                         	c2*(tzz[ix*n1+iz+1] - tzz[ix*n1+iz-2]));
