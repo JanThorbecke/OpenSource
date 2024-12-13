@@ -27,9 +27,10 @@ void getrecpos(float *xi, float *zi, int nx, float *xrcv, float *zrcv, int verbo
 int disp_fileinfo(char *file, int n1, int n2, float f1, float f2, float d1, float d2, segy *hdrs);
 int getFileInfo(char *filename, int *n1, int *n2, int *ngath, float *d1, float *d2, float *f1, float *f2, float *xmin, float *xmax, float *sclsxgx, int *nxm);
 int readData(FILE *fp, float *data, segy *hdrs, int n1);
+void H12(complex *cdata, complex *cwave, int nx, float *xi, float *zi, int iomin, int iomax, int nfreq, float deltom, float rho, float c, float maxdip, float xsrc, float zsrc, float te, float ts);
 
 void xwgreen(float *data, int nt, int nx, float dt, float fmin, float fmax, float *xi, float xsrc, 
-			 float dx, float *zi, float zsrc, float c, float cs, float rho, float *wavelet, 
+			 float dx, float *zi, float zsrc, float c, float cs, float rho, float ts, float te, float *wavelet, 
              float dipx, float maxdip, int far, int p_vz, int dip, int verbose);
 
 /*********************** self documentation **********************/
@@ -81,6 +82,10 @@ char *sdoc[] = {
 "   Fx=0  .................... Force source in x with Vz receivers",
 "   maxdip=90 ................ maximum angle (degrees) to be computed ",
 "   sum=0 .................... sum all sources",
+"   Q=0 ...................... Q factor for visco-acoustic medium",
+"   fw=20 .................... central frequency for Q in visco-acoustic medium",
+//"   te=0 ..................... Tepsilon (s.) for visco-acoustic medium",
+//"   ts=0 ..................... Tsigma (s.) for visco-acoustic medium",
 "   verbose=0 ................ silent option; >0 display info",
 "",
 "  The P or Vz field of a dipole source at depth z below the receivers",
@@ -99,6 +104,7 @@ int main(int argc, char **argv)
 	int     far, p_vz, nt, nx, Ns, is, sum, lint, verbose;
 	int     size, ntraces, ngath, Fz, Fx;
 	float   scl, xmin, xmax;
+    float   Q, te, ts, fw;
 	float   dx, dt, d1, d2, fmin, fmax, f1, f2, c, cs, rho;
 	float 	*data, *wavelet, *tmpdata, dipx, xsrc1, xsrc2;
 	float 	*xrcv, *zrcv, *xi, *zi, x0, maxdip;
@@ -121,6 +127,7 @@ int main(int argc, char **argv)
 	if(!getparstring("file_src", &file_src)) file_src = NULL;
 	if(!getparfloat("c", &c)) verr("velocity must be specified.");
     if(!getparfloat("cs", &cs)) cs=0.7*c;
+    if(!getparfloat("Q", &Q)) Q=0.0;
 	if(!getparfloat("zsrc1", &zsrc1)) verr("zsrc1(depth) must be specified.");
 	if(!getparint("lint", &lint)) lint=1;
 	if(!getparfloat("maxdip", &maxdip)) maxdip=90.0;
@@ -200,6 +207,21 @@ int main(int argc, char **argv)
 	if(!getparint("sum", &sum)) sum = 0;
     if(Fz) p_vz=2;
     if(Fx) p_vz=3;
+
+    /* visco acoustic modeling */
+
+    if (Q!=0) {
+        if(!getparfloat("ts", &ts)) ts=0.0;
+        if(!getparfloat("te", &te)) te=0.0;
+	    if(!getparfloat("fw", &fw)) fw = 20.0;
+        ts = ( sqrt(1.0+1.0/(Q*Q) ) - 1.0/Q ) / fw;
+        te = 1.0 / (fw*fw*ts);
+        far=99;
+		if (verbose) {
+            vmess("near and far P field of monopole computed for Q");
+            vmess("Q=%f fw=%f te=%e ts=%e\n", Q, fw, te, ts);
+        }
+    }
 
 /* ========================= Opening wavelet file ====================== */
 
@@ -288,7 +310,7 @@ int main(int argc, char **argv)
 		zsrc = zsrc1 + is*dzsrc;
 		if (verbose) vmess("xsrc = %f zsrc = %f", xsrc, zsrc);
 
-		xwgreen(data,nt,nx,dt,fmin,fmax,xi,xsrc,dx,zi,zsrc,c,cs,rho,wavelet,
+		xwgreen(data,nt,nx,dt,fmin,fmax,xi,xsrc,dx,zi,zsrc,c,cs,rho,ts,te,wavelet,
 			dipx, maxdip, far, p_vz, dip, verbose);
 
 		if (sum == 1) {
@@ -348,7 +370,7 @@ int main(int argc, char **argv)
 *
 ***************************************************************************/
 
-void xwgreen(float *data, int nt, int nx, float dt, float fmin, float fmax, float *xi, float xsrc, float dx, float *zi, float zsrc, float c, float cs, float rho, float *wavelet, float dipx, float maxdip, int far, int p_vz, int dip, int verbose)
+void xwgreen(float *data, int nt, int nx, float dt, float fmin, float fmax, float *xi, float xsrc, float dx, float *zi, float zsrc, float c, float cs, float rho, float ts, float te, float *wavelet, float dipx, float maxdip, int far, int p_vz, int dip, int verbose)
 {
 	int    	iomin, iomax, iom, ix, nfreq, i, sign, optn;
 	float  	df, deltom, om, k, r, x, invr, phi, phi2, cosphi;
@@ -387,6 +409,7 @@ void xwgreen(float *data, int nt, int nx, float dt, float fmin, float fmax, floa
 			cdata[ix*nfreq+iom].i = 0.0;
 		}
 	}
+
 
 	if (p_vz == 0) {
 		if (far == 0 && dip == 1) {
@@ -709,6 +732,14 @@ void xwgreen(float *data, int nt, int nx, float dt, float fmin, float fmax, floa
             }
         }
 
+    }
+
+    if (far==99) {
+		if (verbose) {
+            vmess("near and far P field of monopole computed for Q");
+            vmess("te=%e ts=%e\n", te, ts);
+        }
+        H12(cdata, cwave, nx, xi, zi, iomin, iomax, nfreq, deltom, rho, c, maxdip, xsrc, zsrc, te, ts);
     }
 
 
