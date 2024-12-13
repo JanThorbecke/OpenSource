@@ -29,7 +29,7 @@ for i in `seq 1 700 `; do (( x = i*3 )); (( z = i*3 )); echo $x $z >> Src.txt ; 
 time ../fdelmodc \
 	file_cp=$filecp file_den=$filero \
 	ischeme=1 \
-	file_src=wavelet.su verbose=4 \
+	file_src=wavelet.su verbose=5 \
 	file_rcv=rec.su \
 	file_snap=snap.su \
 	xrcv1=0 xrcv2=2100 dxrcv=15 \
@@ -44,6 +44,8 @@ time ../fdelmodc \
 	sna_type_ss=1 sna_type_pp=1
 
 exit;
+# for random start times and using wavelet in file_src.
+    wav_random=1 src_multiwav=0 \
 
 # to show a movie of the snapshots 
 #suxmovie < snap_svz.su perc=99 loop=1
