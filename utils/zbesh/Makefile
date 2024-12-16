@@ -2,9 +2,8 @@
 
 include ../../Make_include
 
-#FC = gfortran-mp-13
 LIB = libslatec.a
-FFLAGS= -O2
+FFLAGS= -O3
 
 FSRC =			\
 	d1mach.f \
@@ -41,15 +40,6 @@ FSRC =			\
 	zuoik.f \
 	zwrsk.f 
  
-#	xgetua.f \
-#	fdump.f \
-#	xerhlt.f \
-#	xercnt.f \
-#	xersve.f \
-#	xermsg.f \
-#	xerprn.f \
-#	j4save.f \
-
 OBJF    = $(FSRC:%.f=%.o)
 
 FARCH = $(patsubst %.f, $(LIB)(%.o), $(FSRC))
@@ -71,18 +61,9 @@ list	:
 clean:
 	-rm -f core a.out $(LIB)
 
-#	@cd test ; $(MAKE) clean
-
 realclean:
 	$(MAKE) clean
 	-rm -f $(LIB) 
-#	@cd test ; $(MAKE) realclean 
-
-#.o.a    :
-#	$(AR) $(ARFLAGS) $@ $*.o
-#	rm -f $*.o
-#.f.o    :
-#	$(FC) -c $(FFLAGS) $(OPTF) $<
 
 .PRECIOUS:	 $(LIB)
 
