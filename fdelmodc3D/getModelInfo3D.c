@@ -52,7 +52,7 @@ long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3,
     *f3 = gy0/1000.0;
     ny = 1;
     gy = hdr.gy;
-    if(!getparfloat("dz",d1)) dz = *d1;
+    if(!getparfloat("dz",d1)) *d1 = hdr.d1;
 
     if ( NINT(1000.0*(*d1))==0 ) {
         if(!getparfloat("dz",d1)) {
@@ -66,7 +66,7 @@ long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3,
 
 	if (*n2==1) *d2 = *d1;
 
-    if(!getparfloat("dx",d2)) dx = *d2;
+    if(!getparfloat("dx",d2)) *d2 = *d2;
 
    	if ( NINT(100.0*((*d1)/(*d2)))!=100 ) {
        	verr("dx and dz are different in the model !");
@@ -125,7 +125,7 @@ long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3,
     	*d3 = ((float)(gy-gy0))/(((float)(ny-1))*1000); //del
 	}
 
-    if(!getparfloat("dy",d3)) dy = *d3;
+    if(!getparfloat("dy",d3)) *d3 = *d3;
 
     if ( NINT(100.0*((*d1)/(*d3)))!=100 ) {
         verr("dz and dy are different in the model ! d1=%f d2=%f d3=%f", *d1, *d2, *d3); 
