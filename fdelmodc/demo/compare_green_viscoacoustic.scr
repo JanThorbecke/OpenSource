@@ -19,6 +19,7 @@ makewave fp=15 dt=$dt file_out=wave.su nt=4096 t0=0.1
 
 ######### MONOPOLE ACOUSTIC #######
 
+#fw=200
 ../fdelmodc \
     file_cp=simple_cp.su ischeme=2 \
     file_den=simple_ro.su \
@@ -40,6 +41,7 @@ makewave fp=15 dt=$dt file_out=wave.su nt=4096 t0=0.1
 
 makewave fp=15 dt=0.0005 file_out=wave.su nt=4096 t0=0.1
 
+#fw=22
 green c=$cp rho=$rho file_src=wave.su zsrc1=500 xrcv=-500,500 dxrcv=5 nt=4096 dip=0 far=99 Q=$Q fw=$fw verbose=1 | suwind nt=1024 > shot_green_rp.su  
 
 # rp
