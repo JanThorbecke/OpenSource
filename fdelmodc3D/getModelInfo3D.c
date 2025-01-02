@@ -29,7 +29,7 @@ long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3,
     FILE    *fp;
     size_t  nread, trace_sz;
     off_t   bytes;
-    long     ret, i, one_shot, ntraces, gy, gy0, ny;
+    long     ret, i, one_shot, ntraces, gy, gy0, ny, scl;
     float   *trace, cmin;
     segy    hdr;
     
@@ -41,6 +41,10 @@ long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3,
     if (ret<0) perror("fseeko");
     bytes = ftello( fp );
 
+	if (hdr.scalco < 0) scl = 1.0/fabs((float)hdr.scalco);
+	else if (hdr.scalco == 0) scl = 1.0;
+	else scl = hdr.scalco;
+
     *n1 = hdr.ns;
     *d1 = hdr.d1;
     *d2 = hdr.d2;
@@ -49,7 +53,7 @@ long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3,
     *f2 = hdr.f2;
 
     gy0 = hdr.gy;
-    *f3 = gy0/1000.0;
+    *f3 = gy0*scl;
     ny = 1;
     gy = hdr.gy;
     if(!getparfloat("dz",d1)) *d1 = hdr.d1;
@@ -118,11 +122,15 @@ long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3,
 
     *n3 = ny;
     *n2 = ntraces/ny;
+
+    if(!getparint("ny",n3)) *n3 = *n3;
+    if(!getparint("nx",n2)) *n2 = *n2;
+
     if (ny==1) {
 		*d3 = *d2;
 	}
 	else {
-    	*d3 = ((float)(gy-gy0))/(((float)(ny-1))*1000); //del
+    	*d3 = (scl*(float)(gy-gy0))/(((float)(ny-1))); //del
 	}
 
     if(!getparfloat("dy",d3)) *d3 = *d3;
