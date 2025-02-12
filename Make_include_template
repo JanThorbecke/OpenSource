@@ -43,12 +43,12 @@ OPTC += -fopenmp
 
 #Intel 
 #CC = icc
-#FC = ifort
+#FC = ifx
 ### Linux
 ##OPTC = -O3 -qopt-report-phase=vec,openmp
 ##OPTF = -O3 -qopt-report-phase=vec,openmp
 #OPTC = -O3 -xCORE-AVX2 
-#OPTF = -O3 -xCORE-AVX2
+#OPTF = -O3 -xCORE-AVX2 -nofor-main
 ###to include parallelisation with OpenMP
 #OPTC += -qopenmp
 ## for static linking uncomment the following

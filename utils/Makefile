@@ -303,8 +303,9 @@ correigen:	$(OBJC)
 
 OBJG	= $(SRCG:%.c=%.o)
 
-green:	$(OBJG) 
-	$(FC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o green $(OBJG) $(LIBS) -Lzbesh/ -lslatec 
+green: $(OBJG) 
+	cd zbesh		; $(MAKE) install
+	$(FC) $(LDFLAGS) $(OPTF) $(FFLAGS) -o green $(OBJG) $(LIBS) -Lzbesh/ -lslatec 
 
 OBJG3	= $(SRCG3:%.c=%.o)
 
@@ -430,6 +431,7 @@ install: makemod makewave extendModel fconv correigen green green3D basop syn2d 
 
 clean:
 		rm -f core $(OBJM) makemod $(OBJW) makewave $(OBJE) extendModel $(OBJF) fconv $(OBJG) $(OBJC) correigen green $(OBJG3) green3D $(OBJB) basop $(OBJJ) syn2d $(OBJS) mat2su $(OBJA) ftr1d $(OBJT) mutesnap $(OBJMS) truncate $(OBJTR) padmodel $(OBJPM) combine $(OBJCO) makeR1D $(OBJMR) reshape_su $(OBJRS) combine_induced $(OBJCI) HomG $(OBJHG) snap2shot $(OBJSS) pwshift $(OBJPW) convhomg $(OBJCH) changevalue $(OBJVL) extend3D $(OBJEX) smooth $(OBJSM)
+	cd zbesh		; $(MAKE) clean
 
 realclean: clean
 		rm -f $B/makemod $B/makewave $B/extendModel $B/fconv $B/correigen $B/green $B/green3D $B/basop $B/syn2d $B/mat2su $B/ftr1d $B/mutesnap $B/padmodel $B/truncate $B/combine $B/combine_induced $B/reshape_su $B/HomG $B/snap2shot $B/makeR1D $B/pwshift $B/convhomg $B/changevalue $B/extend3D $B/smooth
