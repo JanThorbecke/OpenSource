@@ -13,11 +13,6 @@
 void cgemm_(char *transA, char *transb, int *M, int *N, int *K, float *alpha, float *A, int *lda, float *B, int *ldb, float *beta, float *C, int *ldc);
 void cgemv_(char *transA, int *M, int *N, float *alpha, float *A, int *lda, float *X, int *incx, float *beta, float *Y, int *incy);
 
-void cr1fft(complex *cdata, float *rdata, int n, int sign);
-void rc1fft(float *rdata, complex *cdata, int n, int sign);
-
-
-
 void scl_data(float *data, long nsam, long nrec, float scl, float *datout, long nsamout);
 void pad_data(float *data, long nsam, long nrec, long nsamout, float *datout);
 
