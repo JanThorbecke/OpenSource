@@ -14,8 +14,6 @@
 
 int optncr(int n);
 long zfpcompress(float* data, long nx, long ny, long nz, double tolerance, zfpmar zfpm, FILE *file);
-void cc1fft(complex *data, int n, int sign);
-void rc1fft(float *rdata, complex *cdata, int n, int sign);
 long writeData3D(FILE *fp, float *data, segy *hdrs, long n1, long n2);
 long getFileInfo3D(char *filename, long *n1, long *n2, long *n3, long *ngath, float *d1, float *d2, float *d3, float *f1, float *f2, float *f3,
     float *sclsxgxsygy, long *nxm);

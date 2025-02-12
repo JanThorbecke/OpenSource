@@ -46,13 +46,13 @@ FARCH = $(patsubst %.f, $(LIB)(%.o), $(FSRC))
 
 ARCH := $(FARCH)
 
-INSTALL: $(LIB)
+install: $(LIB)
 
 $(LIB)  : $(ARCH)
 	$(RANLIB) $(LIB)
 
 remake	:
-	@-rm -f $(LIB) INSTALL
+	@-rm -f $(LIB) 
 	@$(MAKE)
 
 list	:
