@@ -41,9 +41,9 @@ OPTC += -fopenmp
 #OPTC = -O2
 #OPTF = -O2
 
-#Intel 
+#Intel old (non oneapi) compilers
 #CC = icc
-#FC = ifx
+#FC = ifort
 ### Linux
 ##OPTC = -O3 -qopt-report-phase=vec,openmp
 ##OPTF = -O3 -qopt-report-phase=vec,openmp
@@ -53,6 +53,18 @@ OPTC += -fopenmp
 #OPTC += -qopenmp
 ## for static linking uncomment the following
 #LDFLAGS = -static-intel -qopenmp-link=static
+
+#Intel oneAPI 2025
+#CC = icx
+#FC = ifx
+#OPTC = -O3 -xCORE-AVX2
+#OPTF = -O3 -xCORE-AVX2 -nofor-main
+##Intel MPI with icx
+#MPICC=mpicc
+#MPIFC=mpif90
+#export I_MPI_CC=icx
+#export I_MPI_FC=ifx
+#export I_MPI_F90=ifx
 
 #PGI 
 #CC = pgcc
@@ -96,7 +108,7 @@ else
 endif
 
 #LIBARIES
-LIBS= -L$L -lgenfft
+LIBS += -L$L -lgenfft
 ifneq ($(strip $(MKLROOT)),)
    LIBS += $(BLAS)
 endif
@@ -104,8 +116,9 @@ ifeq ($(FC),ifort)
    LIBS += -lifcore
 # for static linking with Intel compiler
 # LDFLAGS = -static-intel -qopenmp-link=static
-endif
-ifeq ($(FC),gfortran)
+else ifeq ($(FC),ifx)
+   LIBS += -lifcore
+else ifeq ($(FC),gfortran)
    LIBS += -lgfortran
 endif
 
