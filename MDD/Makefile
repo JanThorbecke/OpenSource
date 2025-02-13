@@ -18,6 +18,8 @@ LIBS += $(BLAS)
 
 ifeq ($(FC),ifort)
    LDFLAGS += -nofor-main
+else ifeq ($(FC),ifx)
+   LDFLAGS += -nofor-main
 endif
 ifeq ($(FC),gfortran)
    LDFLAGS += -Wno-main
