@@ -3,11 +3,8 @@ Runtime Matlab scripts to reproduce the results discussed in:
 "Green’s functions, propagation invariants, reciprocity theorems, wave-field representations and propagator matrices in 2D time-dependent materials"
 author: Kees Wapenaar
 
-The manuscript is accepted by 
-
-Proceedings of the Royal Society A.
-
-Proc. R. Soc. A 481: 20240479:  https://doi.org/10.1098/rspa.2024.0479
+The paper is published in Proceedings of the Royal Society A, Vol. 481, 20240479.
+https://doi.org/10.1098/rspa.2024.0479
 
 
 The animations that belong to this paper can be found on
