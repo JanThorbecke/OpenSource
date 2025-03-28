@@ -26,6 +26,7 @@ FC =
 OPTC = -O3 -ffast-math
 ##to include parallelisation with OpenMP
 OPTC += -fopenmp
+OPTF += -fopenmp
 # for better performing code you can try:
 #OPTC = -O3 -fno-trapping-math -ffast-math -funroll-all-loops -mavx -fomit-frame-pointer -mfpmath=sse -ftree-vectorizer-verbose=1
 # Linux gcc version 3.x

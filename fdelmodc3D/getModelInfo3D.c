@@ -123,8 +123,8 @@ long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3,
     *n3 = ny;
     *n2 = ntraces/ny;
 
-    if(!getparint("ny",n3)) *n3 = *n3;
-    if(!getparint("nx",n2)) *n2 = *n2;
+    if(!getparlong("ny",n3)) *n3 = *n3;
+    if(!getparlong("nx",n2)) *n2 = *n2;
 
     if (ny==1) {
 		*d3 = *d2;
