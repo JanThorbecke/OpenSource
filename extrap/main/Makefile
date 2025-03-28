@@ -6,6 +6,8 @@ LIBS := $(subst -lgenfft,-lextrap2d -lgenfft ,$(LIBS))
 
 LDFLAGS += $(LIBS)
 
+# $(info    LIBS is $(LIBS))
+
 MPICPROGS = \
 	migr_mpi \
 
