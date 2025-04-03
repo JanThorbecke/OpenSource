@@ -46,6 +46,7 @@ utils/pwshift
 utils/truncate
 utils/changevalue
 utils/smooth
+utils/readlog
 fdelmodc/fdelmodc
 include/genfft.h
 include/optim.h
