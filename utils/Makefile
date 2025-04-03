@@ -414,7 +414,7 @@ OBJL	= $(SRCL:%.c=%.o)
 readlog: $(OBJL) 
 	$(CC) $(LDFLAGS) $(OPTC) $(CFLAGS) -o readlog $(OBJL) $(LIBS)
 
-install: makemod makewave extendModel fconv correigen green green3D basop syn2d mat2su ftr1d mutesnap padmodel truncate combine combine_induced reshape_su HomG snap2shot makeR1D pwshift convhomg changevalue extend3D smooth
+install: makemod makewave extendModel fconv correigen green green3D basop syn2d mat2su ftr1d mutesnap padmodel truncate combine combine_induced reshape_su HomG snap2shot makeR1D pwshift convhomg changevalue extend3D smooth readlog
 	cp makemod $B
 	cp makewave $B
 	cp extendModel $B
