@@ -108,7 +108,7 @@ int main(int argc, char **argv)
             trrho[iz]=rho[is]*1000.0;
             trvel[iz]=vel[is];
         }
-        fprintf(stderr,"i=%d is=%d depth=%f iz*dz=%f rho=%f trrho=%f\n",iz, is, dep[is+1], iz*dz, rho[is], trrho[iz]);
+        //fprintf(stderr,"i=%d is=%d depth=%f iz*dz=%f rho=%f trrho=%f\n",iz, is, dep[is+1], iz*dz, rho[is], trrho[iz]);
     } 
     strcpy(filename, file_base);
     name_ext(filename, "_ro");
