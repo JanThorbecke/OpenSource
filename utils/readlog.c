@@ -56,7 +56,7 @@ int main(int argc, char **argv)
         while (!feof(fp)) if (fgetc(fp)=='\n') nsrc++;
         fseek(fp,-1,SEEK_CUR);
         if (fgetc(fp)!='\n') nsrc++; /* Checks if last line terminated by /n */
-        vmess("Number of sources in src_txt file: %d",nsrc);
+        vmess("Number of grid values in src_txt file: %d",nsrc);
         rewind(fp);
     }
 
@@ -99,8 +99,7 @@ int main(int argc, char **argv)
     trrho[iz]=rho[is]*1000.0;
     trvel[iz]=vel[is];
     for(iz = 1; iz < n1; iz++) {
-//            fprintf(stderr,"i=%d is=%d depth=%f idz=%f\n",iz, is, dep[is+1], iz*dz);
-        if (dep[is+1] >= iz*dz) {
+        if (dep[is+1] > iz*dz) {
             trrho[iz]=rho[is]*1000.0;
             trvel[iz]=vel[is];
         }
@@ -109,6 +108,7 @@ int main(int argc, char **argv)
             trrho[iz]=rho[is]*1000.0;
             trvel[iz]=vel[is];
         }
+        fprintf(stderr,"i=%d is=%d depth=%f iz*dz=%f rho=%f trrho=%f\n",iz, is, dep[is+1], iz*dz, rho[is], trrho[iz]);
     } 
     strcpy(filename, file_base);
     name_ext(filename, "_ro");
@@ -130,8 +130,6 @@ int main(int argc, char **argv)
     nwrite = fwrite( &trvel[0], sizeof(float), n1, fpsu);
     assert(nwrite == n1);
     fclose(fpsu);
-
-
 
     return 0;
 }
