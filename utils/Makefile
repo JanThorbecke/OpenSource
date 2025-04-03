@@ -440,6 +440,7 @@ install: makemod makewave extendModel fconv correigen green green3D basop syn2d 
 	cp changevalue $B
 	cp extend3D $B
 	cp smooth $B
+	cp readlog $B
 
 clean:
 		rm -f core $(OBJM) makemod $(OBJW) makewave $(OBJE) extendModel $(OBJF) fconv $(OBJG) $(OBJC) correigen green $(OBJG3) green3D $(OBJB) basop $(OBJJ) syn2d $(OBJS) mat2su $(OBJA) ftr1d $(OBJT) mutesnap $(OBJMS) truncate $(OBJTR) padmodel $(OBJPM) combine $(OBJCO) makeR1D $(OBJMR) reshape_su $(OBJRS) combine_induced $(OBJCI) HomG $(OBJHG) snap2shot $(OBJSS) pwshift $(OBJPW) convhomg $(OBJCH) changevalue $(OBJVL) extend3D $(OBJEX) smooth $(OBJSM) readlog $(OBJL)
