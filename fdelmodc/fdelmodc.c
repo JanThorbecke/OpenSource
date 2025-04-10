@@ -21,7 +21,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 
 int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float *lam, float *muu, float *tss, float *tes, float *tep);
 
-int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwav, int reverse, int verbose);
+int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, shotPar shot, float **src_nwav, int reverse, int verbose);
 
 int writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot);
 
@@ -378,7 +378,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	defineSource(wav, src, mod, rec, src_nwav, mod.grid_dir, verbose);
+	defineSource(wav, src, mod, rec, shot, src_nwav, mod.grid_dir, verbose);
 
 	/* allocate arrays for wavefield and receiver arrays */
 
@@ -542,7 +542,7 @@ int main(int argc, char **argv)
 			it1=mod.nt+NINT(-mod.t0/mod.dt);
 			its=1;
 		}
-                perc=it1/100;if(!perc)perc=1;
+        perc=it1/100;if(!perc)perc=1;
 
 		/* Main loop over the number of time steps */
 		for (it=it0; it<it1; it++) {

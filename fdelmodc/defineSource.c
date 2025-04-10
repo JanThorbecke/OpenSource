@@ -52,18 +52,29 @@ void seedCMWC4096(void);
 #define     MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
-int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwav, int reverse, int verbose)
+int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, shotPar shot, float **src_nwav, int reverse, int verbose)
 {
     FILE   *fp;
     size_t nread, namp;
     int    optn, nfreq, i, j, k, iwmax, tracesToDo;
     int    iw, n1, optnscale, nfreqscale;
+    int    ixsrc, izsrc;
     float  scl, d1, df, deltom, om, tshift;
     float  amp1, amp2, amp3;
-    float  *trace, maxampl, scale;
+    float  *trace, maxampl, scale, *cp;
     complex *ctrace, tmp;
     segy   hdr;
     
+    /* read cp velocity grid to get velocity at source positions */
+    cp = (float *)malloc(mod.nz*mod.nx*sizeof(float));
+    fp = fopen( mod.file_cp, "r" );
+    assert( fp != NULL);
+    for (i=0; i<mod.nx; i++) {
+        nread = fread(&hdr, 1, TRCBYTES, fp);
+        nread = fread(&cp[i*mod.nz], sizeof(float), hdr.ns, fp);
+    }
+    fclose(fp);
+
     scale = 1.0;
     n1 = wav.ns;
     if (wav.random) { /* initialize random sequence */
@@ -158,8 +169,10 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwa
                 }
             }
 
-            if (src.type < 6) { // shift wavelet with +1/2 DeltaT due to staggered in time 
-                tshift=-(0.5*rec.skipdt+1.5)*wav.dt;
+            if (src.type > 6) { // shift wavelet with +1/2 DeltaT due to staggered in time 
+		        izsrc = shot.z[i];
+		        ixsrc = shot.x[i];
+                tshift=0.5*mod.dt+0.5*mod.dz/cp[ixsrc*mod.nz+izsrc];
                 for (iw=1;iw<iwmax;iw++) {
                     om = deltom*iw*tshift;
                     tmp.r = ctrace[iw].r*cos(-om) - ctrace[iw].i*sin(-om);
@@ -218,6 +231,7 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, float **src_nwa
     }
     free(ctrace);
     free(trace);
+    free(cp);
 
 /* use random amplitude gain factor for each source */
     if (src.amplitude > 0.0) {
