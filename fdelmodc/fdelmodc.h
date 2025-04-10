@@ -129,6 +129,7 @@ typedef struct _waveletPar { /* Wavelet Parameters */
 	int seed;
 	int nst;
 	size_t *nsamp;
+	float *cp;
 } wavPar;
 
 typedef struct _sourcePar { /* Source Array Parameters */
