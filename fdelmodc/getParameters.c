@@ -221,7 +221,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		stabfactor = 0.606; /* courant number */
 	}
 	else if (mod->iorder == 16) {
-		dispfactor = 5;
+		dispfactor = 2;
 		stabfactor = 0.35; /* courant number */
     }
 
