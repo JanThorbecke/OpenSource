@@ -33,6 +33,7 @@ SRCC	= $(PRG).c \
 		acousticSH4.c \
 		acoustic4_qr.c \
 		acoustic6.c \
+		acoustic16.c \
 		viscoacoustic4.c \
 		elastic4.c \
 		elastic4dc.c \

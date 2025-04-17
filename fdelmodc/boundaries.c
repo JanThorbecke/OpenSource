@@ -83,8 +83,13 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 		for (ix=1; ix<=nx; ix++) {
 			//vx[ix*n1+ibnd] = 0.0;
 			vz[ix*n1+ibnd] = -vz[ix*n1+ibnd+1];
+            for (ib=1; ib<=ibnd; ib++) { 
+                vz[ix*n1+ibnd-ib] = -vz[ix*n1+ibnd+1+ib];
+            }
+            /*
 			if (mod.iorder >= 4) vz[ix*n1+ibnd-1] = -vz[ix*n1+ibnd+2];
 			if (mod.iorder >= 6) vz[ix*n1+ibnd-2] = -vz[ix*n1+ibnd+3];
+            */
 		}
 	}
 	if (bnd.rig==3) { /* rigid surface at right */
@@ -93,11 +98,14 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 		for (iz=1; iz<=nz; iz++) {
 			//vz[(nx+ibnd-1)*n1+iz] = 0.0;
 			vx[(nx+ibnd)*n1+iz]   = -vx[(nx+ibnd-1)*n1+iz];
-			if (mod.iorder == 4) vx[(nx+2)*n1+iz] = -vx[(nx-1)*n1+iz];
+            for (ib=1; ib<=ibnd; ib++) { 
+                vx[(nx+ibnd+ib)*n1+iz] = -vx[(nx-ib)*n1+iz];
+            }
+			/*if (mod.iorder == 4) vx[(nx+2)*n1+iz] = -vx[(nx-1)*n1+iz];
 			if (mod.iorder == 6) {
 				vx[(nx+1)*n1+iz] = -vx[(nx)*n1+iz];
 				vx[(nx+3)*n1+iz] = -vx[(nx-2)*n1+iz];
-			}
+			}*/
 		}
 	}
 	if (bnd.bot==3) { /* rigid surface at bottom */
@@ -106,11 +114,14 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 		for (ix=1; ix<=nx; ix++) {
 			//vx[ix*n1+nz+ibnd-1] = 0.0;
 			vz[ix*n1+nz+ibnd]   = -vz[ix*n1+nz+ibnd-1];
-			if (mod.iorder == 4) vz[ix*n1+nz+2] = -vz[ix*n1+nz-1];
+            for (ib=1; ib<=ibnd; ib++) { 
+                vz[ix*n1+nz+ibnd+ib] = -vz[ix*n1+nz-ib];
+            }
+			/*if (mod.iorder == 4) vz[ix*n1+nz+2] = -vz[ix*n1+nz-1];
 			if (mod.iorder == 6) {
 				vz[ix*n1+nz+1] = -vz[ix*n1+nz];
 				vz[ix*n1+nz+3] = -vz[ix*n1+nz-2];
-			}
+			}*/
 		}
 	}
 	if (bnd.lef==3) { /* rigid surface at left */
@@ -119,11 +130,14 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 		for (iz=1; iz<=nz; iz++) {
 			//vz[ibnd*n1+iz] = 0.0;
 			vx[ibnd*n1+iz] = -vx[(ibnd+1)*n1+iz];
-			if (mod.iorder == 4) vx[0*n1+iz] = -vx[3*n1+iz];
+            for (ib=1; ib<=ibnd; ib++) { 
+                vx[(ib-ibnd)*n1+iz] = -vx[(ibnd+1+ib)*n1+iz];
+            }
+			/*if (mod.iorder == 4) vx[0*n1+iz] = -vx[3*n1+iz];
 			if (mod.iorder == 6) {
 				vx[1*n1+iz] = -vx[4*n1+iz];
 				vx[0*n1+iz] = -vx[5*n1+iz];
-			}
+			}*/
 		}
 	}
 
