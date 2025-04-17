@@ -40,8 +40,8 @@ set -x
 
 set -x
 
-dx=6 
-dt=0.0008
+dx=12 
+dt=0.0010
 
 makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
 
@@ -71,5 +71,5 @@ makemod sizex=6000 sizez=4000 dx=$dx dz=$dx cp0=$cp cs0=$cs ro0=$rho \
     zrcv1=0 zrcv2=0 \
     xsrc=0 zsrc=1150 \
     ntaper=200 \
-    left=3 right=3 top=3 bottom=3
+    left=4 right=4 top=1 bottom=4
 

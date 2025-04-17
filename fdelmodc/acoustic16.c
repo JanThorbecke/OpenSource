@@ -67,15 +67,18 @@ int acoustic16(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ix
 	int   n1;
 	int ioXx, ioXz, ioZz, ioZx, ioPx, ioPz;
 
+    /* Yang Liu, Optimal staggered-grid finite-difference schemes based on least-squares for wave equation modelling, 
+     * Geophysical Journal International, Volume 197, Issue 2, May 2014, Pages 1033–1047, 
+     * https://academic.oup.com/gji/article/197/2/1033/617490 LS optimised */
+    c1 = 1.259312;
+    c2 = -0.1280347;
+    c3 = 0.03841945;
+    c4 = -0.01473229;
+    c5 = 0.005924913;
+    c6 = -0.002248618;
+    c7 = 0.0007179226;
+    c8 = -0.0001400855;
 
-    c1 = 2.468182146549224;
-    c2 = -0.213299691677093;
-    c3 = 0.046072733402252;
-    c4 = -0.010684771197183;
-    c5 = 0.002154542340173;
-    c6 = -0.000332837755030;
-    c7 = 0.000034043422112;
-    c8 = -0.000001704692841;
 	n1  = mod.naz;
 
     /* Vx: rox */
