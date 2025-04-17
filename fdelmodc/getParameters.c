@@ -216,11 +216,14 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		dispfactor=10;
 		stabfactor = 1.0/sqrt(2.0);
 	}
-	else {
+	else if (mod->iorder == 4 || mod->iorder == 6) {
 		dispfactor = 5;
 		stabfactor = 0.606; /* courant number */
 	}
-    
+	else if (mod->iorder == 16) {
+		dispfactor = 5;
+		stabfactor = 0.35; /* courant number */
+    }
 
     /* origin of model in real (non-grid) coordinates */
 	mod->x0 = sub_x0;
@@ -233,7 +236,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		vmess("************** general info ***************");
 		vmess("*******************************************");
 		vmess("tmod    = %f",mod->tmod);
-		vmess("ntsam   = %d   dt      = %f(%e)",mod->nt, mod->dt, mod->dt);
+		vmess("ntsam   = %8d   dt      = %f(%e)",mod->nt, mod->dt, mod->dt);
+		vmess("order   = %8d   dx/dz   = %f",mod->iorder, mod->dx);
 		if (mod->ischeme == 1) vmess("Acoustic staggered grid, pressure/velocity");
 		if (mod->ischeme == 2) vmess("Visco-Acoustic staggered grid, pressure/velocity");
 		if (mod->ischeme == 3) vmess("Elastic staggered grid, stress/velocity");

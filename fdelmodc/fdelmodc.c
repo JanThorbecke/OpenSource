@@ -25,6 +25,8 @@ int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, shotPar shot, f
 
 int writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot);
 
+int acoustic16(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, int verbose);
+
 int acoustic6(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, int verbose);
 
 int acoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, int verbose);
@@ -585,6 +587,10 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 					}
 					else if (mod.iorder==6) {
 						acoustic6(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
+							vx, vz, tzz, rox, roz, l2m, verbose);
+					}
+					else if (mod.iorder==16) {
+						acoustic16(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
 							vx, vz, tzz, rox, roz, l2m, verbose);
 					}
 					break;
