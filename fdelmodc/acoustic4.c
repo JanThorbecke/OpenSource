@@ -69,8 +69,13 @@ int acoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 	int   n1;
 	int   ioXx, ioXz, ioZz, ioZx, ioPx, ioPz;
 
+/* Taylor series
 	c1 = 9.0/8.0; 
 	c2 = -1.0/24.0;
+*/
+/* L2 optimised */
+	c1 = 1.129042;
+	c2 = -0.04301412;
 	n1  = mod.naz;
 
 /*
