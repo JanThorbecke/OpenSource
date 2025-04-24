@@ -222,7 +222,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	}
 	else if (mod->iorder == 16) {
 		dispfactor = 2;
-		stabfactor = 0.35; /* courant number */
+		stabfactor = 0.45; /* courant number */
     }
 
     /* origin of model in real (non-grid) coordinates */
