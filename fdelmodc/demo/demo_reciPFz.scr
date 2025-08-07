@@ -9,7 +9,7 @@ cp=2000
 rho=1000
 dx=2.5
 dt=0.00025
-injectionrate=0
+injectionrate=1
 
 set -x
 if [ $injectionrate == 1 ];
@@ -121,10 +121,17 @@ sumax < wave.su
 susum shot_monZ0_rvz.su shot_dipZ600_rp.su > nep.su 
 suximage < shot_monZ0_rvz.su title="shot_monZ0_rvz.su" clip=$scalev
 suximage < nep.su clip=$scalev title="difference"
+suwind key=gx min=0 max=0 < shot_monZ0_rvz.su | sugain scale=-1 > monZ0_rvz.su
+suwind key=gx min=0 max=0 < shot_dipZ600_rp.su > dipZ600_rp.su
+(cat monZ0_rvz.su; cat dipZ600_rp.su) | suxgraph
 sumax < shot_monZ0_rvz.su; sumax < shot_dipZ600_rp.su
+
 susum shot_dipZ0_rp.su shot_monZ600_rvz.su > nep.su
 suximage < shot_dipZ0_rp.su title="shot_dipZ0_rp.su" clip=$scalep
 suximage < nep.su clip=$scalep title="difference"
+suwind key=gx min=0 max=0 < shot_monZ600_rvz.su | sugain scale=-1 > monZ600_rvz.su
+suwind key=gx min=0 max=0 < shot_dipZ0_rp.su > dipZ0_rp.su
+(cat monZ600_rvz.su; cat dipZ0_rp.su) | suxgraph
 sumax < shot_dipZ0_rp.su; sumax < shot_monZ600_rvz.su
 
 
