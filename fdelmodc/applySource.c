@@ -151,7 +151,7 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 #pragma omp critical 
 {
 		if (src.type == 6) {
-			vx[ix*n1+iz] += src_ampl*rox[ix*n1+iz]/(l2m[ix*n1+iz]);
+			vx[ix*n1+iz] += 0.5*src_ampl*rox[ix*n1+iz]/(l2m[ix*n1+iz]);
 			/* stable implementation from "Numerical Techniques for Conservation Laws with Source Terms" by Justin Hudson */
 			//vx[ix*n1+iz] = 0.5*(vx[(ix+1)*n1+iz]+vx[(ix-1)*n1+iz])+src_ampl*rox[ix*n1+iz]/(l2m[ix*n1+iz]);
 		}
