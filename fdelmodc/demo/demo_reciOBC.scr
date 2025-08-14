@@ -1,0 +1,126 @@
+#!/bin/bash
+
+dt=0.0004
+ntap=120
+fmax=40
+
+makemod sizex=6000 sizez=2100 dx=2.5 dz=2.5 cp0=1500 ro0=1000 cs0=0 file_base=reference.su \
+    orig=0,0 gradunit=0 verbose=1 \
+    intt=def poly=0 x=0,6000 z=500,500 cp=2100 ro=2000 cs=600 gradcp=0 gradcs=0 grad=0  \
+    intt=def poly=0 x=0,6000 z=1000,1000 cp=2500 cs=1700 ro=2200 gradcp=0 gradcs=0 grad=0 \
+    intt=def poly=0 x=0,6000 z=1500,1500 cp=3000 cs=1900 ro=2500 gradcp=0 gradcs=0 grad=0 \
+
+
+makewave w=g2 fmax=35 t0=0.10 dt=$dt nt=4096 db=-40 file_out=G2.su verbose=1
+
+#mkdir -p shots
+
+# P source => P receiver
+
+file_rcv=test_shot_obc_Psour.su
+
+fdelmodc \
+    ischeme=3 \
+    file_cp=reference_cp.su \
+    file_cs=reference_cs.su \
+    file_den=reference_ro.su \
+    file_rcv=$file_rcv \
+    file_src=G2.su \
+    dtrcv=0.004 \
+    src_type=1 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_vx=1 \
+    rec_type_vz=1 \
+    rec_type_tzz=1 \
+    rec_type_txz=1 \
+    rec_type_pp=1 \
+    rec_type_ss=1 \
+    xsrc=2500 \
+    zsrc=5 \
+    verbose=4 \
+    tmod=3.004 \
+    zrcva=400 \
+    xrcva=1500 \
+    rec_int_vx=2 \
+    rec_int_vz=2 \
+    rec_int_tzz=1 \
+    rec_int_txz=1 \
+    ntaper=$ntap \
+    left=4 right=4 top=1 bottom=4
+
+
+# Fz source
+
+file_rcv=test_shot_obc_Vzsour_rec.su
+        
+fdelmodc \
+    ischeme=3 \
+    file_cp=reference_cp.su \
+    file_cs=reference_cs.su \
+    file_den=reference_ro.su \
+    file_rcv=$file_rcv \
+    file_src=G2.su \
+    dtrcv=0.004 \
+    src_type=7 \
+    src_injectionrate=1 \
+    src_orient=1 \
+    rec_type_vx=1 \
+    rec_type_vz=1 \
+    rec_type_tzz=1 \
+    rec_type_txz=1 \
+    rec_type_pp=1 \
+    rec_type_ss=1 \
+    xsrc=1500 \
+    zsrc=400 \
+    verbose=4 \
+    tmod=3.004 \
+    zrcva=5 \
+    xrcva=2500 \
+    rec_int_vx=2 \
+    rec_int_vz=2 \
+    rec_int_tzz=0 \
+    rec_int_txz=0 \
+    left=4 right=4 top=1 bottom=4
+
+
+file_rcv=test_shot_obc_Vxsour_rec.su
+ 
+fdelmodc \
+    ischeme=3 \
+    file_cp=reference_cp.su \
+    file_cs=reference_cs.su \
+    file_den=reference_ro.su \
+    file_rcv=$file_rcv \
+    file_src=G2.su \
+    dtrcv=0.004 \
+    src_type=6 \
+    src_injectionrate=1 \
+    src_orient=1 \
+    rec_type_vx=1 \
+    rec_type_vz=1 \
+    rec_type_tzz=1 \
+    rec_type_txz=1 \
+    rec_type_pp=1 \
+    rec_type_ss=1 \
+    xsrc=1500 \
+    zsrc=400 \
+    verbose=4 \
+    tmod=3.004 \
+    zrcva=5 \
+    xrcva=2500 \
+    rec_int_vx=2 \
+    rec_int_vz=2 \
+    rec_int_tzz=0 \
+    rec_int_txz=0 \
+    ntaper=$ntap \
+    left=4 right=4 top=1 bottom=4
+
+sugain scale=-1 < test_shot_obc_Vzsour_rec_rtzz.su > test_shot_obc_Vzsour_rec_rtzz_scale.su
+(suwind key=gx min=1500000 max=1500000 < test_shot_obc_Psour_rvz.su ; suwind key=gx min=2500000 max=2500000 < test_shot_obc_Vzsour_rec_rtzz_scale.su  ) | suxgraph &
+
+sugain scale=-1 < test_shot_obc_Vxsour_rec_rtzz.su > test_shot_obc_Vxsour_rec_rtzz_scale.su
+(suwind key=gx min=1500000 max=1500000 < test_shot_obc_Psour_rvx.su ; suwind key=gx min=2500000 max=2500000 < test_shot_obc_Vxsour_rec_rtzz_scale.su  ) | suxgraph
+
+
+
