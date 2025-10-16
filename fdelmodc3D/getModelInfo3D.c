@@ -29,7 +29,8 @@ long getModelInfo3D(char *file_name, long *n1, long *n2, long *n3,
     FILE    *fp;
     size_t  nread, trace_sz;
     off_t   bytes;
-    long     ret, i, one_shot, ntraces, gy, gy0, ny, scl;
+    long    ret, i, one_shot, ntraces, gy, gy0, ny;
+    float   scl;
     float   *trace, cmin;
     segy    hdr;
     
