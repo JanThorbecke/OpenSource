@@ -20,8 +20,9 @@ ifeq ($(FC),ifort)
    LDFLAGS += -nofor-main
 else ifeq ($(FC),ifx)
    LDFLAGS += -nofor-main
-endif
-ifeq ($(FC),gfortran)
+else ifeq ($(FC),nvfortran)
+   LDFLAGS += -Mnomain
+else ifeq ($(FC),gfortran)
    LDFLAGS += -Wno-main
 endif
 
@@ -52,7 +53,7 @@ OBJC	= $(SRCC:%.c=%.o)
 OBJF    = $(SRCF:%.F90=%.o)
 
 $(PRG):	$(OBJC) $(OBJF)
-	$(FC) $(LDFLAGS) $(CFLAGS) $(OPTC) -o $(PRG) $(OBJC) $(OBJF) $(LIBS) 
+	$(FC) $(LDFLAGS) -o $(PRG) $(OBJC) $(OBJF) $(LIBS) 
 
 install: $(PRG) 
 	cp $(PRG) $B

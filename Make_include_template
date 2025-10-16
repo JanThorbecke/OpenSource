@@ -18,23 +18,21 @@ L = $(ROOT)/lib
 # C compiler; change this only if you are using a different C-compiler
 
 #GNU 
-#CC = gcc-mp-5 
 CC = gcc
-FC = 
-#FC = gfortran
+FC = gfortran
 # Linux gcc version 4.x
 OPTC = -O3 -ffast-math
 ##to include parallelisation with OpenMP
 OPTC += -fopenmp
-OPTF += -fopenmp
-# for better performing code you can try:
-#OPTC = -O3 -fno-trapping-math -ffast-math -funroll-all-loops -mavx -fomit-frame-pointer -mfpmath=sse -ftree-vectorizer-verbose=1
-# Linux gcc version 3.x
-#OPTC = -O3 -ffast-math -funroll-all-loops -mfpmath=sse
+OPTF = -O3 -ffast-math -fopenmp
 
 #for double precision use FFTlib and emmod
 #OPTC += -DDOUBLE
 #OPTF += -fdefault-double-8 -fdefault-real-8
+
+#Open MPI with GNU
+MPICC=mpicc
+MPIFC=mpif90
 
 #Cray
 #CC=cc
@@ -42,14 +40,14 @@ OPTF += -fopenmp
 #OPTC = -O2
 #OPTF = -O2
 
-#Intel old (non oneapi) compilers
+#Intel Classic
 #CC = icc
 #FC = ifort
 ### Linux
 ##OPTC = -O3 -qopt-report-phase=vec,openmp
 ##OPTF = -O3 -qopt-report-phase=vec,openmp
-#OPTC = -O3 -xCORE-AVX2 
-#OPTF = -O3 -xCORE-AVX2 -nofor-main
+#OPTC = -O3 -axCORE-AVX2 
+#OPTF = -O3 -axCORE-AVX2
 ###to include parallelisation with OpenMP
 #OPTC += -qopenmp
 ## for static linking uncomment the following
@@ -58,8 +56,8 @@ OPTF += -fopenmp
 #Intel oneAPI 2025
 #CC = icx
 #FC = ifx
-#OPTC = -O3 -xCORE-AVX2
-#OPTF = -O3 -xCORE-AVX2 -nofor-main
+#OPTC = -O3 -axCORE-AVX2 
+#OPTF = -O3 -axCORE-AVX2 -nofor-main
 ##Intel MPI with icx
 #MPICC=mpicc
 #MPIFC=mpif90
@@ -67,13 +65,18 @@ OPTF += -fopenmp
 #export I_MPI_FC=ifx
 #export I_MPI_F90=ifx
 
-#PGI 
-#CC = pgcc
-#FC = pgf90
-#OPTC = -fast  -Minfo=vect -Mvect=simd:256 -Msafeptr
-#OPTC = -fast  -Minfo=vect -Mvect=simd:256 -Msafeptr -Mprof=lines
-#OPTF = -fast
-#LDFLAGS = -fast -Minfo=vect -Mvect=simd:256 -Msafeptr 
+#PGI Nvidia
+#CC = nvc
+#FC = nvfortran
+#OPTC = -O3  -Minfo=all -Mvect=simd:256 -Msafeptr
+##OPTC = -O3  -Minfo=all -Mvect=simd:256 -Msafeptr -Mprof=lines
+#OPTF = -O3 -Mnomain
+#LDFLAGS = -O3 -Mvect=simd:256 
+##Open MPI with GNU
+
+#export OMPI_CC=nvc
+#MPICC=mpicc
+#MPIFC=mpif90
 
 #Apple OSX clang/gcc (10.9) llvm
 #CC = clang
@@ -108,6 +111,12 @@ else
     BLAS = -llapack -lblas 
 endif
 
+### NETCDF support 
+# enable the flag -D_NETCDF 
+#CFLAGS += -I$(NETCDF_INC) -D_NETCDF
+#LIBS += -L$(NETCDF_LIB) -lnetcdf
+
+
 #LIBARIES
 LIBS += -L$L -lgenfft
 ifneq ($(strip $(MKLROOT)),)
@@ -119,19 +128,23 @@ ifeq ($(FC),ifort)
 # LDFLAGS = -static-intel -qopenmp-link=static
 else ifeq ($(FC),ifx)
    LIBS += -lifcore
+else ifeq ($(FC),nvfortran)
+   LIBS += -lnvf -lrt
 else ifeq ($(FC),gfortran)
    LIBS += -lgfortran
 endif
 
 #MATH library: on some linux distributions the math (cos, sin, ..) must be excluded explicitely
 #if that's needed uncomment the following line
-#LIBSM= -lm
+LIBS += -lm
+LIBSM= -lm
 
 
+$(info    LIBS is $(LIBS))
 
 ########################################################################
 # standard CFLAGS
-CFLAGS = -I$I -I.
+CFLAGS += -I$I -I.
 
 #############################################################################
 # the archiver
