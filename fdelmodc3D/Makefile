@@ -7,7 +7,8 @@ include ../Make_include
 ALLINC  = -I.
 LIBS    += -L$L -lgenfft $(LIBSM)
 #LIBS    += -L$L -lgenfft -lm -lc
-#OPTC = -g -Wall -fsignaling-nans -O0 -fopenmp
+#OPTC += -g -Mbounds
+#OPTC += -g -O1
 #OPTC += -g3 
 #OPTC += -fopenmp -Waddress
 #OPTC := $(subst -O3 -ffast-math, -O1 -g ,$(OPTC))
@@ -64,6 +65,12 @@ OBJC	= $(SRCC:%.c=%.o)
 $(PRG):	$(OBJC) fdelmodc3D.h
 	$(CC) $(LDFLAGS) $(CFLAGS) $(OPTC) -o fdelmodc3D $(OBJC) $(LIBS)
 
+#	OPTC = $(subst -O3 -Minfo=all -Mvect=simd:256 -Msafeptr,-O1,$(OPTC))
+#
+boundaries3D.o:
+	$(CC) -c $(CFLAGS) $(subst -O3 -Minfo=all -Mvect=simd:256 -Msafeptr,-O1,$(OPTC)) boundaries3D.c
+
+	
 install: fdelmodc3D 
 	cp fdelmodc3D $B
 
