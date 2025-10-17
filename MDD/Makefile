@@ -17,7 +17,7 @@ LIBS += $(BLAS)
 #LIBS += -lblas -llapack -L$L -lgenfft $(LIBSM) -lc -lm
 
 ifeq ($(FC),ifort)
-   LDFLAGS += -nofor-main
+   LDFLAGS += -nofor-main 
 else ifeq ($(FC),ifx)
    LDFLAGS += -nofor-main
 else ifeq ($(FC),nvfortran)
@@ -53,7 +53,7 @@ OBJC	= $(SRCC:%.c=%.o)
 OBJF    = $(SRCF:%.F90=%.o)
 
 $(PRG):	$(OBJC) $(OBJF)
-	$(FC) $(LDFLAGS) -o $(PRG) $(OBJC) $(OBJF) $(LIBS) 
+	$(FC) $(LDFLAGS) $(OPTF) -o $(PRG) $(OBJC) $(OBJF) $(LIBS) 
 
 install: $(PRG) 
 	cp $(PRG) $B
