@@ -56,8 +56,8 @@ MPIFC=mpif90
 #Intel oneAPI 2025
 #CC = icx
 #FC = ifx
-#OPTC = -O3 -axCORE-AVX2 
-#OPTF = -O3 -axCORE-AVX2 -nofor-main
+#OPTC = -O3 -axCORE-AVX2 -qopenmp
+#OPTF = -O3 -axCORE-AVX2 -nofor-main -qopenmp
 ##Intel MPI with icx
 #MPICC=mpicc
 #MPIFC=mpif90
@@ -68,9 +68,8 @@ MPIFC=mpif90
 #PGI Nvidia
 #CC = nvc
 #FC = nvfortran
-#OPTC = -O3  -Minfo=all -Mvect=simd:256 -Msafeptr
-##OPTC = -O3  -Minfo=all -Mvect=simd:256 -Msafeptr -Mprof=lines
-#OPTF = -O3 -Mnomain
+#OPTC = -O3  -Minfo=all -Mvect=simd:256 -Msafeptr -mp=multicore
+#OPTF = -O3 -Mnomain -mp=multicore
 #LDFLAGS = -O3 -Mvect=simd:256 
 ##Open MPI with GNU
 
@@ -84,7 +83,7 @@ MPIFC=mpif90
 #OPTC = -Ofast
 #LDFLAGS = -Ofast
 
-#AMD Open64 this will be replaced with the latest AOCC compilers
+#AMD AOCC compilers
 #CC = opencc
 #FC = openf95
 #OPTC = -Ofast
@@ -139,8 +138,7 @@ endif
 LIBS += -lm
 LIBSM= -lm
 
-
-$(info    LIBS is $(LIBS))
+#$(info    LIBS is $(LIBS))
 
 ########################################################################
 # standard CFLAGS
