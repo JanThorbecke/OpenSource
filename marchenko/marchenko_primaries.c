@@ -91,7 +91,7 @@ char *sdoc[] = {
 //"   countmin=0 ............... 0.3*nxrcv; minimum number of reciprocal traces for a contribution",
 " OUTPUT DEFINITION ",
 "   file_rr= ................. output file with primary only shot record",
-//"   file_dd= ................. output file with input of the algorithm ",
+"   file_dd= ................. output file of original i'th shot record",
 "   file_iter= ............... output file with -Mi(-t) for each iteration: writes",
 "              ............... M0.su=M0 : initialisation of algorithm",
 "              ............... RMi: iterative terms ",
@@ -141,7 +141,7 @@ int main (int argc, char **argv)
 	float   src_velo, src_angle, grad2rad, p, *twplane;
     complex *Refl, *Fop, *ctrace, *cwave, csum, cwav;
     char    *file_tinv, *file_shot, *file_rr, *file_src, *file_iter, *file_update;
-    char    *file_umin, *file_uplus, *file_vmin, *file_vplus;
+    char    *file_umin, *file_uplus, *file_vmin, *file_vplus, *file_dd;
 //	char    *file_dd;
     segy    *hdrs_out, hdr;
 
@@ -155,7 +155,7 @@ int main (int argc, char **argv)
     if (!getparstring("file_tinv", &file_tinv)) file_tinv = NULL;
     if(!getparstring("file_src", &file_src)) file_src = NULL;
     if (!getparstring("file_rr", &file_rr)) verr("parameter file_rr not found");
-//    if (!getparstring("file_dd", &file_rr)) file_dd = NULL;
+    if (!getparstring("file_dd", &file_dd)) file_dd = NULL;
     if (!getparstring("file_iter", &file_iter)) file_iter = NULL;
     if (!getparstring("file_update", &file_update)) file_update = NULL;
     if (!getparstring("file_umin", &file_umin)) file_umin = NULL;
@@ -593,6 +593,7 @@ int main (int argc, char **argv)
         	vmess("plane-wave SRC for migration    = SRCplane%03d.su ", src_angle);
 		}
         if (file_rr != NULL) vmess("RR output file                  = %s ", file_rr);
+        if (file_dd != NULL) vmess("DD output file                  = %s ", file_dd);
         if (file_iter != NULL)  {
 			vmess("Iterations output file          = %s ", file_iter);
 			vmess("Initialisation input data       = M0_%06d.su ", 1000*istart);
@@ -673,7 +674,7 @@ int main (int argc, char **argv)
 		writeDataIter("DDplane.su", SRC, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixp, nxs, 0, NINT(src_angle));
     }
     else {
-        writeDataIter("DDshot.su", SRC, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixp, nxs, 0, ishot+1);
+        writeDataIter(file_dd, SRC, hdrs_out, ntfft, nxs, d2, f2, n2out, Nfoc, xsyn, zsyn, ixp, nxs, 0, ishot+1);
 	}
 	free(SRC);
 
