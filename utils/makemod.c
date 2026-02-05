@@ -611,7 +611,7 @@ int main(int argc, char **argv)
             Nv = countnparval(Nvi, "var");
             if (Nv == 2 || Nv == 1) {
                    getnparfloat(Nvi,"var", var);
-                   diffrwidth=(int)var[0];
+                   diffrwidth=(int)NINT(var[0]/dx);
                    if (Nv==1) {
                        if(!getparint("dtype", &dtype)) dtype = 0;
             }
