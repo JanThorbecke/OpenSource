@@ -202,8 +202,11 @@ Almost all Figures in the papers mentioned in the REFERENCES can be reproduced w
 
 REFERENCES
 ---------
--0- DOI reference of this software release
-https://zenodo.org/badge/latestdoi/23060862
+-0- Reference of this software release
+
+Thorbecke, J., and J. Brackenhoff, 2022,
+OpenSource code for Finite Difference, Marchenko algorithms and processing utilities: 
+https://gitlab.com/geophysicsdelft/OpenSource.git, doi 10.5281/zenodo.3374728.
 
 
 -1- If the Finite Difference code has helped you in your research please refer to the following paper in your publications:
