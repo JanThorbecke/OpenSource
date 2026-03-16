@@ -23,13 +23,14 @@ void vmess(char *fmt, ...);
 
 int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float **src_nwav, int verbose)
 {
-	int is0, ibndz, ibndx;
+	static int ibndz, ibndx;
 	int isrc, ix, iz, n1;
-	int id1, id2;
+	int id1, id2, is0;
 	float src_ampl, time, scl, dt, sdx;
 	float Mxx, Mzz, Mxz;
 	static int first=1;
 
+if (first) {
 	if (src.type==6) {
     	ibndz = mod.ioXz;
     	ibndx = mod.ioXx;
@@ -43,13 +44,17 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
     	ibndx = mod.ioTx;
     	if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
     	if (bnd.top==4 || bnd.top==2) ibndz += bnd.ntap;
+    	if (bnd.top==5) ibndz += bnd.topadd;
 	}
 	else {	
     	ibndz = mod.ioPz;
     	ibndx = mod.ioPx;
     	if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
     	if (bnd.top==4 || bnd.top==2) ibndz += bnd.ntap;
+    	if (bnd.top==5) ibndz += bnd.topadd;
 	}
+first = 0;
+}
 
 	n1   = mod.naz;
 	dt   = mod.dt;
@@ -105,7 +110,7 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 		/* delay not reached or no samples left in source wavelet? */
 		if ( (time < 0.0) || ((itime*dt+mod.t0) >= src.tend[isrc]) || id2 > wav.nt ) continue;
 		//if (isrc==0) fprintf(stderr,"isrc=%d id1=%d time=%f wav.nt=%d tbeg=%f tend=%f\n", isrc, id1, time, wav.nt, src.tbeg[isrc], src.tend[isrc]);
-//		fprintf(stderr,"isrc=%d ix=%d iz=%d src.x=%d src.z=%d\n", isrc, ix, iz, src.x[isrc], src.z[isrc]);
+		//fprintf(stderr,"isrc=%d ix=%d iz=%d src.x=%d src.z=%d\n", isrc, ix, iz, src.x[isrc], src.z[isrc]);
 
 		if (!src.multiwav) { /* only one wavelet for all sources */
 			src_ampl = src_nwav[0][id1]*(id2-time/dt) + src_nwav[0][id2]*(time/dt-id1);

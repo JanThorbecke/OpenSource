@@ -340,6 +340,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparint("top",&bnd->top) && !taptop) bnd->top=1;
 	if (!getparint("bottom",&bnd->bot) && !tapbottom) bnd->bot=4;
 
+	if (!getparfloat("movingspeed",&bnd->speed)) bnd->speed=250;
+
     /* calculate default taper length to be three wavelenghts */
 	if (!getparint("ntaper",&bnd->ntap)) bnd->ntap=0; // bnd->ntap=3*NINT((cp_max/wav->fmax)/dx);
 	if (!bnd->ntap) if (!getparint("npml",&bnd->ntap)) bnd->ntap=3*NINT((cp_max/wav->fmax)/dx);
@@ -496,6 +498,20 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         mod->iePz += bnd->ntap;
         mod->ieTz += bnd->ntap;
 
+    }
+    if (bnd->top==5) {
+        bnd->spskip=NINT(dx/(bnd->speed*dt));
+        bnd->topadd = mod->nt/bnd->spskip+4;
+        fprintf(stderr,"speed of moving free-surface = %f m/s every %d time-steps \n", dx/(bnd->spskip*dt), bnd->spskip);
+        fprintf(stderr,"adding %d grid points above free-surface at t=0\n", bnd->topadd);
+        // number of points to accomodate the moving free surface
+        mod->naz  += bnd->topadd;
+        mod->ioXz += bnd->topadd;
+        mod->ioZz += bnd->topadd;
+        mod->ieXz += bnd->topadd;
+        mod->ieZz += bnd->topadd;
+        mod->iePz += bnd->topadd;
+        mod->ieTz += bnd->topadd;
     }
     if (bnd->bot==4 || bnd->bot==2) {
         mod->naz += bnd->ntap;

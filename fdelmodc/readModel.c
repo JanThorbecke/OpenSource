@@ -11,6 +11,8 @@
 #include "par.h"
 #include "fdelmodc.h"
 
+int writesufile(char *filename, float *data, size_t n1, size_t n2, float f1, float f2, float d1, float d2);
+
 #define     MAX(x,y) ((x) > (y) ? (x) : (y))
 #define     MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
@@ -67,6 +69,10 @@ int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float 
     if (bnd.top==4 || bnd.top==2) {
 		ioPz += bnd.ntap;
 		ioTz += bnd.ntap;
+	}
+    if (bnd.top==5) {
+		ioPz += bnd.topadd;
+		ioTz += bnd.topadd;
 	}
 
 /* open files and read first header */
@@ -396,6 +402,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
 			}
 		}
 	}
+
 
 	/* For topography free surface check for zero-velocity and set rox and roz also to zero */
 	for (ix=0;ix<nx;ix++) {
@@ -761,6 +768,51 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
 
     }
  
+    if (bnd.top==5) {
+        
+        /* Rox field */
+        ixo = mod.ioXx;
+        ixe = mod.ieXx;
+        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.ntap;
+        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.ntap;
+        izo = mod.ioXz-bnd.topadd;
+        ize = mod.ioXz;
+        
+        for (ix=ixo; ix<ixe; ix++) {
+            for (iz=izo; iz<ize; iz++) {
+                //rox[ix*n1+iz] = rox[ix*n1+ize];
+                rox[ix*n1+iz] = 0.0;
+            }
+        }
+        
+        /* roz field */
+        ixo = mod.ioZx;
+        ixe = mod.ieZx;
+        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.ntap;
+        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.ntap;
+        izo = mod.ioZz-bnd.topadd;
+        ize = mod.ioZz;
+        for (ix=ixo; ix<ixe; ix++) {
+            for (iz=izo; iz<ize; iz++) {
+                //roz[ix*n1+iz] = roz[ix*n1+ize];
+                roz[ix*n1+iz] = 0.0;
+            }
+        }
+        /* l2m field */
+        ixo = mod.ioPx;
+        ixe = mod.iePx;
+        izo = mod.ioPz;
+        ize = mod.ioPz+bnd.topadd;
+        for (ix=ixo; ix<ixe; ix++) {
+            for (iz=izo; iz<ize; iz++) {
+                //l2m[ix*n1+iz] = l2m[ix*n1+ize];
+                l2m[ix*n1+iz] = 0.0;
+            }
+        }
+    }
+
+writesufile("read_rox.su", rox, mod.naz, mod.nax, 0.0, 0.0, mod.dz, mod.dx);
+writesufile("read_l2m.su", l2m, mod.naz, mod.nax, 0.0, 0.0, mod.dz, mod.dx);
 	free(cp);
 	free(ro);
    	free(cs);

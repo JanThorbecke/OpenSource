@@ -48,7 +48,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 #pragma omp	for private (ix) nowait
 			for (ix=mod.ioPx; ix<mod.iePx; ix++) {
 				iz = bnd.surface[ix];
-				//fprintf(stderr,"free iz=%d\n", iz);
+				//fprintf(stderr,"free ix=%d iz=%d\n", ix, iz);
 				vz[ix*n1+iz]   = vz[ix*n1+iz+1];
 				vz[ix*n1+iz-1] = vz[ix*n1+iz+2];
 			}
@@ -73,6 +73,16 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 //		}
 	}
 
+		if (bnd.top==5) { /* moving free surface at top */
+#pragma omp	for private (ix) nowait
+			for (ix=mod.ioPx; ix<mod.iePx; ix++) {
+				//iz = bnd.surface[ix]-1;
+				iz = bnd.surface[ix];
+				//fprintf(stderr,"free ix=%d iz=%d\n", ix, iz);
+				vz[ix*n1+iz]   = vz[ix*n1+iz+1];
+				vz[ix*n1+iz-1] = vz[ix*n1+iz+2];
+			}
+		}
 /************************************************************/
 /* rigid boundary condition clears velocities on boundaries */
 /************************************************************/
@@ -1443,6 +1453,16 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 
 	if (mod.ischeme <= 2) { /* Acoustic scheme */
 		if (bnd.top==1) { /* free surface at top */
+#pragma omp	for private (ix) nowait
+			for (ix=mod.ioPx; ix<mod.iePx; ix++) {
+				iz = bnd.surface[ix];
+				tzz[ix*n1+iz] = 0.0;
+                //vz[ix*n1+iz] = -vz[ix*n1+iz+1];
+                //vz[ix*n1+iz-1] = -vz[ix*n1+iz+2];
+
+			}
+		}
+		if (bnd.top==5) { /* moving free surface at top */
 #pragma omp	for private (ix) nowait
 			for (ix=mod.ioPx; ix<mod.iePx; ix++) {
 				iz = bnd.surface[ix];
