@@ -9,5 +9,6 @@ The paper is published in the Journal of the Acoustical Society of America (2026
 The animations that belong to the figures in this paper are organized as follows
 
 Figure 3: https://www.keeswapenaar.nl/TimeMaterial/Green5.mp4
+
 Figure 7: https://www.keeswapenaar.nl/TimeMaterial/TimeMirror.mp4
  
