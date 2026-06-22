@@ -3,8 +3,8 @@ Animations, belonging to the paper
 "Multiple reflections on Huygens' principle"
 author: Kees Wapenaar
 
-The manuscript is submitted to Geophysical Prospecting.
-
+The paper is published in Geophysical Prospecting, Vol 73, e70038
+https://doi.org/10.1111/1365-2478.70038
 
 The animations that belong to the figures in this paper are organized as follows
 
