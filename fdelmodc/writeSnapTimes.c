@@ -118,7 +118,7 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, wavPar wav, int ixsrc, in
 * txz stresses have one sample less in z-direction and x-direction
 ***********************************************************************/
 
-		snap = (float *)malloc(sna.nz*sizeof(float));
+		snap = (float *)malloc((sna.nz+1)*sizeof(float));
 
 		/* Decimate, with skipdx and skipdz, the number of gridpoints written to file 
 		   and write to file. */

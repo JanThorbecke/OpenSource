@@ -13,8 +13,6 @@
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
 
-int writesufile(char *filename, float *data, size_t n1, size_t n2, float f1, float f2, float d1, float d2);
-
 double wallclock_time(void);
 
 void threadAffinity(void);
@@ -110,7 +108,7 @@ char *sdoc[] = {
 "   R=1e-4 ............ the theoretical reflection coefficient at PML boundary",
 "   m=2.0 ............. scaling order of the PML sigma function ",
 "   tapfact=0.30 ...... taper strength: larger value gets stronger taper",
-"   For the 4 boundaries the options are:  1=free 2=pml 3=rigid 4=taper 5=moving",
+"   For the 4 boundaries the options are:  1=free 2=pml 3=rigid 4=taper",
 "   top=1 ............. type of boundary on top edge of model",
 "   left=4 ............ type of boundary on left edge of model",
 "   right=4 ........... type of boundary on right edge of model",
@@ -301,7 +299,7 @@ int main(int argc, char **argv)
 	double t0, t1, t2, t3, tt, tinit;
 	size_t size, sizem, nsamp, perc, sizew;
 	int n1, ix, iz, ir, ishot, i;
-	int ioPx, ioPz, iePx;
+	int ioPx, ioPz;
 	int it0, it1, its, it, fileno, isam;
 	int ixsrc, izsrc, is0, is1;
 	int verbose;
@@ -448,8 +446,6 @@ int main(int argc, char **argv)
     ioPz=mod.ioPz;
     if (bnd.lef==4 || bnd.lef==2) ioPx += bnd.ntap;
     if (bnd.top==4 || bnd.top==2) ioPz += bnd.ntap;
-    if (bnd.top==4 || bnd.top==2) iePx -= bnd.ntap;
-    if (bnd.top==5) ioPz += bnd.topadd;
 	if (rec.sinkvel) sinkvel=l2m[(rec.x[0]+ioPx)*n1+rec.z[0]+ioPz];
 	else sinkvel = 0.0;
 
@@ -483,7 +479,7 @@ int main(int argc, char **argv)
 		bnd.surface[ix] = bnd.surface[ioPx];
 	}
 	for (ix=ioPx+mod.nx; ix<mod.iePx; ix++) {
-		bnd.surface[ix] = bnd.surface[iePx-1];
+		bnd.surface[ix] = bnd.surface[mod.iePx-1];
 	}
 	if (verbose>3 && pe==0) writeSrcRecPos(&mod, &rec, &src, &shot);
 
@@ -559,7 +555,7 @@ shared (tss, tep, tes, r, q, p) \
 shared (tinit, it0, it1, its) \
 shared(beam_vx, beam_vz, beam_txx, beam_tzz, beam_txz, beam_p, beam_pp, beam_ss) \
 shared(rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, rec_p, rec_pp, rec_ss, rec_q) \
-shared (tt, t2, t3, isam, n1) \
+shared (tt, t2, t3, isam) \
 shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 {
 			if (it==it0 && verbose>2 && pe==0) {
@@ -585,35 +581,6 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
                                   vx, vz, tzz, rox, roz, l2m, verbose);
                         }
                         else {
-                            if (bnd.top==5) {
-                                if ((it-it0-rec.delay)%bnd.spskip==0) {
-                                    fprintf(stderr,"Moving free surface at it %d\n", it);
-                                    fprintf(stderr,"mod.nz=%d mod.naz=%d \n", mod.nz, mod.naz);
-                                    mod.ioXz -= 1;
-                                    mod.ioZz -= 1;
-                                    mod.ioPz -= 1;
-
-//writesufile("read_rox_2.su", rox, mod.naz, mod.nax, 0.0, 0.0, mod.dz, mod.dx);
-                                    for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
-				                        iz = bnd.surface[ix]-1;
-                                    //fprintf(stderr,"rox%d*%d %d =%e \n", ix, n1, iz, rox[ix*n1+iz+1]);
-                                        rox[ix*n1+iz] = rox[ix*n1+iz+1];
-                                    }
-                                    for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
-				                        iz = bnd.surface[ix]-1;
-                                    //fprintf(stderr,"roz%d*%d %d =%e \n", ix, n1, iz, roz[ix*n1+iz+2]);
-                                        roz[ix*n1+iz+1] = roz[ix*n1+iz+2];
-                                    }
-                                    for (ix=mod.ioPx; ix<mod.iePx; ix++) {
-				                        iz = bnd.surface[ix]-1;
-                                    //fprintf(stderr,"l2m%d*%d %d =%e \n", ix, n1, iz, l2m[ix*n1+iz+1]);
-                                          l2m[ix*n1+iz] = l2m[ix*n1+iz+1];
-                                    }
-                                    for (ix=0; ix<mod.iePx; ix++) {
-				                        bnd.surface[ix] = bnd.surface[ix] - 1;
-                                    }
-                                }
-                            }
                             acoustic4(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
                                       vx, vz, tzz, rox, roz, l2m, verbose);
                         }
@@ -656,13 +623,6 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 
 #pragma omp master
 {
-            if (bnd.top==5 && it==it0) {
-            isam=0;
-			getRecTimes(mod, rec, bnd, it, isam, vx, vz, tzz, txx, txz, q, 
-				l2m, lam, rox, roz, 
-				rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
-				rec_p, rec_pp, rec_ss, rec_q, rec_udp, rec_udvz, rec_dxvx, rec_dzvz, verbose);
-            }
 			if ( (((it-rec.delay) % rec.skipdt)==0) && (it >= rec.delay) ) {
 				int writeToFile, itwritten;
 
