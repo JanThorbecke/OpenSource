@@ -30,31 +30,31 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 	float Mxx, Mzz, Mxz;
 	static int first=1;
 
-if (first) {
-	if (src.type==6) {
-    	ibndz = mod.ioXz;
-    	ibndx = mod.ioXx;
-	}
-	else if (src.type==7) {
-    	ibndz = mod.ioZz;
-    	ibndx = mod.ioZx;
-	}
-	else if (src.type==2) {
-    	ibndz = mod.ioTz;
-    	ibndx = mod.ioTx;
-    	if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
-    	if (bnd.top==4 || bnd.top==2) ibndz += bnd.ntap;
-    	if (bnd.top==5) ibndz += bnd.topadd;
-	}
-	else {	
-    	ibndz = mod.ioPz;
-    	ibndx = mod.ioPx;
-    	if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
-    	if (bnd.top==4 || bnd.top==2) ibndz += bnd.ntap;
-    	if (bnd.top==5) ibndz += bnd.topadd;
-	}
-first = 0;
-}
+    if (first) {
+	    if (src.type==6) {
+    	    ibndz = mod.ioXz;
+    	    ibndx = mod.ioXx;
+	    }
+	    else if (src.type==7) {
+    	    ibndz = mod.ioZz;
+    	    ibndx = mod.ioZx;
+	    }
+	    else if (src.type==2) {
+    	    ibndz = mod.ioTz;
+    	    ibndx = mod.ioTx;
+    	    if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
+    	    if (bnd.top==4 || bnd.top==2) ibndz += bnd.ntap;
+    	    if (bnd.top==5) ibndz += bnd.topadd;
+	    }
+	    else {	
+    	    ibndz = mod.ioPz;
+    	    ibndx = mod.ioPx;
+    	    if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
+    	    if (bnd.top==4 || bnd.top==2) ibndz += bnd.ntap;
+            if (bnd.top==5) ibndz += bnd.topadd;
+        }
+        first = 0;
+   }
 
 	n1   = mod.naz;
 	dt   = mod.dt;

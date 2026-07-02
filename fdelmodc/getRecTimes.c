@@ -25,15 +25,15 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 	float dvx, dvz, rdz, rdx, C00, C10, C01, C11;
 	float *vz_t, c1, c2, lroz, field;
 
-if (first) {
-fprintf(stderr,"calling gerrectimes for time-step %d to store isam=%d\n", itime, isam);
-    ibndx = mod.ioPx;
-    ibndz = mod.ioPz;
-    if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
-    if (bnd.top==4 || bnd.top==2) ibndz += bnd.ntap;
-    if (bnd.top==5) ibndz += bnd.topadd;
-first=0;
-}
+    if (first) {
+        //fprintf(stderr,"calling gerrectimes for time-step %d to store isam=%d\n", itime, isam);
+        ibndx = mod.ioPx;
+        ibndz = mod.ioPz;
+        if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
+        if (bnd.top==4 || bnd.top==2) ibndz += bnd.ntap;
+        if (bnd.top==5) ibndz += bnd.topadd;
+        first=0;
+    }
 	n1    = mod.naz;
 	c1 = 9.0/8.0;
 	c2 = -1.0/24.0;

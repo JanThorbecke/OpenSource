@@ -809,10 +809,10 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
                 l2m[ix*n1+iz] = 0.0;
             }
         }
+//writesufile("read_rox.su", rox, mod.naz, mod.nax, 0.0, 0.0, mod.dz, mod.dx);
+//writesufile("read_l2m.su", l2m, mod.naz, mod.nax, 0.0, 0.0, mod.dz, mod.dx);
     }
 
-writesufile("read_rox.su", rox, mod.naz, mod.nax, 0.0, 0.0, mod.dz, mod.dx);
-writesufile("read_l2m.su", l2m, mod.naz, mod.nax, 0.0, 0.0, mod.dz, mod.dx);
 	free(cp);
 	free(ro);
    	free(cs);

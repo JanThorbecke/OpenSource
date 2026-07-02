@@ -500,9 +500,10 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 
     }
     if (bnd->top==5) {
-        bnd->spskip=NINT(dx/(bnd->speed*dt));
-        bnd->topadd = mod->nt/bnd->spskip+4;
-        fprintf(stderr,"speed of moving free-surface = %f m/s every %d time-steps \n", dx/(bnd->spskip*dt), bnd->spskip);
+        if (bnd->speed != 0.0) bnd->spskip=NINT(dx/(bnd->speed*dt));
+        else bnd->spskip=0;
+        bnd->topadd = (mod->nt/bnd->spskip)+8;
+        fprintf(stderr,"speed of moving one-grid of free-surface = %f m/s every %d time-steps \n", dx/(bnd->spskip*dt), bnd->spskip);
         fprintf(stderr,"adding %d grid points above free-surface at t=0\n", bnd->topadd);
         // number of points to accomodate the moving free surface
         mod->naz  += bnd->topadd;
@@ -554,7 +555,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	/* Intialize the array which contains the topography surface */
     if (bnd->top==4 || bnd->top==2) ioPz=mod->ioPz - bnd->ntap;
 	else ioPz=mod->ioPz;
-	ioPz=mod->ioPz;
+	//if (bnd->top==5) mod->ioPz += bnd->topadd;
+    ioPz=mod->ioPz;
 	bnd->surface = (int *)malloc((mod->nax+mod->naz)*sizeof(int));
 	for (ix=0; ix<mod->nax+mod->naz; ix++) {
 		bnd->surface[ix] = ioPz;
