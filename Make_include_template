@@ -84,11 +84,17 @@ MPIFC=mpif90
 #LDFLAGS = -Ofast
 
 #AMD AOCC compilers
-#CC = opencc
-#FC = openf95
-#OPTC = -Ofast
-#OPTF = -Ofast
-#LDFLAGS = -static -Ofast
+# Use definitions
+# export I_MPI_F90=flang
+# export I_MPI_FC=flang
+# export I_MPI_CC=clang
+# export LD_LIBRARY_PATH=/palmyra/software/pe/spack/opt/spack/linux-zen2/aocc-5.0.0-avnccyravtf7lms7qve34do2qfo2pzry/lib/:$LD_LIBRARY_PATH
+#
+#CC = clang
+#FC = flang
+#OPTC = -Ofast -fopenmp -ffast-math -march=native
+#OPTF = -Ofast -ffast-math -march=native
+#LDFLAGS = -Ofast -fopenmp
 
 #############################################################################
 # BLAS and LAPACK libraries 
