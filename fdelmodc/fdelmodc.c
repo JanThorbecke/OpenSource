@@ -331,9 +331,9 @@ int main(int argc, char **argv)
 	roz = (float *)calloc(sizem,sizeof(float));
 	l2m = (float *)calloc(sizem,sizeof(float));
 	if (mod.ischeme==2) {
-		tss = (float *)calloc(sizem,sizeof(float));
-		tep = (float *)calloc(sizem,sizeof(float));
-		q = (float *)calloc(sizem,sizeof(float));
+        tss=(float *)calloc(mod.nfw * sizem, sizeof(float));
+        tep=(float *)calloc(mod.nfw * sizem, sizeof(float));
+        q  =(float *)calloc(mod.nfw * sizem, sizeof(float));
 	}
 	if (mod.ischeme>2) {
 		lam = (float *)calloc(sizem,sizeof(float));
