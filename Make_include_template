@@ -93,7 +93,7 @@ MPIFC=mpif90
 #CC = clang
 #FC = flang
 #OPTC = -Ofast -fopenmp -ffast-math -march=native
-#OPTF = -Ofast -ffast-math -march=native
+#OPTF = -Ofast -ffast-math -march=native -fno-fortran-main
 #LDFLAGS = -Ofast -fopenmp
 
 #############################################################################
