@@ -80,7 +80,6 @@ fdelmodc_mpi: $(OBJC) fdelmodc.h
 	$(MPICC) -DMPI $(CFLAGS) $(OPTC) -c writeRec.c 
 	$(MPICC) -DMPI $(CFLAGS) $(OPTC) -c fdelmodc.c 
 	$(MPICC) -DMPI $(CFLAGS) $(OPTC) $(LDFLAGS) -o fdelmodc_mpi $(OBJC) fileOpen.o writeRec.o $(LIBS)
-	cp -rp fdelmodc_mpi $B
 endif
 
 ifdef MPICC
