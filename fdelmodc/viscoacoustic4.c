@@ -162,60 +162,27 @@ int viscoacoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, in
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
             idx   = ix*n1*nfw + iz*nfw;
             div_v = dxvx[iz] + dzvz[iz];
-            Tpp_total = 0.0f;
-            for (imech = 0; imech < mod.nfw; imech++) {
-                Tpp = tss[imech+idx] * tep[imech+idx];
-                Tpp_total += mod.weight[imech] * Tpp; 
-            } 
-            /* Elastic pressure contribution using weighted Tpp */
-            p[ix*n1+iz] -= l2m[ix*n1+iz] * Tpp_total * (div_v);
-
-            /* Add correction from previous GSLS memory variables */
-            q_total = 0.0f;
-#pragma simd
-            for (imech = 0; imech < mod.nfw; imech++) {
-                q_total += mod.weight[imech] * q[imech+idx];
-            }
-            //q_total = gsls_get_total_correction(q, mod, idx);
-            p[ix*n1+iz] -= q_total;
-
-//old implementation 
-//            for (imech = 0; imech < mod.nfw; imech++) {
-//			Tpp     = tep[imech*sizem+ix*n1+iz]*tss[imech*sizem+ix*n1+iz];
-//			p[ix*n1+iz] -= l2m[ix*n1+iz]*Tpp*(dzvz[iz]+dxvx[iz]) + q[imech*sizem+ix*n1+iz];
-//			p[ix*n1+iz] -= q[imech*sizem+ix*n1+iz];
-//			Tlm = (1.0-Tpp)*tss[imech*sizem+ix*n1+iz]*l2m[ix*n1+iz];
-//            nom = 1.0/(1.0+0.5*tss[imech*sizem+ix*n1+iz]*mod.dt);
-//            q[imech*sizem+ix*n1+iz] = nom*( q[imech*sizem+ix*n1+iz] - 0.5*tss[imech*sizem+ix*n1+iz]*mod.dt*q[imech*sizem+ix*n1+iz] + 0.5*Tlm*(dxvx[iz]+dzvz[iz])*mod.dt );
-//            p[ix*n1+iz] -= q[imech*sizem+ix*n1+iz];
-//            }
-//end old implementation
-
-
-		    /* Update each mechanism using its local tss and tep */
 #pragma simd
             for (imech = 0; imech < mod.nfw; imech++) {
                 tss_i=tss[imech+idx];
-                tep_i=tep[imech+idx];
-                Tpp = tss_i * tep_i;
+                Tpp = tss_i * tep[imech+idx];
+                /* Elastic pressure contribution using weighted Tpp */
+                /* Add correction from previous GSLS memory variables */
+                p[ix*n1+iz] -= l2m[ix*n1+iz] * Tpp * div_v + mod.weight[imech] * q[imech+idx];
+
+		        /* Update each mechanism using its local tss and tep */
                 Tlm = (1.0f - Tpp) * tss_i * l2m[ix*n1+iz];
-                //gsls_update_memory(q, imech, mod, idx, div_v, Tlm, tss_i);
                 nom = 1.0 / (1.0 + 0.5 * tss_i * mod.dt);
 
                 /* Update memory variable using the same equation as the single-mechanism model:
                 * q_n^{n+1} = nom * (q_n^n - 0.5*tss*dt*q_n^n + 0.5*Tlm*div_v*dt)
                 */
-                q[imech+idx] = nom * (q[imech+idx] - 0.5 * tss_i * mod.dt * q[imech+idx] +
+                q[imech+idx] = nom * (q[imech+idx] * (1.0 - 0.5 * tss_i * mod.dt ) +
                                   0.5 * Tlm * div_v * mod.dt);
-            }
           
-            /* Apply correction from updated GSLS memory variables */ 
-            q_total = 0.0f;
-            for (imech = 0; imech < mod.nfw; imech++) {
-                q_total += mod.weight[imech] * q[imech+idx];
+                /* Apply correction from updated GSLS memory variables */ 
+                p[ix*n1+iz] -=  mod.weight[imech] * q[imech+idx];
             }
-            //q_total = gsls_get_total_correction(q, mod, idx); 
-            p[ix*n1+iz] -= q_total;
 
 		}
 	}
