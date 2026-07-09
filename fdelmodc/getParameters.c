@@ -60,7 +60,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	int i, j;
 	int cfree;
 	int tapleft,tapright,taptop,tapbottom;
-	int nxsrc, nzsrc, nhx;
+	int nxsrc, nzsrc, nhx, nfw;
 	int largeSUfile;
 	int is,ntraces,length_random;
 	float rand, Fangle;
@@ -200,7 +200,23 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		if (!getparstring("file_qs",&mod->file_qs)) mod->file_qs=NULL;
 		if (!getparfloat("Qp",&mod->Qp)) mod->Qp=1;
 		if (!getparfloat("Qs",&mod->Qs)) mod->Qs=mod->Qp;
-		if (!getparfloat("fw",&mod->fw)) mod->fw=0.5*wav->fmax;
+	    mod->nfw = countparval("fw");
+        if (mod->nfw==0) { 
+            mod->nfw=1;
+		    mod->fw = (float *)malloc(mod->nfw*sizeof(float));
+		    mod->weight = (float *)malloc(mod->nfw*sizeof(float));
+            mod->weight[0] = 1.0;
+		    if (!getparfloat("fw",&mod->fw[0])) mod->fw[0]=0.5*wav->fmax;
+        }
+        else {
+		    mod->fw = (float *)malloc(mod->nfw*sizeof(float));
+		    mod->weight = (float *)malloc(mod->nfw*sizeof(float));
+		    getparfloat("fw",mod->fw);
+            for (i=0;i<mod->nfw;i++) {
+                fprintf(stderr,"fw[%d]=%f\n",i, mod->fw[i]);
+                mod->weight[i] = 1.0;
+            }
+        }
 	}
 
 	/* dissipative medium option for Evert */
@@ -258,12 +274,14 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 		if (mod->ischeme==2 || mod->ischeme==4) {
 			if (mod->file_qp!=NULL) vmess("Qp from file %s   ", mod->file_qp);
 			else vmess("Qp      = %9.3f   ", mod->Qp);
-			vmess("at freq = %5.3f", mod->fw);
+            for (i=0;i<mod->nfw;i++) {
+                vmess("at freq = %5.3f with weight =  %5.3f", mod->fw[i], mod->weight[i]);
+            }
 		}
 		if (mod->ischeme==4) {
 			if (mod->file_qs!=NULL) vmess("Qs from file %s   ", mod->file_qs);
 			else vmess("Qs      = %9.3f ", mod->Qs);
-			vmess("at freq = %5.3f", mod->fw);
+			vmess("at freq = %5.3f", mod->fw[0]);
 		}
 	}
 

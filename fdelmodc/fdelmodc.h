@@ -112,8 +112,10 @@ typedef struct _modelPar { /* Model Parameters */
 	/* attenuation / dissipative medium */
 	float Qp;
 	float Qs;
-	float fw;
+	float *fw;
 	float qr;
+	int   nfw;
+	float *weight;
 } modPar;
 
 typedef struct _waveletPar { /* Wavelet Parameters */
