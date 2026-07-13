@@ -158,11 +158,12 @@ int viscoacoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, in
          * before the time step is applied to 1 and after the time-step of q 
          * see equation (13) of Robertson (1994). 
          */
-#pragma simd
+#pragma ivdep
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
             idx   = ix*n1*nfw + iz*nfw;
             div_v = dxvx[iz] + dzvz[iz];
-#pragma simd
+#pragma unroll
+//#pragma loop_count min(1), max(8), avg(1)
             for (imech = 0; imech < mod.nfw; imech++) {
                 tss_i=tss[imech+idx];
                 Tpp = tss_i * tep[imech+idx];
