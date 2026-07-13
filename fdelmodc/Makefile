@@ -8,7 +8,7 @@ ALLINC  = -I.
 #LIBS    += -L$L -lgenfft $(LIBSM)
 #OPTC = -g -Wall -fsignaling-nans -O0 -fopenmp
 #OPTC += -fopenmp -Waddress
-#OPTC +=  -qopt-report=5 -g
+#OPTC +=  -qopt-report -save-temps
 #OPTC +=  -O1 -g
 #OPTC +=  -O1 -g -fsanitize=address -fsanitize=bounds-strict -fsanitize=object-size
 #OPTC =  -fp-trap=invalid,overflow -traceback -g -O1 -qopenmp
