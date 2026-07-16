@@ -684,7 +684,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, iysrc, izsrc, it, src_nwav, verbos
 							vx, vy, vz, tzz, tyy, txx, txz, txy, tyz, rox, roy, roz, l2m, lam, mul, verbose);
 #pragma omp master
 {
-					 vmess("****** Elastic order 4 not yet fully TESTED ******* ");
+					 if (it==it0) vmess("****** Elastic order 4 not yet fully TESTED ******* ");
 }
 					}
 					else if (mod.iorder==6) {
