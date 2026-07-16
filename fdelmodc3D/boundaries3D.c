@@ -4412,7 +4412,7 @@ long boundariesV3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 	   Zero normal stress on P-grid and zero adjacent shear stresses where they exist for all faces. */
 
     /* Elastic scheme */
-    else if (mod.ischeme == 3) {
+    else if (mod.ischeme >= 3) {
         if (bnd.top==1) { /* free surface at top */
 #pragma omp for private (ix,iy) nowait
             for (iy=mod.ioPy; iy<mod.iePy; iy++) {
