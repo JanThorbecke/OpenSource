@@ -3925,8 +3925,7 @@ MID 	left 	mid 	mid
 #pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
-						//vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
-						vz[iy*n1*n2+ix*n1+iz] -= roz[3][3][3]*(
+						vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
 									c1*(tzz[iy*n1*n2+ix*n1+iz]   - tzz[iy*n1*n2+ix*n1+iz-1]) +
 									c2*(tzz[iy*n1*n2+ix*n1+iz+1] - tzz[iy*n1*n2+ix*n1+iz-2]));
 		
