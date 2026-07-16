@@ -7,7 +7,7 @@
 cd /palmyra/data/jthorbecke/OpenSource/fdelmodc3D/demo
 
 cp=2000
-cp=1000
+cs=1000
 rho=1000
 dx=2.5
 dt=0.0005

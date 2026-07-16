@@ -18,7 +18,7 @@ makemod sizex=1000 sizez=500 dx=$dx dz=$dx cp0=$cp cs0=$cs ro0=$rho \
 	intt=def x=-500,500 z=500,500 poly=0 cp=2400 ro=1800 
 
 #extend to 3D
-ny=201
+ny=101
 nx=401
 dy=2500
 rm ro3d.su
@@ -63,6 +63,7 @@ time ../fdelmodc3D \
     file_den=ro3d.su \
     file_src=wave.su \
     file_rcv=shot3d_fd.su \
+    dz=$dx dx=$dx dy=$dx \
     src_type=7 \
 	src_orient=1 \
 	src_injectionrate=1 \
