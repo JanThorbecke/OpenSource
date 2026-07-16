@@ -580,7 +580,7 @@ long readModel3D(modPar mod, bndPar bnd, float ***rox, float ***roy, float ***ro
 			by = 0.5*(ro[iy][ix][iz]+ro[iy+1][ix][iz]);
 			bz = ro[iy][ix][iz];
 			rox[iy+ioXy][ix+ioXx][iz+ioXz]=fac/bx;
-			roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/bx;
+			roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/by;
 			roz[iy+ioZy][ix+ioZx][iz+ioZz]=fac/bz;
 			l2m[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda2mu;
 			lam[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda;
@@ -645,7 +645,7 @@ long readModel3D(modPar mod, bndPar bnd, float ***rox, float ***roy, float ***ro
 			by = ro[iy][ix][iz];
 			bz = 0.5*(ro[iy][ix][iz]+ro[iy][ix][iz+1]);
 			rox[iy+ioXy][ix+ioXx][iz+ioXz]=fac/bx;
-			roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/bx;
+			roy[iy+ioYy][ix+ioYx][iz+ioYz]=fac/by;
 			roz[iy+ioZy][ix+ioZx][iz+ioZz]=fac/bz;
 			l2m[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda2mu;
 			lam[iy+ioPy][ix+ioPx][iz+ioPz]=fac*lamda;

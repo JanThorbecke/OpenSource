@@ -8,7 +8,7 @@ ALLINC  = -I.
 LIBS    += -L$L -lgenfft $(LIBSM)
 #LIBS    += -L$L -lgenfft -lm -lc
 #OPTC += -g -Mbounds
-#OPTC += -g -O1
+OPTC += -g -O0
 #OPTC += -g3 
 #OPTC += -fopenmp -Waddress
 #OPTC := $(subst -O3 -ffast-math, -O1 -g ,$(OPTC))
@@ -67,8 +67,8 @@ $(PRG):	$(OBJC) fdelmodc3D.h
 
 #	OPTC = $(subst -O3 -Minfo=all -Mvect=simd:256 -Msafeptr,-O1,$(OPTC))
 #
-boundaries3D.o:
-	$(CC) -c $(CFLAGS) $(subst -O3 -Minfo=all -Mvect=simd:256 -Msafeptr,-O1,$(OPTC)) boundaries3D.c
+#boundaries3D.o:
+#	$(CC) -c $(CFLAGS) $(subst -O3 -Minfo=all -Mvect=simd:256 -Msafeptr,-O1,$(OPTC)) boundaries3D.c
 
 	
 install: fdelmodc3D 

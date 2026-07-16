@@ -84,6 +84,23 @@ long elastic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lon
 	n1  = mod.naz;
     n2  = mod.nax;
 
+    /* Verify staggered-grid index ranges meet 4th-order stencil requirements.
+       The 4th-order derivative uses offsets up to +/-2, so the provided io/ie
+       ranges for P- and T-grids must include at least two ghost points.
+       If these asserts fail, the driver should set io/ie values accordingly.
+    */
+    {
+        int halfw = 2; /* stencil half-width for 4th order */
+        /* Ensure P-grid ranges are wide enough */
+        assert((mod.iePx - mod.ioPx) > halfw);
+        assert((mod.iePy - mod.ioPy) > halfw);
+        assert((mod.iePz - mod.ioPz) > halfw);
+        /* Ensure shear (T) grids have sufficient range for +/-2 accesses */
+        assert((mod.ieTx - mod.ioTx) > halfw);
+        assert((mod.ieTy - mod.ioTy) > halfw);
+        assert((mod.ieTz - mod.ioTz) > halfw);
+    }
+
 	/* calculate vx for all grid points except on the virtual boundary*/
 #pragma omp for private (ix, iy, iz) nowait schedule(guided,1)
     for (iy=mod.ioXy; iy<mod.ieXy; iy++) {

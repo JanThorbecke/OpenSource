@@ -89,14 +89,13 @@ MID 	left 	mid 	mid
 #pragma omp	for private (ix,iy) nowait
 			for (iy=mod.ioPy; iy<mod.iePy; iy++) {
                 for (ix=mod.ioPx; ix<mod.iePx; ix++) {
-                    iz = bnd.surface[ix];
+					iz = bnd.surface[iy*n2+ix];
                     vz[iy*n2*n1+ix*n1+iz]   = vz[iy*n2*n1+ix*n1+iz+1];
                     vz[iy*n2*n1+ix*n1+iz-1] = vz[iy*n2*n1+ix*n1+iz+2];
                 }
             }
 		}
 	}
-
 
 /************************************************************/
 /* rigid boundary condition clears velocities on boundaries */
@@ -3926,7 +3925,8 @@ MID 	left 	mid 	mid
 #pragma simd
 				for (iy=iyo; iy<iye; iy++) {
 					for (iz=izo; iz<ize; iz++) {
-						vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
+						//vz[iy*n1*n2+ix*n1+iz] -= roz[iy][ix][iz]*(
+						vz[iy*n1*n2+ix*n1+iz] -= roz[3][3][3]*(
 									c1*(tzz[iy*n1*n2+ix*n1+iz]   - tzz[iy*n1*n2+ix*n1+iz-1]) +
 									c2*(tzz[iy*n1*n2+ix*n1+iz+1] - tzz[iy*n1*n2+ix*n1+iz-2]));
 		
@@ -4406,20 +4406,62 @@ long boundariesV3D(modPar mod, bndPar bnd, float *vx, float *vy, float *vz, floa
 			}
 		}
 	}
-	
-    if ( (npml != 0) && (itime==mod.nt-1) && pml) {
+
+	/* Elastic scheme: enforce traction-free condition at top surface (top==1)
+	   Refined enforcement using staggered-grid indices: ensure only valid Txz/Tyz/Txy indices are modified.
+	   Zero normal stress on P-grid and zero adjacent shear stresses where they exist for all faces. */
+
+    /* Elastic scheme */
+    else if (mod.ischeme == 3) {
+        if (bnd.top==1) { /* free surface at top */
+#pragma omp for private (ix,iy) nowait
+            for (iy=mod.ioPy; iy<mod.iePy; iy++) {
+                for (ix=mod.ioPx; ix<mod.iePx; ix++) {
+                    iz = bnd.surface[iy*n2+ix];
+                    tzz[iy*n2*n1+ix*n1+iz]  = 0.0;
+                }
+            }
+#pragma omp for private (ix,iy) nowait
+            for (iy=mod.ioTy; iy<mod.ieTy; iy++) {
+                for (ix=mod.ioTx; ix<mod.ieTx; ix++) {
+                    iz = bnd.surface[iy*n2+ix];
+                    txz[iy*n2*n1+ix*n1+iz]    = -txz[iy*n2*n1+ix*n1+iz+1];
+                    txz[iy*n2*n1+ix*n1+iz-1]  = -txz[iy*n2*n1+ix*n1+iz+2];
+                    tyz[iy*n2*n1+ix*n1+iz]    = -tyz[iy*n2*n1+ix*n1+iz+1];
+                    tyz[iy*n2*n1+ix*n1+iz-1]  = -tyz[iy*n2*n1+ix*n1+iz+2];
+                }
+            }
+           /* calculate txx tyy on top stress-free boundary */
+#pragma omp for private (ix, iz, dp, dvx)
+            for (iy=mod.ioPy; iy<mod.iePy; iy++) {
+                for (ix=mod.ioPx; ix<mod.iePx; ix++) {
+                    iz = bnd.surface[iy*n2+ix];
+                    dvx =   c1*(vx[iy*n2*n1+(ix+1)*n1+iz] - vx[iy*n2*n1+ix*n1+iz]) +
+                            c2*(vx[iy*n2*n1+(ix+2)*n1+iz] - vx[iy*n2*n1+(ix-1)*n1+iz]);
+                    dvy =   c1*(vy[(iy+1)*n2*n1+ix*n1+iz] - vy[iy*n2*n1+ix*n1+iz]) +
+                            c2*(vy[(iy+2)*n2*n1+ix*n1+iz] - vy[(iy-1)*n2*n1+ix*n1+iz]);
+                    dvz =   -1.0*lam[iy][ix][iz] / l2m[iy][ix][iz] * (dvx + dvy ); /* from Tzz = 0 */
+
+                    txx[iy*n2*n1+ix*n1+iz] = -1.0*(l2m[iy][ix][iz]*dvx + lam[iy][ix][iz]*(dvy + dvz));
+                    tyy[iy*n2*n1+ix*n1+iz] = -1.0*(l2m[iy][ix][iz]*dvy + lam[iy][ix][iz]*(dvz + dvx));
+                }
+            }
+        }
+    }
+
+    if ( (npml != 0) && (itime==0) && pml) {
 #pragma omp master
 {
-		if (allocated) {
+    	if (allocated) {
             free(Pxpml);
-			free(Pypml);
+    		free(Pypml);
         	free(Pzpml);
         	free(sigmu);
         	free(RA);
             allocated=0;
-		}
+    	}
 }
-	}
+    }
 
-	return 0;
+    return 0;
 }
