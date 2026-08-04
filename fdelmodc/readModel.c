@@ -344,15 +344,95 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
 			}
 		}
 
-		/* for the tapered/PML boundaries */
-/*
-		for (ix=mod.ioXx-bnd.ntap;ix<mod.ioXx;ix++) {
-			for (iz=mod.ioXz-bnd.ntap;ix<mod.naz;ix++) {
-				rox[ix*n1+iz]=rox[ioXx*n1+ioXz]
+		/* Extend model parameters into CFS-CPML PML zones.
+		 * readModel shifts ioPx/ioTx/ioPz/ioTz by ntap before filling, so PML cells
+		 * are zero-filled by calloc. Extend nearest-neighbor values into PML zones
+		 * so CPML attenuation operates on valid material parameters. */
+		if (bnd.lef==2 || bnd.rig==2 || bnd.top==2 || bnd.bot==2) {
+			int nax = mod.nax;
+			int iy, pix, piz;
+			/* Left PML: copy from the leftmost filled column */
+			if (bnd.lef==2) {
+				/* velocity (rox, roz): leftmost filled ix = ioXx */
+				for (pix=0; pix<ioXx; pix++) {
+					for (iy=0; iy<n1; iy++) {
+						rox[pix*n1+iy] = rox[ioXx*n1+iy];
+						roz[pix*n1+iy] = roz[ioXx*n1+iy];
+					}
+				}
+				/* stress (l2m, lam): leftmost filled ix = ioPx */
+				for (pix=0; pix<ioPx; pix++) {
+					for (iy=0; iy<n1; iy++) {
+						l2m[pix*n1+iy] = l2m[ioPx*n1+iy];
+						lam[pix*n1+iy] = lam[ioPx*n1+iy];
+					}
+				}
+				/* shear (muu): leftmost filled ix = ioTx */
+				for (pix=0; pix<ioTx; pix++) {
+					for (iy=0; iy<n1; iy++) {
+						muu[pix*n1+iy] = muu[ioTx*n1+iy];
+					}
+				}
+			}
+			/* Right PML: copy from the rightmost filled column */
+			if (bnd.rig==2) {
+				int ixR_vx = ioXx+nx-1;
+				int ixR_p  = ioPx+nx-1;
+				int ixR_t  = ioTx+nx-1;
+				for (pix=ixR_vx+1; pix<nax; pix++) {
+					for (iy=0; iy<n1; iy++) {
+						rox[pix*n1+iy] = rox[ixR_vx*n1+iy];
+						roz[pix*n1+iy] = roz[ixR_vx*n1+iy];
+					}
+				}
+				for (pix=ixR_p+1; pix<nax; pix++) {
+					for (iy=0; iy<n1; iy++) {
+						l2m[pix*n1+iy] = l2m[ixR_p*n1+iy];
+						lam[pix*n1+iy] = lam[ixR_p*n1+iy];
+					}
+				}
+				for (pix=ixR_t+1; pix<nax; pix++) {
+					for (iy=0; iy<n1; iy++) {
+						muu[pix*n1+iy] = muu[ixR_t*n1+iy];
+					}
+				}
+			}
+			/* Top PML: copy from the topmost filled row */
+			if (bnd.top==2) {
+				for (piz=0; piz<ioPz; piz++) {
+					for (iy=0; iy<nax; iy++) {
+						rox[iy*n1+piz] = rox[iy*n1+ioXz];
+						roz[iy*n1+piz] = roz[iy*n1+ioXz];
+						l2m[iy*n1+piz] = l2m[iy*n1+ioPz];
+						lam[iy*n1+piz] = lam[iy*n1+ioPz];
+						muu[iy*n1+piz] = muu[iy*n1+ioTz];
+					}
+				}
+			}
+			/* Bottom PML: copy from the bottommost filled row */
+			if (bnd.bot==2) {
+				int izB_vx = ioXz+nz-1;
+				int izB_p  = ioPz+nz-1;
+				int izB_t  = ioTz+nz-1;
+				for (piz=izB_vx+1; piz<n1; piz++) {
+					for (iy=0; iy<nax; iy++) {
+						rox[iy*n1+piz] = rox[iy*n1+izB_vx];
+						roz[iy*n1+piz] = roz[iy*n1+izB_vx];
+					}
+				}
+				for (piz=izB_p+1; piz<n1; piz++) {
+					for (iy=0; iy<nax; iy++) {
+						l2m[iy*n1+piz] = l2m[iy*n1+izB_p];
+						lam[iy*n1+piz] = lam[iy*n1+izB_p];
+					}
+				}
+				for (piz=izB_t+1; piz<n1; piz++) {
+					for (iy=0; iy<nax; iy++) {
+						muu[iy*n1+piz] = muu[iy*n1+izB_t];
+					}
+				}
 			}
 		}
-*/
-
 	}
 	else { /* Acoustic Scheme */
 		iz = nz-1;
