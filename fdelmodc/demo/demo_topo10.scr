@@ -1,0 +1,46 @@
+#!/bin/bash
+
+dt=0.001
+ntap=120
+fmax=40
+
+makemod sizex=2000 sizez=2000 dx=5 dz=5 cp0=2000 ro0=2000 cs0=0 file_base=topo.su \
+    orig=0,0 gradunit=0 verbose=1 
+
+
+makewave w=g2 fmax=25 t0=0.10 dt=$dt nt=4096 db=-40 file_out=G2.su verbose=1
+
+#mkdir -p shots
+
+# P source => P receiver
+
+file_rcv=shot_top0.su
+
+set -x
+../fdelmodc \
+    ischeme=-2 \
+    npml=20 R=1e-8 m=2 \
+    surf_z0=500 surf_amp=50 surf_lambda=800 surf_omega=0.5 movingspeed=40 \
+    file_cp=topo_cp.su \
+    file_den=topo_ro.su \
+    file_rcv=$file_rcv \
+    file_src=G2.su \
+    dtrcv=0.004 \
+    src_type=1 \
+    src_orient=1 \
+    src_injectionrate=1 \
+    rec_type_vx=1 \
+    rec_type_vz=1 \
+    rec_type_p=1 \
+    xsrc=1000 \
+    zsrc=667 \
+   zrcv1=500 zrcv2=500 xrcv1=0 xrcv2=2000 dxrcv=5 \
+    verbose=4 \
+    tmod=2.000 \
+    rec_int_vx=2 \
+    rec_int_vz=2 \
+    rec_int_tzz=1 \
+    rec_int_txz=1 \
+    ntaper=$ntap \
+    left=4 right=4 top=1 bottom=4
+
