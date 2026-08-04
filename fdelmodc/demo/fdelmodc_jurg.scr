@@ -9,7 +9,7 @@
 export PATH=../../bin:$PATH
 
 dt=0.00005
-ntap=120
+ntap=40
 
 makemod sizex=160 sizez=10 dx=0.1 dz=0.1 cp0=1000 ro0=1000 cs0=200 file_base=model.su \
     orig=0,0  verbose=1 \
@@ -26,9 +26,9 @@ makewave w=g2 fmax=230 t0=0.10 dt=$dt nt=4096 db=-40 file_out=G2.su verbose=1
 ../fdelmodc \
     ischeme=3 \
     src_type=2 \
-    file_cp=vel2_edge_cp.su \
-    file_cs=vel2_edge_cs.su \
-    file_den=vel2_edge_ro.su \
+    file_cp=model_cp.su \
+    file_cs=model_cs.su \
+    file_den=model_ro.su \
     file_rcv=shot_xl.su \
     file_src=G2.su \
     dtrcv=0.0005 \
@@ -50,6 +50,6 @@ makewave w=g2 fmax=230 t0=0.10 dt=$dt nt=4096 db=-40 file_out=G2.su verbose=1
     wav_random=0 \
 	dipsrc=1 \
     ntaper=$ntap \
-	left=4 right=4 bottom=4 top=1
+	left=2 right=2 bottom=2 top=1
 
 
