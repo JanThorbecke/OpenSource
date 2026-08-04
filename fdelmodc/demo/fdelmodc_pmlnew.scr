@@ -17,12 +17,11 @@ export filecp=model_cp.su
 export filecs=model_cs.su
 export filero=model_ro.su
 
-for npml in 20;
+for npml in 50;
 do
-set -x
 ../fdelmodc \
         file_cp=$filecp file_cs=$filecs file_den=$filero \
-        ischeme=3 \
+        ischeme=1 \
         file_src=wavelet.su verbose=4 \
         file_rcv=rec.su \
         file_snap=snap_nodisp.su \
@@ -34,8 +33,8 @@ set -x
         src_type=1 tmod=1.0  \
 		npml=$npml R=1e-5 m=2.0 \
 		left=2 right=2 bottom=2 top=2 \
-        tsnap1=0.35 tsnap2=1.0 dtsnap=0.1 \
-        sna_type_vx=1 sna_type_vz=1 sna_type_tzz=1 fmax=25 snapwithbnd=1
+        tsnap1=0.3 tsnap2=0.4 dtsnap=0.01 \
+        sna_type_vx=1 sna_type_vz=1 fmax=25 snapwithbnd=1
 
 suwind key=fldr min=3 max=3 < snap_nodisp_sp.su | \
         supsimage \
