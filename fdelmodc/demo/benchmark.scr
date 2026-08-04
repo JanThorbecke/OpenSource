@@ -35,7 +35,7 @@ set -x
     xrcv1=-2250 xrcv2=2250 \
     zrcv1=0 zrcv2=0 \
     xsrc=0 zsrc=1150 \
-    ntaper=200 \
+    npml=20 \
     left=2 right=2 top=1 bottom=2
 
 set -x
@@ -55,7 +55,7 @@ makemod sizex=6000 sizez=4000 dx=$dx dz=$dx cp0=$cp cs0=$cs ro0=$rho \
     file_cp=syncl_cp.su ischeme=1 iorder=16 \
     file_den=syncl_ro.su \
     file_src=wave.su \
-    file_rcv=shot_xsrc${xsrc}.su \
+    file_rcv=shotfree_xsrc${xsrc}.su \
     src_type=7 \
     src_orient=1 \
     src_injectionrate=1 \
@@ -70,6 +70,6 @@ makemod sizex=6000 sizez=4000 dx=$dx dz=$dx cp0=$cp cs0=$cs ro0=$rho \
     xrcv1=-2250 xrcv2=2250 \
     zrcv1=0 zrcv2=0 \
     xsrc=0 zsrc=1150 \
-    ntaper=200 \
-    left=4 right=4 top=1 bottom=4
+    npml=80 \
+    left=2 right=2 top=1 bottom=2
 
