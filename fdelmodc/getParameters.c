@@ -366,6 +366,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 	if (!getparfloat("R",&bnd->R)) bnd->R=1e-5;
 	if (!getparfloat("m",&bnd->m)) bnd->m=2.0;
 	bnd->npml=bnd->ntap;
+    if (bnd->npml < 5) bnd->npml = 20;
 	
 /*
 	if (!getparint("boundary",&boundary)) boundary=1;
