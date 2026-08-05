@@ -542,6 +542,133 @@ criteria we have imposed.*/
 		bnd->surface[ix] = ioPz;
 	}
 
+    /* Validate staggered-grid index ranges meet 4th-order stencil requirements.
+       The 4th-order derivative uses offsets up to +/-2, so all grid ranges
+       must include at least 2 ghost points on each side.
+       For a valid range [io, ie), we need: ie - io >= 2*halfw + 1 (halfw=2 for 4th-order)
+    */
+    {
+        int halfw = 2; /* stencil half-width for 4th order */
+        int min_range = 2*halfw + 1; /* minimum required range = 5 */
+        int validation_failed = 0;
+        
+        /* Check P-grid (Txx, Tyy, Tzz) ranges */
+        if ((mod->iePx - mod->ioPx) < min_range) {
+            fprintf(stderr, "ERROR: P-grid X range [%ld, %ld) width=%ld < required %d\n",
+                    mod->ioPx, mod->iePx, mod->iePx - mod->ioPx, min_range);
+            validation_failed = 1;
+        }
+        if ((mod->iePy - mod->ioPy) < min_range) {
+            fprintf(stderr, "ERROR: P-grid Y range [%ld, %ld) width=%ld < required %d\n",
+                    mod->ioPy, mod->iePy, mod->iePy - mod->ioPy, min_range);
+            validation_failed = 1;
+        }
+        if ((mod->iePz - mod->ioPz) < min_range) {
+            fprintf(stderr, "ERROR: P-grid Z range [%ld, %ld) width=%ld < required %d\n",
+                    mod->ioPz, mod->iePz, mod->iePz - mod->ioPz, min_range);
+            validation_failed = 1;
+        }
+        
+        /* Check Vx ranges */
+        if ((mod->ieXx - mod->ioXx) < min_range) {
+            fprintf(stderr, "ERROR: Vx X range [%ld, %ld) width=%ld < required %d\n",
+                    mod->ioXx, mod->ieXx, mod->ieXx - mod->ioXx, min_range);
+            validation_failed = 1;
+        }
+        if ((mod->ieXy - mod->ioXy) < min_range) {
+            fprintf(stderr, "ERROR: Vx Y range [%ld, %ld) width=%ld < required %d\n",
+                    mod->ioXy, mod->ieXy, mod->ieXy - mod->ioXy, min_range);
+            validation_failed = 1;
+        }
+        if ((mod->ieXz - mod->ioXz) < min_range) {
+            fprintf(stderr, "ERROR: Vx Z range [%ld, %ld) width=%ld < required %d\n",
+                    mod->ioXz, mod->ieXz, mod->ieXz - mod->ioXz, min_range);
+            validation_failed = 1;
+        }
+        
+        /* Check Vy ranges */
+        if ((mod->ieYx - mod->ioYx) < min_range) {
+            fprintf(stderr, "ERROR: Vy X range [%ld, %ld) width=%ld < required %d\n",
+                    mod->ioYx, mod->ieYx, mod->ieYx - mod->ioYx, min_range);
+            validation_failed = 1;
+        }
+        if ((mod->ieYy - mod->ioYy) < min_range) {
+            fprintf(stderr, "ERROR: Vy Y range [%ld, %ld) width=%ld < required %d\n",
+                    mod->ioYy, mod->ieYy, mod->ieYy - mod->ioYy, min_range);
+            validation_failed = 1;
+        }
+        if ((mod->ieYz - mod->ioYz) < min_range) {
+            fprintf(stderr, "ERROR: Vy Z range [%ld, %ld) width=%ld < required %d\n",
+                    mod->ioYz, mod->ieYz, mod->ieYz - mod->ioYz, min_range);
+            validation_failed = 1;
+        }
+        
+        /* Check Vz ranges */
+        if ((mod->ieZx - mod->ioZx) < min_range) {
+            fprintf(stderr, "ERROR: Vz X range [%ld, %ld) width=%ld < required %d\n",
+                    mod->ioZx, mod->ieZx, mod->ieZx - mod->ioZx, min_range);
+            validation_failed = 1;
+        }
+        if ((mod->ieZy - mod->ioZy) < min_range) {
+            fprintf(stderr, "ERROR: Vz Y range [%ld, %ld) width=%ld < required %d\n",
+                    mod->ioZy, mod->ieZy, mod->ieZy - mod->ioZy, min_range);
+            validation_failed = 1;
+        }
+        if ((mod->ieZz - mod->ioZz) < min_range) {
+            fprintf(stderr, "ERROR: Vz Z range [%ld, %ld) width=%ld < required %d\n",
+                    mod->ioZz, mod->ieZz, mod->ieZz - mod->ioZz, min_range);
+            validation_failed = 1;
+        }
+        
+        /* Check Shear (T) grid ranges */
+        if ((mod->ieTx - mod->ioTx) < min_range) {
+            fprintf(stderr, "ERROR: T-grid X range [%ld, %ld) width=%ld < required %d\n",
+                    mod->ioTx, mod->ieTx, mod->ieTx - mod->ioTx, min_range);
+            validation_failed = 1;
+        }
+        if ((mod->ieTy - mod->ioTy) < min_range) {
+            fprintf(stderr, "ERROR: T-grid Y range [%ld, %ld) width=%ld < required %d\n",
+                    mod->ioTy, mod->ieTy, mod->ieTy - mod->ioTy, min_range);
+            validation_failed = 1;
+        }
+        if ((mod->ieTz - mod->ioTz) < min_range) {
+            fprintf(stderr, "ERROR: T-grid Z range [%ld, %ld) width=%ld < required %d\n",
+                    mod->ioTz, mod->ieTz, mod->ieTz - mod->ioTz, min_range);
+            validation_failed = 1;
+        }
+        
+        if (validation_failed) {
+            verr("Grid bounds validation failed. Check stagger ranges and boundary settings.");
+        }
+        if (verbose) fprintf(stderr, "   Grid bounds validation passed for 4th-order stencil\n");
+    }
+
+    /* Validate CFL stability condition for 3D elastic wave equation.
+       For explicit FDTD with 4th-order accuracy: dt < dx_min / (c_max * sqrt(3))
+       Note: This is a necessary condition but not sufficient; user must ensure
+       model setup is stable with their specific material parameters.
+    */
+    {
+        float dx_min = mod->dx;
+        if (mod->dy < dx_min) dx_min = mod->dy;
+        if (mod->dz < dx_min) dx_min = mod->dz;
+        
+        float c_max = mod->cp_max;
+        float cfl_limit = dx_min / (c_max * sqrtf(3.0));
+        
+        if (mod->dt >= cfl_limit) {
+            fprintf(stderr, "WARNING: CFL stability condition may be violated\n");
+            fprintf(stderr, "         dt=%.6e >= limit=%.6e (dx_min/(c_max*sqrt(3)))\n",
+                    mod->dt, cfl_limit);
+            fprintf(stderr, "         This may lead to numerical instability\n");
+            fprintf(stderr, "         Recommendation: reduce dt or increase model spacing\n");
+        }
+        if (verbose) {
+            fprintf(stderr, "   CFL check: dt=%.6e, limit=%.6e (dx_min=%.3f, c_max=%.1f)\n",
+                    mod->dt, cfl_limit, dx_min, c_max);
+        }
+    }
+
 	if (verbose) {
 		vmess("*******************************************");
 		vmess("************* boundary info ***************");
