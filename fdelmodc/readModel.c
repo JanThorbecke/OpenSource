@@ -38,7 +38,7 @@ int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float 
     int ixo, izo, ixe, ize;
 	int ioXx, ioXz, ioZz, ioZx, ioPx, ioPz, ioTx, ioTz;
 	float cp2, cs2, cs11, cs12, cs21, cs22, mul, mu, lamda2mu, lamda;
-	float cs2c, cs2b, cs2a, cpx, cpz, bx, bz, fac;
+	float cs2c, cs2b, cs2a, cpx, cpz, bx, bz, fac, fw;
 	float *cp, *cs, *ro, *qp, *qs;
 	float a, b;
     segy hdr;
@@ -148,8 +148,9 @@ int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float 
        			assert (nread == hdr.ns);
 				for (iz=0; iz<nz; iz++) {
                     for (imech = 0; imech < mod.nfw; imech++) {
-					    a = (sqrt(1.0+(1.0/(qp[iz]*qp[iz])))-(1.0/qp[iz]))/mod.fw[imech];
-					    b = 1.0/(mod.fw[imech]*mod.fw[imech]*a);
+                        fw=2.0*M_PI*mod.fw[imech];
+					    a = (sqrt(1.0+(1.0/(qp[iz]*qp[iz])))-(1.0/qp[iz]))/fw;
+					    b = 1.0/(fw*fw*a);
 					    //tss[imech*sizem+(i+ioPx)*n1+iz+ioPz] = 1.0/a;
 					    //tep[imech*sizem+(i+ioPx)*n1+iz+ioPz] = b;
 					    tss[(i+ioPx)*n1*nfw+(iz+ioPz)*nfw+imech] = 1.0/a;
@@ -160,8 +161,9 @@ int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float 
 			else {
 				for (iz=0; iz<nz; iz++) {
                     for (imech = 0; imech < mod.nfw; imech++) {
-					    a = (sqrt(1.0+(1.0/(mod.Qp*mod.Qp)))-(1.0/mod.Qp))/mod.fw[imech];
-					    b = 1.0/(mod.fw[imech]*mod.fw[imech]*a);
+                        fw=2.0*M_PI*mod.fw[imech];
+					    a = (sqrt(1.0+(1.0/(mod.Qp*mod.Qp)))-(1.0/mod.Qp))/fw;
+					    b = 1.0/(fw*fw*a);
 					    //tss[imech*sizem+(i+ioPx)*n1+iz+ioPz] = 1.0/a;
 					    //tep[imech*sizem+(i+ioPx)*n1+iz+ioPz] = b;
 					    tss[(i+ioPx)*n1*nfw+(iz+ioPz)*nfw+imech] = 1.0/a;
@@ -177,14 +179,16 @@ int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float 
        			nread = fread(&qs[0], sizeof(float), hdr.ns, fpqs);
        			assert (nread == hdr.ns);
 				for (iz=0; iz<nz; iz++) {
+                    fw=2.0*M_PI*mod.fw[0];
 					a = 1.0/tss[(i+ioPx)*n1+iz+ioPz];
-					tes[(i+ioPx)*n1+iz+ioPz] = (1.0+(mod.fw[0]*qs[iz]*a))/(mod.fw[0]*qs[iz]-(mod.fw[0]*mod.fw[0]*a));
+					tes[(i+ioPx)*n1+iz+ioPz] = (1.0+(fw*qs[iz]*a))/(fw*qs[iz]-(fw*fw*a));
 				}
 			}
 			else {
 				for (iz=0; iz<nz; iz++) {
+                    fw=2.0*M_PI*mod.fw[0];
 					a = 1.0/tss[(i+ioPx)*n1+iz+ioPz];
-					tes[(i+ioPx)*n1+iz+ioPz] = (1.0+(mod.fw[0]*mod.Qs*a))/(mod.fw[0]*mod.Qs-(mod.fw[0]*mod.fw[0]*a));
+					tes[(i+ioPx)*n1+iz+ioPz] = (1.0+(fw*mod.Qs*a))/(fw*mod.Qs-(fw*fw*a));
 				}
 			}
 		}
