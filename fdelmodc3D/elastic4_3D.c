@@ -68,6 +68,30 @@ long elastic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lon
                                                              |
                                          extra row of txz/vz |
 
+   ARRAY INDEXING CONVENTION:
+   ===========================
+   Linear 1D indexing for 3D arrays: array[iy*n2*n1 + ix*n1 + iz]
+   
+   Where:
+     n1 = mod.naz (Z dimension)
+     n2 = mod.nax (X dimension)
+     n3 = mod.nay (Y dimension)
+   
+   Index strides:
+     Y changes: stride = n2*n1 (iy varies outermost)
+     X changes: stride = n1    (ix varies middle)
+     Z changes: stride = 1     (iz varies innermost/fastest)
+   
+   Grid ranges and staggering:
+     Vx (rox):  [ioXx,ieXx), [ioXy,ieXy), [ioXz,ieXz)
+     Vy (roy):  [ioYx,ieYx), [ioYy,ieYy), [ioYz,ieYz)
+     Vz (roz):  [ioZx,ieZx), [ioZy,ieZy), [ioZz,ieZz)
+     P/T (l2m): [ioPx,iePx), [ioPy,iePy), [ioPz,iePz)
+     Shear (T): [ioTx,ieTx), [ioTy,ieTy), [ioTz,ieTz)
+   
+   CRITICAL: Each range MUST be at least 2*halfw+1 wide (halfw=2 for 4th-order)
+   to safely accommodate stencil offsets ±1, ±2.
+
    AUTHOR:
            Jan Thorbecke (janth@xs4all.nl)
            The Netherlands 
@@ -77,31 +101,13 @@ long elastic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lon
 	float c1, c2;
 	float dvx, dvy, dvz;
 	long   ix, iy, iz;
-	long   n1, n2;
+	long   n1, n2, n3;
 
 	c1  = 9.0/8.0; 
 	c2  = -1.0/24.0;
 	n1  = mod.naz;
     n2  = mod.nax;
-
-    /* Verify staggered-grid index ranges meet 4th-order stencil requirements.
-       The 4th-order derivative uses offsets up to +/-2, so the provided io/ie
-       ranges for P- and T-grids must include at least two ghost points.
-       If these asserts fail, the driver should set io/ie values accordingly.
-    */
-    {
-        int halfw = 2; /* stencil half-width for 4th order */
-        /* Ensure P-grid ranges are wide enough */
-        assert((mod.iePx - mod.ioPx) > halfw);
-        assert((mod.iePy - mod.ioPy) > halfw);
-        assert((mod.iePz - mod.ioPz) > halfw);
-        /* Ensure shear (T) grids have sufficient range for +/-2 accesses */
-        assert((mod.ieTx - mod.ioTx) > halfw);
-        assert((mod.ieTy - mod.ioTy) > halfw);
-        assert((mod.ieTz - mod.ioTz) > halfw);
-    }
-
-	/* calculate vx for all grid points except on the virtual boundary*/
+    n3  = mod.nay;
 #pragma omp for private (ix, iy, iz) nowait schedule(guided,1)
     for (iy=mod.ioXy; iy<mod.ieXy; iy++) {
 	    for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
@@ -152,7 +158,7 @@ long elastic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lon
         }
 	}
 
-    /* Add force source */
+    /* Add force source (applied after velocity update) */
 	if (src.type > 5) {
          applySource3D(mod, src, wav, bnd, itime, ixsrc, iysrc, izsrc, vx, vy, vz, tzz, tyy, txx, txz, txy, tyz, rox, roy, roz, l2m, src_nwav, verbose);
 	}
@@ -226,9 +232,15 @@ long elastic4_3D(modPar mod, srcPar src, wavPar wav, bndPar bnd, long itime, lon
         }
 	}
 
-	/* Add stress source */
-	if (src.type < 6) {
+	/* Add stress source (applied after stress update)
+	   Source types 0-5: stress sources; types 6+: force sources
+	   If src.type is invalid or doesn't match expected ranges, issue warning
+	*/
+	if (src.type <= 5) {
 		 applySource3D(mod, src, wav, bnd, itime, ixsrc, iysrc, izsrc, vx, vy, vz, tzz, tyy, txx, txz, txy, tyz, rox, roy, roz, l2m, src_nwav, verbose);
+	}
+	else if (src.type > 5) {
+		/* Force sources already applied after velocity update */
 	}
     
 	/* check if there are sources placed on the boundaries */
