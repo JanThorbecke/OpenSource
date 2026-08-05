@@ -1221,8 +1221,10 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* interior-boundary references for p (cell-centre positions).
          * Align with velocity-grid boundaries so CPML coefficients match loop masks. */
         ioXx_ref = mod.ioXx;   /* inner edge of left P-grid PML = velocity interior start */
-        ieXx_ref = mod.ieXx;   /* inner edge of right P-grid PML = velocity interior end */
-        ioZz_ref = mod.ioXz;   /* inner edge of top P-grid PML */
+        //JT ieXx_ref = mod.ieXx;   /* inner edge of right P-grid PML = velocity interior end */
+        ieXx_ref = mod.iePx-npml;   /* inner edge of right P-grid PML = velocity interior end */
+        //JT ioZz_ref = mod.ioXz;   /* inner edge of top P-grid PML */
+        ioZz_ref = mod.ioPz+npml+1;   /* inner edge of top P-grid PML */
         ieZz_ref = mod.ieXz;   /* inner edge of bottom P-grid PML */
 
         /* Left PML: p cell-centre positions */
