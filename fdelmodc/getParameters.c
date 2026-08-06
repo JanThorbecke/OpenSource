@@ -342,13 +342,13 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
     if (!getparint("taptop",&taptop)) taptop=0;
     if (!getparint("tapbottom",&tapbottom)) tapbottom=0;
 
-    if (tapleft) bnd->lef=4;
+    if (tapleft) bnd->lef=2;
     else bnd->lef=1;
-    if (tapright) bnd->rig=4;
+    if (tapright) bnd->rig=2;
     else bnd->rig=1;
-    if (taptop) bnd->top=4;
+    if (taptop) bnd->top=2;
     else bnd->top=1;
-    if (tapbottom) bnd->bot=4;
+    if (tapbottom) bnd->bot=2;
     else bnd->bot=1;
 
     /* define the type of boundaries */
@@ -359,6 +359,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         if (!getparint("right",&bnd->rig)&& !tapright) bnd->rig=2;
         if (!getparint("top",&bnd->top) && !taptop) bnd->top=1;
         if (!getparint("bottom",&bnd->bot) && !tapbottom) bnd->bot=2;
+        fprintf(stderr,"ischeme=%d\n", mod->ischeme);
     }
     else {
         if (!getparint("left",&bnd->lef) && !tapleft) bnd->lef=4;
@@ -366,7 +367,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         if (!getparint("top",&bnd->top) && !taptop) bnd->top=1;
         if (!getparint("bottom",&bnd->bot) && !tapbottom) bnd->bot=4;
     }
-    if (mod->ischeme!=1 || mod->ischeme!=3) {
+    if (mod->ischeme==2 || mod->ischeme>=4) {
             if (bnd->lef==2) bnd->lef=4;
             if (bnd->rig==2) bnd->rig=4;
             if (bnd->top==2) bnd->top=4;

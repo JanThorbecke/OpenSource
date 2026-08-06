@@ -107,8 +107,7 @@ void threadAffinity(void)
 #endif
     (void)sched_getaffinity(0, sizeof(coremask), &coremask);
     cpuset_to_cstr(&coremask, clbuf);
-    vmess("%s thread %d, on %s. (core affinity = %s)", prefix, thread, hnbuf, clbuf);
-
+    vmess("    \n%s thread %d, on %s. (core affinity = %s)", prefix, thread, hnbuf, clbuf);
   }
   return;
 }
