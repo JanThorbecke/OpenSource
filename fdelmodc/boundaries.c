@@ -221,7 +221,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 ik_zf[iz] = (float)(1.0/kap);
             }
         }
-        if (verbose>=2) vmess("CFS-CPML boundP: sigma_max=%e cp_min=%e npml=%d", sigma_max_cpml, mod.cp_min, npml);
+        if (verbose>=2) vmess("    \nCFS-CPML boundP: sigma_max=%e cp_min=%e npml=%d", sigma_max_cpml, mod.cp_min, npml);
 }
     }
 #pragma omp barrier
@@ -1337,7 +1337,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 ik_zf[iz] = (float)(1.0/kap);
             }
         }
-        if (verbose>=2) vmess("CFS-CPML boundV: sigma_max=%e cp_min=%e npml=%d", sigma_max_cpml, mod.cp_min, npml);
+        if (verbose>=2) vmess("    \nCFS-CPML boundV: sigma_max=%e cp_min=%e npml=%d", sigma_max_cpml, mod.cp_min, npml);
 }
     }
 
