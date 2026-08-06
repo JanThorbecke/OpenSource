@@ -359,7 +359,6 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         if (!getparint("right",&bnd->rig)&& !tapright) bnd->rig=2;
         if (!getparint("top",&bnd->top) && !taptop) bnd->top=1;
         if (!getparint("bottom",&bnd->bot) && !tapbottom) bnd->bot=2;
-        fprintf(stderr,"ischeme=%d\n", mod->ischeme);
     }
     else {
         if (!getparint("left",&bnd->lef) && !tapleft) bnd->lef=4;
@@ -507,16 +506,18 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         mod->ieTx += bnd->npml;
     }    
 
+     fprintf(stderr,"Vx x-range: ioXx=%d ieXx=%d\n", mod->ioXx, mod->ieXx);
+     fprintf(stderr,"Vx z-range: ioXz=%d ieXz=%d\n", mod->ioXz, mod->ieXz);
+
+     fprintf(stderr,"Vz x-range: ioZx=%d ieZx=%d\n", mod->ioZx, mod->ieZx);
+     fprintf(stderr,"Vz z-range: ioZz=%d ieZz=%d\n", mod->ioZz, mod->ieZz);
+
+     fprintf(stderr,"P x-range: ioPx=%d iePx=%d\n", mod->ioPx, mod->iePx);
+     fprintf(stderr,"P z-range: ioPz=%d iePz=%d\n", mod->ioPz, mod->iePz);
+
+     fprintf(stderr,"T x-range: ioTx=%d ieTx=%d\n", mod->ioTx, mod->ieTx);
+     fprintf(stderr,"T z-range: ioTz=%d ieTz=%d\n", mod->ioTz, mod->ieTz);
 /*
-     fprintf(stderr,"ioXx=%d ieXx=%d\n", mod->ioXx, mod->ieXx);
-     fprintf(stderr,"ioZx=%d ieZx=%d\n", mod->ioZx, mod->ieZx);
-     fprintf(stderr,"ioPx=%d iePx=%d\n", mod->ioPx, mod->iePx);
-     fprintf(stderr,"ioTx=%d ieTx=%d\n", mod->ioTx, mod->ieTx);
-     
-     fprintf(stderr,"ioXz=%d ieXz=%d\n", mod->ioXz, mod->ieXz);
-     fprintf(stderr,"ioZz=%d ieZz=%d\n", mod->ioZz, mod->ieZz);
-     fprintf(stderr,"ioPz=%d iePz=%d\n", mod->ioPz, mod->iePz);
-     fprintf(stderr,"ioTz=%d ieTz=%d\n", mod->ioTz, mod->ieTz);
 */
 
     /* Intialize the array which contains the topography surface */
@@ -987,6 +988,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
             case 10 : fprintf(stderr,"Fz on P grid with +/-"); break;
             case 11 : fprintf(stderr,"moment tensor"); break;
             case 12 : fprintf(stderr,"Fa source with wx(%.1f) and wz(%.1f)", src->wx, src->wz); break;
+            case 13 : fprintf(stderr,"S-potential 2nd order"); break;
         }
         fprintf(stderr,"\n");
         if (src->type==9) vmess("strike %.2f rake %.2f dip %.2f",180.0*strike/M_PI,180.0*rake/M_PI,180.0*dip/M_PI);

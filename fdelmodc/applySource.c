@@ -353,6 +353,23 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 				txx[ix*n1+iz] -= src.Mxx*src_ampl;
 				tzz[ix*n1+iz] -= src.Mzz*src_ampl;
 				txz[ix*n1+iz] -= src.Mxz*src_ampl;
+			} 
+/***********************************************************************
+* pure potential shear S source (experimental) with point at P position
+* Curl S-pot = CURL(F) = dF_x/dz - dF_z/dx
+***********************************************************************/
+			else if(src.type == 13) {
+				src_ampl = src_ampl*rox[ix*n1+iz]/(l2m[ix*n1+iz]);
+                /* second order derivatives */
+				vx[ix*n1+iz]     += c1*src_ampl*sdx;
+                vx[ix*n1+iz-1]   -= c1*src_ampl*sdx;
+				vx[ix*n1+iz+1]   += c2*src_ampl*sdx;
+                vx[ix*n1+iz-2]   -= c2*src_ampl*sdx;
+
+                vz[ix*n1+iz]     -= c1*src_ampl*sdx;
+				vz[(ix-1)*n1+iz] += c1*src_ampl*sdx;
+				vz[(ix+1)*n1+iz] -= c2*src_ampl*sdx;
+				vz[(ix-2)*n1+iz] += c2*src_ampl*sdx;
 			} /* src.type */
 		} /* ischeme */
 }
