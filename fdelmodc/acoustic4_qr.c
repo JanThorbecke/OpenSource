@@ -105,28 +105,28 @@ int acoustic4_qr(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int 
     ieTz=nz+ioTz;
 
     if (bnd.top==4 || bnd.top==2) {
-        ieXz += bnd.ntap;
-        ieZz += bnd.ntap;
-        iePz += bnd.ntap;
-        ieTz += bnd.ntap;
+        ieXz += bnd.npml;
+        ieZz += bnd.npml;
+        iePz += bnd.npml;
+        ieTz += bnd.npml;
     }
     if (bnd.bot==4 || bnd.bot==2) {
-        ieXz += bnd.ntap;
-        ieZz += bnd.ntap;
-        iePz += bnd.ntap;
-        ieTz += bnd.ntap;
+        ieXz += bnd.npml;
+        ieZz += bnd.npml;
+        iePz += bnd.npml;
+        ieTz += bnd.npml;
     }
     if (bnd.lef==4 || bnd.lef==2) {
-        ieXx += bnd.ntap;
-        ieZx += bnd.ntap;
-        iePx += bnd.ntap;
-        ieTx += bnd.ntap;
+        ieXx += bnd.npml;
+        ieZx += bnd.npml;
+        iePx += bnd.npml;
+        ieTx += bnd.npml;
     }
     if (bnd.rig==4 || bnd.rig==2) {
-        ieXx += bnd.ntap;
-        ieZx += bnd.ntap;
-        iePx += bnd.ntap;
-        ieTx += bnd.ntap;
+        ieXx += bnd.npml;
+        ieZx += bnd.npml;
+        iePx += bnd.npml;
+        ieTx += bnd.npml;
     }
 
 
@@ -189,49 +189,49 @@ int acoustic4_qr(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int 
 //Tapering top bottom
 #pragma omp for private(ix,iz)
 	for (ix=ioXx; ix<ieXx; ix++) {
-		ib = (bnd.ntap+ioXz-1);
-		for (iz=ioXz; iz<ioXz+bnd.ntap; iz++) {
+		ib = (bnd.npml+ioXz-1);
+		for (iz=ioXz; iz<ioXz+bnd.npml; iz++) {
 			vx[ix*n1+iz]  *= bnd.tapx[ib-iz];
 		}
-		ib = (ieXz-bnd.ntap);
+		ib = (ieXz-bnd.npml);
 		for (iz=ib; iz<ieXz; iz++) {
 			vx[ix*n1+iz] *= bnd.tapx[iz-ib];
 		}
 	}
 #pragma omp for private(ix,iz)
 	for (ix=ioZx; ix<ieZx; ix++) {
-		ib = (bnd.ntap+ioZz-1);
-		for (iz=ioZz; iz<ioZz+bnd.ntap; iz++) {
+		ib = (bnd.npml+ioZz-1);
+		for (iz=ioZz; iz<ioZz+bnd.npml; iz++) {
 			vz[ix*n1+iz]  *= bnd.tapz[ib-iz];
 		}
-		ib = (ieZz-bnd.ntap);
+		ib = (ieZz-bnd.npml);
 		for (iz=ib; iz<ieZz; iz++) {
 			vz[ix*n1+iz] *= bnd.tapz[iz-ib];
 		}
 	}
 
 //Tapering left 
-	ib = (bnd.ntap+ioXx-1);
-	for (ix=ioXx; ix<ioXx+bnd.ntap; ix++) {
+	ib = (bnd.npml+ioXx-1);
+	for (ix=ioXx; ix<ioXx+bnd.npml; ix++) {
 		for (iz=ioXz; iz<ieXz; iz++) {
 			vx[ix*n1+iz] *= bnd.tapx[ib-ix];
 		}
 	}
-	ib = (bnd.ntap+ioZx-1);
-	for (ix=ioZx; ix<ioZx+bnd.ntap; ix++) {
+	ib = (bnd.npml+ioZx-1);
+	for (ix=ioZx; ix<ioZx+bnd.npml; ix++) {
 		for (iz=ioZz; iz<ieZz; iz++) {
 			vz[ix*n1+iz] *= bnd.tapz[ib-ix];
 		}
 	}
 
 //Tapering right
-	ib = (ieXx-bnd.ntap);
+	ib = (ieXx-bnd.npml);
 	for (ix=ib; ix<ieXx; ix++) {
 		for (iz=ioXz; iz<ieXz; iz++) {
 			vx[ix*n1+iz] *= bnd.tapx[ix-ib];
 		}
 	}
-	ib = (ieZx-bnd.ntap);
+	ib = (ieZx-bnd.npml);
 	for (ix=ib; ix<ieZx; ix++) {
 		for (iz=ioZz; iz<ieZz; iz++) {
 			vz[ix*n1+iz] *= bnd.tapz[ix-ib];

@@ -17,7 +17,7 @@ export filecp=model_cp.su
 export filecs=model_cs.su
 export filero=model_ro.su
 
-for npml in 50;
+for npml in 20;
 do
 ../fdelmodc \
         file_cp=$filecp file_cs=$filecs file_den=$filero \

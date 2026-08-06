@@ -42,15 +42,15 @@ int applySource(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int i
 	    else if (src.type==2) {
     	    ibndz = mod.ioTz;
     	    ibndx = mod.ioTx;
-    	    if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
-    	    if (bnd.top==4 || bnd.top==2) ibndz += bnd.ntap;
+    	    if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.npml;
+    	    if (bnd.top==4 || bnd.top==2) ibndz += bnd.npml;
     	    if (bnd.top==5) ibndz += bnd.topadd;
 	    }
 	    else {	
     	    ibndz = mod.ioPz;
     	    ibndx = mod.ioPx;
-    	    if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
-    	    if (bnd.top==4 || bnd.top==2) ibndz += bnd.ntap;
+    	    if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.npml;
+    	    if (bnd.top==4 || bnd.top==2) ibndz += bnd.npml;
             if (bnd.top==5) ibndz += bnd.topadd;
         }
         first = 0;
