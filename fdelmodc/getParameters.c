@@ -1035,6 +1035,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 
     if (!getparint("sna_type_vz", &sna->type.vz)) sna->type.vz=1;
     if (!getparint("sna_type_vx", &sna->type.vx)) sna->type.vx=0;
+    if (!getparint("sna_type_dxvx", &sna->type.dxvx)) sna->type.dxvx=0;
+    if (!getparint("sna_type_dzvz", &sna->type.dzvz)) sna->type.dzvz=0;
     if (mod->ischeme>2) {
         sna->type.p=0;
         if (!getparint("sna_type_txx", &sna->type.txx)) sna->type.txx=0;
@@ -1089,6 +1091,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
             fprintf(stderr,"    %s: Snapshot types        : ",xargv[0]);
             if (sna->type.vz) fprintf(stderr,"Vz ");
             if (sna->type.vx) fprintf(stderr,"Vx ");
+            if (sna->type.dxvx) fprintf(stderr,"Vx/dx ");
+            if (sna->type.dzvz) fprintf(stderr,"Vz/dz ");
             if (sna->type.p) fprintf(stderr,"p ");
             if (mod->ischeme>2) {
                 if (sna->type.txx) fprintf(stderr,"Txx ");
