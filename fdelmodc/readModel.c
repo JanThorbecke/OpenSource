@@ -65,12 +65,12 @@ int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float 
 	ioTx=mod.ioTx;
 	ioTz=mod.ioTz;
     if (bnd.lef==4 || bnd.lef==2) {
-		ioPx += bnd.ntap;
-		ioTx += bnd.ntap;
+		ioPx += bnd.npml;
+		ioTx += bnd.npml;
 	}
     if (bnd.top==4 || bnd.top==2) {
-		ioPz += bnd.ntap;
-		ioTz += bnd.ntap;
+		ioPz += bnd.npml;
+		ioTz += bnd.npml;
 	}
     if (bnd.top==5) {
 		ioPz += bnd.topadd;
@@ -349,7 +349,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
 		}
 
 		/* Extend model parameters into CFS-CPML PML zones.
-		 * readModel shifts ioPx/ioTx/ioPz/ioTz by ntap before filling, so PML cells
+		 * readModel shifts ioPx/ioTx/ioPz/ioTz by npml before filling, so PML cells
 		 * are zero-filled by calloc. Extend nearest-neighbor values into PML zones
 		 * so CPML attenuation operates on valid material parameters. */
 		if (bnd.lef==2 || bnd.rig==2 || bnd.top==2 || bnd.bot==2) {
@@ -514,7 +514,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
     if (bnd.lef==4 || bnd.lef==2) {
         
         /* rox field */
-        ixo = mod.ioXx-bnd.ntap;
+        ixo = mod.ioXx-bnd.npml;
         ixe = mod.ioXx;
         izo = mod.ioXz;
         ize = mod.ieXz;
@@ -525,7 +525,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         }
         
         /* roz field */
-        ixo = mod.ioZx-bnd.ntap;
+        ixo = mod.ioZx-bnd.npml;
         ixe = mod.ioZx;
         izo = mod.ioZz;
         ize = mod.ieZz;
@@ -536,7 +536,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         }
         /* l2m field */
         ixo = mod.ioPx;
-        ixe = mod.ioPx+bnd.ntap;
+        ixe = mod.ioPx+bnd.npml;
         izo = mod.ioPz;
         ize = mod.iePz;
         for (ix=ixo; ix<ixe; ix++) {
@@ -548,7 +548,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         if (mod.ischeme>2) { /* Elastic Scheme */
         	/* lam field */
         	ixo = mod.ioPx;
-        	ixe = mod.ioPx+bnd.ntap;
+        	ixe = mod.ioPx+bnd.npml;
         	izo = mod.ioPz;
         	ize = mod.iePz;
         	for (ix=ixo; ix<ixe; ix++) {
@@ -558,7 +558,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         	}
             /* muu field */
             ixo = mod.ioTx;
-            ixe = mod.ioTx+bnd.ntap;
+            ixe = mod.ioTx+bnd.npml;
             izo = mod.ioTz;
             ize = mod.ieTz;
             for (ix=ixo; ix<ixe; ix++) {
@@ -570,7 +570,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         if (mod.ischeme==2 || mod.ischeme==4) {
             /* tss and tep field */
         	ixo = mod.ioPx;
-        	ixe = mod.ioPx+bnd.ntap;
+        	ixe = mod.ioPx+bnd.npml;
         	izo = mod.ioPz;
         	ize = mod.iePz;
         	for (ix=ixo; ix<ixe; ix++) {
@@ -587,7 +587,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         if (mod.ischeme==4) {
             /* tes field */
         	ixo = mod.ioPx;
-        	ixe = mod.ioPx+bnd.ntap;
+        	ixe = mod.ioPx+bnd.npml;
         	izo = mod.ioPz;
         	ize = mod.iePz;
         	for (ix=ixo; ix<ixe; ix++) {
@@ -604,7 +604,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         
         /* rox field */
         ixo = mod.ieXx;
-        ixe = mod.ieXx+bnd.ntap;
+        ixe = mod.ieXx+bnd.npml;
         izo = mod.ioXz;
         ize = mod.ieXz;
         for (ix=ixo; ix<ixe; ix++) {
@@ -615,7 +615,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         
         /* roz field */
         ixo = mod.ieZx;
-        ixe = mod.ieZx+bnd.ntap;
+        ixe = mod.ieZx+bnd.npml;
         izo = mod.ioZz;
         ize = mod.ieZz;
         for (ix=ixo; ix<ixe; ix++) {
@@ -624,7 +624,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
             }
         }
         /* l2m field */
-        ixo = mod.iePx-bnd.ntap;
+        ixo = mod.iePx-bnd.npml;
         ixe = mod.iePx;
         izo = mod.ioPz;
         ize = mod.iePz;
@@ -636,7 +636,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         
         if (mod.ischeme>2) { /* Elastic Scheme */
         	/* lam field */
-        	ixo = mod.iePx-bnd.ntap;
+        	ixo = mod.iePx-bnd.npml;
         	ixe = mod.iePx;
         	izo = mod.ioPz;
         	ize = mod.iePz;
@@ -646,7 +646,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
             	}
         	}
             /* muu field */
-            ixo = mod.ieTx-bnd.ntap;
+            ixo = mod.ieTx-bnd.npml;
             ixe = mod.ieTx;
             izo = mod.ioTz;
             ize = mod.ieTz;
@@ -658,7 +658,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         }
         if (mod.ischeme==2 || mod.ischeme==4) {
             /* tss and tep field */
-        	ixo = mod.iePx-bnd.ntap;
+        	ixo = mod.iePx-bnd.npml;
         	ixe = mod.iePx;
         	izo = mod.ioPz;
         	ize = mod.iePz;
@@ -675,7 +675,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         }
         if (mod.ischeme==4) {
             /* tes field */
-        	ixo = mod.iePx-bnd.ntap;
+        	ixo = mod.iePx-bnd.npml;
         	ixe = mod.iePx;
         	izo = mod.ioPz;
         	ize = mod.iePz;
@@ -694,9 +694,9 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         /* Rox field */
         ixo = mod.ioXx;
         ixe = mod.ieXx;
-        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.ntap;
-        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.ntap;
-        izo = mod.ioXz-bnd.ntap;
+        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.npml;
+        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.npml;
+        izo = mod.ioXz-bnd.npml;
         ize = mod.ioXz;
         
         for (ix=ixo; ix<ixe; ix++) {
@@ -708,9 +708,9 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         /* roz field */
         ixo = mod.ioZx;
         ixe = mod.ieZx;
-        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.ntap;
-        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.ntap;
-        izo = mod.ioZz-bnd.ntap;
+        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.npml;
+        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.npml;
+        izo = mod.ioZz-bnd.npml;
         ize = mod.ioZz;
         for (ix=ixo; ix<ixe; ix++) {
             for (iz=izo; iz<ize; iz++) {
@@ -721,7 +721,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         ixo = mod.ioPx;
         ixe = mod.iePx;
         izo = mod.ioPz;
-        ize = mod.ioPz+bnd.ntap;
+        ize = mod.ioPz+bnd.npml;
         for (ix=ixo; ix<ixe; ix++) {
             for (iz=izo; iz<ize; iz++) {
                 l2m[ix*n1+iz] = l2m[ix*n1+ize];
@@ -733,7 +733,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         	ixo = mod.ioPx;
         	ixe = mod.iePx;
         	izo = mod.ioPz;
-        	ize = mod.ioPz+bnd.ntap;
+        	ize = mod.ioPz+bnd.npml;
         	for (ix=ixo; ix<ixe; ix++) {
             	for (iz=izo; iz<ize; iz++) {
                 	lam[ix*n1+iz] = lam[ix*n1+ize];
@@ -743,7 +743,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
             ixo = mod.ioTx;
             ixe = mod.ieTx;
             izo = mod.ioTz;
-            ize = mod.ioTz+bnd.ntap;
+            ize = mod.ioTz+bnd.npml;
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
                     muu[ix*n1+iz] = muu[ix*n1+ize];
@@ -755,7 +755,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         	ixo = mod.ioPx;
         	ixe = mod.iePx;
         	izo = mod.ioPz;
-        	ize = mod.ioPz+bnd.ntap;
+        	ize = mod.ioPz+bnd.npml;
         	for (ix=ixo; ix<ixe; ix++) {
             	for (iz=izo; iz<ize; iz++) {
                     for (imech = 0; imech < mod.nfw; imech++) {
@@ -772,7 +772,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         	ixo = mod.ioPx;
         	ixe = mod.iePx;
         	izo = mod.ioPz;
-        	ize = mod.ioPz+bnd.ntap;
+        	ize = mod.ioPz+bnd.npml;
         	for (ix=ixo; ix<ixe; ix++) {
             	for (iz=izo; iz<ize; iz++) {
                     tes[ix*n1+iz] = tes[ix*n1+ize];
@@ -788,10 +788,10 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         /* Rox field */
         ixo = mod.ioXx;
         ixe = mod.ieXx;
-        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.ntap;
-        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.ntap;
+        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.npml;
+        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.npml;
         izo = mod.ieXz;
-        ize = mod.ieXz+bnd.ntap;
+        ize = mod.ieXz+bnd.npml;
         for (ix=ixo; ix<ixe; ix++) {
             for (iz=izo; iz<ize; iz++) {
                 rox[ix*n1+iz] = rox[ix*n1+izo-1];
@@ -801,10 +801,10 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         /* roz field */
         ixo = mod.ioZx;
         ixe = mod.ieZx;
-        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.ntap;
-        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.ntap;
+        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.npml;
+        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.npml;
         izo = mod.ieZz;
-        ize = mod.ieZz+bnd.ntap;
+        ize = mod.ieZz+bnd.npml;
         for (ix=ixo; ix<ixe; ix++) {
             for (iz=izo; iz<ize; iz++) {
                 roz[ix*n1+iz] = roz[ix*n1+izo-1];
@@ -813,7 +813,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         /* l2m field */
         ixo = mod.ioPx;
         ixe = mod.iePx;
-        izo = mod.iePz-bnd.ntap;
+        izo = mod.iePz-bnd.npml;
         ize = mod.iePz;
         for (ix=ixo; ix<ixe; ix++) {
             for (iz=izo; iz<ize; iz++) {
@@ -825,7 +825,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         	/* lam field */
         	ixo = mod.ioPx;
         	ixe = mod.iePx;
-        	izo = mod.iePz-bnd.ntap;
+        	izo = mod.iePz-bnd.npml;
         	ize = mod.iePz;
         	for (ix=ixo; ix<ixe; ix++) {
             	for (iz=izo; iz<ize; iz++) {
@@ -836,7 +836,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
             /* muu */
             ixo = mod.ioTx;
             ixe = mod.ieTx;
-            izo = mod.ieTz-bnd.ntap;
+            izo = mod.ieTz-bnd.npml;
             ize = mod.ieTz;
             for (ix=ixo; ix<ixe; ix++) {
                 for (iz=izo; iz<ize; iz++) {
@@ -848,7 +848,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
             /* tss and tep field */
         	ixo = mod.ioPx;
         	ixe = mod.iePx;
-        	izo = mod.iePz-bnd.ntap;
+        	izo = mod.iePz-bnd.npml;
         	ize = mod.iePz;
         	for (ix=ixo; ix<ixe; ix++) {
             	for (iz=izo; iz<ize; iz++) {
@@ -865,7 +865,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
             /* tes field */
         	ixo = mod.ioPx;
         	ixe = mod.iePx;
-        	izo = mod.iePz-bnd.ntap;
+        	izo = mod.iePz-bnd.npml;
         	ize = mod.iePz;
         	for (ix=ixo; ix<ixe; ix++) {
             	for (iz=izo; iz<ize; iz++) {
@@ -881,8 +881,8 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         /* Rox field */
         ixo = mod.ioXx;
         ixe = mod.ieXx;
-        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.ntap;
-        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.ntap;
+        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.npml;
+        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.npml;
         izo = mod.ioXz-bnd.topadd;
         ize = mod.ioXz;
         
@@ -896,8 +896,8 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         /* roz field */
         ixo = mod.ioZx;
         ixe = mod.ieZx;
-        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.ntap;
-        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.ntap;
+        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.npml;
+        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.npml;
         izo = mod.ioZz-bnd.topadd;
         ize = mod.ioZz;
         for (ix=ixo; ix<ixe; ix++) {

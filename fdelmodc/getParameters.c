@@ -353,126 +353,70 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 
     /* define the type of boundaries */
     /* 1=free 2=pml 3=rigid 4=taper */
-    if (!getparint("left",&bnd->lef) && !tapleft) bnd->lef=4;
-    if (!getparint("right",&bnd->rig)&& !tapright) bnd->rig=4;
-    if (!getparint("top",&bnd->top) && !taptop) bnd->top=1;
-    if (!getparint("bottom",&bnd->bot) && !tapbottom) bnd->bot=4;
+    /* for acoustic and elastic default to PML, else taper */
+    if (mod->ischeme==1 || mod->ischeme==3) {
+        if (!getparint("left",&bnd->lef) && !tapleft) bnd->lef=2;
+        if (!getparint("right",&bnd->rig)&& !tapright) bnd->rig=2;
+        if (!getparint("top",&bnd->top) && !taptop) bnd->top=1;
+        if (!getparint("bottom",&bnd->bot) && !tapbottom) bnd->bot=2;
+    }
+    else {
+        if (!getparint("left",&bnd->lef) && !tapleft) bnd->lef=4;
+        if (!getparint("right",&bnd->rig)&& !tapright) bnd->rig=4;
+        if (!getparint("top",&bnd->top) && !taptop) bnd->top=1;
+        if (!getparint("bottom",&bnd->bot) && !tapbottom) bnd->bot=4;
+    }
+    if (mod->ischeme!=1 || mod->ischeme!=3) {
+            if (bnd->lef==2) bnd->lef=4;
+            if (bnd->rig==2) bnd->rig=4;
+            if (bnd->top==2) bnd->top=4;
+            if (bnd->bot==2) bnd->bot=4;
+    }
 
     if (!getparfloat("movingspeed",&bnd->speed)) bnd->speed=250;
 
     /* calculate default taper length to be three wavelenghts */
-    if (!getparint("ntaper",&bnd->ntap)) bnd->ntap=20; // bnd->ntap=3*NINT((cp_max/wav->fmax)/dx);
-    if (!bnd->ntap) if (!getparint("npml",&bnd->ntap)) bnd->ntap=3*NINT((cp_max/wav->fmax)/dx);
+    if (!getparint("ntaper",&bnd->npml)) bnd->npml=20; // bnd->npml=3*NINT((cp_max/wav->fmax)/dx);
+    if (!getparint("npml",&bnd->npml)) bnd->npml=20;
     if (!getparfloat("R",&bnd->R)) bnd->R=1e-5;
     if (!getparfloat("m",&bnd->m)) bnd->m=2.0;
-    bnd->npml=bnd->ntap;
     if (bnd->npml < 5) {
         bnd->npml = 20;
-        bnd->ntap = bnd->npml;
     }
     
-/*
-    if (!getparint("boundary",&boundary)) boundary=1;
-    for (ibnd=0;ibnd<4;ibnd++) {
-        if (boundary == 1) {
-            bnd->free[ibnd]=1;
-            bnd->rig[ibnd]=0;
-            bnd->tap[ibnd]=0;
-        }
-        else if (boundary == 3) {
-            bnd->free[ibnd]=0;
-            bnd->rig[ibnd]=1;
-            bnd->tap[ibnd]=0;
-        }
-        else if (boundary == 4) {
-            bnd->free[ibnd]=0;
-            bnd->rig[ibnd]=0;
-            bnd->tap[ibnd]=bnd->ntap;
-        }
-    }
-    if (!getparint("tapleft",&tapleft)) tapleft=0;
-    if (!getparint("tapright",&tapright)) tapright=0;
-    if (!getparint("taptop",&taptop)) taptop=0;
-    if (!getparint("tapbottom",&tapbottom)) tapbottom=0;
-
-    if (tapleft) {
-        bnd->free[3]=0;
-        bnd->rig[3]=0;
-        bnd->tap[3]=bnd->ntap;
-    }
-    else {
-        bnd->tap[3]=0;
-        bnd->free[3]=1;
-    }
-    if (tapright) {
-        bnd->free[1]=0;
-        bnd->rig[1]=0;
-        bnd->tap[1]=bnd->ntap;
-    }
-    else {
-        bnd->tap[1]=0;
-        bnd->free[1]=1;
-    }
-    
-    if (taptop) {
-        bnd->free[0]=0;
-        bnd->rig[0]=0;
-        bnd->tap[0]=bnd->ntap;
-    }
-    else {
-        bnd->tap[0]=0;
-        bnd->free[0]=1;
-    }
-    if (tapbottom) {
-        bnd->free[2]=0;
-        bnd->rig[2]=0;
-        bnd->tap[2]=bnd->ntap;
-    }
-    else {
-        bnd->tap[2]=0;
-        bnd->free[2]=1;
-    }
-    
-    if (cfree) {
-        bnd->free[0]=1;
-        bnd->rig[0]=0;
-        bnd->tap[0]=0;
-    }
-*/
-
-    if (bnd->ntap) {
-        bnd->tapx  = (float *)malloc(bnd->ntap*sizeof(float));
-        bnd->tapz  = (float *)malloc(bnd->ntap*sizeof(float));
-        bnd->tapxz = (float *)malloc(bnd->ntap*bnd->ntap*sizeof(float));
+    if (bnd->npml) {
+        bnd->tapx  = (float *)malloc(bnd->npml*sizeof(float));
+        bnd->tapz  = (float *)malloc(bnd->npml*sizeof(float));
+        bnd->tapxz = (float *)malloc(bnd->npml*bnd->npml*sizeof(float));
         if(!getparfloat("tapfact",&tapfact)) tapfact=0.30;
-        scl = tapfact/((float)bnd->ntap);
-        for (i=0; i<bnd->ntap; i++) {
+        scl = tapfact/((float)bnd->npml);
+        for (i=0; i<bnd->npml; i++) {
             wfct = (scl*i);
             bnd->tapx[i] = exp(-(wfct*wfct));
 
             wfct = (scl*(i+0.5));
             bnd->tapz[i] = exp(-(wfct*wfct));
         }
-        for (j=0; j<bnd->ntap; j++) {
-            for (i=0; i<bnd->ntap; i++) {
+        for (j=0; j<bnd->npml; j++) {
+            for (i=0; i<bnd->npml; i++) {
                 wfct = (scl*sqrt(i*i+j*j));
-                bnd->tapxz[j*bnd->ntap+i] = exp(-(wfct*wfct));
+                bnd->tapxz[j*bnd->npml+i] = exp(-(wfct*wfct));
             }
         }
     }
 
 /* To write tapers for in manual 
     free(bnd->tapx);
-    bnd->tapx  = (float *)malloc(20*bnd->ntap*sizeof(float));
+    bnd->tapx  = (float *)malloc(20*bnd->npml*sizeof(float));
     for (j=0; j<20; j++) {
         tapfact = j*0.1;
-        scl = tapfact/((float)bnd->ntap);
-        for (i=0; i<bnd->ntap; i++) {
+        scl = tapfact/((float)bnd->npml);
+        for (i=0; i<bnd->npml; i++) {
             wfct = (scl*i);
-            bnd->tapx[j*bnd->ntap+i] = exp(-(wfct*wfct));
+            bnd->tapx[j*bnd->npml+i] = exp(-(wfct*wfct));
         }
     }
-    writesufile("tapx.su", bnd->tapx, bnd->ntap, 20, 0.0, 0.0, 1, 1);
+    writesufile("tapx.su", bnd->tapx, bnd->npml, 20, 0.0, 0.0, 1, 1);
 */
     
     /* Vx: rox */
@@ -508,17 +452,17 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
     /* for tapered and PML extra points are needed at the boundaries of the model */
     
     if (bnd->top==4 || bnd->top==2) {
-        mod->naz  += bnd->ntap; 
-        mod->ioXz += bnd->ntap;
-        mod->ioZz += bnd->ntap;
-        mod->ieXz += bnd->ntap;
-        mod->ieZz += bnd->ntap;
+        mod->naz  += bnd->npml; 
+        mod->ioXz += bnd->npml;
+        mod->ioZz += bnd->npml;
+        mod->ieXz += bnd->npml;
+        mod->ieZz += bnd->npml;
 
         /* For P/Tzz, Txx and Txz fields the tapered boundaries are calculated in the main kernels */
-        //mod->ioPz += bnd->ntap;
-//        mod->ioTz += bnd->ntap;
-        mod->iePz += bnd->ntap;
-        mod->ieTz += bnd->ntap;
+        //mod->ioPz += bnd->npml;
+//        mod->ioTz += bnd->npml;
+        mod->iePz += bnd->npml;
+        mod->ieTz += bnd->npml;
 
     }
     if (bnd->top==5) {
@@ -537,29 +481,29 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         mod->ieTz += bnd->topadd;
     }
     if (bnd->bot==4 || bnd->bot==2) {
-        mod->naz += bnd->ntap;
+        mod->naz += bnd->npml;
         /* For P/Tzz, Txx and Txz fields the tapered boundaries are calculated in the main kernels */
-        mod->iePz += bnd->ntap;
-        mod->ieTz += bnd->ntap;
+        mod->iePz += bnd->npml;
+        mod->ieTz += bnd->npml;
     }
     if (bnd->lef==4 || bnd->lef==2) {
-        mod->nax += bnd->ntap;
-        mod->ioXx += bnd->ntap;
-        mod->ioZx += bnd->ntap;
-        mod->ieXx += bnd->ntap;
-        mod->ieZx += bnd->ntap;
+        mod->nax += bnd->npml;
+        mod->ioXx += bnd->npml;
+        mod->ioZx += bnd->npml;
+        mod->ieXx += bnd->npml;
+        mod->ieZx += bnd->npml;
 
         /* For Tzz, Txx and Txz fields the tapered boundaries are calculated in the main kernels */
-//        mod->ioPx += bnd->ntap;
-//        mod->ioTx += bnd->ntap;
-        mod->iePx += bnd->ntap;
-        mod->ieTx += bnd->ntap;
+//        mod->ioPx += bnd->npml;
+//        mod->ioTx += bnd->npml;
+        mod->iePx += bnd->npml;
+        mod->ieTx += bnd->npml;
     }
     if (bnd->rig==4 || bnd->rig==2) {
-        mod->nax += bnd->ntap;
+        mod->nax += bnd->npml;
         /* For P/Tzz, Txx and Txz fields the tapered boundaries are calculated in the main kernels */
-        mod->iePx += bnd->ntap;
-        mod->ieTx += bnd->ntap;
+        mod->iePx += bnd->npml;
+        mod->ieTx += bnd->npml;
     }    
 
 /*
@@ -575,7 +519,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 */
 
     /* Intialize the array which contains the topography surface */
-    if (bnd->top==4 || bnd->top==2) ioPz=mod->ioPz - bnd->ntap;
+    if (bnd->top==4 || bnd->top==2) ioPz=mod->ioPz - bnd->npml;
     else ioPz=mod->ioPz;
     //if (bnd->top==5) mod->ioPz += bnd->topadd;
     ioPz=mod->ioPz;
@@ -593,7 +537,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         vmess("Left boundary   : %d",bnd->lef);
         vmess("Right boundary  : %d",bnd->rig);
         vmess("Bottom boundary : %d",bnd->bot);
-        vmess("taper lenght = %d points",bnd->ntap);
+        vmess("taper lenght = %d points",bnd->npml);
     }
 
     /* define the number and type of shots to model */

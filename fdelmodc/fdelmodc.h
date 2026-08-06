@@ -180,7 +180,6 @@ typedef struct _boundPar { /* Boundary Parameters */
 	float *tapx;
 	float *tapxz;
 	int cfree;
-	int ntap;
 	int *surface;
     int npml;
     float R; /* reflection at side of model */

@@ -106,8 +106,8 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, wavPar wav, int ixsrc, in
 		hdr.d1     = mod.dz*sna.skipdz;
 		hdr.d2     = mod.dx*sna.skipdx;
 		if (sna.withbnd) {
-        	if ( !ISODD(bnd.top)) hdr.f1 = mod.z0 - bnd.ntap*mod.dz;
-        	if ( !ISODD(bnd.lef)) hdr.f2 = mod.x0 - bnd.ntap*mod.dx;
+        	if ( !ISODD(bnd.top)) hdr.f1 = mod.z0 - bnd.npml*mod.dz;
+        	if ( !ISODD(bnd.lef)) hdr.f2 = mod.x0 - bnd.npml*mod.dx;
         	//if ( !ISODD(bnd.rig)) ;
         	//if ( !ISODD(bnd.bot)) store=1;
 		}
@@ -139,7 +139,7 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, wavPar wav, int ixsrc, in
 				ix2 = ix;
 				//if (sna.type.vz || sna.type.txz) izs = -1;
                 //else izs = 0;
-        		if ( !ISODD(bnd.lef)) hdr.gx = 1000*(mod.x0 - bnd.ntap*mod.dx);
+        		if ( !ISODD(bnd.lef)) hdr.gx = 1000*(mod.x0 - bnd.npml*mod.dx);
 			}
 
 			if (sna.type.vx) {

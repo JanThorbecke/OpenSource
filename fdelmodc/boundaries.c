@@ -221,12 +221,12 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 ik_zf[iz] = (float)(1.0/kap);
             }
         }
-        if (verbose>=4) vmess("CFS-CPML boundP: sigma_max=%e cp_min=%e npml=%d", sigma_max_cpml, mod.cp_min, npml);
+        if (verbose>=2) vmess("CFS-CPML boundP: sigma_max=%e cp_min=%e npml=%d", sigma_max_cpml, mod.cp_min, npml);
 }
     }
 #pragma omp barrier
 
-	if (mod.ischeme == 1 && pml) { /* Acoustic CFS-CPML */
+	if (mod.ischeme <= 2 && pml) { /* Acoustic CFS-CPML */
         p = tzz;
 
         if (itime == 0) {
@@ -431,10 +431,10 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			/* Vx field */
 			ixo = mod.ioXx;
 			ixe = mod.ieXx;
-			izo = mod.ioXz-bnd.ntap;
+			izo = mod.ioXz-bnd.npml;
 			ize = mod.ioXz;
 	
-			ib = (bnd.ntap+izo-1);
+			ib = (bnd.npml+izo-1);
 #pragma omp for private(ix,iz)
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -449,8 +449,8 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			/* right top corner */
 			if (bnd.rig==4) {
 				ixo = mod.ieXx;
-				ixe = ixo+bnd.ntap;
-				ibz = (bnd.ntap+izo-1);
+				ixe = ixo+bnd.npml;
+				ibz = (bnd.npml+izo-1);
 				ibx = (ixo);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
@@ -460,16 +460,16 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 									c1*(tzz[ix*n1+iz]	 - tzz[(ix-1)*n1+iz]) +
 									c2*(tzz[(ix+1)*n1+iz] - tzz[(ix-2)*n1+iz]));
 	
-						vx[ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.ntap+(ibz-iz)];
+						vx[ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.npml+(ibz-iz)];
 					}
 				}
 			}
 			/* left top corner */
 			if (bnd.lef==4) {
-				ixo = mod.ioXx-bnd.ntap;
+				ixo = mod.ioXx-bnd.npml;
 				ixe = mod.ioXx;
-				ibz = (bnd.ntap+izo-1);
-				ibx = (bnd.ntap+ixo-1);
+				ibz = (bnd.npml+izo-1);
+				ibx = (bnd.npml+ixo-1);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -478,7 +478,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 									c1*(tzz[ix*n1+iz]	 - tzz[(ix-1)*n1+iz]) +
 									c2*(tzz[(ix+1)*n1+iz] - tzz[(ix-2)*n1+iz]));
 						
-						vx[ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.ntap+(ibz-iz)];
+						vx[ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.npml+(ibz-iz)];
 					}
 				}
 			}
@@ -487,10 +487,10 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			/* Vz field */
 			ixo = mod.ioZx;
 			ixe = mod.ieZx;
-			izo = mod.ioZz-bnd.ntap;
+			izo = mod.ioZz-bnd.npml;
 			ize = mod.ioZz;
 	
-			ib = (bnd.ntap+izo-1);
+			ib = (bnd.npml+izo-1);
 #pragma omp for private (ix, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -505,8 +505,8 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			/* right top corner */
 			if (bnd.rig==4) {
 				ixo = mod.ieZx;
-				ixe = ixo+bnd.ntap;
-				ibz = (bnd.ntap+izo-1);
+				ixe = ixo+bnd.npml;
+				ibz = (bnd.npml+izo-1);
 				ibx = (ixo);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
@@ -516,16 +516,16 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 									c1*(tzz[ix*n1+iz]   - tzz[ix*n1+iz-1]) +
 									c2*(tzz[ix*n1+iz+1] - tzz[ix*n1+iz-2]));
 	
-						vz[ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.ntap+(ibz-iz)];
+						vz[ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.npml+(ibz-iz)];
 					}
 				}
 			}
 			/* left top corner */
 			if (bnd.lef==4) {
-				ixo = mod.ioZx-bnd.ntap;
+				ixo = mod.ioZx-bnd.npml;
 				ixe = mod.ioZx;
-				ibz = (bnd.ntap+izo-1);
-				ibx = (bnd.ntap+ixo-1);
+				ibz = (bnd.npml+izo-1);
+				ibx = (bnd.npml+ixo-1);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -534,7 +534,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 									c1*(tzz[ix*n1+iz]   - tzz[ix*n1+iz-1]) +
 									c2*(tzz[ix*n1+iz+1] - tzz[ix*n1+iz-2]));
 						
-						vz[ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.ntap+(ibz-iz)];
+						vz[ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.npml+(ibz-iz)];
 					}
 				}
 			}
@@ -545,10 +545,10 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			/* Vx field */
 			ixo = mod.ioXx;
 			ixe = mod.ieXx;
-			izo = mod.ioXz-bnd.ntap;
+			izo = mod.ioXz-bnd.npml;
 			ize = mod.ioXz;
 
-			ib = (bnd.ntap+izo-1);
+			ib = (bnd.npml+izo-1);
 #pragma omp for private(ix,iz)
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -565,8 +565,8 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			/* right top corner */
 			if (bnd.rig==4) {
 				ixo = mod.ieXx;
-				ixe = ixo+bnd.ntap;
-				ibz = (bnd.ntap+izo-1);
+				ixe = ixo+bnd.npml;
+				ibz = (bnd.npml+izo-1);
 				ibx = (ixo);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
@@ -578,16 +578,16 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 									c2*(txx[(ix+1)*n1+iz] - txx[(ix-2)*n1+iz] +
 										txz[ix*n1+iz+2]   - txz[ix*n1+iz-1])  );
 	
-						vx[ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.ntap+(ibz-iz)];
+						vx[ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.npml+(ibz-iz)];
 					}
 				}
 			}
 			/* left top corner */
 			if (bnd.lef==4) {
-				ixo = mod.ioXx-bnd.ntap;
+				ixo = mod.ioXx-bnd.npml;
 				ixe = mod.ioXx;
-				ibz = (bnd.ntap+izo-1);
-				ibx = (bnd.ntap+ixo-1);
+				ibz = (bnd.npml+izo-1);
+				ibx = (bnd.npml+ixo-1);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -598,7 +598,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 									c2*(txx[(ix+1)*n1+iz] - txx[(ix-2)*n1+iz] +
 										txz[ix*n1+iz+2]   - txz[ix*n1+iz-1])  );
 						
-						vx[ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.ntap+(ibz-iz)];
+						vx[ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.npml+(ibz-iz)];
 					}
 				}
 			}
@@ -606,10 +606,10 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			/* Vz field */
 			ixo = mod.ioZx;
 			ixe = mod.ieZx;
-			izo = mod.ioZz-bnd.ntap;
+			izo = mod.ioZz-bnd.npml;
 			ize = mod.ioZz;
 	
-			ib = (bnd.ntap+izo-1);
+			ib = (bnd.npml+izo-1);
 #pragma omp for private (ix, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -626,8 +626,8 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			/* right top corner */
 			if (bnd.rig==4) {
 				ixo = mod.ieZx;
-				ixe = ixo+bnd.ntap;
-				ibz = (bnd.ntap+izo-1);
+				ixe = ixo+bnd.npml;
+				ibz = (bnd.npml+izo-1);
 				ibx = (ixo);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
@@ -639,16 +639,16 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 								c2*(tzz[ix*n1+iz+1]   - tzz[ix*n1+iz-2] +
 									txz[(ix+2)*n1+iz] - txz[(ix-1)*n1+iz])  );
 	
-						vz[ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.ntap+(ibz-iz)];
+						vz[ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.npml+(ibz-iz)];
 					}
 				}
 			}
 			/* left top corner */
 			if (bnd.lef==4) {
-				ixo = mod.ioZx-bnd.ntap;
+				ixo = mod.ioZx-bnd.npml;
 				ixe = mod.ioZx;
-				ibz = (bnd.ntap+izo-1);
-				ibx = (bnd.ntap+ixo-1);
+				ibz = (bnd.npml+izo-1);
+				ibx = (bnd.npml+ixo-1);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -659,7 +659,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 								c2*(tzz[ix*n1+iz+1]   - tzz[ix*n1+iz-2] +
 									txz[(ix+2)*n1+iz] - txz[(ix-1)*n1+iz])  );
 						
-						vz[ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.ntap+(ibz-iz)];
+						vz[ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.npml+(ibz-iz)];
 					}
 				}
 			}
@@ -679,9 +679,9 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ixo = mod.ioXx;
 			ixe = mod.ieXx;
 			izo = mod.ieXz;
-			ize = mod.ieXz+bnd.ntap;
+			ize = mod.ieXz+bnd.npml;
 			
-			ib = (ize-bnd.ntap);
+			ib = (ize-bnd.npml);
 #pragma omp for private(ix,iz)
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -695,7 +695,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			/* right bottom corner */
 			if (bnd.rig==4) {
 				ixo = mod.ieXx;
-				ixe = ixo+bnd.ntap;
+				ixe = ixo+bnd.npml;
 				ibz = (izo);
 				ibx = (ixo);
 #pragma omp for private(ix,iz)
@@ -706,16 +706,16 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 									c1*(tzz[ix*n1+iz]	 - tzz[(ix-1)*n1+iz]) +
 									c2*(tzz[(ix+1)*n1+iz] - tzz[(ix-2)*n1+iz]));
 	
-						vx[ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.ntap+(iz-ibz)];
+						vx[ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.npml+(iz-ibz)];
 					}
 				}
 			}
 			/* left bottom corner */
 			if (bnd.lef==4) {
-				ixo = mod.ioXx-bnd.ntap;
+				ixo = mod.ioXx-bnd.npml;
 				ixe = mod.ioXx;
 				ibz = (izo);
-				ibx = (bnd.ntap+ixo-1);
+				ibx = (bnd.npml+ixo-1);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -724,7 +724,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 									c1*(tzz[ix*n1+iz]	 - tzz[(ix-1)*n1+iz]) +
 									c2*(tzz[(ix+1)*n1+iz] - tzz[(ix-2)*n1+iz]));
 						
-						vx[ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.ntap+(iz-ibz)];
+						vx[ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.npml+(iz-ibz)];
 					}
 				}
 			}
@@ -734,9 +734,9 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ixo = mod.ioZx;
 			ixe = mod.ieZx;
 			izo = mod.ieZz;
-			ize = mod.ieZz+bnd.ntap;
+			ize = mod.ieZz+bnd.npml;
 			
-			ib = (ize-bnd.ntap);
+			ib = (ize-bnd.npml);
 #pragma omp for private (ix, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -750,7 +750,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			/* right bottom corner */
 			if (bnd.rig==4) {
 				ixo = mod.ieZx;
-				ixe = ixo+bnd.ntap;
+				ixe = ixo+bnd.npml;
 				ibz = (izo);
 				ibx = (ixo);
 #pragma omp for private(ix,iz)
@@ -761,16 +761,16 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 									c1*(tzz[ix*n1+iz]   - tzz[ix*n1+iz-1]) +
 									c2*(tzz[ix*n1+iz+1] - tzz[ix*n1+iz-2]));
 						
-						vz[ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.ntap+(iz-ibz)];
+						vz[ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.npml+(iz-ibz)];
 					}
 				}
 			}
 			/* left bottom corner */
 			if (bnd.lef==4) {
-				ixo = mod.ioZx-bnd.ntap;
+				ixo = mod.ioZx-bnd.npml;
 				ixe = mod.ioZx;
 				ibz = (izo);
-				ibx = (bnd.ntap+ixo-1);
+				ibx = (bnd.npml+ixo-1);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -779,7 +779,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 									c1*(tzz[ix*n1+iz]   - tzz[ix*n1+iz-1]) +
 									c2*(tzz[ix*n1+iz+1] - tzz[ix*n1+iz-2]));
 						
-						vz[ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.ntap+(iz-ibz)];
+						vz[ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.npml+(iz-ibz)];
 					}
 				}
 			}
@@ -792,9 +792,9 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ixo = mod.ioXx;
 			ixe = mod.ieXx;
 			izo = mod.ieXz;
-			ize = mod.ieXz+bnd.ntap;
+			ize = mod.ieXz+bnd.npml;
 			
-			ib = (ize-bnd.ntap);
+			ib = (ize-bnd.npml);
 #pragma omp for private(ix,iz)
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -811,7 +811,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			/* right bottom corner */
 			if (bnd.rig==4) {
 				ixo = mod.ieXx;
-				ixe = ixo+bnd.ntap;
+				ixe = ixo+bnd.npml;
 				ibz = (izo);
 				ibx = (ixo);
 #pragma omp for private(ix,iz)
@@ -824,7 +824,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 								c2*(txx[(ix+1)*n1+iz] - txx[(ix-2)*n1+iz] +
 									txz[ix*n1+iz+2]   - txz[ix*n1+iz-1])  );
 	
-						vx[ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.ntap+(iz-ibz)];
+						vx[ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.npml+(iz-ibz)];
 					}
 				}
 			}
@@ -832,10 +832,10 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			if (bnd.lef==4) {
 				
 
-				ixo = mod.ioXx-bnd.ntap;
+				ixo = mod.ioXx-bnd.npml;
 				ixe = mod.ioXx;
 				ibz = (izo);
-				ibx = (bnd.ntap+ixo-1);
+				ibx = (bnd.npml+ixo-1);
 				
 				
 #pragma omp for private(ix,iz)
@@ -848,7 +848,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 								c2*(txx[(ix+1)*n1+iz] - txx[(ix-2)*n1+iz] +
 									txz[ix*n1+iz+2]   - txz[ix*n1+iz-1])  );
 						
-						vx[ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.ntap+(iz-ibz)];
+						vx[ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.npml+(iz-ibz)];
 					}
 				}
 			}
@@ -857,9 +857,9 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			ixo = mod.ioZx;
 			ixe = mod.ieZx;
 			izo = mod.ieZz;
-			ize = mod.ieZz+bnd.ntap;
+			ize = mod.ieZz+bnd.npml;
 			
-			ib = (ize-bnd.ntap);
+			ib = (ize-bnd.npml);
 #pragma omp for private (ix, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -876,7 +876,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
  			/* right bottom corner */
 			if (bnd.rig==4) {
 				ixo = mod.ieZx;
-				ixe = ixo+bnd.ntap;
+				ixe = ixo+bnd.npml;
 				ibz = (izo);
 				ibx = (ixo);
 #pragma omp for private(ix,iz)
@@ -889,16 +889,16 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 								c2*(tzz[ix*n1+iz+1]   - tzz[ix*n1+iz-2] +
 									txz[(ix+2)*n1+iz] - txz[(ix-1)*n1+iz])  );
 						
-						vz[ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.ntap+(iz-ibz)];
+						vz[ix*n1+iz]   *= bnd.tapxz[(ix-ibx)*bnd.npml+(iz-ibz)];
 					}
 				}
 			}
 			/* left bottom corner */
 			if (bnd.lef==4) {
-				ixo = mod.ioZx-bnd.ntap;
+				ixo = mod.ioZx-bnd.npml;
 				ixe = mod.ioZx;
 				ibz = (izo);
-				ibx = (bnd.ntap+ixo-1);
+				ibx = (bnd.npml+ixo-1);
 #pragma omp for private(ix,iz)
 				for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -909,7 +909,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 								c2*(tzz[ix*n1+iz+1]   - tzz[ix*n1+iz-2] +
 									txz[(ix+2)*n1+iz] - txz[(ix-1)*n1+iz])  );
 						
-						vz[ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.ntap+(iz-ibz)];
+						vz[ix*n1+iz]   *= bnd.tapxz[(ibx-ix)*bnd.npml+(iz-ibz)];
 					}
 				}
 			}
@@ -927,12 +927,12 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 		if (mod.ischeme <= 2) { /* Acoustic scheme */
 			
 			/* Vx field */
-			ixo = mod.ioXx-bnd.ntap;
+			ixo = mod.ioXx-bnd.npml;
 			ixe = mod.ioXx;
 			izo = mod.ioXz;
 			ize = mod.ieXz;
 			
-			ib = (bnd.ntap+ixo-1);
+			ib = (bnd.npml+ixo-1);
 #pragma omp for private(ix,iz)
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -946,12 +946,12 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			}
 			
 			/* Vz field */
-			ixo = mod.ioZx-bnd.ntap;
+			ixo = mod.ioZx-bnd.npml;
 			ixe = mod.ioZx;
 			izo = mod.ioZz;
 			ize = mod.ieZz;
 
-			ib = (bnd.ntap+ixo-1);
+			ib = (bnd.npml+ixo-1);
 #pragma omp for private (ix, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -968,12 +968,12 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 		else { /* Elastic scheme */
 			
 			/* Vx field */
-			ixo = mod.ioXx-bnd.ntap;
+			ixo = mod.ioXx-bnd.npml;
 			ixe = mod.ioXx;
 			izo = mod.ioXz;
 			ize = mod.ieXz;
 			
-			ib = (bnd.ntap+ixo-1);
+			ib = (bnd.npml+ixo-1);
 #pragma omp for private(ix,iz)
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -989,12 +989,12 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			}
 			
 			/* Vz field */
-			ixo = mod.ioZx-bnd.ntap;
+			ixo = mod.ioZx-bnd.npml;
 			ixe = mod.ioZx;
 			izo = mod.ioZz;
 			ize = mod.ieZz;
 			
-			ib = (bnd.ntap+ixo-1);
+			ib = (bnd.npml+ixo-1);
 #pragma omp for private (ix, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -1021,11 +1021,11 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			
 			/* Vx field */
 			ixo = mod.ieXx;
-			ixe = mod.ieXx+bnd.ntap;
+			ixe = mod.ieXx+bnd.npml;
 			izo = mod.ioXz;
 			ize = mod.ieXz;
 		
-			ib = (ixe-bnd.ntap);
+			ib = (ixe-bnd.npml);
 #pragma omp for private(ix,iz)
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -1040,11 +1040,11 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 		
 			/* Vz field */
 			ixo = mod.ieZx;
-			ixe = mod.ieZx+bnd.ntap;
+			ixe = mod.ieZx+bnd.npml;
 			izo = mod.ioZz;
 			ize = mod.ieZz;
 			
-			ib = (ixe-bnd.ntap);
+			ib = (ixe-bnd.npml);
 #pragma omp for private (ix, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -1062,11 +1062,11 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			
 			/* Vx field */
 			ixo = mod.ieXx;
-			ixe = mod.ieXx+bnd.ntap;
+			ixe = mod.ieXx+bnd.npml;
 			izo = mod.ioXz;
 			ize = mod.ieXz;
 			
-			ib = (ixe-bnd.ntap);
+			ib = (ixe-bnd.npml);
 #pragma omp for private(ix,iz)
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -1083,10 +1083,10 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 			
 			/* Vz field */
 			ixo = mod.ieZx;
-			ixe = mod.ieZx+bnd.ntap;
+			ixe = mod.ieZx+bnd.npml;
 			izo = mod.ioZz;
 			ize = mod.ieZz;
-			ib = (ixe-bnd.ntap);
+			ib = (ixe-bnd.npml);
 #pragma omp for private (ix, iz) 
 			for (ix=ixo; ix<ixe; ix++) {
 #pragma simd
@@ -1337,12 +1337,12 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 ik_zf[iz] = (float)(1.0/kap);
             }
         }
-        if (verbose>=4) vmess("CFS-CPML boundV: sigma_max=%e cp_min=%e npml=%d", sigma_max_cpml, mod.cp_min, npml);
+        if (verbose>=2) vmess("CFS-CPML boundV: sigma_max=%e cp_min=%e npml=%d", sigma_max_cpml, mod.cp_min, npml);
 }
     }
 
 #pragma omp barrier
-    if (mod.ischeme == 1 && pml) { /* Acoustic CFS-CPML */
+    if (mod.ischeme <= 2 && pml) { /* (Visco-)Acoustic CFS-CPML */
         p = tzz;
 
         if (itime == 0) {

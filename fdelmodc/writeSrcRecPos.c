@@ -38,8 +38,8 @@ int writeSrcRecPos(modPar *mod, recPar *rec, srcPar *src, shotPar *shot)
 
 //    ibndx = mod.ioPx;
 //    ibndz = mod.ioPz;
-//    if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
-//    if (bnd.top==4 || bnd.top==2) ibndz += bnd.ntap;
+//    if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.npml;
+//    if (bnd.top==4 || bnd.top==2) ibndz += bnd.npml;
 
 	/* write velocity field with positions of the sources */
 	dum = (float *)calloc(nx*nz, sizeof(float));

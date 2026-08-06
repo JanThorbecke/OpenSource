@@ -143,7 +143,7 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
         fmax = wav.fmax;
         nkx = optncc(2*mod.nax);
         ibndx = mod.ioPx;
-        if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
+        if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.npml;
         cp  = rec.cp;
         rho = rec.rho;
 		if (rec.type.ud==1) vznorm=0;

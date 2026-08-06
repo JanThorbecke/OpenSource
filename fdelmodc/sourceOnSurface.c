@@ -58,12 +58,12 @@ int storeSourceOnSurface(modPar mod, srcPar src, bndPar bnd, int ixsrc, int izsr
 	else if (src.type==2) {
     	ibndz = mod.ioTz;
     	ibndx = mod.ioTx;
-    	if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
+    	if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.npml;
 	}
 	else {	
     	ibndz = mod.ioPz;
     	ibndx = mod.ioPx;
-    	if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
+    	if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.npml;
 	}
 
 /* check if there are sources placed on the boundaries */
@@ -296,12 +296,12 @@ int reStoreSourceOnSurface(modPar mod, srcPar src, bndPar bnd, int ixsrc, int iz
 	else if (src.type==2) {
     	ibndz = mod.ioTz;
     	ibndx = mod.ioTx;
-    	if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
+    	if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.npml;
 	}
 	else {	
     	ibndz = mod.ioPz;
     	ibndx = mod.ioPx;
-    	if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.ntap;
+    	if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.npml;
 	}
 
 	/* restore source positions on the edge */

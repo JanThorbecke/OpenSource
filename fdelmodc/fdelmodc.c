@@ -105,7 +105,7 @@ char *sdoc[] = {
 " OPTIONAL PARAMETERS:",
 "   ischeme=3 ......... 1=acoustic, 2=visco-acoustic 3=elastic, 4=visco-elastic, 5=double-couple, -2=ALE-moving-free-surface",
 "   tmod=(nt-1)*dt .... total modeling time (nt from file_src)",
-"   ntaper=0 .......... length of taper in points at edges of model",
+"   ntaper=0 .......... length of taper in points at edges of model (old: use npml)",
 "   npml=20 ........... length of PML layer in points at edges of model",
 "   R=1e-5 ............ the theoretical reflection coefficient at PML boundary",
 "   m=2.0 ............. scaling order of the PML sigma function ",
@@ -446,8 +446,8 @@ int main(int argc, char **argv)
 
     ioPx=mod.ioPx;
     ioPz=mod.ioPz;
-    if (bnd.lef==4 || bnd.lef==2) ioPx += bnd.ntap;
-    if (bnd.top==4 || bnd.top==2) ioPz += bnd.ntap;
+    if (bnd.lef==4 || bnd.lef==2) ioPx += bnd.npml;
+    if (bnd.top==4 || bnd.top==2) ioPz += bnd.npml;
 	if (rec.sinkvel) sinkvel=l2m[(rec.x[0]+ioPx)*n1+rec.z[0]+ioPz];
 	else sinkvel = 0.0;
 
@@ -812,7 +812,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 		free(p);
 		free(q);
 	}
-	if (bnd.ntap) {
+	if (bnd.npml) {
 		free(bnd.tapx);
 		free(bnd.tapz);
 		free(bnd.tapxz);
