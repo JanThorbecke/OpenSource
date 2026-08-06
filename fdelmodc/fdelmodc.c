@@ -67,7 +67,7 @@ int writeRec(recPar rec, modPar mod, bndPar bnd, wavPar wav, int ixsrc, int izsr
 			 float *rec_vx, float *rec_vz, float *rec_txx, float *rec_tzz, float *rec_txz, 
 			 float *rec_p, float *rec_pp, float *rec_ss, float *rec_q, float *rec_udp, float *rec_udvz, float *rec_dxvx, float *rec_dzvz, int verbose);
 
-int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, wavPar wav,int ixsrc, int izsrc, int itime, 
+int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, srcPar src, wavPar wav,int ixsrc, int izsrc, int itime, 
 				   float *vx, float *vz, float *tzz, float *txx, float *txz, int verbose);
 
 int getBeamTimes(modPar mod, snaPar sna, float *vx, float *vz, float *tzz, float *txx, float *txz, 
@@ -134,7 +134,7 @@ char *sdoc[] = {
 "   verbose=0 ......... silent mode; =1: display info",
 " ",
 " SHOT AND GENERAL SOURCE DEFINITION:",
-"   src_type=1 ........ 1=P 2=Txz 3=Tzz 4=Txx 5=S-pot 6=Fx 7=Fz 8=P-pot 9=double-couple 10=Fz by P 11=moment tensor 12=Fa",
+"   src_type=1 ........ 1=P 2=Txz 3=Tzz 4=Txx 5=S-pot 6=Fx 7=Fz 8=P-pot 9=double-couple 10=Fz by P 11=moment tensor 12=Fa 13=S-Zibi",
 "   src_orient=1 ...... orientation of the source",
 "                     - 1=monopole",
 "                     - 2=dipole +/- vertical oriented",
@@ -686,7 +686,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 
 			/* write snapshots to output file(s) */
 			if (sna.nsnap) {
-				writeSnapTimes(mod, sna, bnd, wav, ixsrc, izsrc, it, vx, vz, tzz, txx, txz, verbose);
+				writeSnapTimes(mod, sna, bnd, src, wav, ixsrc, izsrc, it, vx, vz, tzz, txx, txz, verbose);
 			}
 
 			/* calculate beams */
