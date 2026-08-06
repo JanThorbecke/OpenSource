@@ -33,14 +33,17 @@ int traceWrite(segy *hdr, float *data, int n, long long offset, FILE *fp);
 
 int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, wavPar wav, int ixsrc, int izsrc, int itime, float *vx, float *vz, float *tzz, float *txx, float *txz, int verbose)
 {
-	FILE    *fpvx, *fpvz, *fptxx, *fptzz, *fptxz, *fpp, *fppp, *fpss;
+	FILE *fpvx, *fpvz, *fptxx, *fptzz, *fptxz, *fpp, *fppp, *fpss, *fpdxvx, *fpdzvz;
 	int append, isnap;
 	static int first=1;
 	int n1, ibndx, ibndz, ixs, izs, ize, i, j;
     long long offset;
 	int ix, iz, ix2;
-	float *snap, sdx, stime;
+	float *snap, sdx, stime, c1, c2;
 	segy hdr;
+
+    c1 = 9.0/8.0;
+    c2 = -1.0/24.0;
 
 	if (sna.nsnap==0) return 0;
 
@@ -88,6 +91,8 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, wavPar wav, int ixsrc, in
 		if (sna.type.txz) fptxz = fileOpen(sna.file_snap, "_stxz", append);
 		if (sna.type.pp)  fppp  = fileOpen(sna.file_snap, "_spp", append);
 		if (sna.type.ss)  fpss  = fileOpen(sna.file_snap, "_sss", append);
+		if (sna.type.dxvx)fpdxvx  = fileOpen(sna.file_snap, "_sdxvx", append);
+		if (sna.type.dzvz)fpdzvz  = fileOpen(sna.file_snap, "_sdzvz", append);
 	
 		memset(&hdr,0,TRCBYTES);
 		hdr.dt     = 1000000*(sna.skipdt*mod.dt);
@@ -198,6 +203,18 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, wavPar wav, int ixsrc, in
 				}
 				traceWrite(&hdr, snap, sna.nz, offset, fpss);
 			}
+            if (sna.type.dxvx) {
+				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
+                    snap[j] = sdx*(c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
+                       c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]));
+                }
+            }
+            if (sna.type.dzvz) {
+				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
+                    snap[j] = sdx*(c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
+                       c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]));
+                }
+            }
 
 		}
 
@@ -209,6 +226,8 @@ int writeSnapTimes(modPar mod, snaPar sna, bndPar bnd, wavPar wav, int ixsrc, in
 		if (sna.type.txz) fclose(fptxz);
 		if (sna.type.pp) fclose(fppp);
 		if (sna.type.ss) fclose(fpss);
+		if (sna.type.dxvx) fclose(fpdxvx);
+		if (sna.type.dzvz) fclose(fpdzvz);
 
 		free(snap);
 	}
