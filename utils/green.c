@@ -104,7 +104,7 @@ int main(int argc, char **argv)
 	int     far, p_vz, nt, nx, Ns, is, sum, lint, verbose;
 	int     size, ntraces, ngath, Fz, Fx;
 	float   scl, xmin, xmax;
-    float   Q, te, ts, fw;
+    float   Q, te, ts, fw, fom;
 	float   dx, dt, d1, d2, fmin, fmax, f1, f2, c, cs, rho;
 	float 	*data, *wavelet, *tmpdata, dipx, xsrc1, xsrc2;
 	float 	*xrcv, *zrcv, *xi, *zi, x0, maxdip;
@@ -214,8 +214,9 @@ int main(int argc, char **argv)
         if(!getparfloat("ts", &ts)) ts=0.0;
         if(!getparfloat("te", &te)) te=0.0;
 	    if(!getparfloat("fw", &fw)) fw = 20.0;
-        ts = ( sqrt(1.0+1.0/(Q*Q) ) - 1.0/Q ) / fw;
-        te = 1.0 / (fw*fw*ts);
+        fom = 2.0*M_PI*fw;
+        ts = ( sqrt(1.0+1.0/(Q*Q) ) - 1.0/Q ) / fom;
+        te = 1.0 / (fom*fom*ts);
         far=99;
 		if (verbose) {
             vmess("near and far P field of monopole computed for Q");
