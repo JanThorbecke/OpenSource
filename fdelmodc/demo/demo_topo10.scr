@@ -1,12 +1,12 @@
 #!/bin/bash
 
 dt=0.001
-ntap=120
+ntap=20
 fmax=40
 
-makemod sizex=2000 sizez=2000 dx=5 dz=5 cp0=2000 ro0=2000 cs0=0 file_base=topo.su \
+makemod sizex=2000 sizez=2000 dx=5 dz=5 cp0=2000 ro0=2000 file_base=topo.su \
+    intt=def x=0,2000 z=1000,1000 cp=2300 ro=2500 \
     orig=0,0 gradunit=0 verbose=1 
-
 
 makewave w=g2 fmax=25 t0=0.10 dt=$dt nt=4096 db=-40 file_out=G2.su verbose=1
 
@@ -34,8 +34,8 @@ set -x
     rec_type_p=1 \
     xsrc=1000 \
     zsrc=667 \
-   zrcv1=500 zrcv2=500 xrcv1=0 xrcv2=2000 dxrcv=5 \
-    verbose=4 \
+    zrcv1=500 zrcv2=500 xrcv1=0 xrcv2=2000 dxrcv=5 \
+    verbose=3 \
     tmod=2.000 \
     rec_int_vx=2 \
     rec_int_vz=2 \

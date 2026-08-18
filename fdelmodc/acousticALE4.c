@@ -108,12 +108,18 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
                  float *vx, float *vz, float *p,
                  float *rox, float *roz, float *l2m, int verbose)
 {
-    const int   nx = NX, nz = NZ, nt = NT;
+    //const int   nx = NX, nz = NZ, nt = NT;
+    int  nx, nz, nt, n1, n2;
+    nz = mod.nz;
+    n1 = mod.naz;
+    nx = mod.nx;
+    nt = mod.nt;
+
     const float dx = DX, dz = DZ, dt = DT;
     const float Z_MAX    = (float)nz * dz;
-    const float K0       = RHO0 * VEL0 * VEL0;
-    const float dt_rho   = dt / RHO0;
-    const float dtK0     = dt * K0;
+    //const float K0       = RHO0 * VEL0 * VEL0;
+    //const float dt_rho   = dt / RHO0;
+    //const float dtK0     = dt * K0;
     const float inv24dx  = 1.0f / (24.0f * dx);
     const float inv_dx   = 1.0f / dx;
     const float inv12    = 1.0f / 12.0f;
@@ -225,9 +231,10 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
         }
 
         /* --- Ricker wavelet amplitude (hoisted outside inner loops) --- */
-        const float tau     = PI * SOURCE_F0 * (t_phys - 1.0f / SOURCE_F0);
-        const float src_amp = 0.25f * SOURCE_AMP * (1.0f - 2.0f*tau*tau)
-                              * expf(-tau*tau) * dt;
+        //const float tau     = PI * SOURCE_F0 * (t_phys - 1.0f / SOURCE_F0);
+        //const float src_amp = 0.25f * SOURCE_AMP * (1.0f - 2.0f*tau*tau)
+                              //* expf(-tau*tau) * dt;
+        const float src_amp = 0.25f * src_nwav[0][it];
 
         /* ----------------------------------------------------------------
          * vx update  (i-faces i=1..nx-1, j=0..nz-1)
@@ -278,8 +285,13 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
                     ? (vxm2 - 8.0f*vxm1 + 8.0f*vxp1 - vxp2) * inv12
                     : (vxp1 - vxm1);
 
+                /*
+                if (rox[(i+mod.ioXx)*n1+j+mod.ioXz] == 0.0) {
+                    fprintf(stderr,"i=%d j=%d rox=%e dt_rho=%e\n",i,j,dx*rox[i*nx+j],dt_rho);
+                }
+                */
                 vxi[j] = vxi[j]
-                        - dt_rho * (dpx - shear_f * nj * dpdj)
+                        - dx*rox[(i+mod.ioXx)*n1+j+mod.ioXz] * (dpx - shear_f * nj * dpdj)
                         + ale_f  * nj * dvx_dj;
             }
         }
@@ -321,7 +333,7 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
                     : (vzp1 - vzm1);
 
                 vzi[j] = vzi[j]
-                        - dt_rho * dpdz
+                        - dx*roz[(i+mod.ioZx)*n1+j+mod.ioZz] * dpdz
                         + ale_i  * nj * dvz_dj;
             }
             vzi[nz] = 0.0f;  /* rigid bottom wall */
@@ -391,7 +403,7 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
                     : (pp1 - pm1);
 
                 pni[j] = pi[j]
-                        - dtK0  * (dvx_dx - shear_c * nj * dvx_dj + dvz_dz)
+                        - dx*l2m[(i+mod.ioPx)*n1+j+mod.ioPz]  * (dvx_dx - shear_c * nj * dvx_dj + dvz_dz)
                         + ale_i * nj * dp_dj;
             }
         }
