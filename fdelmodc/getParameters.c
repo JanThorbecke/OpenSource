@@ -458,13 +458,14 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         mod->ieXz += bnd->npml;
         mod->ieZz += bnd->npml;
 
-        /* For P/Tzz, Txx and Txz fields the tapered boundaries are calculated in the main kernels */
-        //mod->ioPz += bnd->npml;
-//        mod->ioTz += bnd->npml;
+        /* Changed Aug 2026 For P/Tzz, Txx and Txz fields the tapered boundaries are calculated in the main kernels */
+        mod->ioPz += bnd->npml;
+        mod->ioTz += bnd->npml;
         mod->iePz += bnd->npml;
         mod->ieTz += bnd->npml;
 
     }
+    /*
     if (bnd->top==5) {
         if (bnd->speed != 0.0) bnd->spskip=NINT(dx/(bnd->speed*dt));
         else bnd->spskip=0;
@@ -480,11 +481,12 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         mod->iePz += bnd->topadd;
         mod->ieTz += bnd->topadd;
     }
+    */
     if (bnd->bot==4 || bnd->bot==2) {
         mod->naz += bnd->npml;
         /* For P/Tzz, Txx and Txz fields the tapered boundaries are calculated in the main kernels */
-        mod->iePz += bnd->npml;
-        mod->ieTz += bnd->npml;
+//        mod->iePz += bnd->npml;
+//        mod->ieTz += bnd->npml;
     }
     if (bnd->lef==4 || bnd->lef==2) {
         mod->nax += bnd->npml;
@@ -494,16 +496,16 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         mod->ieZx += bnd->npml;
 
         /* For Tzz, Txx and Txz fields the tapered boundaries are calculated in the main kernels */
-//        mod->ioPx += bnd->npml;
-//        mod->ioTx += bnd->npml;
+        mod->ioPx += bnd->npml;
+        mod->ioTx += bnd->npml;
         mod->iePx += bnd->npml;
         mod->ieTx += bnd->npml;
     }
     if (bnd->rig==4 || bnd->rig==2) {
         mod->nax += bnd->npml;
         /* For P/Tzz, Txx and Txz fields the tapered boundaries are calculated in the main kernels */
-        mod->iePx += bnd->npml;
-        mod->ieTx += bnd->npml;
+//        mod->iePx += bnd->npml;
+//        mod->ieTx += bnd->npml;
     }    
 
      fprintf(stderr,"Vx x-range: ioXx=%d ieXx=%d\n", mod->ioXx, mod->ieXx);
