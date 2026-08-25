@@ -37,15 +37,15 @@
 #define PI 3.14159265358979323846f                 
     
 /* ---------- grid / time ---------- */
-#define NX        400
-#define NZ        400
-#define NT       2000
-#define DX        5.0f
-#define DZ        5.0f     /* Cartesian output cell spacing */
-#define DT        0.001f
+//#define NX        400
+//#define NZ        400
+//#define NT       2000
+//#define DX        5.0f
+//#define DZ        5.0f     /* Cartesian output cell spacing */
+//#define DT        0.001f
 
 /* ---------- source ---------- */
-#define SOURCE_AMP  1e6f 
+//#define SOURCE_AMP  1e6f 
 #define SOURCE_F0   25.0f
     
 /* ---------- CFS-CPML absorbing boundary (left, right, bottom) ----------
@@ -57,7 +57,7 @@
 #define CPML_M      2.0f            /* polynomial order                    */
 #define CPML_R      1e-8f           /* target reflection coefficient       */
 #define CPML_KMAX   5.0f            /* maximum real stretching κ           */
-#define CPML_AMAX   (PI*SOURCE_F0)  /* maximum CFS shift α [rad/s]         */
+#define CPML_AMAX   (M_PI*SOURCE_F0)  /* maximum CFS shift α [rad/s]         */
     
 /* ---------- free surface ---------- 
  * z_s(x,t) = SURF_Z0 + SURF_AMP·sin(2π x/SURF_LAMBDA − SURF_OMEGA·t) + SURF_VRATE·t */
@@ -71,8 +71,8 @@
 #define IZ_REC  100   /* Cartesian depth index; z = (IZ_REC+0.5)*DZ */
 
 /* ---------- medium ---------- */
-#define RHO0  2000.0f
-#define VEL0  2000.0f
+//#define RHO0  2000.0f
+//#define VEL0  2000.0f
 
 
 static int write_snapshot(const char *fname, const float *data, size_t n)
@@ -115,7 +115,9 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
     nx = mod.nx;
     nt = mod.nt;
 
-    const float dx = DX, dz = DZ, dt = DT;
+    fprintf(stderr,"naz=%d nax=%d ioXx=%d ieXx=%d\n", mod.naz, mod.nax, mod.ioXx, mod.ieXx);
+
+    const float dx = mod.dx, dz = mod.dz, dt = mod.dt;
     const float Z_MAX    = (float)nz * dz;
     //const float K0       = RHO0 * VEL0 * VEL0;
     //const float dt_rho   = dt / RHO0;
@@ -123,9 +125,9 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
     const float inv24dx  = 1.0f / (24.0f * dx);
     const float inv_dx   = 1.0f / dx;
     const float inv12    = 1.0f / 12.0f;
-    const float two_pi_lam = 2.0f * PI / SURF_LAMBDA;
+    const float two_pi_lam = 2.0f * M_PI / SURF_LAMBDA;
     const int   J_SRC    = nz / 3;
-    const int   cpml_n   = CPML_N;
+    const int   cpml_n   = bnd.npml;
 
     const size_t pcnt  = (size_t)nx * nz;
     const size_t vxcnt = (size_t)(nx + 1) * nz;
@@ -133,7 +135,7 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
 
     /* σ_max chosen to achieve reflection CPML_R over the PML thickness */
     const float L_pml    = cpml_n * dx;
-    const float sigma_max = (CPML_M + 1.0f) * VEL0 / (2.0f * L_pml)
+    const float sigma_max = (CPML_M + 1.0f) * mod.cp_max / (2.0f * L_pml)
                             * logf(1.0f / CPML_R);
 
     /* --- CFS-CPML coefficient arrays (1-D, staggered) ---
@@ -141,10 +143,23 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
      * _xc : x-direction at cell  positions x  = (i+½)·dx  (i=0..NX-1,p)
      * _zf : z-direction at face  positions j  = j          (j=0..NZ,  vz)
      * _zc : z-direction at cell  positions j  = j+½        (j=0..NZ-1, p) */
-    float b_xf[NX+1], c_xf[NX+1], ik_xf[NX+1];
-    float b_xc[NX],   c_xc[NX],   ik_xc[NX];
-    float b_zf[NZ+1], c_zf[NZ+1], ik_zf[NZ+1];
-    float b_zc[NZ],   c_zc[NZ],   ik_zc[NZ];
+//    float b_xf[NX+1], c_xf[NX+1], ik_xf[NX+1];
+//    float b_xc[NX],   c_xc[NX],   ik_xc[NX];
+//    float b_zf[NZ+1], c_zf[NZ+1], ik_zf[NZ+1];
+//    float b_zc[NZ],   c_zc[NZ],   ik_zc[NZ];
+    float *b_xf  = calloc(nx+1,  sizeof(float));
+    float *c_xf  = calloc(nx+1,  sizeof(float));
+    float *ik_xf = calloc(nx+1,  sizeof(float));
+    float *b_xc  = calloc(nx,  sizeof(float));
+    float *c_xc  = calloc(nx,  sizeof(float));
+    float *ik_xc = calloc(nx,  sizeof(float));
+    float *b_zf  = calloc(nz+1,  sizeof(float));
+    float *c_zf  = calloc(nz+1,  sizeof(float));
+    float *ik_zf = calloc(nz+1,  sizeof(float));
+    float *b_zc  = calloc(nz,  sizeof(float));
+    float *c_zc  = calloc(nz,  sizeof(float));
+    float *ik_zc = calloc(nz,  sizeof(float));
+
 
     /* x-direction: left and right PML */
     for (int i = 0; i <= nx; i++) {
@@ -239,6 +254,8 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
         /* ----------------------------------------------------------------
          * vx update  (i-faces i=1..nx-1, j=0..nz-1)
          * ---------------------------------------------------------------- */
+        //for (int i=mod.ioXx-bnd.npml; i<mod.ieXx; i++) {
+
         for (int i = 1; i < nx; i++) {
             const float zs_f     = 0.5f*(surf_z[i-1]    + surf_z[i]);
             const float H_f      = Z_MAX - zs_f;
@@ -285,17 +302,19 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
                     ? (vxm2 - 8.0f*vxm1 + 8.0f*vxp1 - vxp2) * inv12
                     : (vxp1 - vxm1);
 
+                
                 /*
-                if (rox[(i+mod.ioXx)*n1+j+mod.ioXz] == 0.0) {
-                    fprintf(stderr,"i=%d j=%d rox=%e dt_rho=%e\n",i,j,dx*rox[i*nx+j],dt_rho);
+                if (rox[(i)*n1+j] == 0.0) {
+                    fprintf(stderr,"i=%d j=%d rox=%e \n",i,j,dx*rox[i*n1+j]);
                 }
                 */
                 vxi[j] = vxi[j]
-                        - dx*rox[(i+mod.ioXx)*n1+j+mod.ioXz] * (dpx - shear_f * nj * dpdj)
+                        //- dx*rox[(i+mod.ioXx)*n1+j+mod.ioXz] * (dpx - shear_f * nj * dpdj)
+                        - (mod.dt/2000) * (dpx - shear_f * nj * dpdj)
                         + ale_f  * nj * dvx_dj;
             }
         }
-        for (int j = 0; j < nz; j++) { vx[j] = 0.0f; vx[nx*nz+j] = 0.0f; }
+        for (int j = 0; j < nz; j++) { vx[j] = 0.0f; vx[(nx)*nz+j] = 0.0f; }
 
         /* ----------------------------------------------------------------
          * vz update  (j-faces j=0..nz-1 per column; j=nz → rigid bottom)
@@ -333,7 +352,8 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
                     : (vzp1 - vzm1);
 
                 vzi[j] = vzi[j]
-                        - dx*roz[(i+mod.ioZx)*n1+j+mod.ioZz] * dpdz
+                        //- dx*roz[(i+mod.ioZx)*n1+j+mod.ioZz] * dpdz
+                        - (mod.dt/2000) * dpdz
                         + ale_i  * nj * dvz_dj;
             }
             vzi[nz] = 0.0f;  /* rigid bottom wall */
@@ -402,6 +422,11 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
                     ? (pm2 - 8.0f*pm1 + 8.0f*pp1 - pp2) * inv12
                     : (pp1 - pm1);
 
+                /*
+                if (l2m[(i)*n1+j] == 0.0) {
+                    fprintf(stderr,"i=%d j=%d l2m=%e \n",i,j,dx*l2m[i*n1+j]);
+                }
+                */
                 pni[j] = pi[j]
                         - dx*l2m[(i+mod.ioPx)*n1+j+mod.ioPz]  * (dvx_dx - shear_c * nj * dvx_dj + dvz_dz)
                         + ale_i * nj * dp_dj;
@@ -479,7 +504,8 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
                    fname, nx, nt);
     }
 
-    free(p); free(p_new); free(vx); free(vz);
+    //free(p); free(p_new); free(vx); free(vz);
+    free(p_new);
     free(psi_vx_x); free(psi_vz_z); free(psi_p_x); free(psi_p_z);
     free(p_cart); free(rec);
     free(surf_z); free(dzsdt_col); free(H_col); free(dz_eff_col);
