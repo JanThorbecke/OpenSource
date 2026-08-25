@@ -5,7 +5,7 @@ ntap=20
 fmax=40
 
 makemod sizex=2000 sizez=2000 dx=5 dz=5 cp0=2000 ro0=2000 file_base=topo.su \
-    intt=def x=0,2000 z=1000,1000 cp=2300 ro=2500 \
+    intt=def x=0,2000 z=1000,1000 cp=2000 ro=2500 \
     orig=0,0 gradunit=0 verbose=1 
 
 makewave w=g2 fmax=25 t0=0.10 dt=$dt nt=4096 db=-40 file_out=G2.su verbose=1
@@ -41,6 +41,6 @@ set -x
     rec_int_vz=2 \
     rec_int_tzz=1 \
     rec_int_txz=1 \
-    ntaper=$ntap \
-    left=4 right=4 top=1 bottom=4
+    npml=$ntap \
+    left=2 right=2 top=1 bottom=2
 
