@@ -22,7 +22,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 	int   ix, iz, ibnd, ib, ibx, ibz;
 	int   nx, nz, n1, n2;
 	int   ixo, ixe, izo, ize;
-    int   npml, pml;
+    int   npml, pml, zmin, zmax, zlo, zhi;
     int   has_lef_pml, has_rig_pml, has_top_pml, has_bot_pml;
     float dpx, dpz, *p;
     static float *psi_vx_x = NULL, *psi_vz_z = NULL;
@@ -241,11 +241,11 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         }
 
         /* unified-mask CPML update: one loop per velocity component */
+        zmin = ((mod.ioXz-npml)>0?(mod.ioXz-npml):0);
+        zmax = ((mod.ieXz+npml)<n1?(mod.ieXz+npml):n1);
 #pragma omp for private(ix, iz, dpx) schedule(static)
         for (ix=((mod.ioXx-npml)>0?(mod.ioXx-npml):0); ix<((mod.ieXx+npml)<n2?(mod.ieXx+npml):n2); ix++) {
             int in_x = ((has_lef_pml && ix < mod.ioXx) || (has_rig_pml && ix >= mod.ieXx));
-            int zmin = ((mod.ioXz-npml)>0?(mod.ioXz-npml):0);
-            int zmax = ((mod.ieXz+npml)<n1?(mod.ieXz+npml):n1);
 
             if (in_x) {
                 for (iz=zmin; iz<zmax; iz++) {
@@ -277,11 +277,11 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
             }
         }
 
+        zmin = ((mod.ioZz-npml)>0?(mod.ioZz-npml):0);
+        zmax = ((mod.ieZz+npml)<n1?(mod.ieZz+npml):n1);
 #pragma omp for private(ix, iz, dpz) schedule(static)
         for (ix=((mod.ioZx-npml)>0?(mod.ioZx-npml):0); ix<((mod.ieZx+npml)<n2?(mod.ieZx+npml):n2); ix++) {
             int in_x = ((has_lef_pml && ix < mod.ioZx) || (has_rig_pml && ix >= mod.ieZx));
-            int zmin = ((mod.ioZz-npml)>0?(mod.ioZz-npml):0);
-            int zmax = ((mod.ieZz+npml)<n1?(mod.ieZz+npml):n1);
 
             if (in_x) {
                 for (iz=zmin; iz<zmax; iz++) {
@@ -359,15 +359,15 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         }
 
         /* vx: update all PML cells skipped by elastic4 main kernel */
-            int zmin = ((mod.ioXz-npml)>0?(mod.ioXz-npml):0);
-            int zmax = ((mod.ieXz+npml)<n1?(mod.ieXz+npml):n1);
+        zmin = ((mod.ioXz-npml)>0?(mod.ioXz-npml):0);
+        zmax = ((mod.ieXz+npml)<n1?(mod.ieXz+npml):n1);
+        zlo = has_top_pml ? zmin : mod.ioXz;
+        zhi = has_bot_pml ? zmax : mod.ieXz;
 //fprintf(stderr,"ixo=%d ixe=%d zmin=%d zmax=%d\n", ((mod.ioXx-npml)>0?(mod.ioXx-npml):0), ((mod.ieXx+npml)<n2?(mod.ieXx+npml):n2), zmin, zmax);
 
 #pragma omp for private(ix, iz, dpx, dpz) schedule(static)
         for (ix=((mod.ioXx-npml)>0?(mod.ioXx-npml):0); ix<((mod.ieXx+npml)<n2?(mod.ieXx+npml):n2); ix++) {
             int in_x = ((has_lef_pml && ix < mod.ioXx) || (has_rig_pml && ix >= mod.ieXx));
-            int zlo = has_top_pml ? zmin : mod.ioXz;
-            int zhi = has_bot_pml ? zmax : mod.ieXz;
 
             for (iz=zlo; iz<zhi; iz++) {
                 int in_z = ((has_top_pml && iz < mod.ioXz) || (has_bot_pml && iz >= mod.ieXz));
@@ -407,14 +407,14 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         }
 
         /* vz: update all PML cells skipped by elastic4 main kernel */
-            zmin = ((mod.ioZz-npml)>0?(mod.ioZz-npml):0);
-            zmax = ((mod.ieZz+npml)<n1?(mod.ieZz+npml):n1);
+        zmin = ((mod.ioZz-npml)>0?(mod.ioZz-npml):0);
+        zmax = ((mod.ieZz+npml)<n1?(mod.ieZz+npml):n1);
+        zlo = has_top_pml ? zmin : mod.ioZz;
+        zhi = has_bot_pml ? zmax : mod.ieZz;
 
 #pragma omp for private(ix, iz, dpx, dpz) schedule(static)
         for (ix=((mod.ioZx-npml)>0?(mod.ioZx-npml):0); ix<((mod.ieZx+npml)<n2?(mod.ieZx+npml):n2); ix++) {
             int in_x = ((has_lef_pml && ix < mod.ioZx) || (has_rig_pml && ix >= mod.ieZx));
-            int zlo = has_top_pml ? zmin : mod.ioZz;
-            int zhi = has_bot_pml ? zmax : mod.ieZz;
 
             for (iz=zlo; iz<zhi; iz++) {
                 int in_z = ((has_top_pml && iz < mod.ioZz) || (has_bot_pml && iz >= mod.ieZz));
@@ -1418,11 +1418,6 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 #pragma omp barrier
         }
 
-        //if (bnd.top==2) mod.ioPz += bnd.npml;
-        //if (bnd.bot==2) mod.iePz -= bnd.npml;
-        //if (bnd.lef==2) mod.ioPx += bnd.npml;
-        //if (bnd.rig==2) mod.iePx -= bnd.npml;
-
         /* unified-mask CPML update for pressure on P-grid */
 #pragma omp for private(ix, iz, dvx, dvz) schedule(guided,1)
         for (ix=((mod.ioPx-npml)>0?(mod.ioPx-npml):0); ix<((mod.iePx+npml)<n2?(mod.iePx+npml):n2); ix++) {
@@ -1593,6 +1588,124 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         }
         }
     } /* end elastic CFS-CPML */
+
+
+/****************************************************************/	
+/* compute fields inside tapered boundaries                     */
+/****************************************************************/
+
+    if (bnd.lef==4) {
+        for (ix=mod.ioPx-npml;ix<mod.ioPx;ix++) {
+            for (iz=mod.ioPz;iz<mod.iePz;iz++) {
+                p[ix*n1+iz] -= l2m[ix*n1+iz]*(
+                    c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
+                    c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]) +
+                    c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
+                    c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]));
+            }
+        }
+        if (mod.ischeme > 2) {
+            for (ix=mod.ioTx-npml; ix<mod.ioTx; ix++) {
+                for (iz=mod.ioPz;iz<mod.iePz;iz++) {
+                    dvx = c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
+                          c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]);
+                    dvz = c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
+                          c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]);
+                    txx[ix*n1+iz] -= l2m[ix*n1+iz]*dvx + lam[ix*n1+iz]*dvz;
+                    tzz[ix*n1+iz] -= l2m[ix*n1+iz]*dvz + lam[ix*n1+iz]*dvx;
+                    txz[ix*n1+iz] -= mul[ix*n1+iz]*(
+                            c1*(vx[ix*n1+iz]     - vx[ix*n1+iz-1] +
+                                vz[ix*n1+iz]     - vz[(ix-1)*n1+iz]) +
+                            c2*(vx[ix*n1+iz+1]   - vx[ix*n1+iz-2] +
+                                vz[(ix+1)*n1+iz] - vz[(ix-2)*n1+iz]) );
+                }
+            }
+        }
+    }
+    if (bnd.rig==4) {
+        for (ix=mod.iePx;ix<mod.iePx+npml;ix++) {
+            for (iz=mod.ioPz;iz<mod.iePz;iz++) {
+                p[ix*n1+iz] -= l2m[ix*n1+iz]*(
+                    c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
+                    c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]) +
+                    c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
+                    c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]));
+            }
+        }
+        if (mod.ischeme > 2) {
+            for (ix=mod.ieTx; ix<mod.ieTx+npml; ix++) {
+                for (iz=mod.ioPz;iz<mod.iePz;iz++) {
+                    dvx = c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
+                          c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]);
+                    dvz = c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
+                          c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]);
+                    txx[ix*n1+iz] -= l2m[ix*n1+iz]*dvx + lam[ix*n1+iz]*dvz;
+                    tzz[ix*n1+iz] -= l2m[ix*n1+iz]*dvz + lam[ix*n1+iz]*dvx;
+                    txz[ix*n1+iz] -= mul[ix*n1+iz]*(
+                            c1*(vx[ix*n1+iz]     - vx[ix*n1+iz-1] +
+                                vz[ix*n1+iz]     - vz[(ix-1)*n1+iz]) +
+                            c2*(vx[ix*n1+iz+1]   - vx[ix*n1+iz-2] +
+                                vz[(ix+1)*n1+iz] - vz[(ix-2)*n1+iz]) );
+                }
+            }
+        }
+    }
+    if (bnd.top==4) {
+        for (ix=(mod.ioPx-npml<0 ? mod.ioPx: mod.ioPx-npml);ix<(mod.iePx+npml<n2 ? mod.iePx+npml: mod.iePx);ix++) {
+            for (iz=mod.ioPz-npml;iz<mod.ioPz;iz++) {
+                p[ix*n1+iz] -= l2m[ix*n1+iz]*(
+                    c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
+                    c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]) +
+                    c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
+                    c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]));
+            }
+        }
+        if (mod.ischeme > 2) {
+            for (ix=(mod.ioTx-npml<0 ? mod.ioTx: mod.ioTx-npml);ix<(mod.ieTx+npml<n2 ? mod.ieTx+npml: mod.ieTx);ix++) {
+                for (iz=mod.ioPz-npml;iz<mod.ioPz;iz++) {
+                    dvx = c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
+                          c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]);
+                    dvz = c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
+                          c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]);
+                    txx[ix*n1+iz] -= l2m[ix*n1+iz]*dvx + lam[ix*n1+iz]*dvz;
+                    tzz[ix*n1+iz] -= l2m[ix*n1+iz]*dvz + lam[ix*n1+iz]*dvx;
+                    txz[ix*n1+iz] -= mul[ix*n1+iz]*(
+                            c1*(vx[ix*n1+iz]     - vx[ix*n1+iz-1] +
+                                vz[ix*n1+iz]     - vz[(ix-1)*n1+iz]) +
+                            c2*(vx[ix*n1+iz+1]   - vx[ix*n1+iz-2] +
+                                vz[(ix+1)*n1+iz] - vz[(ix-2)*n1+iz]) );
+                }
+            }
+        }
+    }
+    if (bnd.bot==4) {
+        for (ix=(mod.ioPx-npml<0 ? mod.ioPx: mod.ioPx-npml);ix<(mod.iePx+npml<n2 ? mod.iePx+npml: mod.iePx);ix++) {
+            for (iz=mod.iePz;iz<mod.iePz+npml;iz++) {
+                p[ix*n1+iz] -= l2m[ix*n1+iz]*(
+                    c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
+                    c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]) +
+                    c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
+                    c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]));
+            }
+        }
+        if (mod.ischeme > 2) {
+            for (ix=(mod.ioTx-npml<0 ? mod.ioTx: mod.ioTx-npml);ix<(mod.ieTx+npml<n2 ? mod.ieTx+npml: mod.ieTx);ix++) {
+                for (iz=mod.iePz;iz<mod.iePz+npml;iz++) {
+                    dvx = c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
+                          c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]);
+                    dvz = c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
+                          c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]);
+                    txx[ix*n1+iz] -= l2m[ix*n1+iz]*dvx + lam[ix*n1+iz]*dvz;
+                    tzz[ix*n1+iz] -= l2m[ix*n1+iz]*dvz + lam[ix*n1+iz]*dvx;
+                    txz[ix*n1+iz] -= mul[ix*n1+iz]*(
+                            c1*(vx[ix*n1+iz]     - vx[ix*n1+iz-1] +
+                                vz[ix*n1+iz]     - vz[(ix-1)*n1+iz]) +
+                            c2*(vx[ix*n1+iz+1]   - vx[ix*n1+iz-2] +
+                                vz[(ix+1)*n1+iz] - vz[(ix-2)*n1+iz]) );
+                }
+            }
+        }
+    }
 
 
 	

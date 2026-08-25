@@ -108,17 +108,12 @@ float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float
 		 applySource(mod, src, wav, bnd, itime, ixsrc, izsrc, vx, vz, tzz, txx, txz, rox, roz, l2m, src_nwav, verbose);
 	}
 
-    
 	/* boundary condition clears velocities on boundaries */
 	boundariesP(mod, bnd, vx, vz, tzz, txx, txz, rox, roz, l2m, lam, mul, itime, verbose);
 
 	/* calculate Txx/tzz for all grid points except on the virtual boundary.
 	 * When CPML is active (bnd.xxx==2) skip the PML zone — boundariesV handles those cells. */
     /*
-	txx_ix0 = (bnd.lef==2) ? mod.ioXx : mod.ioPx;
-	txx_ix1 = (bnd.rig==2) ? mod.ieXx : mod.iePx;
-	txx_iz0 = (bnd.top==2) ? mod.ioXz : mod.ioPz;
-	txx_iz1 = (bnd.bot==2) ? mod.ieXz : mod.iePz;
     fprintf(stderr,"txx_ix0=%d txx_ix1=%d txx_iz0=%d txx_iz1=%d\n", txx_ix0, txx_ix1, txx_iz0, txx_iz1);
     fprintf(stderr,"mod.ioTx=%d mod.ieTx=%d mod.ioPz=%d mod.iePz=%d\n", mod.ioTx, mod.ieTx, mod.ioPz, mod.iePz);
     */

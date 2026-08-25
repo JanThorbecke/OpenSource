@@ -69,23 +69,11 @@ int acoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 	int   n1;
 	int   ioXx, ioXz, ioZz, ioZx, ioPx, ioPz;
 
-/* Taylor series
-	c1 = 9.0/8.0; 
-	c2 = -1.0/24.0;
-*/
 /* L2 optimised */
 	c1 = 1.129042;
 	c2 = -0.04301412;
 	n1  = mod.naz;
 
-/*
-	ioXx=mod.iorder/2;
-	ioXz=ioXx-1;
-	ioZz=mod.iorder/2;
-	ioZx=ioZz-1;
-	ioPx=mod.iorder/2-1;
-	ioPz=ioPx;
-*/
 	/* calculate vx for all grid points except on the virtual boundary*/
 #pragma omp for private (ix, iz) nowait schedule(guided,1)
 	for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
@@ -116,14 +104,6 @@ int acoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 		 applySource(mod, src, wav, bnd, itime, ixsrc, izsrc, vx, vz, p, NULL, NULL, rox, roz, l2m, src_nwav, verbose);
 	}
 
-	/* this is needed because the P fields are not using tapered boundaries (bnd....=4) */
-    /*
-    if (bnd.top==2) mod.ioPz += bnd.npml;
-    if (bnd.bot==2) mod.iePz -= bnd.npml;
-    if (bnd.lef==2) mod.ioPx += bnd.npml;
-    if (bnd.rig==2) mod.iePx -= bnd.npml;
-    */
-
 	/* calculate p/tzz for all grid points except on the virtual boundary */
 #pragma omp for private (ix, iz) schedule(guided,1) 
 //#pragma omp for private (ix, iz) schedule(dynamic) 
@@ -138,12 +118,6 @@ int acoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 						c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]));
 		}
 	}
-    /*
-    if (bnd.top==2) mod.ioPz -= bnd.npml;
-    if (bnd.bot==2) mod.iePz += bnd.npml;
-    if (bnd.lef==2) mod.ioPx -= bnd.npml;
-    if (bnd.rig==2) mod.iePx += bnd.npml;
-    */
 
 	/* Add stress source */
 	if (src.type < 6) {

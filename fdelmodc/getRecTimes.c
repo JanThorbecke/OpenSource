@@ -29,9 +29,6 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
         //fprintf(stderr,"calling gerrectimes for time-step %d to store isam=%d\n", itime, isam);
         ibndx = mod.ioPx;
         ibndz = mod.ioPz;
-        if (bnd.lef==4 || bnd.lef==2) ibndx += bnd.npml;
-        if (bnd.top==4 || bnd.top==2) ibndz += bnd.npml;
-        if (bnd.top==5) ibndz += bnd.topadd;
         first=0;
     }
 	n1    = mod.naz;

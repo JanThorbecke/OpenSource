@@ -64,20 +64,6 @@ int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float 
 	/* Txz: muu */
 	ioTx=mod.ioTx;
 	ioTz=mod.ioTz;
-    /*
-    if (bnd.lef==4 || bnd.lef==2) {
-		ioPx += bnd.npml;
-		ioTx += bnd.npml;
-	}
-    if (bnd.top==4 || bnd.top==2) {
-		ioPz += bnd.npml;
-		ioTz += bnd.npml;
-	}
-    if (bnd.top==5) {
-		ioPz += bnd.topadd;
-		ioTz += bnd.topadd;
-	}
-    */
 
 /* open files and read first header */
 
