@@ -52,7 +52,7 @@ time ../fdelmodc \
 	dtrcv=0.004 xsrc=1000 zsrc=300 nshot=1 \
 	src_type=1 \
 	npml=100 \
-	left=2 right=2 bottom=2 top=2 \
+	left=4 right=4 bottom=4 top=4 \
 	tmod=1.5 dt=0.001 
 
 #    tsnap1=0 tsnap2=1.5 dtsnap=0.05 \

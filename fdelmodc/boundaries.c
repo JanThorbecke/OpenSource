@@ -1161,15 +1161,6 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 					vz[ix*n1+iz] *= bnd.tapz[ix-ib];
 				}
 			}
-/*
-			for (ix=ixo-5; ix<ixo+5; ix++) {
-				for (iz=0; iz<5; iz++) {
-			fprintf(stderr,"edge ix=%d iz=%d vz=%e roz=%e tzz=%e txz=%e txx=%e lam=%e l2m=%e\n", ix, iz, vz[ix*n1+iz], roz[ix*n1+iz],
-tzz[ix*n1+iz], txz[ix*n1+iz], txx[ix*n1+iz], lam[ix*n1+iz], l2m[ix*n1+iz]);
-				}
-			}
-*/
-		
 		} /* end elastic scheme */
 
 	}
