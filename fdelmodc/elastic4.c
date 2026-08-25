@@ -71,7 +71,7 @@ float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float
 	float dvx, dvz;
 	int   ix, iz;
 	int   n1;
-	int   txx_ix0, txx_ix1, txx_iz0, txx_iz1;
+	//int   txx_ix0, txx_ix1, txx_iz0, txx_iz1;
 
 	c1 = 9.0/8.0; 
 	c2 = -1.0/24.0;
@@ -114,14 +114,19 @@ float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float
 
 	/* calculate Txx/tzz for all grid points except on the virtual boundary.
 	 * When CPML is active (bnd.xxx==2) skip the PML zone — boundariesV handles those cells. */
+    /*
 	txx_ix0 = (bnd.lef==2) ? mod.ioXx : mod.ioPx;
 	txx_ix1 = (bnd.rig==2) ? mod.ieXx : mod.iePx;
 	txx_iz0 = (bnd.top==2) ? mod.ioXz : mod.ioPz;
 	txx_iz1 = (bnd.bot==2) ? mod.ieXz : mod.iePz;
+    fprintf(stderr,"txx_ix0=%d txx_ix1=%d txx_iz0=%d txx_iz1=%d\n", txx_ix0, txx_ix1, txx_iz0, txx_iz1);
+    fprintf(stderr,"mod.ioTx=%d mod.ieTx=%d mod.ioPz=%d mod.iePz=%d\n", mod.ioTx, mod.ieTx, mod.ioPz, mod.iePz);
+    */
+
 #pragma omp	for private (ix, iz, dvx, dvz) nowait schedule(guided,1)
-	for (ix=txx_ix0; ix<txx_ix1; ix++) {
+	for (ix=mod.ioTx; ix<mod.ieTx; ix++) {
 #pragma simd
-		for (iz=txx_iz0; iz<txx_iz1; iz++) {
+		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			dvx = c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
 			      c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]);
 			dvz = c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
@@ -136,9 +141,9 @@ float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float
 	/* calculate Txz for all grid points except on the virtual boundary.
 	 * When CPML is active, PML zone txz cells are handled by boundariesV. */
 #pragma omp	for private (ix, iz)  schedule(guided,1)
-	for (ix=txx_ix0; ix<txx_ix1; ix++) {
+	for (ix=mod.ioTx; ix<mod.ieTx; ix++) {
 #pragma simd
-		for (iz=txx_iz0; iz<txx_iz1; iz++) {
+		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
 			txz[ix*n1+iz] -= mul[ix*n1+iz]*(
 					c1*(vx[ix*n1+iz]     - vx[ix*n1+iz-1] +
 						vz[ix*n1+iz]     - vz[(ix-1)*n1+iz]) +

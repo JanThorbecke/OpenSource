@@ -349,96 +349,6 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
 				muu[(ix+ioTx)*n1+iz+ioTz]=fac*mul;
 			}
 		}
-
-		/* Extend model parameters into CFS-CPML PML zones.
-		 * readModel shifts ioPx/ioTx/ioPz/ioTz by npml before filling, so PML cells
-		 * are zero-filled by calloc. Extend nearest-neighbor values into PML zones
-		 * so CPML attenuation operates on valid material parameters. */
-		if (bnd.lef==2 || bnd.rig==2 || bnd.top==2 || bnd.bot==2) {
-			int nax = mod.nax;
-			int iy, pix, piz;
-			/* Left PML: copy from the leftmost filled column */
-			if (bnd.lef==2) {
-				/* velocity (rox, roz): leftmost filled ix = ioXx */
-				for (pix=0; pix<ioXx; pix++) {
-					for (iy=0; iy<n1; iy++) {
-						rox[pix*n1+iy] = rox[ioXx*n1+iy];
-						roz[pix*n1+iy] = roz[ioXx*n1+iy];
-					}
-				}
-				/* stress (l2m, lam): leftmost filled ix = ioPx */
-				for (pix=0; pix<ioPx; pix++) {
-					for (iy=0; iy<n1; iy++) {
-						l2m[pix*n1+iy] = l2m[ioPx*n1+iy];
-						lam[pix*n1+iy] = lam[ioPx*n1+iy];
-					}
-				}
-				/* shear (muu): leftmost filled ix = ioTx */
-				for (pix=0; pix<ioTx; pix++) {
-					for (iy=0; iy<n1; iy++) {
-						muu[pix*n1+iy] = muu[ioTx*n1+iy];
-					}
-				}
-			}
-			/* Right PML: copy from the rightmost filled column */
-			if (bnd.rig==2) {
-				int ixR_vx = ioXx+nx-1;
-				int ixR_p  = ioPx+nx-1;
-				int ixR_t  = ioTx+nx-1;
-				for (pix=ixR_vx+1; pix<nax; pix++) {
-					for (iy=0; iy<n1; iy++) {
-						rox[pix*n1+iy] = rox[ixR_vx*n1+iy];
-						roz[pix*n1+iy] = roz[ixR_vx*n1+iy];
-					}
-				}
-				for (pix=ixR_p+1; pix<nax; pix++) {
-					for (iy=0; iy<n1; iy++) {
-						l2m[pix*n1+iy] = l2m[ixR_p*n1+iy];
-						lam[pix*n1+iy] = lam[ixR_p*n1+iy];
-					}
-				}
-				for (pix=ixR_t+1; pix<nax; pix++) {
-					for (iy=0; iy<n1; iy++) {
-						muu[pix*n1+iy] = muu[ixR_t*n1+iy];
-					}
-				}
-			}
-			/* Top PML: copy from the topmost filled row */
-			if (bnd.top==2) {
-				for (piz=0; piz<ioPz; piz++) {
-					for (iy=0; iy<nax; iy++) {
-						rox[iy*n1+piz] = rox[iy*n1+ioXz];
-						roz[iy*n1+piz] = roz[iy*n1+ioXz];
-						l2m[iy*n1+piz] = l2m[iy*n1+ioPz];
-						lam[iy*n1+piz] = lam[iy*n1+ioPz];
-						muu[iy*n1+piz] = muu[iy*n1+ioTz];
-					}
-				}
-			}
-			/* Bottom PML: copy from the bottommost filled row */
-			if (bnd.bot==2) {
-				int izB_vx = ioXz+nz-1;
-				int izB_p  = ioPz+nz-1;
-				int izB_t  = ioTz+nz-1;
-				for (piz=izB_vx+1; piz<n1; piz++) {
-					for (iy=0; iy<nax; iy++) {
-						rox[iy*n1+piz] = rox[iy*n1+izB_vx];
-						roz[iy*n1+piz] = roz[iy*n1+izB_vx];
-					}
-				}
-				for (piz=izB_p+1; piz<n1; piz++) {
-					for (iy=0; iy<nax; iy++) {
-						l2m[iy*n1+piz] = l2m[iy*n1+izB_p];
-						lam[iy*n1+piz] = lam[iy*n1+izB_p];
-					}
-				}
-				for (piz=izB_t+1; piz<n1; piz++) {
-					for (iy=0; iy<nax; iy++) {
-						muu[iy*n1+piz] = muu[iy*n1+izB_t];
-					}
-				}
-			}
-		}
 	}
 	else { /* Acoustic Scheme */
 		iz = nz-1;
@@ -557,7 +467,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
     }
 	for (ix=0;ix<mod.nax;ix++) {
 		for (iz=mod.ieZz;iz<mod.naz;iz++) {
-            roz[ix*n1+iz]= roz[ix*n1+mod.ieZz];
+            roz[ix*n1+iz]= roz[ix*n1+mod.ieZz-1];
         }
     }
     //fprintf(stderr,"ix %d-%d iz %d %d med %e\n", 0,mod.nax,mod.iePz,mod.naz, l2m[20*n1+mod.iePz-1]);
@@ -571,112 +481,55 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         /* Halo Left */
 		for (ix=0;ix<ioPx;ix++) {
 			for (iz=ioPz;iz<mod.iePz;iz++) {
-                lam[ix*n1+iz]= l2m[ioPx*n1+iz];
-                muu[ix*n1+iz]= l2m[ioTx*n1+iz];
+                lam[ix*n1+iz]= lam[ioPx*n1+iz];
+            }
+        }
+		for (ix=0;ix<ioTx;ix++) {
+			for (iz=ioTz;iz<mod.ieTz;iz++) {
+                muu[ix*n1+iz]= muu[ioTx*n1+iz];
             }
         }
         /* Halo Right */
 		for (ix=mod.iePx;ix<mod.nax;ix++) {
 			for (iz=ioPz;iz<mod.iePz;iz++) {
-                lam[ix*n1+iz]= l2m[(mod.iePx-1)*n1+iz];
-                muu[ix*n1+iz]= l2m[(mod.ieTx-1)*n1+iz];
+                lam[ix*n1+iz]= lam[(mod.iePx-1)*n1+iz];
+            }
+        }
+		for (ix=mod.ieTx;ix<mod.nax;ix++) {
+			for (iz=ioTz;iz<mod.ieTz;iz++) {
+                muu[ix*n1+iz]= muu[(mod.ieTx-1)*n1+iz];
             }
         }
         /* Halo top */
 		for (ix=0;ix<mod.nax;ix++) {
 			for (iz=0;iz<mod.ioPz;iz++) {
-                lam[ix*n1+iz]= l2m[ix*n1+mod.ioPz];
-                muu[ix*n1+iz]= l2m[ix*n1+mod.ioPz];
+                lam[ix*n1+iz]= lam[ix*n1+mod.ioPz];
+            }
+        }
+		for (ix=0;ix<mod.nax;ix++) {
+			for (iz=0;iz<mod.ioTz;iz++) {
+                muu[ix*n1+iz]= muu[ix*n1+mod.ioTz];
             }
         }
         /* Halo Bot */
 		for (ix=0;ix<mod.nax;ix++) {
 			for (iz=mod.iePz;iz<mod.naz;iz++) {
-                lam[ix*n1+iz]= l2m[ix*n1+mod.iePz-1];
-                muu[ix*n1+iz]= l2m[ix*n1+mod.iePz-1];
+                lam[ix*n1+iz]= lam[ix*n1+mod.iePz-1];
+            }
+        }
+		for (ix=0;ix<mod.nax;ix++) {
+			for (iz=mod.ieTz;iz<mod.naz;iz++) {
+                muu[ix*n1+iz]= muu[ix*n1+mod.ieTz-1];
             }
         }
     }
 
-	/* For topography free surface check for zero-velocity and set rox and roz also to zero */
-    /*
-	for (ix=0;ix<nx;ix++) {
-		for (iz=0;iz<nz;iz++) {
-			if (l2m[(ix+ioPx)*n1+iz+ioPz]==0.0) {
-				rox[(ix+ioXx)*n1+iz+ioXz]=0.0;
-				roz[(ix+ioZx)*n1+iz+ioZz]=0.0;
-			}
-		}
-	}
-    */
-    
-    
     /* Left  */
     if (bnd.lef==4 || bnd.lef==2) {
-        
-        /* rox field */
-        //ixo = mod.ioXx-bnd.npml;
-        ixo = 0;
-        ixe = mod.ioXx;
-        izo = mod.ioXz;
-        ize = mod.ieXz;
-        for (ix=ixo; ix<ixe; ix++) {
-            for (iz=izo; iz<ize; iz++) {
-                rox[ix*n1+iz] = rox[ixe*n1+iz];
-            }
-        }
-        
-        /* roz field */
-        //ixo = mod.ioZx-bnd.npml;
-        ixo = 0;
-        ixe = mod.ioZx;
-        izo = mod.ioZz;
-        ize = mod.ieZz;
-        for (ix=ixo; ix<ixe; ix++) {
-            for (iz=izo; iz<ize; iz++) {
-                roz[ix*n1+iz] = roz[ixe*n1+iz];
-            }
-        }
-        /* l2m field */
-        //ixo = mod.ioPx;
-        ixo = 0;
-        ixe = mod.ioPx+bnd.npml;
-        izo = mod.ioPz;
-        ize = mod.iePz;
-        for (ix=ixo; ix<ixe; ix++) {
-            for (iz=izo; iz<ize; iz++) {
-                l2m[ix*n1+iz] = l2m[ixe*n1+iz];
-            }
-        }
-        
-        if (mod.ischeme>2) { /* Elastic Scheme */
-        	/* lam field */
-        	//ixo = mod.ioPx;
-            ixo = 0;
-        	ixe = mod.ioPx+bnd.npml;
-        	izo = mod.ioPz;
-        	ize = mod.iePz;
-        	for (ix=ixo; ix<ixe; ix++) {
-            	for (iz=izo; iz<ize; iz++) {
-                	lam[ix*n1+iz] = lam[ixe*n1+iz];
-            	}
-        	}
-            /* muu field */
-            //ixo = mod.ioTx;
-            ixo = 0;
-            ixe = mod.ioTx+bnd.npml;
-            izo = mod.ioTz;
-            ize = mod.ieTz;
-            for (ix=ixo; ix<ixe; ix++) {
-                for (iz=izo; iz<ize; iz++) {
-                    muu[ix*n1+iz] = muu[ixe*n1+iz];
-                }
-            }
-        }
         if (mod.ischeme==2 || mod.ischeme==4) {
             /* tss and tep field */
         	ixo = mod.ioPx;
-        	ixe = mod.ioPx+bnd.npml;
+        	ixe = mod.ioPx;
         	izo = mod.ioPz;
         	ize = mod.iePz;
         	for (ix=ixo; ix<ixe; ix++) {
@@ -691,7 +544,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         if (mod.ischeme==4) {
             /* tes field */
         	ixo = mod.ioPx;
-        	ixe = mod.ioPx+bnd.npml;
+        	ixe = mod.ioPx;
         	izo = mod.ioPz;
         	ize = mod.iePz;
         	for (ix=ixo; ix<ixe; ix++) {
@@ -700,75 +553,14 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
             	}
         	}
         }
-
     }
     
     /* Right  */
     if (bnd.rig==4 || bnd.rig==2) {
         
-        /* rox field */
-        ixo = mod.ieXx;
-        //ixe = mod.ieXx+bnd.npml;
-        ixe = mod.nax;
-        izo = mod.ioXz;
-        ize = mod.ieXz;
-        for (ix=ixo; ix<ixe; ix++) {
-            for (iz=izo; iz<ize; iz++) {
-                rox[ix*n1+iz] = rox[(ixo-1)*n1+iz];
-            }
-        }
-        
-        /* roz field */
-        ixo = mod.ieZx;
-        //ixe = mod.ieZx+bnd.npml;
-        ixe = mod.nax;
-        izo = mod.ioZz;
-        ize = mod.ieZz;
-        for (ix=ixo; ix<ixe; ix++) {
-            for (iz=izo; iz<ize; iz++) {
-                roz[ix*n1+iz] = roz[(ixo-1)*n1+iz];
-            }
-        }
-        /* l2m field */
-        ixo = mod.iePx-bnd.npml;
-        //ixe = mod.iePx;
-        ixe = mod.nax;
-        izo = mod.ioPz;
-        ize = mod.iePz;
-        for (ix=ixo; ix<ixe; ix++) {
-            for (iz=izo; iz<ize; iz++) {
-                l2m[ix*n1+iz] = l2m[(ixo-1)*n1+iz];
-            }
-        }
-        
-        if (mod.ischeme>2) { /* Elastic Scheme */
-        	/* lam field */
-        	ixo = mod.iePx-bnd.npml;
-        	//ixe = mod.iePx;
-            ixe = mod.nax;
-        	izo = mod.ioPz;
-        	ize = mod.iePz;
-        	for (ix=ixo; ix<ixe; ix++) {
-            	for (iz=izo; iz<ize; iz++) {
-                	lam[ix*n1+iz] = lam[(ixo-1)*n1+iz];
-            	}
-        	}
-            /* muu field */
-            ixo = mod.ieTx-bnd.npml;
-            //ixe = mod.ieTx;
-            ixe = mod.nax;
-            izo = mod.ioTz;
-            ize = mod.ieTz;
-            for (ix=ixo; ix<ixe; ix++) {
-                for (iz=izo; iz<ize; iz++) {
-                    muu[ix*n1+iz] = muu[(ixo-1)*n1+iz];
-                }
-            }
-        }
         if (mod.ischeme==2 || mod.ischeme==4) {
             /* tss and tep field */
-        	ixo = mod.iePx-bnd.npml;
-        	//ixe = mod.iePx;
+        	ixo = mod.iePx;
             ixe = mod.nax;
         	izo = mod.ioPz;
         	ize = mod.iePz;
@@ -785,8 +577,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
         }
         if (mod.ischeme==4) {
             /* tes field */
-        	ixo = mod.iePx-bnd.npml;
-        	//ixe = mod.iePx;
+        	ixo = mod.iePx;
             ixe = mod.nax;
         	izo = mod.ioPz;
         	ize = mod.iePz;
@@ -796,86 +587,17 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
             	}
         	}
         }
-
     }
 
 	/* Top */
     if (bnd.top==4 || bnd.top==2) {
         
-        /* Rox field */
-        ixo = mod.ioXx;
-        ixe = mod.ieXx;
-        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.npml;
-        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.npml;
-        //izo = mod.ioXz-bnd.npml;
-        ixo = 0;
-        ixe = mod.nax;
-        izo = 0;
-        ize = mod.ioXz;
-        for (ix=ixo; ix<ixe; ix++) {
-            for (iz=izo; iz<ize; iz++) {
-                rox[ix*n1+iz] = rox[ix*n1+ize];
-            }
-        }
-        
-        /* roz field */
-        ixo = mod.ioZx;
-        ixe = mod.ieZx;
-        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.npml;
-        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.npml;
-        //izo = mod.ioZz-bnd.npml;
-        ixo = 0;
-        ixe = mod.nax;
-        izo = 0;
-        ize = mod.ioZz;
-        for (ix=ixo; ix<ixe; ix++) {
-            for (iz=izo; iz<ize; iz++) {
-                roz[ix*n1+iz] = roz[ix*n1+ize];
-            }
-        }
-        /* l2m field */
-        ixo = mod.ioPx;
-        ixe = mod.iePx;
-        //izo = mod.ioPz;
-        izo = 0;
-        ize = mod.ioPz+bnd.npml;
-        for (ix=ixo; ix<ixe; ix++) {
-            for (iz=izo; iz<ize; iz++) {
-                l2m[ix*n1+iz] = l2m[ix*n1+ize];
-            }
-        }
-        
-        if (mod.ischeme>2) { /* Elastic Scheme */
-        	/* lam field */
-        	ixo = mod.ioPx;
-        	ixe = mod.iePx;
-        	//izo = mod.ioPz;
-            izo = 0;
-        	ize = mod.ioPz+bnd.npml;
-        	for (ix=ixo; ix<ixe; ix++) {
-            	for (iz=izo; iz<ize; iz++) {
-                	lam[ix*n1+iz] = lam[ix*n1+ize];
-            	}
-        	}
-            /* muu field */
-            ixo = mod.ioTx;
-            ixe = mod.ieTx;
-            //izo = mod.ioTz;
-            izo = 0;
-            ize = mod.ioTz+bnd.npml;
-            for (ix=ixo; ix<ixe; ix++) {
-                for (iz=izo; iz<ize; iz++) {
-                    muu[ix*n1+iz] = muu[ix*n1+ize];
-                }
-            }
-        }
         if (mod.ischeme==2 || mod.ischeme==4) {
             /* tss and tep field */
         	ixo = mod.ioPx;
         	ixe = mod.iePx;
-        	//izo = mod.ioPz;
             izo = 0;
-        	ize = mod.ioPz+bnd.npml;
+        	ize = mod.ioPz;
         	for (ix=ixo; ix<ixe; ix++) {
             	for (iz=izo; iz<ize; iz++) {
                     for (imech = 0; imech < mod.nfw; imech++) {
@@ -889,9 +611,8 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
             /* tes field */
         	ixo = mod.ioPx;
         	ixe = mod.iePx;
-        	//izo = mod.ioPz;
             izo = 0;
-        	ize = mod.ioPz+bnd.npml;
+        	ize = mod.ioPz;
         	for (ix=ixo; ix<ixe; ix++) {
             	for (iz=izo; iz<ize; iz++) {
                     tes[ix*n1+iz] = tes[ix*n1+ize];
@@ -904,80 +625,11 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
 	/* Bottom */
     if (bnd.bot==4 || bnd.bot==2) {
         
-        /* Rox field */
-        //ixo = mod.ioXx;
-        //ixe = mod.ieXx;
-        //if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.npml;
-        //if (bnd.rig==4 || bnd.rig==2) ixe += bnd.npml;
-        ixo=0;
-        ixe=mod.nax;
-        izo = mod.ieXz;
-        //ize = mod.ieXz+bnd.npml;
-        ize = mod.naz;
-        for (ix=ixo; ix<ixe; ix++) {
-            for (iz=izo; iz<ize; iz++) {
-                rox[ix*n1+iz] = rox[ix*n1+izo];
-            }
-        }
-        
-        /* roz field */
-        //ixo = mod.ioZx;
-        //ixe = mod.ieZx;
-        //if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.npml;
-        //if (bnd.rig==4 || bnd.rig==2) ixe += bnd.npml;
-        ixo=0;
-        ixe=mod.nax;
-        izo = mod.ieZz;
-        //ize = mod.ieZz+bnd.npml;
-        ize = mod.naz;
-        for (ix=ixo; ix<ixe; ix++) {
-            for (iz=izo; iz<ize; iz++) {
-                roz[ix*n1+iz] = roz[ix*n1+izo-1];
-            }
-        }
-        /* l2m field */
-        ixo = mod.ioPx;
-        ixe = mod.iePx;
-        izo = mod.iePz-bnd.npml;
-        //ize = mod.iePz;
-        ize = mod.naz;
-        for (ix=ixo; ix<ixe; ix++) {
-            for (iz=izo; iz<ize; iz++) {
-                l2m[ix*n1+iz] = l2m[ix*n1+izo-1];
-            }
-        }
-        
-        if (mod.ischeme>2) { /* Elastic Scheme */
-        	/* lam field */
-        	ixo = mod.ioPx;
-        	ixe = mod.iePx;
-        	izo = mod.iePz-bnd.npml;
-        	//ize = mod.iePz;
-            ize = mod.naz;
-        	for (ix=ixo; ix<ixe; ix++) {
-            	for (iz=izo; iz<ize; iz++) {
-                	lam[ix*n1+iz] = lam[ix*n1+izo-1];
-            	}
-        	}
-
-            /* muu */
-            ixo = mod.ioTx;
-            ixe = mod.ieTx;
-            izo = mod.ieTz-bnd.npml;
-            //ize = mod.ieTz;
-            ize = mod.naz;
-            for (ix=ixo; ix<ixe; ix++) {
-                for (iz=izo; iz<ize; iz++) {
-                    muu[ix*n1+iz] = muu[ix*n1+izo-1];
-                }
-            }
-        }
         if (mod.ischeme==2 || mod.ischeme==4) {
             /* tss and tep field */
         	ixo = mod.ioPx;
         	ixe = mod.iePx;
-        	izo = mod.iePz-bnd.npml;
-        	//ize = mod.iePz;
+        	izo = mod.iePz;
             ize = mod.naz;
         	for (ix=ixo; ix<ixe; ix++) {
             	for (iz=izo; iz<ize; iz++) {
@@ -992,8 +644,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
             /* tes field */
         	ixo = mod.ioPx;
         	ixe = mod.iePx;
-        	izo = mod.iePz-bnd.npml;
-        	//ize = mod.iePz;
+        	izo = mod.iePz;
             ize = mod.naz;
         	for (ix=ixo; ix<ixe; ix++) {
             	for (iz=izo; iz<ize; iz++) {
@@ -1004,50 +655,8 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
 
     }
  
-    if (bnd.top==5) {
-        
-        /* Rox field */
-        ixo = mod.ioXx;
-        ixe = mod.ieXx;
-        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.npml;
-        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.npml;
-        izo = mod.ioXz-bnd.topadd;
-        ize = mod.ioXz;
-        
-        for (ix=ixo; ix<ixe; ix++) {
-            for (iz=izo; iz<ize; iz++) {
-                //rox[ix*n1+iz] = rox[ix*n1+ize];
-                rox[ix*n1+iz] = 0.0;
-            }
-        }
-        
-        /* roz field */
-        ixo = mod.ioZx;
-        ixe = mod.ieZx;
-        if (bnd.lef==4 || bnd.lef==2) ixo -= bnd.npml;
-        if (bnd.rig==4 || bnd.rig==2) ixe += bnd.npml;
-        izo = mod.ioZz-bnd.topadd;
-        ize = mod.ioZz;
-        for (ix=ixo; ix<ixe; ix++) {
-            for (iz=izo; iz<ize; iz++) {
-                //roz[ix*n1+iz] = roz[ix*n1+ize];
-                roz[ix*n1+iz] = 0.0;
-            }
-        }
-        /* l2m field */
-        ixo = mod.ioPx;
-        ixe = mod.iePx;
-        izo = mod.ioPz;
-        ize = mod.ioPz+bnd.topadd;
-        for (ix=ixo; ix<ixe; ix++) {
-            for (iz=izo; iz<ize; iz++) {
-                //l2m[ix*n1+iz] = l2m[ix*n1+ize];
-                l2m[ix*n1+iz] = 0.0;
-            }
-        }
 //writesufile("read_rox.su", rox, mod.naz, mod.nax, 0.0, 0.0, mod.dz, mod.dx);
 //writesufile("read_l2m.su", l2m, mod.naz, mod.nax, 0.0, 0.0, mod.dz, mod.dx);
-    }
 
         for (ix=0; ix<mod.nax; ix++) {
             for (iz=0; iz<mod.naz; iz++) {
@@ -1060,14 +669,14 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
                 if (l2m[(ix)*mod.naz+iz] == 0.0) {
                     fprintf(stderr,"ix=%d iz=%d l2m=%e \n",ix, iz,l2m[ix*mod.naz+iz]);
                 }
+    if (mod.ischeme>2) { /* Elastic Scheme */
                 if (muu[(ix)*mod.naz+iz] == 0.0) {
                     fprintf(stderr,"ix=%d iz=%d muu=%e \n",ix, iz,muu[ix*mod.naz+iz]);
                 }
                 if (lam[(ix)*mod.naz+iz] == 0.0) {
                     fprintf(stderr,"ix=%d iz=%d lam=%e \n",ix, iz,lam[ix*mod.naz+iz]);
                 }
-                /*
-                */
+    }
             }
         }
 

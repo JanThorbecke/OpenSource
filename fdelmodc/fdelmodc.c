@@ -469,8 +469,8 @@ int main(int argc, char **argv)
 
     ioPx=mod.ioPx;
     ioPz=mod.ioPz;
-    if (bnd.lef==4 || bnd.lef==2) ioPx += bnd.npml;
-    if (bnd.top==4 || bnd.top==2) ioPz += bnd.npml;
+    //if (bnd.lef==4 || bnd.lef==2) ioPx += bnd.npml;
+    //if (bnd.top==4 || bnd.top==2) ioPz += bnd.npml;
 	if (rec.sinkvel) sinkvel=l2m[(rec.x[0]+ioPx)*n1+rec.z[0]+ioPz];
 	else sinkvel = 0.0;
 

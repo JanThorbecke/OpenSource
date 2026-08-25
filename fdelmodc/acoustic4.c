@@ -117,10 +117,12 @@ int acoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 	}
 
 	/* this is needed because the P fields are not using tapered boundaries (bnd....=4) */
+    /*
     if (bnd.top==2) mod.ioPz += bnd.npml;
     if (bnd.bot==2) mod.iePz -= bnd.npml;
     if (bnd.lef==2) mod.ioPx += bnd.npml;
     if (bnd.rig==2) mod.iePx -= bnd.npml;
+    */
 
 	/* calculate p/tzz for all grid points except on the virtual boundary */
 #pragma omp for private (ix, iz) schedule(guided,1) 
@@ -136,10 +138,12 @@ int acoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 						c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]));
 		}
 	}
+    /*
     if (bnd.top==2) mod.ioPz -= bnd.npml;
     if (bnd.bot==2) mod.iePz += bnd.npml;
     if (bnd.lef==2) mod.ioPx -= bnd.npml;
     if (bnd.rig==2) mod.iePx += bnd.npml;
+    */
 
 	/* Add stress source */
 	if (src.type < 6) {

@@ -303,7 +303,7 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
 				}
 /* interpolate vx to Txx/Tzz position by taking the mean of 2 values */
 				else if (rec.int_vx == 2) {
-					if (mod.ischeme == 1) { /* interpolate Vx times +1/2 Dt forward to P times */
+					if (mod.ischeme <= 1) { /* interpolate Vx times +1/2 Dt forward to P times */
             			field = vx[ix*n1+iz] - 0.5*rox[ix*n1+iz]*(
                 			c1*(tzz[ix*n1+iz]     - tzz[(ix-1)*n1+iz]) +
                 			c2*(tzz[(ix+1)*n1+iz] - tzz[(ix-2)*n1+iz]));
@@ -312,7 +312,7 @@ int getRecTimes(modPar mod, recPar rec, bndPar bnd, int itime, int isam, float *
                 			c2*(tzz[(ix2+1)*n1+iz] - tzz[(ix2-2)*n1+iz]));
 						rec_vx[irec*rec.nt+isam] += 0.5*field;
 					}
-					else {
+					else if (mod.ischeme > 1) {
                         field = vx[ix*n1+iz] - 0.5*rox[ix*n1+iz]*(
                             c1*(txx[ix*n1+iz]     - txx[(ix-1)*n1+iz] +
                                 txz[ix*n1+iz+1]   - txz[ix*n1+iz])    +
