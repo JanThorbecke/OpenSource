@@ -248,6 +248,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
             int in_x = ((has_lef_pml && ix < mod.ioXx) || (has_rig_pml && ix >= mod.ieXx));
 
             if (in_x) {
+#pragma omp simd
                 for (iz=zmin; iz<zmax; iz++) {
                     int i = ix*n1+iz;
                     dpx = c1*(p[i]        - p[i-n1]) +
@@ -259,6 +260,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
             }
             else {
                 if (has_top_pml) {
+#pragma omp simd
                     for (iz=zmin; iz<mod.ioXz; iz++) {
                         int i = ix*n1+iz;
                         dpx = c1*(p[i]        - p[i-n1]) +
@@ -267,6 +269,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                     }
                 }
                 if (has_bot_pml) {
+#pragma omp simd
                     for (iz=mod.ieXz; iz<zmax; iz++) {
                         int i = ix*n1+iz;
                         dpx = c1*(p[i]        - p[i-n1]) +
@@ -301,6 +304,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
             }
             else {
                 if (has_top_pml) {
+#pragma omp simd
                     for (iz=zmin; iz<mod.ioZz; iz++) {
                         int i = ix*n1+iz;
                         dpz = c1*(p[i]     - p[i-1]) +
@@ -311,6 +315,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                     }
                 }
                 if (has_bot_pml) {
+#pragma omp simd
                     for (iz=mod.ieZz; iz<zmax; iz++) {
                         int i = ix*n1+iz;
                         dpz = c1*(p[i]     - p[i-1]) +
