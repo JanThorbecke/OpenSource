@@ -33,18 +33,18 @@ do
         src_type=1 tmod=1.0  \
 		npml=$npml R=1e-5 m=2.0 \
 		left=2 right=2 bottom=2 top=2 \
-        tsnap1=0.3 tsnap2=0.4 dtsnap=0.01 \
+        tsnap1=0.3 tsnap2=0.6 dtsnap=0.01 \
         sna_type_vx=1 sna_type_vz=1 fmax=25 snapwithbnd=1
 
-suwind key=fldr min=3 max=3 < snap_nodisp_sp.su | \
-        supsimage \
-        wbox=4 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
-        d2=$dx f2=0 clip=$clip \
-        label1="depth [m]" label2="lateral position [m]" > snap_pml${npml}.eps
-
-supsimage < rec_rp.su \
-        wbox=3 hbox=4 titlesize=-1 labelsize=10 clip=$clip verbose=1 \
-        label1="time [s]" label2="lateral position [m]" > rec_pml${npml}_rp.eps
+#suwind key=fldr min=3 max=3 < snap_nodisp_sp.su | \
+        #supsimage \
+        #wbox=4 hbox=4 titlesize=-1 labelsize=10 verbose=1 \
+        #d2=$dx f2=0 clip=$clip \
+        #label1="depth [m]" label2="lateral position [m]" > snap_pml${npml}.eps
+#
+#supsimage < rec_rp.su \
+        #wbox=3 hbox=4 titlesize=-1 labelsize=10 clip=$clip verbose=1 \
+        #label1="time [s]" label2="lateral position [m]" > rec_pml${npml}_rp.eps
 
 done
 
