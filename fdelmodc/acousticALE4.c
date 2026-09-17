@@ -163,6 +163,22 @@ static inline float sbp42_dj_avg(const float *colL, const float *colR, int j, in
 #undef A
 }
 
+/* Free-surface height z_s(i,t) [m] for column i at physical time t, for the
+ * sinusoidal-plus-drift surface shape used by this solver (see the
+ * surf_z0/surf_amp/surf_lambda/surf_om/surf_vrate parameters documented in
+ * the file header). Kept as a single function of (i,t) so that the ALE
+ * mesh velocity dz_s/dt can be obtained by numerical differentiation in
+ * time (see below) instead of a hand-derived analytic derivative: this
+ * keeps the mesh-velocity computation correct for any sufficiently smooth
+ * surface shape defined here, without having to also re-derive and update
+ * a matching analytic dz_s/dt expression whenever the shape changes. */
+static inline float surf_height(int i, float t, float dx, float two_pi_lam,
+                                 float surf_z0, float surf_amp, float surf_om,
+                                 float surf_vrate) {
+    float phi = two_pi_lam * ((i + 0.5f) * dx) - surf_om * t;
+    return surf_z0 + surf_amp * sinf(phi) + surf_vrate * t;
+}
+
 int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
                  int ixsrc, int izsrc, float **src_nwav,
                  float *vx, float *vz, float *p,
@@ -277,28 +293,24 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
     /* ================================================================
      * MAIN TIME LOOP
      * ================================================================ */
+    /* Half-timestep used for the central-difference numerical time
+     * derivative of the surface height below (see surf_height() above). */
+    const float dt_half = 0.5f * dt;
+
     for (int it = 0; it < nt; it++) {
         const float t_half = ((float)it + 0.5f) * dt;
 
         for (int i = 0; i < nx; i++) {
-            float phi         = two_pi_lam * ((i + 0.5f) * dx) - surf_om * t_half;
-            surf_z[i]         = surf_z0 + surf_amp * sinf(phi) + surf_vrate * t_half;
-            dzsdt_col[i]      = surf_vrate - surf_amp * surf_om * cosf(phi);
+            surf_z[i]         = surf_height(i, t_half, dx, two_pi_lam, surf_z0, surf_amp, surf_om, surf_vrate);
+            /* Numerical (central-difference) time derivative of the surface
+             * height, valid for any smooth surf_height() definition;
+             * replaces the previous hand-derived analytic expression
+             * "surf_vrate - surf_amp*surf_om*cos(phi)". */
+            dzsdt_col[i]      = (surf_height(i, t_half + dt_half, dx, two_pi_lam, surf_z0, surf_amp, surf_om, surf_vrate)
+                                - surf_height(i, t_half - dt_half, dx, two_pi_lam, surf_z0, surf_amp, surf_om, surf_vrate)) / dt;
             H_col[i]          = Z_MAX - surf_z[i];
             dz_eff_col[i]     = H_col[i] * (1.0f / (float)nz);
         }
-
-        /*
-        const float t_phys = (float)it * dt;
-
-        for (int i = 0; i < nx; i++) {
-            float phi      = two_pi_lam * ((i + 0.5f) * dx) - surf_om * t_phys;
-            surf_z[i]     = surf_z0 + surf_amp*sinf(phi) + surf_vrate*t_phys;
-            dzsdt_col[i]  = surf_vrate - surf_amp*surf_om*cosf(phi);
-            H_col[i]      = Z_MAX - surf_z[i];
-            dz_eff_col[i] = H_col[i] * (1.0f / (float)nz);
-        }
-        */
 
         /* ----------------------------------------------------------------
          * vx update (Inclusief Staggered Mimetische Kruis-Metriek)
@@ -413,9 +425,11 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
         const float t_whole = (float)it * dt;
 
         for (int i = 0; i < nx; i++) {
-            float phi         = two_pi_lam * ((i + 0.5f) * dx) - surf_om * t_whole;
-            surf_z[i]         = surf_z0 + surf_amp * sinf(phi) + surf_vrate * t_whole;
-            dzsdt_col[i]      = surf_vrate - surf_amp * surf_om * cosf(phi);
+            surf_z[i]         = surf_height(i, t_whole, dx, two_pi_lam, surf_z0, surf_amp, surf_om, surf_vrate);
+            /* Numerical (central-difference) time derivative, see the
+             * t_half loop above for the rationale. */
+            dzsdt_col[i]      = (surf_height(i, t_whole + dt_half, dx, two_pi_lam, surf_z0, surf_amp, surf_om, surf_vrate)
+                                - surf_height(i, t_whole - dt_half, dx, two_pi_lam, surf_z0, surf_amp, surf_om, surf_vrate)) / dt;
             H_col[i]          = Z_MAX - surf_z[i];
             dz_eff_col[i]     = H_col[i] * (1.0f / (float)nz);
         }
