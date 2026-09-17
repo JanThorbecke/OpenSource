@@ -3,8 +3,12 @@
  * Leapfrog velocity-pressure, 4th-order staggered FD in space (2nd-order in time).
  * Moving free surface via per-column ALE coordinate transform: physical
  *   z ∈ [z_s(x,t), Z_MAX] → computational iz ∈ [0, naz-2]
- * Free surface (iz=0) always at p=0. CFS-CPML absorbing boundaries on left,
- * right and bottom.  Heterogeneous medium (rox, roz, l2m from fdelmodc).
+ * Free surface enforced as p=0 at the true moving surface location, via a
+ * 2nd-order extrapolated one-sided reset of p[iz=0] (which itself sits
+ * half a cell below the surface on this staggered grid -- see the
+ * dedicated comment near that reset for details). CFS-CPML absorbing
+ * boundaries on left, right and bottom. Heterogeneous medium (rox, roz,
+ * l2m from fdelmodc).
  *
  * Surface shape (command-line parameters):
  *   surf_z0    = mean surface depth [m]          (default 0.1*naz*dz)
@@ -395,7 +399,27 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
                     float pT = (j >= 1) ? p[idx_p_base + j - 1] : -pB;
                     float pTT = (j >= 2) ? p[idx_p_base + j - 2] : (j == 1) ? -pB : -p[idx_p_base + j];
                     float pBB = (j <= nz-2) ? p[idx_p_base + j + 1] : pB;
-                    float dpdz_raw = (j <= nz-2) ? (-pBB + 27.0f * pB - 27.0f * pT + pTT) * inv24dze : (pB - pT) * inv_dze;
+                    /* At j=0 the vz node sits exactly on the (moving) free
+                     * surface, one half cell above the first pressure node
+                     * p[0]. The interior/near-boundary dp/dz stencils above
+                     * are only used for j>=1; for j=0 we instead use a
+                     * genuine one-sided, 2nd-order accurate EXTRAPOLATED
+                     * derivative estimate at the true surface location,
+                     * built purely from the free (unconstrained) pressure
+                     * values p0,p1,p2 -- i.e. it does NOT assume p=0 at the
+                     * boundary. This replaces the previous antisymmetric
+                     * "mirror" ghost-point construction (pT=pTT=-p0), which
+                     * silently hard-baked the p=0 condition into this
+                     * stencil, decoupling it from the actual (extrapolated)
+                     * enforcement point used below. See the file header/
+                     * derivation notes near sbp42_dj() for the coefficients:
+                     *   p'(0) = (-2 p0 + 3 p1 - p2)/dz + O(dz^2)          */
+                    float dpdz_raw;
+                    if (j == 0) {
+                        dpdz_raw = (-2.0f*p[idx_p_base+0] + 3.0f*p[idx_p_base+1] - p[idx_p_base+2]) * inv_dze;
+                    } else {
+                        dpdz_raw = (j <= nz-2) ? (-pBB + 27.0f * pB - 27.0f * pT + pTT) * inv24dze : (pB - pT) * inv_dze;
+                    }
 
                     psi_vz_z[idx_vz_base + j] = b_zf[j] * psi_vz_z[idx_vz_base + j] + c_zf[j] * dpdz_raw;
 
@@ -415,6 +439,7 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
                     float dvz_dj = sbp42_dj(&vz[idx_vz_base], j, nz + 1, dz_eff_col[i]);
 
                     vz[idx_vz_base + j] = vz[idx_vz_base + j] - dx * roz[i * n1 + j] * dpdz + ale_i * nj * dvz_dj;
+
                 }
                 vz[idx_vz_base + nz] = 0.0f;
             }
@@ -487,6 +512,35 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
 
                 p_new[idx_p_base + j] = p[idx_p_base + j] - dx * l2m[i * n1 + j] * (dvx_dx - shear_c * nj * dvx_dj + dvz_dz) + ale_i * nj * dp_dj;
             }
+        }
+
+        /* Free-surface boundary condition, applied at the true (moving)
+         * surface location. p[0] itself sits half a cell BELOW the actual
+         * free surface (the vz[i*(nz+1)] node is exactly on it -- see the
+         * staggering discussion in the vz update above), so simply setting
+         * p[0]=0 (as older, naive strong-BC schemes do) enforces p=0 at the
+         * wrong point. Instead, enforce p=0 at the true surface using the
+         * 2nd-order accurate one-sided EXTRAPOLATED estimate
+         *   p_face = (15 p0 - 10 p1 + 3 p2) / 8 ,
+         * solved for p0 that makes p_face vanish exactly:
+         *   p0 = (10 p1 - 3 p2) / 15 .
+         * This keeps the same unconditionally-stable strong-reset character
+         * as the original scheme (no extra CFL-type restriction is
+         * introduced), while correcting the systematic geometric error of
+         * clamping the wrong node. An earlier attempt at a genuine SAT-type
+         * weak/penalty enforcement of this same p_face=0 condition was
+         * tried and rejected: at full (characteristic-speed) penalty
+         * strength it destabilised the surf_vrate=140 case (blow-up before
+         * completion), and at a reduced, empirically-stabilised strength it
+         * reproduced results statistically indistinguishable from this
+         * strong reset -- i.e. it added complexity and a tuning parameter
+         * without measurable benefit, so the simpler strong, geometrically
+         * corrected reset is used here instead. p1, p2 use the values
+         * already updated above (this loop runs after the full spatial
+         * update), so this is applied once per column, after all j. */
+        for (int i = 0; i < nx; i++) {
+            const int idx_p_base = i * nz;
+            p_new[idx_p_base + 0] = (10.0f * p_new[idx_p_base + 1] - 3.0f * p_new[idx_p_base + 2]) * (1.0f / 15.0f);
         }
 
         /* --- Dynamic source injection via bilinear weights --- */
@@ -565,12 +619,13 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
                 p_new[idx_p_base + j] -= epsilon * d4p_dj4;
             }
         }
-/*
-*/
-
-
-        /* --- free-surface BC: p = 0 at j = 0 --- */
-        for (int i = 0; i < nx; i++) p_new[i*nz] = 0.0f;
+/* Free-surface boundary condition now enforced as a strong (Dirichlet)
+         * reset at the geometrically correct extrapolated surface location;
+         * see the comment block right after the p-update loop above for
+         * the derivation and the rationale for preferring it over a weak
+         * SAT-type penalty (which was tried and found to either
+         * destabilise the fast-moving-surface case or, once detuned for
+         * stability, add nothing measurable). */
 
         /* --- swap pressure buffers --- */
         { float *tmp = p; p = p_new; p_new = tmp; }
