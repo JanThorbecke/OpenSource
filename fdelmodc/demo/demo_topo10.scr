@@ -1,14 +1,15 @@
 #!/bin/bash
 
-dt=0.001
+dt=0.0010
 ntap=20
 fmax=40
+h=5
 
-makemod sizex=2000 sizez=2000 dx=5 dz=5 cp0=2000 ro0=2000 file_base=topo.su \
+makemod sizex=2000 sizez=2000 dx=$h dz=$h cp0=2000 ro0=2000 file_base=topo.su \
     intt=def x=0,2000 z=1000,1000 cp=2000 ro=2500 \
     orig=0,0 gradunit=0 verbose=1 
 
-makewave w=g2 fmax=25 t0=0.10 dt=$dt nt=4096 db=-40 file_out=G2.su verbose=1
+makewave w=g2 fmax=25 t0=0.15 dt=$dt nt=4096 db=-40 file_out=G2.su verbose=1
 
 #mkdir -p shots
 
@@ -20,7 +21,7 @@ set -x
 ../fdelmodc \
     ischeme=-2 \
     npml=20 R=1e-8 m=2 \
-    surf_z0=500 surf_amp=50 surf_lambda=800 surf_omega=0.5 movingspeed=40 \
+    surf_z0=500 surf_amp=50 surf_lambda=800 surf_omega=0.5 surf_vrate=140 \
     file_cp=topo_cp.su \
     file_den=topo_ro.su \
     file_rcv=$file_rcv \
@@ -33,7 +34,7 @@ set -x
     rec_type_vz=1 \
     rec_type_p=1 \
     xsrc=1000 \
-    zsrc=667 \
+    zsrc=666 \
     zrcv1=500 zrcv2=500 xrcv1=0 xrcv2=2000 dxrcv=5 \
     verbose=3 \
     tmod=2.000 \
