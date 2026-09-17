@@ -19,8 +19,39 @@
  *   m      = polynomial scaling order             (default 2)
  *   cpml_kmax = real stretching κ_max             (default 5)
  *
- * VOLLEDIGE VERSIE: Inclusief mimetische Castillo-Grone rand-stencils én
- * de exacte mimetische metriek-correcties voor de staggered kruisafgeleides.
+ * FULL VERSION: Includes mimetic Castillo-Grone boundary stencils and the
+ * exact mimetic metric corrections for the staggered cross-derivatives.
+ *
+ * MIMETIC / SBP BOUNDARY CLOSURE (dpdj, dvx_dj, dvz_dj, dp_dj):
+ * The vertical cross-derivatives use the standard 4th-order (interior) /
+ * 2nd-order (boundary) diagonal-norm Summation-By-Parts operator, as
+ * constructed by Castillo & Grone (mimetic derivation) and known in the
+ * SBP literature as the "traditional" SBP-42 operator (Mattsson &
+ * Nordström, JCP 2004; Strand 1994). This is not an ad-hoc one-sided
+ * stencil but the canonical stencil that belongs to the diagonal
+ * quadrature norm (dz times)
+ *   diag(17/48, 59/48, 43/48, 49/48, 1, 1, ..., 1, 49/48, 43/48, 59/48, 17/48)
+ * and that satisfies the discrete "summation-by-parts" property
+ * Q + Q^T = diag(-1,0,...,0,1)  (with  D = P^{-1} Q ), which enables a
+ * discrete energy estimate analogous to the continuous derivation.
+ * The stencils (for node j, with f0..f_{nz-1} the column values and dz the
+ * local effective grid spacing) are:
+ *   j=0      : (-24/17 f0 + 59/34 f1 -  4/17 f2 -  3/34 f3                      )/dz   (2nd order)
+ *   j=1      : (        -1/2 f0            +  1/2 f2                          )/dz   (2nd order)
+ *   j=2      : (  4/43 f0 - 59/86 f1        + 59/86 f3 -  4/43 f4              )/dz   (2nd order)
+ *   j=3      : (  3/98 f0        - 59/98 f2         + 32/49 f4 -  4/49 f5       )/dz   (2nd order)
+ *   4<=j<=nz-5: (f_{j-2} - 8 f_{j-1} + 8 f_{j+1} - f_{j+2}) / (12 dz)                  (4th order, standard mimetic central)
+ *   j=nz-4 .. j=nz-1: mirror image (with sign change, since the 1st derivative
+ *                      is odd under reflection) of j=3..j=0 above, respectively.
+ * This operator was verified symbolically (Q+Q^T=diag(-1,0,...,0,1)) during
+ * the construction of this code. NOTE: the diagonal norm above is NOT
+ * explicitly used here in an energy-weighted time step (this remains a
+ * standard explicit leap-frog update, not an SAT-penalty formulation for
+ * the boundary conditions); the SBP property therefore guarantees
+ * consistency and the canonical boundary stencil validated in the
+ * mimetic/SBP literature, but does not by itself provide proven energy
+ * stability for this specific ALE scheme with strongly (Dirichlet) imposed
+ * p=0 free-surface boundary condition.
  *
  * AUTHOR: Jan Thorbecke — ALE free-surface extension
  */
@@ -74,6 +105,64 @@ static void cpml_coeff(float xi, float sigma_max, float dt, float *b, float *c, 
     *c     = (sak > 0.0f) ? sig / (kap * sak) * (*b - 1.0f) : 0.0f;
     *inv_k = 1.0f / kap;
 }
+
+/* Exact Castillo-Grone / SBP-42 (Mattsson-Nordström) vertical derivative
+ * d f/dj at node j of a column of length nz with effective grid spacing
+ * dz, with the canonical 4th-order interior / 2nd-order boundary
+ * diagonal-norm boundary closure (see the header of this file for the
+ * full derivation and the associated quadrature norm). col[k] must return
+ * the value at row k of the column; nz must be >= 9 (enforced elsewhere
+ * in this file). */
+static inline float sbp42_dj(const float *col, int j, int nz, float dz) {
+    if (j == 0) {
+        return (-24.0f/17.0f*col[0] + 59.0f/34.0f*col[1] - 4.0f/17.0f*col[2] - 3.0f/34.0f*col[3]) / dz;
+    } else if (j == 1) {
+        return (-0.5f*col[0] + 0.5f*col[2]) / dz;
+    } else if (j == 2) {
+        return (4.0f/43.0f*col[0] - 59.0f/86.0f*col[1] + 59.0f/86.0f*col[3] - 4.0f/43.0f*col[4]) / dz;
+    } else if (j == 3) {
+        return (3.0f/98.0f*col[0] - 59.0f/98.0f*col[2] + 32.0f/49.0f*col[4] - 4.0f/49.0f*col[5]) / dz;
+    } else if (j == nz - 1) {
+        return (24.0f/17.0f*col[nz-1] - 59.0f/34.0f*col[nz-2] + 4.0f/17.0f*col[nz-3] + 3.0f/34.0f*col[nz-4]) / dz;
+    } else if (j == nz - 2) {
+        return (0.5f*col[nz-1] - 0.5f*col[nz-3]) / dz;
+    } else if (j == nz - 3) {
+        return (4.0f/43.0f*col[nz-5] - 59.0f/86.0f*col[nz-4] + 59.0f/86.0f*col[nz-2] - 4.0f/43.0f*col[nz-1]) / dz;
+    } else if (j == nz - 4) {
+        return (4.0f/49.0f*col[nz-6] - 32.0f/49.0f*col[nz-5] + 59.0f/98.0f*col[nz-3] - 3.0f/98.0f*col[nz-1]) / dz;
+    } else {
+        return (col[j-2] - 8.0f*col[j-1] + 8.0f*col[j+1] - col[j+2]) * (1.0f/12.0f) / dz;
+    }
+}
+
+/* Same SBP-42 operator as sbp42_dj, but applied to a face-averaged column
+ * (0.5*(colL[k]+colR[k])), used where the cross-derivative is first
+ * determined on two adjacent cell faces and then averaged
+ * (dpdj in the vx update, dvx_dj in the p update). */
+static inline float sbp42_dj_avg(const float *colL, const float *colR, int j, int nz, float dz) {
+#define A(k) (0.5f*(colL[k]+colR[k]))
+    if (j == 0) {
+        return (-24.0f/17.0f*A(0) + 59.0f/34.0f*A(1) - 4.0f/17.0f*A(2) - 3.0f/34.0f*A(3)) / dz;
+    } else if (j == 1) {
+        return (-0.5f*A(0) + 0.5f*A(2)) / dz;
+    } else if (j == 2) {
+        return (4.0f/43.0f*A(0) - 59.0f/86.0f*A(1) + 59.0f/86.0f*A(3) - 4.0f/43.0f*A(4)) / dz;
+    } else if (j == 3) {
+        return (3.0f/98.0f*A(0) - 59.0f/98.0f*A(2) + 32.0f/49.0f*A(4) - 4.0f/49.0f*A(5)) / dz;
+    } else if (j == nz - 1) {
+        return (24.0f/17.0f*A(nz-1) - 59.0f/34.0f*A(nz-2) + 4.0f/17.0f*A(nz-3) + 3.0f/34.0f*A(nz-4)) / dz;
+    } else if (j == nz - 2) {
+        return (0.5f*A(nz-1) - 0.5f*A(nz-3)) / dz;
+    } else if (j == nz - 3) {
+        return (4.0f/43.0f*A(nz-5) - 59.0f/86.0f*A(nz-4) + 59.0f/86.0f*A(nz-2) - 4.0f/43.0f*A(nz-1)) / dz;
+    } else if (j == nz - 4) {
+        return (4.0f/49.0f*A(nz-6) - 32.0f/49.0f*A(nz-5) + 59.0f/98.0f*A(nz-3) - 3.0f/98.0f*A(nz-1)) / dz;
+    } else {
+        return (A(j-2) - 8.0f*A(j-1) + 8.0f*A(j+1) - A(j+2)) * (1.0f/12.0f) / dz;
+    }
+#undef A
+}
+
 int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
                  int ixsrc, int izsrc, float **src_nwav,
                  float *vx, float *vz, float *p,
@@ -88,6 +177,14 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
     nx = mod.nax;
     nt = mod.nt;
 
+    /* The SBP-42 mimetic boundary closure below needs 4 special stencil
+     * rows at each end plus at least one purely interior row in between
+     * (nz >= 9); in practice nz is always far larger than this. */
+    if (nz < 9) {
+        fprintf(stderr, "acousticALE4: nz=%d too small for the SBP-42 mimetic boundary stencils (need nz>=9)\n", nz);
+        return 1;
+    }
+
     if (verbose) {
         fprintf(stderr,"Mimetische ALE Solver (Volledige Kruisterm Metriek): naz=%d nax=%d\n", mod.naz, mod.nax);
     }
@@ -96,7 +193,6 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
     const float Z_MAX    = (float)nz * dz;
     const float inv24dx  = 1.0f / (24.0f * dx);
     const float inv_dx   = 1.0f / dx;
-    const float inv12    = 1.0f / 12.0f;
     const int   cpml_n   = bnd.npml;
 
     const size_t pcnt  = (size_t)nx * nz;
@@ -224,7 +320,12 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
             
             const int idx_vx_base = i * nz;
             const float bx = b_xf[i], cx = c_xf[i], ikx = ik_xf[i];
-            const float dz_effective = dz_eff_col[i];
+            /* Face-averaged effective dz, consistent with zs_f/H_f above
+             * (H_f = 0.5*(H_col[i-1]+H_col[i]) since Z_MAX cancels). Using
+             * dz_eff_col[i] alone here would evaluate the vertical mimetic
+             * derivatives at this x-face with the wrong (single-column)
+             * grid spacing whenever the surface is sloped between i-1,i. */
+            const float dz_effective = 0.5f * (dz_eff_col[i-1] + dz_eff_col[i]);
 
             for (int j = 0; j < nz; j++) {
                 const float nj = (float)(nz - j);
@@ -236,127 +337,39 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
                 psi_vx_x[idx_vx_base + j] = bx * psi_vx_x[idx_vx_base + j] + cx * dpx_raw;
                 float dpx = ikx * dpx_raw + psi_vx_x[idx_vx_base + j];
 
-                /* MIMETISCHE METRIEK-CORRECTIE: Kruisafgeleide dp/dj op de face */
-                /* MIMETISCHE METRIEK-CORRECTIE: Exacte 4e-orde Castillo-Grone voor dp/dj */
-float dpdj;
-if (j == 0) {
-    /* Eenzijdig 4e-orde voorwaarts randstencil */
-    float p_j0 = 0.5f * (p[idx_R + 0] + p[idx_L + 0]);
-    float p_j1 = 0.5f * (p[idx_R + 1] + p[idx_L + 1]);
-    float p_j2 = 0.5f * (p[idx_R + 2] + p[idx_L + 2]);
-    float p_j3 = 0.5f * (p[idx_R + 3] + p[idx_L + 3]);
-    dpdj = (-11.0f * p_j0 + 18.0f * p_j1 - 9.0f * p_j2 + 2.0f * p_j3) / (6.0f * dz_effective);
-}
-else if (j == 1) {
-    /* Exact Castillo-Grone overgangsstencil voor j=1 */
-    float p_j0 = 0.5f * (p[idx_R + 0] + p[idx_L + 0]);
-    float p_j1 = 0.5f * (p[idx_R + 1] + p[idx_L + 1]);
-    float p_j2 = 0.5f * (p[idx_R + 2] + p[idx_L + 2]);
-    float p_j3 = 0.5f * (p[idx_R + 3] + p[idx_L + 3]);
-    dpdj = (-2.0f * p_j0 - 3.0f * p_j1 + 6.0f * p_j2 - p_j3) / (6.0f * dz_effective);
-}
-else if (j == nz - 1) {
-    /* Eenzijdig achterwaarts mimetisch stencil op de vaste bodem */
-    float p_jn0 = 0.5f * (p[idx_R + nz - 1] + p[idx_L + nz - 1]);
-    float p_jn1 = 0.5f * (p[idx_R + nz - 2] + p[idx_L + nz - 2]);
-    float p_jn2 = 0.5f * (p[idx_R + nz - 3] + p[idx_L + nz - 3]);
-    float p_jn3 = 0.5f * (p[idx_R + nz - 4] + p[idx_L + nz - 4]);
-    dpdj = (11.0f * p_jn0 - 18.0f * p_jn1 + 9.0f * p_jn2 - 2.0f * p_jn3) / (6.0f * dz_effective);
-}
-else {
-    /* Standaard 4e-orde mimetisch centraal binnen-stencil (loopt door vanaf j=2) */
-    float pm1 = 0.5f * (p[idx_R + j - 1] + p[idx_L + j - 1]);
-    float pm2 = 0.5f * (p[idx_R + j - 2] + p[idx_L + j - 2]);
-    float pp1 = 0.5f * (p[idx_R + j + 1] + p[idx_L + j + 1]);
-    float pp2 = 0.5f * (p[idx_R + j + 2] + p[idx_L + j + 2]);
-    dpdj = (pm2 - 8.0f * pm1 + 8.0f * pp1 - pp2) * inv12 / dz_effective;
-}
+                /* MIMETIC METRIC CORRECTION: exact Castillo-Grone/SBP-42
+                 * (Mattsson-Nordström) diagonal-norm boundary closure for
+                 * the cross-derivative dp/dj on the face, normalised with
+                 * the (face-averaged) effective dz -- see the extensive
+                 * explanation/derivation in the header of this file. */
+                float dpdj = sbp42_dj_avg(&p[idx_L], &p[idx_R], j, nz, dz_effective);
 
-/*
-                float dpdj;
-                if (j == 0) {
-                    float p_j0 = 0.5f * (p[idx_R + 0] + p[idx_L + 0]);
-                    float p_j1 = 0.5f * (p[idx_R + 1] + p[idx_L + 1]);
-                    float p_j2 = 0.5f * (p[idx_R + 2] + p[idx_L + 2]);
-                    float p_j3 = 0.5f * (p[idx_R + 3] + p[idx_L + 3]);
-                    dpdj = (-11.0f * p_j0 + 18.0f * p_j1 - 9.0f * p_j2 + 2.0f * p_j3) / 6.0f;
-                } else if (j == nz - 1) {
-                    float p_jn0 = 0.5f * (p[idx_R + nz - 1] + p[idx_L + nz - 1]);
-                    float p_jn1 = 0.5f * (p[idx_R + nz - 2] + p[idx_L + nz - 2]);
-                    float p_jn2 = 0.5f * (p[idx_R + nz - 3] + p[idx_L + nz - 3]);
-                    float p_jn3 = 0.5f * (p[idx_R + nz - 4] + p[idx_L + nz - 4]);
-                    dpdj = (11.0f * p_jn0 - 18.0f * p_jn1 + 9.0f * p_jn2 - 2.0f * p_jn3) / 6.0f;
-                } else if (j == 1 || j == nz - 2) {
-                    dpdj = 0.5f * (0.5f * (p[idx_R + j + 1] + p[idx_L + j + 1]) - 0.5f * (p[idx_R + j - 1] + p[idx_L + j - 1]));
-                } else {
-                    float pm1 = 0.5f * (p[idx_R + j - 1] + p[idx_L + j - 1]);
-                    float pm2 = 0.5f * (p[idx_R + j - 2] + p[idx_L + j - 2]);
-                    float pp1 = 0.5f * (p[idx_R + j + 1] + p[idx_L + j + 1]);
-                    float pp2 = 0.5f * (p[idx_R + j + 2] + p[idx_L + j + 2]);
-                    dpdj = (pm2 - 8.0f * pm1 + 8.0f * pp1 - pp2) * inv12;
-                }
-*/
+                /* Mimetic vertical advection term for ALE: dvx/dj.
+                 * Computed first on the left and right cell face itself
+                 * and then averaged at the cell centre, so that mimetic
+                 * commutativity is preserved and odd-even grid noise is
+                 * suppressed (same dz_effective normalisation as dpdj
+                 * above and as dvx_dj in the pressure update further on).
+                 * Exact Castillo-Grone/SBP-42 boundary closure, see dpdj
+                 * above and the header of this file. */
+                const int idx_vx  = i * nz;       /* left cell face (column i)   */
+                const int idx_vx1 = (i + 1) * nz; /* right cell face (column i+1)*/
 
-                /* Mimetische verticale advectieterm voor ALE: dvx/dj */
-/*
-                float dvx_dj;
-                if (j == 0) {
-                    dvx_dj = (-11.0f * vx[idx_vx_base + 0] + 18.0f * vx[idx_vx_base + 1] - 9.0f * vx[idx_vx_base + 2] + 2.0f * vx[idx_vx_base + 3]) / 6.0f;
-                } else if (j == nz - 1) {
-                    dvx_dj = (11.0f * vx[idx_vx_base + nz - 1] - 18.0f * vx[idx_vx_base + nz - 2] + 9.0f * vx[idx_vx_base + nz - 3] - 2.0f * vx[idx_vx_base + nz - 4]) / 6.0f;
-                } else if (j == 1 || j == nz - 2) {
-                    dvx_dj = 0.5f * (vx[idx_vx_base + j + 1] - vx[idx_vx_base + j - 1]);
-                } else {
-                    dvx_dj = (vx[idx_vx_base + j - 2] - 8.0f * vx[idx_vx_base + j - 1] + 8.0f * vx[idx_vx_base + j + 1] - vx[idx_vx_base + j + 2]) * inv12;
-                }
-                */
+                float dvx_dj_left  = sbp42_dj(&vx[idx_vx],  j, nz, dz_effective);
+                float dvx_dj_right = sbp42_dj(&vx[idx_vx1], j, nz, dz_effective);
 
-                /* ====================================================================
-                   STRIKT MIMETISCHE STAGGERED KOPPELING (ELIMINEERT DE COUPLING-DISPERSIE)
-                   ==================================================================== */
-                /* We berekenen de mimetische verticale afgeleide dvx/dj eerst op de
-                   faces zelf, en middelen het resultaat daarna. Dit herstelt de mimetische
-                   commutativiteit en dooft de odd-even gridruis. */
-                float dvx_dj_left, dvx_dj_right;
-
-                const int idx_vx  = i * nz;       // De startindex van de LINKER celwand (kolom i)
-                const int idx_vx1 = (i + 1) * nz; // De startindex van de RECHTER celwand (kolom i+1)
-
-                // 1. Mimetische afgeleide op de LINKER celwand (i)
-                if (j == 0) {
-                    dvx_dj_left = (-11.0f*vx[idx_vx+0] + 18.0f*vx[idx_vx+1] - 9.0f*vx[idx_vx+2] + 2.0f*vx[idx_vx+3]) / (6.0f * dz_effective);
-                } else if (j == 1) {
-                    dvx_dj_left = (-2.0f*vx[idx_vx+0] - 3.0f*vx[idx_vx+1] + 6.0f*vx[idx_vx+2] - vx[idx_vx+3]) / (6.0f * dz_effective);
-                } else if (j == nz - 1) {
-                    dvx_dj_left = (11.0f*vx[idx_vx+nz-1] - 18.0f*vx[idx_vx+nz-2] + 9.0f*vx[idx_vx+nz-3] - 2.0f*vx[idx_vx+nz-4]) / (6.0f * dz_effective);
-                } else {
-                    dvx_dj_left = (vx[idx_vx+j-2] - 8.0f*vx[idx_vx+j-1] + 8.0f*vx[idx_vx+j+1] - vx[idx_vx+j+2]) * inv12 / dz_effective;
-                }
-
-                // 2. Mimetische afgeleide op de RECHTER celwand (i+1)
-                if (j == 0) {
-                    dvx_dj_right = (-11.0f*vx[idx_vx1+0] + 18.0f*vx[idx_vx1+1] - 9.0f*vx[idx_vx1+2] + 2.0f*vx[idx_vx1+3]) / (6.0f * dz_effective);
-                } else if (j == 1) {
-                    dvx_dj_right = (-2.0f*vx[idx_vx1+0] - 3.0f*vx[idx_vx1+1] + 6.0f*vx[idx_vx1+2] - vx[idx_vx1+3]) / (6.0f * dz_effective);
-                } else if (j == nz - 1) {
-                    dvx_dj_right = (11.0f*vx[idx_vx1+nz-1] - 18.0f*vx[idx_vx1+nz-2] + 9.0f*vx[idx_vx1+nz-3] - 2.0f*vx[idx_vx1+nz-4]) / (6.0f * dz_effective);
-                } else {
-                    dvx_dj_right = (vx[idx_vx1+j-2] - 8.0f*vx[idx_vx1+j-1] + 8.0f*vx[idx_vx1+j+1] - vx[idx_vx1+j+2]) * inv12 / dz_effective;
-                }
-
-                // 3. Neem nu pas het gemiddelde in het celcentrum
+                // 3. Only now take the average at the cell centre
                 float dvx_dj = 0.5f * (dvx_dj_left + dvx_dj_right);
 
-                    vx[idx_vx_base + j] = vx[idx_vx_base + j] - dx * rox[i * n1 + j] * (dpx - shear_f * nj * dpdj) + ale_f * nj * dvx_dj;
-                    //vx[idx_vx_base + j] = vx[idx_vx_base + j] - (dt/2000) * (dpx - shear_f * nj * dpdj) + ale_f * nj * dvx_dj;
-                }
+                vx[idx_vx_base + j] = vx[idx_vx_base + j] - dx * rox[i * n1 + j] * (dpx - shear_f * nj * dpdj) + ale_f * nj * dvx_dj;
             }
+        }
 
+        for (int j = 0; j < nz; j++) { vx[j] = 0.0f; vx[nx * nz + j] = 0.0f; }
 
-            for (int j = 0; j < nz; j++) { vx[j] = 0.0f; vx[nx * nz + j] = 0.0f; }
-/* ----------------------------------------------------------------
-* vz update
-* ---------------------------------------------------------------- */
+        /* ----------------------------------------------------------------
+         * vz update
+         * ---------------------------------------------------------------- */
             for (int i = mod.ioZx - bnd.npml; i < mod.ieZx + bnd.npml; i++) {
                 const float inv_H_i = 1.0f / H_col[i];
                 const float inv24dze = 1.0f / (24.0f * dz_eff_col[i]);
@@ -375,26 +388,28 @@ else {
                     psi_vz_z[idx_vz_base + j] = b_zf[j] * psi_vz_z[idx_vz_base + j] + c_zf[j] * dpdz_raw;
 
                     float dpdz = ik_zf[j] * dpdz_raw + psi_vz_z[idx_vz_base + j];
-                    float dvz_dj;
-                    if (j == 0) {
-                        dvz_dj = (-11.0f * vz[idx_vz_base + 0] + 18.0f * vz[idx_vz_base + 1] - 9.0f * vz[idx_vz_base + 2] + 2.0f * vz[idx_vz_base + 3]) / 6.0f;
-                    } else if (j == nz - 1) {
-                        dvz_dj = (11.0f * vz[idx_vz_base + nz - 1] - 18.0f * vz[idx_vz_base + nz - 2] + 9.0f * vz[idx_vz_base + nz - 3] - 2.0f * vz[idx_vz_base + nz - 4]) / 6.0f;
-                    } else if (j == 1 || j == nz - 2) {
-                        dvz_dj = 0.5f * (vz[idx_vz_base + j + 1] - vz[idx_vz_base + j - 1]);
-                    } else {
-                        dvz_dj = (vz[idx_vz_base + j - 2] - 8.0f * vz[idx_vz_base + j - 1] + 8.0f * vz[idx_vz_base + j + 1] - vz[idx_vz_base + j + 2]) * inv12;
-                    }
+
+                    /* Mimetic vertical advection term for ALE: dvz/dj.
+                     * Exact Castillo-Grone/SBP-42 boundary closure (see
+                     * dpdj in the vx update above and the header of this
+                     * file), normalised with dz_eff_col[i] -- consistent
+                     * with dpdj (vx update) and dvx_dj (p update).
+                     * The vz column has nz+1 valid nodes (vz[idx_vz_base+nz]
+                     * is the fixed rigid bottom boundary, always 0), so the
+                     * domain for the SBP closure here is nz+1 instead of nz:
+                     * the boundary rows j=nz-1..nz-3 "see" this fixed zero
+                     * value as the lowest domain point, just as the
+                     * free-surface boundary at j=0 sees the p=0 condition. */
+                    float dvz_dj = sbp42_dj(&vz[idx_vz_base], j, nz + 1, dz_eff_col[i]);
 
                     vz[idx_vz_base + j] = vz[idx_vz_base + j] - dx * roz[i * n1 + j] * dpdz + ale_i * nj * dvz_dj;
-                    //vz[idx_vz_base + j] = vz[idx_vz_base + j] - (dt/2000) * dpdz + ale_i * nj * dvz_dj;
                 }
                 vz[idx_vz_base + nz] = 0.0f;
             }
 
-            /* ----------------------------------------------------------------
-            * pressure update (Volledige Mimetische Staggered Kruisterm-Metriek)
-            * ---------------------------------------------------------------- */
+        /* ----------------------------------------------------------------
+         * pressure update (Full Mimetic Staggered Cross-Term Metric)
+         * ---------------------------------------------------------------- */
         const float t_whole = (float)it * dt;
 
         for (int i = 0; i < nx; i++) {
@@ -413,11 +428,11 @@ else {
            // const float dzsdx_c = (i == 0) ? (surf_z[1] - surf_z[0]) * inv_dx : (i == nx-1) ? (surf_z[nx-1] - surf_z[nx-2]) * inv_dx : (surf_z[i+1] - surf_z[i-1]) * (0.5f * inv_dx);
 
            /* ====================================================================
-               DEFINITIEVE STAGGERED METRIEK-FIX (ELIMINEERT DE 3 DISPERSIEBANDEN)
+               DEFINITIVE STAGGERED METRIC FIX (ELIMINATES THE 3 DISPERSION BANDS)
                ==================================================================== */
-            /* In plaats van een centrale differentie over 2 cellen (die de kolommen
-               ontkoppelt), gebruiken we een compacte tweepunts-afgeleide gecentreerd
-               op de staggered face-posities. */
+            /* Instead of a central difference over 2 cells (which decouples
+               the columns), we use a compact two-point derivative centred
+               on the staggered face positions. */
             const float dzsdx_c = (i < nx - 1)
                                   ? (surf_z[i+1] - surf_z[i]) * inv_dx
                                   : (surf_z[nx-1] - surf_z[nx-2]) * inv_dx;
@@ -444,85 +459,35 @@ else {
                 float dvz_dz_raw = (j >= 1 && j <= nz-2) ? (-vzBB + 27.0f * vzB - 27.0f * vzT + vzTT) * inv24dze : (vzB - vzT) * inv_dze; psi_p_z[idx_p_base + j] = b_zc[j] * psi_p_z[idx_p_base + j] + c_zc[j] * dvz_dz_raw;
                 float dvz_dz = ik_zc[j] * dvz_dz_raw + psi_p_z[idx_p_base + j];
 
-                /* EXACTE STAGGERED KRUISTERM-METRIEK: dvx/dj */
-           /* EXACTE STAGGERED KRUISTERM-METRIEK: dvx/dj via Castillo-Grone */
-float dvx_dj;
-if (j == 0) {
-    float vxa_0 = 0.5f * (vx[idx_vx + 0] + vx[idx_vx1 + 0]);
-    float vxa_1 = 0.5f * (vx[idx_vx + 1] + vx[idx_vx1 + 1]);
-    float vxa_2 = 0.5f * (vx[idx_vx + 2] + vx[idx_vx1 + 2]);
-    float vxa_3 = 0.5f * (vx[idx_vx + 3] + vx[idx_vx1 + 3]);
-    dvx_dj = (-11.0f * vxa_0 + 18.0f * vxa_1 - 9.0f * vxa_2 + 2.0f * vxa_3) / (6.0f * dz_effective);
-}
-else if (j == 1) {
-    float vxa_0 = 0.5f * (vx[idx_vx + 0] + vx[idx_vx1 + 0]);
-    float vxa_1 = 0.5f * (vx[idx_vx + 1] + vx[idx_vx1 + 1]);
-    float vxa_2 = 0.5f * (vx[idx_vx + 2] + vx[idx_vx1 + 2]);
-    float vxa_3 = 0.5f * (vx[idx_vx + 3] + vx[idx_vx1 + 3]);
-    dvx_dj = (-2.0f * vxa_0 - 3.0f * vxa_1 + 6.0f * vxa_2 - vxa_3) / (6.0f * dz_effective);
-}
-else if (j == nz - 1) {
-    float vxa_n0 = 0.5f * (vx[idx_vx + nz - 1] + vx[idx_vx1 + nz - 1]);
-    float vxa_n1 = 0.5f * (vx[idx_vx + nz - 2] + vx[idx_vx1 + nz - 2]);
-    float vxa_n2 = 0.5f * (vx[idx_vx + nz - 3] + vx[idx_vx1 + nz - 3]);
-    float vxa_n3 = 0.5f * (vx[idx_vx + nz - 4] + vx[idx_vx1 + nz - 4]);
-    dvx_dj = (11.0f * vxa_n0 - 18.0f * vxa_n1 + 9.0f * vxa_n2 - 2.0f * vxa_n3) / (6.0f * dz_effective);
-}
-else {
-    float vxa_m2 = 0.5f * (vx[idx_vx + j - 2] + vx[idx_vx1 + j - 2]);
-    float vxa_m1 = 0.5f * (vx[idx_vx + j - 1] + vx[idx_vx1 + j - 1]);
-    float vxa_p1 = 0.5f * (vx[idx_vx + j + 1] + vx[idx_vx1 + j + 1]);
-    float vxa_p2 = 0.5f * (vx[idx_vx + j + 2] + vx[idx_vx1 + j + 2]);
-    dvx_dj = (vxa_m2 - 8.0f * vxa_m1 + 8.0f * vxa_p1 - vxa_p2) * inv12 / dz_effective;
-}
+                /* EXACT STAGGERED CROSS-TERM METRIC: dvx/dj, exact
+                 * Castillo-Grone/SBP-42 boundary closure (see dpdj in the
+                 * vx update for the derivation), averaged between the left
+                 * (idx_vx) and right (idx_vx1) x-face, normalised with
+                 * dz_effective. */
+                float dvx_dj = sbp42_dj_avg(&vx[idx_vx], &vx[idx_vx1], j, nz, dz_effective);
 
-/*
-                float dvx_dj;
-                if (j == 0) {
-                    float vxa_0 = 0.5f * (vx[idx_vx + 0] + vx[idx_vx1 + 0]);
-                    float vxa_1 = 0.5f * (vx[idx_vx + 1] + vx[idx_vx1 + 1]);
-                    float vxa_2 = 0.5f * (vx[idx_vx + 2] + vx[idx_vx1 + 2]);
-                    float vxa_3 = 0.5f * (vx[idx_vx + 3] + vx[idx_vx1 + 3]);
-                    dvx_dj = (-11.0f * vxa_0 + 18.0f * vxa_1 - 9.0f * vxa_2 + 2.0f * vxa_3) / 6.0f;
-                } else if (j == nz - 1) {
-                    float vxa_n0 = 0.5f * (vx[idx_vx + nz - 1] + vx[idx_vx1 + nz - 1]);
-                    float vxa_n1 = 0.5f * (vx[idx_vx + nz - 2] + vx[idx_vx1 + nz - 2]);
-                    float vxa_n2 = 0.5f * (vx[idx_vx + nz - 3] + vx[idx_vx1 + nz - 3]);
-                    float vxa_n3 = 0.5f * (vx[idx_vx + nz - 4] + vx[idx_vx1 + nz - 4]);
-                    dvx_dj = (11.0f * vxa_n0 - 18.0f * vxa_n1 + 9.0f * vxa_n2 - 2.0f * vxa_n3) / 6.0f;
-                } else if (j == 1 || j == nz - 2) {
-                    float vxa_m1 = 0.5f * (vx[idx_vx + j - 1] + vx[idx_vx1 + j - 1]);
-                    float vxa_p1 = 0.5f * (vx[idx_vx + j + 1] + vx[idx_vx1 + j + 1]);
-                    dvx_dj = 0.5f * (vxa_p1 - vxa_m1);
-                } else {
-                    float vxa_m2 = 0.5f * (vx[idx_vx + j - 2] + vx[idx_vx1 + j - 2]);
-                    float vxa_m1 = 0.5f * (vx[idx_vx + j - 1] + vx[idx_vx1 + j - 1]);
-                    float vxa_p1 = 0.5f * (vx[idx_vx + j + 1] + vx[idx_vx1 + j + 1]);
-                    float vxa_p2 = 0.5f * (vx[idx_vx + j + 2] + vx[idx_vx1 + j + 2]);
-                    dvx_dj = (vxa_m2 - 8.0f * vxa_m1 + 8.0f * vxa_p1 - vxa_p2) * inv12;
-                }
-*/
-
-                /* Mimetische verticale drukgradiënt voor advectie: dp/dj */
-                float dp_dj;
-                if (j == 0) {
-                    dp_dj = (-11.0f * p[idx_p_base + 0] + 18.0f * p[idx_p_base + 1] - 9.0f * p[idx_p_base + 2] + 2.0f * p[idx_p_base + 3]) / 6.0f;
-                } else if (j == nz - 1) {
-                    dp_dj = (11.0f * p[idx_p_base + nz - 1] - 18.0f * p[idx_p_base + nz - 2] + 9.0f * p[idx_p_base + nz - 3] - 2.0f * p[idx_p_base + nz - 4]) / 6.0f;
-                } else if (j == 1 || j == nz - 2) {
-                    dp_dj = 0.5f * (p[idx_p_base + j + 1] - p[idx_p_base + j - 1]);
-                } else {
-                    dp_dj = (p[idx_p_base + j - 2] - 8.0f * p[idx_p_base + j - 1] + 8.0f * p[idx_p_base + j + 1] - p[idx_p_base + j + 2]) * inv12;
-                }
+                /* Mimetic vertical pressure gradient for advection: dp/dj.
+                 * Same exact SBP-42 stencils + dz_effective normalisation
+                 * as dpdj (vx update) and dvx_dj (above). */
+                float dp_dj = sbp42_dj(&p[idx_p_base], j, nz, dz_effective);
 
                 p_new[idx_p_base + j] = p[idx_p_base + j] - dx * l2m[i * n1 + j] * (dvx_dx - shear_c * nj * dvx_dj + dvz_dz) + ale_i * nj * dp_dj;
-                //p_new[idx_p_base + j] = p[idx_p_base + j] - (dt * 2000*2000*2000) * (dvx_dx - shear_c * nj * dvx_dj + dvz_dz) + ale_i * nj * dp_dj;
             }
         }
-    
-        /* --- Dynamische Bron-injectie via Bilineaire gewichten --- */
-        int izs = (int)ceil((zsrc+(surf_z[ixs]-surf_z0)) / dz_eff_col[ixs]);
-        izs = 200;
+
+        /* --- Dynamic source injection via bilinear weights --- */
+        /* BUGFIX: use zsrc as a fixed absolute depth instead of
+         * "zsrc + (surf_z[ixs]-surf_z0)". The latter made the source
+         * move along with the drift + sinusoidal displacement of the
+         * surface itself: the source thereby effectively became a
+         * continuously moving source in the real, absolute z-coordinate
+         * system, which generated broadband grid noise that visibly
+         * ran in sync with the surface motion in the snapshots. izs
+         * (the computational column row) is allowed to move with
+         * dz_eff_col[ixs] -- that is the legitimate ALE mesh rescaling --
+         * as long as the interpolated physical target position (via
+         * v_frac below) stays exactly at zsrc. */
+        int izs = (int)ceil(zsrc / dz_eff_col[ixs]);
 
         double z4 = (izs - 1) * dz_eff_col[ixs-1];
         double z3 = (izs - 1) * dz_eff_col[ixs];
@@ -535,7 +500,7 @@ else {
         double v_frac = 0.0;
 
         if (cell_height > 0.1*dz) {
-            v_frac = (zsrc + (surf_z[ixs]-surf_z0) - z_bot) / cell_height;
+            v_frac = (zsrc - z_bot) / cell_height;
             v_frac = (v_frac < 0.0) ? 0.0 : ((v_frac > 1.0) ? 1.0 : v_frac);
         }
         double v_one_minus = 1.0 - v_frac;
@@ -544,25 +509,13 @@ else {
         double W3 = u * v_one_minus;
         double W4 = u_one_minus * v_one_minus;
 
-        /* ====================================================================
-         * MIMETISCHE BRON-FIX: Volumetrische Jacobean Schaling
-         * ==================================================================== */
-        /* Een puntbron in een ALE-raster moet worden gedeeld door het lokale 
-         * volume (dz_effective) om amplitude-modulatie door de zeegolf te voorkomen. */
-        const float inv_J_right = 1.0f / dz_eff_col[ixs];
-        const float inv_J_left  = 1.0f / dz_eff_col[ixs-1];
-
         const float src_amp = src_nwav[0][it];
 
-        /* Schaal elk hoekpunt met zijn eigen lokale, actuele cel-Jacobiaan */
-        /*
-        p_new[(ixs  )*nz + izs]   += (W1 * src_amp) * inv_J_right;
-        p_new[(ixs-1)*nz + izs]   += (W2 * src_amp) * inv_J_left;
-        p_new[(ixs  )*nz + izs-1] += (W3 * src_amp) * inv_J_right;
-        p_new[(ixs-1)*nz + izs-1] += (W4 * src_amp) * inv_J_left;
-        */
-
-        fprintf(stderr,"Source ixs=%d izs=%d W1=%e W2=%e W3=%e W4=%e\n", ixs, izs, W1, W2, W3, W4);
+        /* Bilinear injection onto the four surrounding grid points. W1..W4
+         * sum to 1 by construction, so the total source energy remains
+         * constant regardless of the local ALE cell geometry (do not
+         * apply a Jacobian scaling -- that breaks the weight sum and does
+         * not solve the artefacts, see the izs/v_frac fix above). */
         p_new[(ixs )*nz + izs] += W1 * src_amp;
         p_new[(ixs-1)*nz + izs] += W2 * src_amp;
         p_new[(ixs )*nz + izs-1] += W3 * src_amp;
@@ -570,21 +523,21 @@ else {
 
 
        /* ====================================================================
-         * 3. MIMETISCHE KREISS-OLIGER DISSIPATIE (DISPERSIE-FILTER)
+         * 3. MIMETIC KREISS-OLIGER DISSIPATION (DISPERSION FILTER)
          * ==================================================================== */
-        /* Dit filter dempt uitsluitend de numerieke 2*dz grid-ontkoppeling
-         * vlak onder het bewegende oppervlak (j = 2 tot j = 7). */
+        /* This filter only damps the numerical 2*dz grid decoupling
+         * just below the moving surface (j = 2 to j = 7). */
         for (int i = mod.ioPx - bnd.npml; i < mod.iePx + bnd.npml; i++) {
             if (i < 0 || i >= nx) continue;
 
             const int idx_p_base = i * nz;
-            const float epsilon = 0.025f; // Filtersterkte (1.5% demping van pure gridruis)
-            //const float epsilon = 0.005f; // Filtersterkte (0.5% demping van pure gridruis)
+            const float epsilon = 0.025f; // Filter strength (1.5% damping of pure grid noise)
+            //const float epsilon = 0.005f; // Filter strength (0.5% damping of pure grid noise)
 
             for (int j = 2; j < 8; j++) {
                 if (j + 2 >= nz) continue;
 
-                // Bereken de discrete 4e-orde verticale afgeleide (d4p/dj4)
+                // Compute the discrete 4th-order vertical derivative (d4p/dj4)
                 float p_jm2 = p[idx_p_base + j - 2];
                 float p_jm1 = p[idx_p_base + j - 1];
                 float p_jc  = p[idx_p_base + j];
@@ -593,8 +546,8 @@ else {
 
                 float d4p_dj4 = p_jp2 - 4.0f * p_jp1 + 6.0f * p_jc - 4.0f * p_jm1 + p_jm2;
 
-                // Trek de schadelijke hoogfrequente component af van de nieuwe druk.
-                //   De factor (-1)^(r/2 + 1) voor r=4 is negatief, dus we trekken hem af.
+                // Subtract the harmful high-frequency component from the new pressure.
+                //   The factor (-1)^(r/2 + 1) for r=4 is negative, so we subtract it.
                 p_new[idx_p_base + j] -= epsilon * d4p_dj4;
             }
         }
@@ -602,7 +555,6 @@ else {
 */
 
 
-        /* --- Vrije Randvoorwaarde (Zeeoppervlak): p = 0 op j = 0 --- */
         /* --- free-surface BC: p = 0 at j = 0 --- */
         for (int i = 0; i < nx; i++) p_new[i*nz] = 0.0f;
 
@@ -611,10 +563,9 @@ else {
 
         /* --- diagnostics --- */
         if (it % 100 == 0 && verbose) {
-            printf("Tijdstap: %d | Modeldruk centrum: %g\n", it, p[(nx/2)*nz + J_SRC]);
+            printf("Time step: %d | Model pressure centre: %g\n", it, p[(nx/2)*nz + J_SRC]);
             fflush(stdout);
         }
-/* --- Ontvangers-data (Cartesian mapping) --- */
 /* --- receiver gather: sample p at Cartesian depth z_rec for all x --- */
         {
             const float z_rec = (IZ_REC + 0.5f) * dz;
@@ -635,14 +586,14 @@ else {
         }
 
         /* ====================================================================
-         * DIAGNOSTISCHE SNAPSHOT: Schrijf het pure rekenraster weg zonder interpolatie
+         * DIAGNOSTIC SNAPSHOT: write the raw computational grid without interpolation
          * ==================================================================== */
         if (it % 10 == 0) {
             char fname_snap[64];
             snprintf(fname_snap, sizeof(fname_snap), "snapshot_raw_%06d.bin", it);
 
-            /* Schrijf de drukmatrix p direct weg naar schijf.
-               Dit omzeilt de lineaire interpolatie-fout volledig. */
+            /* Write the pressure matrix p directly to disk.
+               This completely bypasses the linear interpolation error. */
             write_snapshot(fname_snap, p, pcnt);
         }
 
@@ -674,7 +625,7 @@ else {
         }
     }
 
-/* --- Finaliseren en wegschrijven --- */
+/* --- finalise and write out --- */
 /* --- write receiver gather --- */
     {
         char fname[128];

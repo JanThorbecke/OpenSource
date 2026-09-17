@@ -335,6 +335,80 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         if (!disable_check) verr("********* leaving program *********");
     }
 
+    /* Extra (heuristic) stability check for the moving-free-surface ALE scheme
+     * (ischeme=-2). Besides the normal wave-propagation Courant number, the
+     * ALE formulation adds a mesh-advection term to the vx/vz/p updates that
+     * transports data along the (stretching) z-grid at the local mesh
+     * velocity
+     *   w(i,j) = dzsdt_col[i] * (nz-j)/nz ,  dzsdt_col = surf_vrate - surf_amp*surf_om*cos(phi)
+     * which is largest at the free surface (j=0) and zero at the fixed
+     * bottom. Because this advective term shares the same z-stencils as the
+     * physical wave term, the two characteristic speeds add up and the
+     * effective Courant number is estimated with (cp_max + max|mesh
+     * velocity|) over the smallest effective grid spacing reached anywhere
+     * during the run (the ALE mesh compresses as the free surface rises).
+     * NOTE: this bound is a heuristic (sum-of-characteristic-speeds)
+     * estimate, not an exact analytic limit for this scheme: the
+     * Kreiss-Oliger dissipation filter provides some extra margin, so a
+     * mild excess above the classic stabfactor may still run without
+     * visible artefacts, but growing excess increases the risk of grid-scale
+     * noise near the free surface (as observed empirically for large
+     * surf_vrate). This check therefore only warns; it never aborts the run. */
+    if (mod->ischeme == -2) {
+        float surf_z0, surf_amp, surf_om, surf_vrate;
+        float w_max, z_top_worst, H_min, dz_eff_min, courant_ale;
+
+        if (!getparfloat("surf_z0",&surf_z0))     surf_z0=500.0;
+        if (!getparfloat("surf_amp",&surf_amp))   surf_amp=50.0;
+        if (!getparfloat("surf_om",&surf_om))     surf_om=0.5;
+        if (!getparfloat("surf_vrate",&surf_vrate)) surf_vrate=80.0;
+
+        /* worst-case mesh (surface) velocity magnitude over the whole run */
+        w_max = fabsf(surf_vrate) + fabsf(surf_amp*surf_om);
+
+        /* worst-case (highest) elevation the free surface reaches during
+         * the run, hence the smallest column height / effective dz */
+        z_top_worst = surf_z0 + fabsf(surf_amp) + MAX(surf_vrate,0.0) * mod->tmod;
+        H_min = ((float)nz * dz) - z_top_worst;
+
+        if (H_min <= 0.0) {
+            vwarn("*********** ! ALE mesh collapse ! **********");
+            vwarn("The free surface (surf_z0=%.3f, surf_amp=%.3f, surf_vrate=%.3f)",
+                  surf_z0, surf_amp, surf_vrate);
+            vwarn("is predicted to reach or pass the fixed bottom (z=%.3f) within tmod=%.3f s.",
+                  (float)nz*dz, mod->tmod);
+            vwarn("***************** !!! *********************");
+        } else {
+            dz_eff_min = H_min / (float)nz;
+            courant_ale = dt * (cp_max + w_max) / dz_eff_min;
+
+            if (verbose && pe==0) {
+                vmess("*******************************************");
+                vmess("****** ALE moving free-surface check ******");
+                vmess("*******************************************");
+                vmess("max mesh (surface) velocity |w|   = %.3f m/s", w_max);
+                vmess("smallest effective dz during run  = %.5f m", dz_eff_min);
+                vmess("combined Courant number (cp+w)*dt/dz_eff = %.4f (indicative limit %.4f)",
+                      courant_ale, stabfactor);
+            }
+
+            if (courant_ale > stabfactor) {
+                vwarn("*********** ! ALE Stability (heuristic) ! **");
+                vwarn("Moving free-surface mesh-advection term combined with");
+                vwarn("wave propagation gives Courant number %.4f > indicative limit %.4f.", courant_ale, stabfactor);
+                vwarn("This does not necessarily blow up (Kreiss-Oliger filtering");
+                vwarn("adds margin), but grid-scale noise near the free surface");
+                vwarn("becomes more likely as this number grows (inspect snapshots!).");
+                vwarn("Hence, consider lowering surf_vrate/surf_amp*surf_om below %.3f m/s,",
+                      MAX(0.0f, stabfactor*dz_eff_min/dt - cp_max));
+                vwarn("    or adjust dt <= %e,", stabfactor*dz_eff_min/(cp_max+w_max));
+                vwarn("    or use a finer grid (smaller dz, larger nz) so dz_eff >= %.5f m.",
+                      dt*(cp_max+w_max)/stabfactor);
+                vwarn("***************** !!! *********************");
+            }
+        }
+    }
+
     /* to support old parameter interface */
     if (!getparint("cfree",&cfree)) taptop=1;
     if (!getparint("tapleft",&tapleft)) tapleft=0;
