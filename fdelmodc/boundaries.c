@@ -22,7 +22,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 	int   ix, iz, ibnd, ib, ibx, ibz;
 	int   nx, nz, n1, n2;
 	int   ixo, ixe, izo, ize;
-    int   npml, pml, zmin, zmax, zlo, zhi;
+    int   npml, pml, zmin, zmax;
     int   has_lef_pml, has_rig_pml, has_top_pml, has_bot_pml;
     float dpx, dpz, *p;
     static float *psi_vx_x = NULL, *psi_vz_z = NULL;
@@ -358,54 +358,6 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
             }
         }
 
-/*
-#pragma omp for private(ix, iz, dpz) schedule(static)
-        for (ix=((mod.ioZx-npml)>0?(mod.ioZx-npml):0); ix<((mod.ieZx+npml)<n2?(mod.ieZx+npml):n2); ix++) {
-            int in_x = ((has_lef_pml && ix < mod.ioZx) || (has_rig_pml && ix >= mod.ieZx));
-
-            if (in_x) {
-                for (iz=zmin; iz<zmax; iz++) {
-                    int i = ix*n1+iz;
-                    dpz = c1*(p[i]     - p[i-1]) +
-                          c2*(p[i+1]   - p[i-2]);
-                    if (has_top_pml && iz < mod.ioZz) {
-                        psi_vz_z[i] = b_zf[iz]*psi_vz_z[i] + c_zf[iz]*dpz;
-                        dpz = ik_zf[iz]*dpz + psi_vz_z[i];
-                    }
-                    else if (has_bot_pml && iz >= mod.ieZz) {
-                        psi_vz_z[i] = b_zf[iz]*psi_vz_z[i] + c_zf[iz]*dpz;
-                        dpz = ik_zf[iz]*dpz + psi_vz_z[i];
-                    }
-                    vz[i] -= roz[i]*dpz;
-                }
-            }
-            else {
-                if (has_top_pml) {
-#pragma omp simd
-                    for (iz=zmin; iz<mod.ioZz; iz++) {
-                        int i = ix*n1+iz;
-                        dpz = c1*(p[i]     - p[i-1]) +
-                              c2*(p[i+1]   - p[i-2]);
-                        psi_vz_z[i] = b_zf[iz]*psi_vz_z[i] + c_zf[iz]*dpz;
-                        dpz = ik_zf[iz]*dpz + psi_vz_z[i];
-                        vz[i] -= roz[i]*dpz;
-                    }
-                }
-                if (has_bot_pml) {
-#pragma omp simd
-                    for (iz=mod.ieZz; iz<zmax; iz++) {
-                        int i = ix*n1+iz;
-                        dpz = c1*(p[i]     - p[i-1]) +
-                              c2*(p[i+1]   - p[i-2]);
-                        psi_vz_z[i] = b_zf[iz]*psi_vz_z[i] + c_zf[iz]*dpz;
-                        dpz = ik_zf[iz]*dpz + psi_vz_z[i];
-                        vz[i] -= roz[i]*dpz;
-                    }
-                }
-            }
-        }
-*/
-
         /* Fill ghost cells before pressure update.
          * Keep 4th-order pressure stencils symmetric on both low/high-index faces. */
         if (bnd.lef == 2) {
@@ -444,80 +396,154 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* vx: update all PML cells skipped by elastic4 main kernel */
         zmin = ((mod.ioXz-npml)>0?(mod.ioXz-npml):0);
         zmax = ((mod.ieXz+npml)<n1?(mod.ieXz+npml):n1);
-        zlo = has_top_pml ? zmin : mod.ioXz;
-        zhi = has_bot_pml ? zmax : mod.ieXz;
 //fprintf(stderr,"ixo=%d ixe=%d zmin=%d zmax=%d\n", ((mod.ioXx-npml)>0?(mod.ioXx-npml):0), ((mod.ieXx+npml)<n2?(mod.ieXx+npml):n2), zmin, zmax);
 
+
+       if (has_lef_pml) {
 #pragma omp for private(ix, iz, dpx, dpz) schedule(static)
-        for (ix=((mod.ioXx-npml)>0?(mod.ioXx-npml):0); ix<((mod.ieXx+npml)<n2?(mod.ieXx+npml):n2); ix++) {
-            int in_x = ((has_lef_pml && ix < mod.ioXx) || (has_rig_pml && ix >= mod.ieXx));
-
-            for (iz=zlo; iz<zhi; iz++) {
-                int in_z = ((has_top_pml && iz < mod.ioXz) || (has_bot_pml && iz >= mod.ieXz));
-                int i;
-                if (!in_x && !in_z) continue;
-                i = ix*n1+iz;
-
-                dpx = c1*(txx[i]     - txx[i-n1]) +
-                      c2*(txx[i+n1]  - txx[i-2*n1]);
-                dpz = c1*(txz[i+1]   - txz[i]) +
-                      c2*(txz[i+2]   - txz[i-1]);
-                psi_vx_x[i] = b_xf[ix]*psi_vx_x[i] + c_xf[ix]*dpx;
-                dpx = ik_xf[ix]*dpx + psi_vx_x[i];
-                if (in_z) {
+            for (ix=mod.ioXx-npml; ix<mod.ioXx; ix++) {
+                for (iz=zmin; iz<zmax; iz++) {
+                    int i = ix*n1+iz;
+                    dpx = c1*(txx[i]     - txx[i-n1]) +
+                          c2*(txx[i+n1]  - txx[i-2*n1]);
+                    dpz = c1*(txz[i+1]   - txz[i]) +
+                          c2*(txz[i+2]   - txz[i-1]);
+                    psi_vx_x[i] = b_xf[ix]*psi_vx_x[i] + c_xf[ix]*dpx;
+                    dpx = ik_xf[ix]*dpx + psi_vx_x[i];
                     psi_vx_z[i] = b_zf[iz]*psi_vx_z[i] + c_zf[iz]*dpz;
                     dpz = ik_zf[iz]*dpz + psi_vx_z[i];
+                    vx[i] -= rox[i]*(dpx + dpz);
                 }
-                vx[i] -= rox[i]*(dpx + dpz);
             }
-        }
+       }
+       if (has_rig_pml) {
+#pragma omp for private(ix, iz, dpx, dpz) schedule(static)
+            for (ix=mod.ieXx; ix<mod.ieXx+npml; ix++) {
+                for (iz=zmin; iz<zmax; iz++) {
+                    int i = ix*n1+iz;
+                    dpx = c1*(txx[i]     - txx[i-n1]) +
+                          c2*(txx[i+n1]  - txx[i-2*n1]);
+                    dpz = c1*(txz[i+1]   - txz[i]) +
+                          c2*(txz[i+2]   - txz[i-1]);
+                    psi_vx_x[i] = b_xf[ix]*psi_vx_x[i] + c_xf[ix]*dpx;
+                    dpx = ik_xf[ix]*dpx + psi_vx_x[i];
+                    psi_vx_z[i] = b_zf[iz]*psi_vx_z[i] + c_zf[iz]*dpz;
+                    dpz = ik_zf[iz]*dpz + psi_vx_z[i];
+                    vx[i] -= rox[i]*(dpx + dpz);
+                }
+            }
+       }
+       if (has_top_pml) {
+#pragma omp for private(ix, iz, dpx, dpz) schedule(static)
+            for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
+                for (iz=mod.ioXz-npml; iz<mod.ioXz; iz++) {
+                    int i = ix*n1+iz;
+                    dpx = c1*(txx[i]     - txx[i-n1]) +
+                          c2*(txx[i+n1]  - txx[i-2*n1]);
+                    dpz = c1*(txz[i+1]   - txz[i]) +
+                          c2*(txz[i+2]   - txz[i-1]);
+                    psi_vx_x[i] = b_xf[ix]*psi_vx_x[i] + c_xf[ix]*dpx;
+                    dpx = ik_xf[ix]*dpx + psi_vx_x[i];
+                    psi_vx_z[i] = b_zf[iz]*psi_vx_z[i] + c_zf[iz]*dpz;
+                    dpz = ik_zf[iz]*dpz + psi_vx_z[i];
+                    vx[i] -= rox[i]*(dpx + dpz);
+                }
+            }
+       }
+       if (has_bot_pml) {
+#pragma omp for private(ix, iz, dpx, dpz) schedule(static)
+            for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
+                for (iz=mod.ieXz; iz<mod.ieXz+npml; iz++) {
+                    int i = ix*n1+iz;
+                    dpx = c1*(txx[i]     - txx[i-n1]) +
+                          c2*(txx[i+n1]  - txx[i-2*n1]);
+                    dpz = c1*(txz[i+1]   - txz[i]) +
+                          c2*(txz[i+2]   - txz[i-1]);
+                    psi_vx_x[i] = b_xf[ix]*psi_vx_x[i] + c_xf[ix]*dpx;
+                    dpx = ik_xf[ix]*dpx + psi_vx_x[i];
+                    psi_vx_z[i] = b_zf[iz]*psi_vx_z[i] + c_zf[iz]*dpz;
+                    dpz = ik_zf[iz]*dpz + psi_vx_z[i];
+                    vx[i] -= rox[i]*(dpx + dpz);
+                }
+            }
+       }
 
         /* vz: update all PML cells skipped by elastic4 main kernel */
         zmin = ((mod.ioZz-npml)>0?(mod.ioZz-npml):0);
         zmax = ((mod.ieZz+npml)<n1?(mod.ieZz+npml):n1);
-        zlo = has_top_pml ? zmin : mod.ioZz;
-        zhi = has_bot_pml ? zmax : mod.ieZz;
-
+        if (has_lef_pml) {
 #pragma omp for private(ix, iz, dpx, dpz) schedule(static)
-        for (ix=((mod.ioZx-npml)>0?(mod.ioZx-npml):0); ix<((mod.ieZx+npml)<n2?(mod.ieZx+npml):n2); ix++) {
-            int in_x = ((has_lef_pml && ix < mod.ioZx) || (has_rig_pml && ix >= mod.ieZx));
-
-            for (iz=zlo; iz<zhi; iz++) {
-                int in_z = ((has_top_pml && iz < mod.ioZz) || (has_bot_pml && iz >= mod.ieZz));
-                int i;
-                if (!in_x && !in_z) continue;
-                i = ix*n1+iz;
-
-                if (iz >= 2 && iz <= n1-2) {
+            for (ix=mod.ioZx-npml; ix<mod.ioZx; ix++) {
+                for (iz=zmin; iz<zmax; iz++) {
+                    int i = ix*n1+iz;
                     dpz = c1*(tzz[i]   - tzz[i-1]) +
                           c2*(tzz[i+1] - tzz[i-2]);
-                }
-                else {
-                    int izm1 = (iz > 0) ? iz-1 : iz;
-                    int izp1 = (iz+1 < n1) ? iz+1 : iz;
-                    dpz = tzz[ix*n1+izp1] - tzz[ix*n1+izm1];
-                }
-                if (ix >= 1 && ix <= n2-3) {
-                    dpx = c1*(txz[i+n1]   - txz[i]) +
-                          c2*(txz[i+2*n1] - txz[i-n1]);
-                }
-                else {
-                    int ixm1 = (ix > 0) ? ix-1 : ix;
-                    int ixp1 = (ix+1 < n2) ? ix+1 : ix;
-                    dpx = txz[ixp1*n1+iz] - txz[ixm1*n1+iz];
-                }
-
-                if (in_z) {
                     psi_vz_z[i] = b_zf[iz]*psi_vz_z[i] + c_zf[iz]*dpz;
                     dpz = ik_zf[iz]*dpz + psi_vz_z[i];
-                }
-                if (in_x) {
+    
+                    dpx = c1*(txz[i+n1]   - txz[i]) +
+                          c2*(txz[i+2*n1] - txz[i-n1]);
                     psi_vz_x[i] = b_xf[ix]*psi_vz_x[i] + c_xf[ix]*dpx;
                     dpx = ik_xf[ix]*dpx + psi_vz_x[i];
+                    vz[i] -= roz[i]*(dpz + dpx);
                 }
-                vz[i] -= roz[i]*(dpz + dpx);
             }
         }
+        if (has_rig_pml) {
+#pragma omp for private(ix, iz, dpx, dpz) schedule(static)
+            for (ix=mod.ieZx; ix<mod.ieZx+npml; ix++) {
+                for (iz=zmin; iz<zmax; iz++) {
+                    int i = ix*n1+iz;
+                    dpz = c1*(tzz[i]   - tzz[i-1]) +
+                          c2*(tzz[i+1] - tzz[i-2]);
+                    psi_vz_z[i] = b_zf[iz]*psi_vz_z[i] + c_zf[iz]*dpz;
+                    dpz = ik_zf[iz]*dpz + psi_vz_z[i];
+    
+                    dpx = c1*(txz[i+n1]   - txz[i]) +
+                          c2*(txz[i+2*n1] - txz[i-n1]);
+                    psi_vz_x[i] = b_xf[ix]*psi_vz_x[i] + c_xf[ix]*dpx;
+                    dpx = ik_xf[ix]*dpx + psi_vz_x[i];
+                    vz[i] -= roz[i]*(dpz + dpx);
+                }
+            }
+        }
+        if (has_top_pml) {
+#pragma omp for private(ix, iz, dpx, dpz) schedule(static)
+            for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
+                for (iz=mod.ioZz-npml; iz<mod.ioZz; iz++) {
+                    int i = ix*n1+iz;
+                    dpz = c1*(tzz[i]   - tzz[i-1]) +
+                          c2*(tzz[i+1] - tzz[i-2]);
+                    psi_vz_z[i] = b_zf[iz]*psi_vz_z[i] + c_zf[iz]*dpz;
+                    dpz = ik_zf[iz]*dpz + psi_vz_z[i];
+    
+                    dpx = c1*(txz[i+n1]   - txz[i]) +
+                          c2*(txz[i+2*n1] - txz[i-n1]);
+                    psi_vz_x[i] = b_xf[ix]*psi_vz_x[i] + c_xf[ix]*dpx;
+                    dpx = ik_xf[ix]*dpx + psi_vz_x[i];
+                    vz[i] -= roz[i]*(dpz + dpx);
+                }
+            }
+        }
+        if (has_bot_pml) {
+#pragma omp for private(ix, iz, dpx, dpz) schedule(static)
+            for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
+                for (iz=mod.ieZz; iz<mod.ieZz+npml; iz++) {
+                    int i = ix*n1+iz;
+                    dpz = c1*(tzz[i]   - tzz[i-1]) +
+                          c2*(tzz[i+1] - tzz[i-2]);
+                    psi_vz_z[i] = b_zf[iz]*psi_vz_z[i] + c_zf[iz]*dpz;
+                    dpz = ik_zf[iz]*dpz + psi_vz_z[i];
+    
+                    dpx = c1*(txz[i+n1]   - txz[i]) +
+                          c2*(txz[i+2*n1] - txz[i-n1]);
+                    psi_vz_x[i] = b_xf[ix]*psi_vz_x[i] + c_xf[ix]*dpx;
+                    dpx = ik_xf[ix]*dpx + psi_vz_x[i];
+                    vz[i] -= roz[i]*(dpz + dpx);
+                }
+            }
+        }
+
         /* Fill outer ghost cells with linear extrapolation so 4th-order stress
          * stencils in boundariesV have symmetric closure at all four sides. */
         if (bnd.lef == 2) {
@@ -1858,7 +1884,6 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 	if (mod.ischeme <= 2) { /* Acoustic scheme */
         int zmin = ((mod.ioPz-npml)>0?(mod.ioPz-npml):mod.ioPz);
         int zmax = ((mod.iePz+npml)<n1?(mod.iePz+npml):mod.iePz);
-        //fprintf(stderr,"zmin=%d zmax=%d zlo=%d zhi=%d\n", zmin, zmax, zlo, zhi);
 		if (bnd.top==1) { /* free(1) moving(5) surface at top */
 #pragma omp	for private (ix, iz) nowait
             for (ix=((mod.ioPx-npml)>0?(mod.ioPx-npml):mod.ioPx); ix<((mod.iePx+npml)<n2?(mod.iePx+npml):mod.iePx); ix++) {
