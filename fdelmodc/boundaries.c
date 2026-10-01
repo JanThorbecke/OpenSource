@@ -243,11 +243,9 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
         /* unified-mask CPML update: one loop per velocity component */
         zmin = ((mod.ioXz-npml)>0?(mod.ioXz-npml):0);
         zmax = ((mod.ieXz+npml)<n1?(mod.ieXz+npml):n1);
+        if (has_lef_pml) {
 #pragma omp for private(ix, iz, dpx) schedule(static)
-        for (ix=((mod.ioXx-npml)>0?(mod.ioXx-npml):0); ix<((mod.ieXx+npml)<n2?(mod.ieXx+npml):n2); ix++) {
-            int in_x = ((has_lef_pml && ix < mod.ioXx) || (has_rig_pml && ix >= mod.ieXx));
-
-            if (in_x) {
+            for (ix=mod.ioXx-npml; ix<mod.ioXx; ix++) {
 #pragma omp simd
                 for (iz=zmin; iz<zmax; iz++) {
                     int i = ix*n1+iz;
@@ -258,30 +256,109 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                     vx[i] -= rox[i]*dpx;
                 }
             }
-            else {
-                if (has_top_pml) {
+        }
+        if (has_rig_pml) {
+#pragma omp for private(ix, iz, dpx) schedule(static)
+            for (ix=mod.ieXx; ix<mod.ieXx+npml; ix++) {
 #pragma omp simd
-                    for (iz=zmin; iz<mod.ioXz; iz++) {
-                        int i = ix*n1+iz;
-                        dpx = c1*(p[i]        - p[i-n1]) +
-                              c2*(p[i+n1]     - p[i-2*n1]);
-                        vx[i] -= rox[i]*dpx;
-                    }
+                for (iz=zmin; iz<zmax; iz++) {
+                    int i = ix*n1+iz;
+                    dpx = c1*(p[i]        - p[i-n1]) +
+                          c2*(p[i+n1]     - p[i-2*n1]);
+                    psi_vx_x[i] = b_xf[ix]*psi_vx_x[i] + c_xf[ix]*dpx;
+                    dpx = ik_xf[ix]*dpx + psi_vx_x[i];
+                    vx[i] -= rox[i]*dpx;
                 }
-                if (has_bot_pml) {
+            }
+        }
+        if (has_top_pml) {
+#pragma omp for private(ix, iz, dpx) schedule(static)
+            for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
 #pragma omp simd
-                    for (iz=mod.ieXz; iz<zmax; iz++) {
-                        int i = ix*n1+iz;
-                        dpx = c1*(p[i]        - p[i-n1]) +
-                              c2*(p[i+n1]     - p[i-2*n1]);
-                        vx[i] -= rox[i]*dpx;
-                    }
+                for (iz=mod.ioXz-npml; iz<mod.ioXz; iz++) {
+                    int i = ix*n1+iz;
+                    dpx = c1*(p[i]        - p[i-n1]) +
+                          c2*(p[i+n1]     - p[i-2*n1]);
+                    psi_vx_x[i] = b_xf[ix]*psi_vx_x[i] + c_xf[ix]*dpx;
+                    dpx = ik_xf[ix]*dpx + psi_vx_x[i];
+                    vx[i] -= rox[i]*dpx;
+                }
+            }
+        }
+        if (has_bot_pml) {
+#pragma omp for private(ix, iz, dpx) schedule(static)
+            for (ix=mod.ioXx; ix<mod.ieXx; ix++) {
+#pragma omp simd
+                for (iz=mod.ieXz; iz<mod.ieXz+npml; iz++) {
+                    int i = ix*n1+iz;
+                    dpx = c1*(p[i]        - p[i-n1]) +
+                          c2*(p[i+n1]     - p[i-2*n1]);
+                    psi_vx_x[i] = b_xf[ix]*psi_vx_x[i] + c_xf[ix]*dpx;
+                    dpx = ik_xf[ix]*dpx + psi_vx_x[i];
+                    vx[i] -= rox[i]*dpx;
                 }
             }
         }
 
         zmin = ((mod.ioZz-npml)>0?(mod.ioZz-npml):0);
         zmax = ((mod.ieZz+npml)<n1?(mod.ieZz+npml):n1);
+        if (has_lef_pml) {
+#pragma omp for private(ix, iz, dpz) schedule(static)
+            for (ix=mod.ioZx-npml; ix<mod.ioZx; ix++) {
+                for (iz=zmin; iz<zmax; iz++) {
+                    int i = ix*n1+iz;
+                    dpz = c1*(p[i]     - p[i-1]) +
+                          c2*(p[i+1]   - p[i-2]);
+                    psi_vz_z[i] = b_zf[iz]*psi_vz_z[i] + c_zf[iz]*dpz;
+                    dpz = ik_zf[iz]*dpz + psi_vz_z[i];
+                    vz[i] -= roz[i]*dpz;
+                }
+            }
+        }
+        if (has_rig_pml) {
+#pragma omp for private(ix, iz, dpz) schedule(static)
+            for (ix=mod.ieZx; ix<mod.ieZx+npml; ix++) {
+#pragma omp simd
+                for (iz=zmin; iz<zmax; iz++) {
+                    int i = ix*n1+iz;
+                    dpz = c1*(p[i]     - p[i-1]) +
+                          c2*(p[i+1]   - p[i-2]);
+                    psi_vz_z[i] = b_zf[iz]*psi_vz_z[i] + c_zf[iz]*dpz;
+                    dpz = ik_zf[iz]*dpz + psi_vz_z[i];
+                    vz[i] -= roz[i]*dpz;
+                }
+            }
+        }
+        if (has_top_pml) {
+#pragma omp for private(ix, iz, dpz) schedule(static)
+            for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
+#pragma omp simd
+                for (iz=mod.ioZz-npml; iz<mod.ioZz; iz++) {
+                    int i = ix*n1+iz;
+                    dpz = c1*(p[i]     - p[i-1]) +
+                          c2*(p[i+1]   - p[i-2]);
+                    psi_vz_z[i] = b_zf[iz]*psi_vz_z[i] + c_zf[iz]*dpz;
+                    dpz = ik_zf[iz]*dpz + psi_vz_z[i];
+                    vz[i] -= roz[i]*dpz;
+                }
+            }
+        }
+        if (has_bot_pml) {
+#pragma omp for private(ix, iz, dpz) schedule(static)
+            for (ix=mod.ioZx; ix<mod.ieZx; ix++) {
+#pragma omp simd
+                for (iz=mod.ieZz; iz<mod.ieZz+npml; iz++) {
+                    int i = ix*n1+iz;
+                    dpz = c1*(p[i]     - p[i-1]) +
+                          c2*(p[i+1]   - p[i-2]);
+                    psi_vz_z[i] = b_zf[iz]*psi_vz_z[i] + c_zf[iz]*dpz;
+                    dpz = ik_zf[iz]*dpz + psi_vz_z[i];
+                    vz[i] -= roz[i]*dpz;
+                }
+            }
+        }
+
+/*
 #pragma omp for private(ix, iz, dpz) schedule(static)
         for (ix=((mod.ioZx-npml)>0?(mod.ioZx-npml):0); ix<((mod.ieZx+npml)<n2?(mod.ieZx+npml):n2); ix++) {
             int in_x = ((has_lef_pml && ix < mod.ioZx) || (has_rig_pml && ix >= mod.ieZx));
@@ -327,6 +404,7 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 }
             }
         }
+*/
 
         /* Fill ghost cells before pressure update.
          * Keep 4th-order pressure stencils symmetric on both low/high-index faces. */
@@ -380,29 +458,12 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 if (!in_x && !in_z) continue;
                 i = ix*n1+iz;
 
-                //if (ix >= 2 && ix <= n2-2) {
-                    dpx = c1*(txx[i]     - txx[i-n1]) +
-                          c2*(txx[i+n1]  - txx[i-2*n1]);
-                //}
-                //else {
-                //    int ixm1 = (ix > 0) ? ix-1 : ix;
-                //    int ixp1 = (ix+1 < n2) ? ix+1 : ix;
-                //    dpx = txx[ixp1*n1+iz] - txx[ixm1*n1+iz];
-                //}
-                //if (iz >= 1 && iz <= n1-3) {
-                    dpz = c1*(txz[i+1]   - txz[i]) +
-                          c2*(txz[i+2]   - txz[i-1]);
-                //}
-                //else {
-                //    int izm1 = (iz > 0) ? iz-1 : iz;
-                //    int izp1 = (iz+1 < n1) ? iz+1 : iz;
-                //    dpz = txz[ix*n1+izp1] - txz[ix*n1+izm1];
-                //}
-
-                //if (in_x) {
-                    psi_vx_x[i] = b_xf[ix]*psi_vx_x[i] + c_xf[ix]*dpx;
-                    dpx = ik_xf[ix]*dpx + psi_vx_x[i];
-                //}
+                dpx = c1*(txx[i]     - txx[i-n1]) +
+                      c2*(txx[i+n1]  - txx[i-2*n1]);
+                dpz = c1*(txz[i+1]   - txz[i]) +
+                      c2*(txz[i+2]   - txz[i-1]);
+                psi_vx_x[i] = b_xf[ix]*psi_vx_x[i] + c_xf[ix]*dpx;
+                dpx = ik_xf[ix]*dpx + psi_vx_x[i];
                 if (in_z) {
                     psi_vx_z[i] = b_zf[iz]*psi_vx_z[i] + c_zf[iz]*dpz;
                     dpz = ik_zf[iz]*dpz + psi_vx_z[i];
@@ -1478,50 +1539,9 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 }
             }
         }
-/*
-#pragma omp for private(ix, iz, dvx, dvz) schedule(guided,1)
-        for (ix=((mod.ioPx-npml)>0?(mod.ioPx-npml):0); ix<((mod.iePx+npml)<n2?(mod.iePx+npml):n2); ix++) {
-            int in_x = ((has_lef_pml && ix < mod.ioPx) || (has_rig_pml && ix >= mod.iePx));
-
-            for (iz=zlo; iz<zhi; iz++) {
-                int in_z = ((has_top_pml && iz < mod.ioPz) || (has_bot_pml && iz >= mod.iePz));
-                if (!in_x && !in_z) continue;
-
-//                if (ix >= 1 && ix <= n2-3) {
-                    dvx = c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
-                          c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]);
-//                }
-//                else {
-//                    int ixm1 = (ix > 0) ? ix-1 : ix;
-//                    int ixp1 = (ix+1 < n2) ? ix+1 : ix;
-//                    dvx = vx[ixp1*n1+iz] - vx[ixm1*n1+iz];
-//                }
-//                if (iz >= 1 && iz <= n1-3) {
-                    dvz = c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
-                          c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]);
-//                }
-//                else {
-//                    int izm1 = (iz > 0) ? iz-1 : iz;
-//                    int izp1 = (iz+1 < n1) ? iz+1 : iz;
-//                    dvz = vz[ix*n1+izp1] - vz[ix*n1+izm1];
-//                }
-
-                if (in_x) {
-                    psi_p_x[ix*n1+iz] = b_xc[ix]*psi_p_x[ix*n1+iz] + c_xc[ix]*dvx;
-                    dvx = ik_xc[ix]*dvx + psi_p_x[ix*n1+iz];
-                }
-                if (in_z) {
-                    psi_p_z[ix*n1+iz] = b_zc[iz]*psi_p_z[ix*n1+iz] + c_zc[iz]*dvz;
-                    dvz = ik_zc[iz]*dvz + psi_p_z[ix*n1+iz];
-                }
-                p[ix*n1+iz] -= l2m[ix*n1+iz]*(dvx + dvz);
-            }
-        }
-*/
         /* Fill pressure ghost cells used by 4th-order velocity stencils
          * in the next boundariesP call; keep low/high-index closure symmetric. */
-/*
-        */
+
         if (bnd.lef == 2) {
 #pragma omp for private(iz)
             for (iz=0; iz<n1; iz++) {
@@ -1627,42 +1647,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
             }
         }
 
-
-/*
-        int ixe_pml = bnd.rig==2 ? (mod.ieXx+npml<n2 ? mod.ieXx+npml : n2) : mod.iePx;
-        int ize_pml = bnd.bot==2 ? (mod.ieXz+npml<n1 ? mod.ieXz+npml : n1) : mod.iePz;
-        int zlo = has_top_pml ? mod.ioPz-npml : mod.ioXz;
-        int zhi = has_bot_pml ? ize_pml : mod.ieXz;
-        for (ix=mod.ioPx-npml; ix<ixe_pml; ix++) {
-            int in_x = ((has_lef_pml && ix < mod.ioXx) || (has_rig_pml && ix >= mod.ieXx));
-            for (iz=zlo; iz<zhi; iz++) {
-                int in_z = ((has_top_pml && iz < mod.ioXz) || (has_bot_pml && iz >= mod.ieXz));
-                int i = ix*n1+iz;
-                if (!in_x && !in_z) continue;
-
-                dvx = c1*(vx[i+n1]   - vx[i]) +
-                      c2*(vx[i+2*n1] - vx[i-n1]);
-
-                dvz = c1*(vz[i+1]   - vz[i]) +
-                      c2*(vz[i+2]   - vz[i-1]);
-
-                if (in_x) {
-                    psi_p_x[i] = b_xc[ix]*psi_p_x[i] + c_xc[ix]*dvx;
-                    dvx = ik_xc[ix]*dvx + psi_p_x[i];
-                }
-                if (in_z) {
-                    psi_p_z[i] = b_zc[iz]*psi_p_z[i] + c_zc[iz]*dvz;
-                    dvz = ik_zc[iz]*dvz + psi_p_z[i];
-                }
-
-                txx[i] -= l2m[i]*dvx + lam[i]*dvz;
-                tzz[i] -= l2m[i]*dvz + lam[i]*dvx;
-            }
-        }
-        */
-
         /* Direct CPML update for txz on T-grid PML cells */
-
 
         ixe_pml = bnd.rig==2 ? (mod.ieXx+npml<n2 ? mod.ieXx+npml : n2) : mod.ieTx;
         ize_pml = bnd.bot==2 ? (mod.ieXz+npml<n1 ? mod.ieXz+npml : n1) : mod.ieTz;
@@ -1740,39 +1725,6 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
                 }   
             }       
         }
-
-/*
-        int ixe_pml = bnd.rig==2 ? (mod.ieXx+npml<n2 ? mod.ieXx+npml : n2) : mod.ieTx;
-        int ize_pml = bnd.bot==2 ? (mod.ieXz+npml<n1 ? mod.ieXz+npml : n1) : mod.ieTz;
-        int zlo = has_top_pml ? mod.ioTz-npml : mod.ioXz;
-        int zhi = has_bot_pml ? ize_pml : mod.ieXz;
-#pragma omp for private(ix, iz, dvx, dvz) schedule(static)
-        for (ix=mod.ioTx-npml; ix<ixe_pml; ix++) {
-            int in_x = ((has_lef_pml && ix < mod.ioXx) || (has_rig_pml && ix >= mod.ieXx));
-            for (iz=zlo; iz<zhi; iz++) {
-                int in_z = ((has_top_pml && iz < mod.ioXz) || (has_bot_pml && iz >= mod.ieXz));
-                int i = ix*n1+iz;
-                if (!in_x && !in_z) continue;
-
-                    dvz = c1*(vz[i]     - vz[i-n1]) +
-                          c2*(vz[i+n1]  - vz[i-2*n1]);
-
-                    dvx = c1*(vx[i]   - vx[i-1]) +
-                          c2*(vx[i+1] - vx[i-2]);
-
-                if (in_x) {
-                        psi_txz_x[i] = b_xf[ix]*psi_txz_x[i] + c_xf[ix]*dvz;
-                        dvz = ik_xf[ix]*dvz + psi_txz_x[i];
-                }
-                if (in_z) {
-                        psi_txz_z[i] = b_zf[iz]*psi_txz_z[i] + c_zf[iz]*dvx;
-                        dvx = ik_zf[iz]*dvx + psi_txz_z[i];
-                }
-
-                txz[i] -= mul[i]*(dvx + dvz);
-            }
-        }
-*/
 
     } /* end elastic CFS-CPML */
 
@@ -1937,6 +1889,7 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 		}
 	}
 	else { /* Elastic scheme */
+
 /* The implementation for a topgraphy surface is not yet correct */
 		
 		/* Free surface: calculate free surface conditions for stresses 
