@@ -184,6 +184,8 @@ typedef struct _boundPar { /* Boundary Parameters */
     int npml;
     float R; /* reflection at side of model */
     float m; /* scaling order */
+    float amax; /*  CFS-CPML */
+    float kmax; /* CFS-CPML */
     float speed; /* speed of moving free surface */
     int spskip;
     int topadd;

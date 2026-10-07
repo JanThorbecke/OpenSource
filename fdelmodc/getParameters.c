@@ -290,7 +290,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
     }
     else {
         cmin = cs_min; 
-        if ( (cmin<1e-20) || (cp_min<cs_min) ) cmin=cp_min;
+        if ( (cmin<1e-20) || (cp_min<cs_min && cp_min != 0.0) ) cmin=cp_min;
     }
 
     if (verbose && pe==0) {
@@ -308,8 +308,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 //        vmess("With dt = %f  maximum velocity = %f",dt, dx*stabfactor/dt);
         if (wav->file_src != NULL) vmess(" For wavelet(s) in file_src fmax = %f", fmax);
         vmess("Optimal discretisation for current model:");
-        vmess(" With maximum velocity  = %f dt <= %e", cp_max,dx*stabfactor/cp_max);
-        vmess(" With maximum frequency = %f dx <= %e", wav->fmax, cmin/(wav->fmax*dispfactor));
+        vmess(" With maximum velocity  = %f dt <= %e", cp_max,(double)dx*stabfactor/cp_max);
+        vmess(" With maximum frequency = %f dx <= %e", wav->fmax, (double)cmin/(wav->fmax*dispfactor));
     }
 
     /* Check stability and dispersion setting */
@@ -318,8 +318,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         vwarn("************ ! Stability ! ****************");
         vwarn("From the input file maximum P-wave velocity");
         vwarn("in the current model is %f !!", cp_max);
-        vwarn("Hence, adjust dx >= %.4f,",cp_max*dt/stabfactor);
-        vwarn("    or adjust dt <= %f,",dx*stabfactor/cp_max);
+        vwarn("Hence, adjust dx >= %e,",cp_max*dt/stabfactor);
+        vwarn("    or adjust dt <= %e,",dx*stabfactor/cp_max);
         vwarn("    or lower the maximum velocity below %.3f m/s.",dx*stabfactor/dt);
         vwarn("***************** !!! *********************");
         if (!disable_check) verr("********* leaving program *********");
@@ -454,6 +454,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
     if (!getparint("npml",&bnd->npml)) bnd->npml=20;
     if (!getparfloat("R",&bnd->R)) bnd->R=1e-5;
     if (!getparfloat("m",&bnd->m)) bnd->m=2.0;
+    if (!getparfloat("amax",&bnd->amax)) bnd->amax=M_PI*fmax*0.2;
+    if (!getparfloat("kmax",&bnd->kmax)) bnd->kmax=5.0;
     if (bnd->npml < 5) {
         bnd->npml = 20;
     }

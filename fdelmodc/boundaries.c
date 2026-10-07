@@ -156,8 +156,8 @@ int boundariesP(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 
         m_cpml = (bnd.m > 0.0) ? bnd.m : 2.0;
         R_cpml = (bnd.R > 0.0) ? bnd.R : 1e-5;
-        kmax   = 5.0;
-        amax   = 0.0;
+        kmax   = bnd.kmax;
+        amax   = bnd.amax;
         L_pml  = npml * mod.dx;
         sigma_max_cpml = (m_cpml+1.0)*mod.cp_min/(2.0*L_pml)*log(1.0/R_cpml);
 
@@ -1351,8 +1351,8 @@ int boundariesV(modPar mod, bndPar bnd, float *vx, float *vz, float *tzz, float 
 
         m_cpml = (bnd.m > 0.0) ? bnd.m : 2.0;
         R_cpml = (bnd.R > 0.0) ? bnd.R : 1e-5;
-        kmax   = 5.0;
-        amax   = 0.0;
+        kmax   = bnd.kmax;
+        amax   = bnd.amax;
         L_pml  = npml * mod.dx;
         sigma_max_cpml = (m_cpml+1.0)*mod.cp_min/(2.0*L_pml)*log(1.0/R_cpml);
 
