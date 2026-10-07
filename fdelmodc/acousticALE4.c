@@ -544,13 +544,7 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
         }
 
         /* --- Dynamic source injection via bilinear weights --- */
-        /* BUGFIX: use zsrc as a fixed absolute depth instead of
-         * "zsrc + (surf_z[ixs]-surf_z0)". The latter made the source
-         * move along with the drift + sinusoidal displacement of the
-         * surface itself: the source thereby effectively became a
-         * continuously moving source in the real, absolute z-coordinate
-         * system, which generated broadband grid noise that visibly
-         * ran in sync with the surface motion in the snapshots. izs
+        /* BUGFIX: use zsrc as a fixed absolute depth 
          * (the computational column row) is allowed to move with
          * dz_eff_col[ixs] -- that is the legitimate ALE mesh rescaling --
          * as long as the interpolated physical target position (via

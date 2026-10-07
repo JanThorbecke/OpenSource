@@ -107,8 +107,10 @@ char *sdoc[] = {
 "   tmod=(nt-1)*dt .... total modeling time (nt from file_src)",
 "   ntaper=0 .......... length of taper in points at edges of model (old: use npml)",
 "   npml=20 ........... length of PML layer in points at edges of model",
-"   R=1e-5 ............ the theoretical reflection coefficient at PML boundary",
-"   m=2.0 ............. scaling order of the PML sigma function ",
+"   R=1e-5 ............ the theoretical reflection coefficient at CFS-CPML boundary",
+"   m=2.0 ............. polynimal order of the CFS-CPML sigma function ",
+"   amax=0.0 .......... max complex frequency shift of CFS-CPML for low frequency attenuation in rad/s",
+"   kmax=5.0 .......... max coordinate stretching of CFS-CPML ",
 "   tapfact=0.30 ...... taper strength: larger value gets stronger taper",
 "   For the 4 boundaries the options are:  1=free 2=pml 3=rigid 4=taper",
 "   top=1 ............. type of boundary on top edge of model",
@@ -523,6 +525,7 @@ int main(int argc, char **argv)
 
 		izsrc = shot.z[ishot];
 		ixsrc = shot.x[ishot];
+        fprintf(stderr,"xsrc=%d zsrc=%d\n", src.x[ishot], src.z[ishot]);
 		fileno= 0;
 
 		memset(vx,0,sizem*sizeof(float));
