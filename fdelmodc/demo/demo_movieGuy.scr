@@ -1,13 +1,8 @@
 #!/bin/bash
-#PBS -N fdelmod
-#PBS -q verylong
-#PBS -l nodes=1
-#PBS -k eo
-#PBS -j eo
+set -e
 
 which makewave
 which makemod
-
 
 cp=2000
 rho=1000
@@ -18,8 +13,6 @@ makemod sizex=5000 sizez=2000 dx=$dx dz=$dx cp0=$cp ro0=$rho \
 	orig=0,0 file_base=model.su \
 	intt=def x=0,5000 z=1000,1000 poly=0 cp=3500 ro=5000 
 
-#	intt=def x=-2500,0,2500 z=500,500,500 poly=0 cp=2300 ro=5000 
-
 makewave fp=20 dt=$dt file_out=wave.su nt=4096 t0=0.1
 
 fdelmodc \
@@ -28,15 +21,15 @@ fdelmodc \
     file_src=wave.su \
     file_rcv=shot_x1150.su \
     src_type=1 \
-	src_orient=1 \
-	src_injectionrate=1 \
+    src_orient=1 \
+    src_injectionrate=1 \
     rec_type_vz=0 \
     rec_type_p=1 \
     rec_int_vz=2 \
     dtrcv=0.0012 \
-	rec_delay=0.1 \
+    rec_delay=0.1 \
     verbose=2 \
-    tmod=1.60 \
+    tmod=1.20 \
     dxrcv=5.0 \
     xrcv1=0 xrcv2=5000 \
     zrcv1=0 zrcv2=0 \
@@ -44,7 +37,17 @@ fdelmodc \
     sna_type_p=1 \
     sna_type_vz=1 \
     xsnap1=0 xsnap2=5000 zsnap1=500 zsnap2=2000 \
-    tsnap1=0.1 tsnap2=1.6 dtsnap=0.008 \
-    left=2 right=2 top=2 bottom=2 npml=40
+    tsnap1=0.1 tsnap2=1.4 dtsnap=0.008 \
+    left=2 right=2 top=2 bottom=2 npml=260
 
-exit
+#snap_svz.mp4 and snap_sp.mp4 using make_snapshot_movies.py. The converter
+#requires Python 3, NumPy, Matplotlib, and ffmpeg on PATH. Run
+#`python3 make_snapshot_movies.py --help` to change input/output files, clip
+#limits, or the approximately 20-second movie duration. The default symmetric
+#seismic color scale is centered on zero to show both polarities of the
+#propagating waves and head-wave.
+
+python3 "$(dirname "$0")/make_snapshot_movies.py" \
+    --svz-clip 1e-5 \
+    --sp-clip 100 \
+    --duration 20

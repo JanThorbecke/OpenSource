@@ -525,7 +525,6 @@ int main(int argc, char **argv)
 
 		izsrc = shot.z[ishot];
 		ixsrc = shot.x[ishot];
-        fprintf(stderr,"xsrc=%d zsrc=%d\n", src.x[ishot], src.z[ishot]);
 		fileno= 0;
 
 		memset(vx,0,sizem*sizeof(float));
