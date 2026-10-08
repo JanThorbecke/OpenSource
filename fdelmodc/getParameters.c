@@ -560,9 +560,6 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
     */
     if (bnd->bot==4 || bnd->bot==2) {
         mod->naz += bnd->npml;
-        /* For P/Tzz, Txx and Txz fields the tapered boundaries are calculated in the main kernels */
-//        mod->iePz += bnd->npml;
-//        mod->ieTz += bnd->npml;
     }
     if (bnd->lef==4 || bnd->lef==2) {
         mod->nax += bnd->npml;
@@ -571,7 +568,6 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         mod->ieXx += bnd->npml;
         mod->ieZx += bnd->npml;
 
-        /* For Tzz, Txx and Txz fields the tapered boundaries are calculated in the main kernels */
         mod->ioPx += bnd->npml;
         mod->ioTx += bnd->npml;
         mod->iePx += bnd->npml;
@@ -579,11 +575,9 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
     }
     if (bnd->rig==4 || bnd->rig==2) {
         mod->nax += bnd->npml;
-        /* For P/Tzz, Txx and Txz fields the tapered boundaries are calculated in the main kernels */
-//        mod->iePx += bnd->npml;
-//        mod->ieTx += bnd->npml;
     }    
 
+/*
      fprintf(stderr,"Vx x-range: ioXx=%d ieXx=%d\n", mod->ioXx, mod->ieXx);
      fprintf(stderr,"Vx z-range: ioXz=%d ieXz=%d\n", mod->ioXz, mod->ieXz);
 
@@ -595,7 +589,6 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 
      fprintf(stderr,"T x-range: ioTx=%d ieTx=%d\n", mod->ioTx, mod->ieTx);
      fprintf(stderr,"T z-range: ioTz=%d ieTz=%d\n", mod->ioTz, mod->ieTz);
-/*
 */
 
     /* Intialize the array which contains the topography surface */
@@ -1072,6 +1065,16 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         if (src->type==9) vmess("strike %.2f rake %.2f dip %.2f",180.0*strike/M_PI,180.0*rake/M_PI,180.0*dip/M_PI);
         if (src->type==9 || src->type==11) vmess("Mxx %.2f Mzz %.2f Mxz %.2f",src->Mxx,src->Mzz,src->Mxz);
         if (wav->random) vmess("Wavelet has a random signature with fmax=%.2f", wav->fmax);
+        vmess("*******************************************");
+        vmess("************** source info ****************");
+        vmess("*******************************************");
+        for (int ishot=is0; ishot<shot->n; ishot++) {
+            if (!src->random) {
+                vmess("Modeling source %d at gridpoints ix=%d iz=%d", ishot, shot->x[ishot], shot->z[ishot]);
+                vmess(" which are actual positions x=%.2f z=%.2f", mod->x0+mod->dx*shot->x[ishot], mod->z0+mod->dz*shot->z[ishot]);
+            }
+        }
+
         if (src->n>1) {
             vmess("*******************************************");
             vmess("*********** source array info *************");

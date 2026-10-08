@@ -30,3 +30,4 @@ fdelmodc_topography.scr: source and receivers on topography, used in Figure19
 
 model_flank.scr: builds a steep flank model, used in fdelmodc_srcrec.scr
 
+demo_movieGuy.scr also converts its snap_svz.su and snap_sp.su snapshots to snap_svz.mp4 and snap_sp.mp4 using make_snapshot_movies.py. 
