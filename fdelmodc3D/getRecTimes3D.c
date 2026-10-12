@@ -484,6 +484,21 @@ long getRecTimes3D(modPar mod, recPar rec, bndPar bnd, long itime, long isam,
 					rec_vx[irec*rec.nt+isam] = vx[iy*n1*n2+ix2*n1+iz];
 				}
 			}
+			if (rec.type.vy) {
+				if (rec.int_vy == 1) {
+					rec_vy[irec*rec.nt+isam] = 0.125*(
+							vy[iy*n1*n2+ix2*n1+iz]+vy[iy*n1*n2+ix2*n1+iz1]+
+							vy[iy*n1*n2+ix*n1+iz]+vy[iy*n1*n2+ix*n1+iz1]+
+							vy[iy2*n1*n2+ix2*n1+iz]+vy[iy2*n1*n2+ix2*n1+iz1]+
+							vy[iy2*n1*n2+ix*n1+iz]+vy[iy2*n1*n2+ix*n1+iz1]);
+				}
+				else if (rec.int_vy == 2) {
+				    rec_vy[irec*rec.nt+isam] = 0.5*(vy[iy*n1*n2+ix2*n1+iz]+vy[iy*n1*n2+ix*n1+iz]);
+				}
+				else {
+					rec_vy[irec*rec.nt+isam] = vy[iy2*n1*n2+ix*n1+iz];
+				}
+            }
 		}
 
 	} /* end of irec loop */

@@ -37,7 +37,7 @@ int recvPar(recPar *rec, float sub_x0, float sub_z0, float dx, float dz, int nx,
 
 int writesufile(char *filename, float *data, size_t n1, size_t n2, float f1, float f2, float d1, float d2);
 
-int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, shotPar *shot, bndPar *bnd, int verbose)
+int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, shotPar *shot, bndPar *bnd, surfPar *surf, int verbose)
 {
     int isnapmax1, isnapmax2, isnapmax, sna_nrsna;
     int n1, n2, nx, nz, nsrc, ix, axis, ioPz, is0, optn;
@@ -355,26 +355,29 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
      * noise near the free surface (as observed empirically for large
      * surf_vrate). This check therefore only warns; it never aborts the run. */
     if (mod->ischeme == -2) {
-        float surf_z0, surf_amp, surf_om, surf_vrate;
+        //float surf_z0, surf_amp, surf_om, surf_vrate;
         float w_max, z_top_worst, H_min, dz_eff_min, courant_ale;
-
-        if (!getparfloat("surf_z0",&surf_z0))     surf_z0=500.0;
-        if (!getparfloat("surf_amp",&surf_amp))   surf_amp=50.0;
-        if (!getparfloat("surf_om",&surf_om))     surf_om=0.5;
-        if (!getparfloat("surf_vrate",&surf_vrate)) surf_vrate=80.0;
+ 
+        if (!getparint("surf_type",&surf->type)) surf->type=1;
+        if (!getparfloat("surf_z0",&surf->z0))     surf->z0=500.0;
+        if (!getparfloat("surf_amp",&surf->amp))   surf->amp=50.0;
+        if (!getparfloat("surf_lambda",&surf->lambda)) surf->lambda=800.0;
+        if (!getparfloat("surf_om",&surf->om))     surf->om=0.5;
+        if (!getparfloat("surf_vrate",&surf->vrate)) surf->vrate=80.0;
+        if (!getparfloat("surf_hrate",&surf->hrate)) surf->hrate=0.0;
 
         /* worst-case mesh (surface) velocity magnitude over the whole run */
-        w_max = fabsf(surf_vrate) + fabsf(surf_amp*surf_om);
+        w_max = fabsf(surf->vrate) + fabsf(surf->amp*surf->om);
 
         /* worst-case (highest) elevation the free surface reaches during
          * the run, hence the smallest column height / effective dz */
-        z_top_worst = surf_z0 + fabsf(surf_amp) + MAX(surf_vrate,0.0) * mod->tmod;
+        z_top_worst = surf->z0 + fabsf(surf->amp) + MAX(surf->vrate,0.0) * mod->tmod;
         H_min = ((float)nz * dz) - z_top_worst;
 
         if (H_min <= 0.0) {
             vwarn("*********** ! ALE mesh collapse ! **********");
             vwarn("The free surface (surf_z0=%.3f, surf_amp=%.3f, surf_vrate=%.3f)",
-                  surf_z0, surf_amp, surf_vrate);
+                  surf->z0, surf->amp, surf->vrate);
             vwarn("is predicted to reach or pass the fixed bottom (z=%.3f) within tmod=%.3f s.",
                   (float)nz*dz, mod->tmod);
             vwarn("***************** !!! *********************");
@@ -447,7 +450,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
             if (bnd->bot==2) bnd->bot=4;
     }
 
-    if (!getparfloat("movingspeed",&bnd->speed)) bnd->speed=250;
+    //if (!getparfloat("movingspeed",&bnd->speed)) bnd->speed=250;
 
     /* calculate default taper length to be three wavelenghts */
     if (!getparint("ntaper",&bnd->npml)) bnd->npml=20; // bnd->npml=3*NINT((cp_max/wav->fmax)/dx);

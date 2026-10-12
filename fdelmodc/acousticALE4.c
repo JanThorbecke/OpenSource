@@ -79,15 +79,6 @@
  * ξ ∈ [0,1]: normalised distance from the interior (0) to the wall (1).
  * Memory variables: ψ^{n+1} = b·ψ^n + c·D,  modified derivative = (1/κ)·D + ψ
  * b = exp(−(σ/κ+α)·dt),  c = σ/(κ·(σ/κ+α))·(b−1)                          */
-//#define CPML_N      40              /* PML thickness [cells]               */
-#define SOURCE_F0   25.0f
-#define CPML_M      2.0f            /* polynomial order                    */
-#define CPML_R      1e-8f           /* target reflection coefficient       */
-#define CPML_KMAX   5.0f            /* maximum real stretching κ           */
-#define CPML_AMAX   (M_PI*SOURCE_F0)  /* maximum CFS shift α [rad/s]         */
-
-/* ---------- receiver array ---------- */
-#define IZ_REC  200   /* Cartesian depth index; z = (IZ_REC+0.5)*DZ */
 
 static int write_snapshot(const char *fname, const float *data, size_t n) {
     FILE *f = fopen(fname, "wb");
@@ -99,10 +90,10 @@ static int write_snapshot(const char *fname, const float *data, size_t n) {
 
 /* Fill one CFS-CPML coefficient triple for normalised depth xi in [0,1].
  * xi=0: inner boundary (no attenuation); xi=1: PML wall (max attenuation). */
-static void cpml_coeff(float xi, float sigma_max, float dt, float *b, float *c, float *inv_k) {
-    float sig = sigma_max  * powf(xi, CPML_M);
-    float kap = 1.0f + (CPML_KMAX - 1.0f) * powf(xi, CPML_M);
-    float alp = CPML_AMAX  * (1.0f - xi);         
+static void cpml_coeff(float xi, float sigma_max, float dt, float *b, float *c, float *inv_k, bndPar bnd) {
+    float sig = sigma_max  * powf(xi, bnd.m);
+    float kap = 1.0f + (bnd.kmax - 1.0f) * powf(xi, bnd.m);
+    float alp = bnd.amax  * (1.0f - xi);         
     float dk  = sig / kap + alp;
     float sak = sig + kap * alp;                   
     *b     = expf(-dk * dt);
@@ -176,21 +167,21 @@ static inline float sbp42_dj_avg(const float *colL, const float *colR, int j, in
  * keeps the mesh-velocity computation correct for any sufficiently smooth
  * surface shape defined here, without having to also re-derive and update
  * a matching analytic dz_s/dt expression whenever the shape changes. */
-static inline float surf_height(int i, float t, float dx, float two_pi_lam,
-                                 float surf_z0, float surf_amp, float surf_om,
-                                 float surf_vrate) {
-    float phi = two_pi_lam * ((i + 0.5f) * dx) - surf_om * t;
-    return surf_z0 + surf_amp * sinf(phi) + surf_vrate * t;
+static inline float surf_height(int i, float t, float dx, float two_pi_lam, surfPar surf) 
+{
+    float phi = two_pi_lam * ((i + 0.5f) * dx) - surf.om * t;
+    return surf.z0 + surf.amp * sinf(phi) + surf.vrate * t;
 }
 
-int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
-                 int ixsrc, int izsrc, float **src_nwav,
+int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, surfPar surf, 
+                 int itime, float **src_nwav,
+                 float *rec_vx, float *rec_vz, float *rec_p,
                  float *vx, float *vz, float *p,
                  float *rox, float *roz, float *l2m, int verbose)
 {
     int  nx, nz, nt, n1;
     float xsrc, zsrc;
-    float surf_z0, surf_amp, surf_lambda, surf_om, surf_vrate;
+    int ix, iz, ibndx, ibndz;
 
     nz = mod.naz;
     n1 = mod.naz;
@@ -220,7 +211,7 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
     const size_t vzcnt = (size_t)nx * (nz + 1);
 
     const float L_pml    = cpml_n * dx;
-    const float sigma_max = (CPML_M + 1.0f) * mod.cp_max / (2.0f * L_pml) * logf(1.0f / CPML_R);
+    const float sigma_max = (bnd.m + 1.0f) * mod.cp_max / (2.0f * L_pml) * logf(1.0f / bnd.R);
 
     float *b_xf  = calloc(nx+1,  sizeof(float));
     float *c_xf  = calloc(nx+1,  sizeof(float));
@@ -243,12 +234,12 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
     u = (u < 0.0) ? 0.0 : ((u > 1.0) ? 1.0 : u);
     double u_one_minus = 1.0 - u;
 
-    if (!getparfloat("surf_z0",&surf_z0)) surf_z0=500.0;
-    if (!getparfloat("surf_amp",&surf_amp)) surf_amp=50.0;
-    if (!getparfloat("surf_lambda",&surf_lambda)) surf_lambda=800.0;
-    if (!getparfloat("surf_om",&surf_om)) surf_om=0.5;
-    if (!getparfloat("surf_vrate",&surf_vrate)) surf_vrate=80.0;
-    const float two_pi_lam = 2.0f * M_PI / surf_lambda;
+    //if (!getparfloat("surf_z0",&surf_z0)) surf_z0=500.0;
+    //if (!getparfloat("surf_amp",&surf_amp)) surf_amp=50.0;
+    //if (!getparfloat("surf_lambda",&surf_lambda)) surf_lambda=800.0;
+    //if (!getparfloat("surf_om",&surf_om)) surf_om=0.5;
+    //if (!getparfloat("surf_vrate",&surf_vrate)) surf_vrate=80.0;
+    const float two_pi_lam = 2.0f * M_PI / surf.lambda;
 
     const int   J_SRC    = nz / 3;
 
@@ -257,7 +248,7 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
         if      (i <  cpml_n)        xi = (float)(cpml_n - i)        / cpml_n;
         else if (i >  nx - cpml_n)   xi = (float)(i - (nx - cpml_n)) / cpml_n;
         else                          xi = 0.0f;
-        cpml_coeff(xi, sigma_max, dt, &b_xf[i], &c_xf[i], &ik_xf[i]);
+        cpml_coeff(xi, sigma_max, dt, &b_xf[i], &c_xf[i], &ik_xf[i], bnd);
     }
     for (int i = 0; i < nx; i++) {
         float xi;
@@ -265,16 +256,16 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
         else if (i >= nx - cpml_n)   xi = ((float)(i - (nx - cpml_n))+ 0.5f) / cpml_n;
         else                          xi = 0.0f;
         if (xi > 1.0f) xi = 1.0f;
-        cpml_coeff(xi, sigma_max, dt, &b_xc[i], &c_xc[i], &ik_xc[i]);
+        cpml_coeff(xi, sigma_max, dt, &b_xc[i], &c_xc[i], &ik_xc[i], bnd);
     }
     for (int j = 0; j <= nz; j++) {
         float xi = (j > nz - cpml_n) ? (float)(j - (nz - cpml_n)) / cpml_n : 0.0f;
-        cpml_coeff(xi, sigma_max, dt, &b_zf[j], &c_zf[j], &ik_zf[j]);
+        cpml_coeff(xi, sigma_max, dt, &b_zf[j], &c_zf[j], &ik_zf[j], bnd);
     }
     for (int j = 0; j < nz; j++) {
         float xi = (j >= nz - cpml_n) ? ((float)(j - (nz - cpml_n)) + 0.5f) / cpml_n : 0.0f;
         if (xi > 1.0f) xi = 1.0f;
-        cpml_coeff(xi, sigma_max, dt, &b_zc[j], &c_zc[j], &ik_zc[j]);
+        cpml_coeff(xi, sigma_max, dt, &b_zc[j], &c_zc[j], &ik_zc[j], bnd);
     }
 
     float *p_new = calloc(pcnt,  sizeof(float));
@@ -283,14 +274,16 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
     float *psi_p_x  = calloc(pcnt,  sizeof(float)); 
     float *psi_p_z  = calloc(pcnt,  sizeof(float)); 
     float *p_cart = malloc(pcnt * sizeof(float));
-    float *rec    = malloc((size_t)nx * nt * sizeof(float));
+    //float *rec_vx     = malloc((size_t)nx * nt * sizeof(float));
+    //float *rec_vz     = malloc((size_t)nx * nt * sizeof(float));
+    //float *rec_p      = malloc((size_t)nx * nt * sizeof(float));
     float *surf_z     = malloc(nx * sizeof(float));
     float *dzsdt_col  = malloc(nx * sizeof(float));
     float *H_col      = malloc(nx * sizeof(float));
     float *dz_eff_col = malloc(nx * sizeof(float));
 
     if (!p_new || !psi_vx_x || !psi_vz_z || !psi_p_x || !psi_p_z ||
-        !p_cart || !rec || !surf_z || !dzsdt_col || !H_col || !dz_eff_col) {
+        !p_cart || !surf_z || !dzsdt_col || !H_col || !dz_eff_col) {
         fprintf(stderr, "allocation failed\n"); return 1;
     }
 
@@ -305,13 +298,13 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
         const float t_half = ((float)it + 0.5f) * dt;
 
         for (int i = 0; i < nx; i++) {
-            surf_z[i]         = surf_height(i, t_half, dx, two_pi_lam, surf_z0, surf_amp, surf_om, surf_vrate);
+            surf_z[i]         = surf_height(i, t_half, dx, two_pi_lam, surf);
             /* Numerical (central-difference) time derivative of the surface
              * height, valid for any smooth surf_height() definition;
              * replaces the previous hand-derived analytic expression
              * "surf_vrate - surf_amp*surf_om*cos(phi)". */
-            dzsdt_col[i]      = (surf_height(i, t_half + dt_half, dx, two_pi_lam, surf_z0, surf_amp, surf_om, surf_vrate)
-                                - surf_height(i, t_half - dt_half, dx, two_pi_lam, surf_z0, surf_amp, surf_om, surf_vrate)) / dt;
+            dzsdt_col[i]      = (surf_height(i, t_half + dt_half, dx, two_pi_lam, surf)
+                                - surf_height(i, t_half - dt_half, dx, two_pi_lam, surf)) / dt;
             H_col[i]          = Z_MAX - surf_z[i];
             dz_eff_col[i]     = H_col[i] * (1.0f / (float)nz);
         }
@@ -450,11 +443,11 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
         const float t_whole = (float)it * dt;
 
         for (int i = 0; i < nx; i++) {
-            surf_z[i]         = surf_height(i, t_whole, dx, two_pi_lam, surf_z0, surf_amp, surf_om, surf_vrate);
+            surf_z[i]         = surf_height(i, t_whole, dx, two_pi_lam, surf);
             /* Numerical (central-difference) time derivative, see the
              * t_half loop above for the rationale. */
-            dzsdt_col[i]      = (surf_height(i, t_whole + dt_half, dx, two_pi_lam, surf_z0, surf_amp, surf_om, surf_vrate)
-                                - surf_height(i, t_whole - dt_half, dx, two_pi_lam, surf_z0, surf_amp, surf_om, surf_vrate)) / dt;
+            dzsdt_col[i]      = (surf_height(i, t_whole + dt_half, dx, two_pi_lam, surf)
+                                - surf_height(i, t_whole - dt_half, dx, two_pi_lam, surf)) / dt;
             H_col[i]          = Z_MAX - surf_z[i];
             dz_eff_col[i]     = H_col[i] * (1.0f / (float)nz);
         }
@@ -630,21 +623,72 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
             fflush(stdout);
         }
 /* --- receiver gather: sample p at Cartesian depth z_rec for all x --- */
-        {
-            const float z_rec = (IZ_REC + 0.5f) * dz;
-            for (int i = 0; i < nx; i++) {
-                float val;
-                if (z_rec < surf_z[i]) {
-                    val = 0.0f;
-                } else {
-                    const float *pi = p + i*nz;
-                    float jf = (z_rec - surf_z[i]) / dz_eff_col[i];
-                    int   j0 = (int)jf;
-                    float fr = jf - (float)j0;
-                    val = (j0   < nz ? pi[j0]   : 0.0f) * (1.0f - fr)
-                        + (j0+1 < nz ? pi[j0+1] : 0.0f) * fr;
+        if ( (((it-rec.delay) % rec.skipdt)==0) && (it >= rec.delay) ) {
+            int isam = (it-rec.delay+NINT(mod.t0/mod.dt))/rec.skipdt+1;
+
+            if (rec.type.p){
+                for (int irec = 0; irec < rec.n; irec++) {
+
+                    ix = rec.x[irec]+mod.ioPx;
+                    iz = rec.z[irec]+mod.ioPz;
+                    float z_rec = (iz+0.5)*dz;
+                    float val;
+                    if (z_rec < surf_z[ix]) {
+                        val = 0.0f;
+                    } else {
+                        const float *pi = p + ix*nz;
+                        //float jf = (z_rec - surf_z[ix]) / dz_eff_col[ix];
+                        float jf = z_rec / dz_eff_col[ix];
+                        int   j0 = (int)jf;
+                        //fprintf(stderr,"z_rec=%f j0=%d depth=%f\n", z_rec, j0, j0*dz_eff_col[ix]);
+                        float fr = jf - (float)j0;
+                        val = (j0   < nz ? pi[j0]   : 0.0f) * (1.0f - fr)
+                            + (j0+1 < nz ? pi[j0+1] : 0.0f) * fr;
+                    }
+                    rec_p[irec*rec.nt + isam] = val;
                 }
-                rec[i*nt + it] = val;
+            }
+            if (rec.type.vz){
+                for (int irec = 0; irec < rec.n; irec++) {
+
+                    ix = rec.x[irec]+mod.ioPx;
+                    iz = rec.z[irec]+mod.ioPz;
+                    float z_rec = (iz)*dz;
+                    float val;
+                    if (z_rec < surf_z[ix]) {
+                        val = 0.0f;
+                    } else {
+                        const float *vzi = vz + ix*(nz+1);
+                        float jf = z_rec / dz_eff_col[ix];
+                        int   j0 = (int)jf;
+                        float fr = jf - (float)j0;
+                        val = (j0   < nz ? vzi[j0]   : 0.0f) * (1.0f - fr)
+                            + (j0+1 < nz ? vzi[j0+1] : 0.0f) * fr;
+                    }
+                    rec_vz[irec*rec.nt + isam] = val;
+                }
+            }
+            if (rec.type.vx){
+                for (int irec = 0; irec < rec.n; irec++) {
+
+                    ix = rec.x[irec]+mod.ioXx;
+                    iz = rec.z[irec]+mod.ioXz;
+                    float z_rec = (iz+0.5)*dz;
+                    float val;
+                    if (z_rec < surf_z[ix]) {
+                        val = 0.0f;
+                    } else {
+                        const float *vxi = vx + ix*nz;
+                        //float jf = (z_rec - surf_z[ix]) / dz_eff_col[ix];
+                        float jf = z_rec / dz_eff_col[ix];
+                        int   j0 = (int)jf;
+                        //fprintf(stderr,"z_rec=%f j0=%d depth=%f\n", z_rec, j0, j0*dz_eff_col[ix]);
+                        float fr = jf - (float)j0;
+                        val = (j0   < nz ? vxi[j0]   : 0.0f) * (1.0f - fr)
+                            + (j0+1 < nz ? vxi[j0+1] : 0.0f) * fr;
+                    }
+                    rec_vx[irec*rec.nt + isam] = val;
+                }
             }
         }
 
@@ -686,23 +730,13 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime,
             if (write_snapshot(fname, p_cart, pcnt) != 0)
                 fprintf(stderr, "write failed: %s\n", fname);
         }
-    }
 
 /* --- finalise and write out --- */
-/* --- write receiver gather --- */
-    {
-        char fname[128];
-        snprintf(fname, sizeof(fname), "reciz%d.bin", IZ_REC);
-        if (write_snapshot(fname, rec, (size_t)nx * nt) != 0)
-            fprintf(stderr, "write failed: %s\n", fname);
-        else
-            printf("Receiver gather written to %s  (%d receivers x %d samples)\n",
-                   fname, nx, nt);
     }
 
     free(p_new);
     free(psi_vx_x); free(psi_vz_z); free(psi_p_x); free(psi_p_z);
-    free(p_cart); free(rec);
+    free(p_cart);
     free(surf_z); free(dzsdt_col); free(H_col); free(dz_eff_col);
 
     free(b_xf); free(c_xf); free(ik_xf);
