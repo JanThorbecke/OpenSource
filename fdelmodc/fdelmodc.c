@@ -17,7 +17,7 @@ double wallclock_time(void);
 
 void threadAffinity(void);
 
-int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, shotPar *shot, bndPar *bnd, int verbose);
+int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, shotPar *shot, bndPar *bnd, surfPar *surf, int verbose);
 
 int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float *lam, float *muu, float *tss, float *tes, float *tep);
 
@@ -42,7 +42,7 @@ int acoustic2(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 int acoustic4Block(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx,
 float *vz, float *p, float *rox, float *roz, float *l2m, int verbose);
 
-int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, int verbose);
+int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, surfPar surf, int itime, float **src_nwav, float *rec_vx, float *rec_vz, float *rec_p, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, int verbose);
 
 int viscoacoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, float *tss, float *tep, float *q, int verbose);
 
@@ -165,6 +165,16 @@ char *sdoc[] = {
 "   src_multiwav=0 .... use traces in file_src as areal source",
 "   src_at_rcv=1 ...... inject wavefield at receiver coordinates (1), inject at source (0)",
 "   src_injectionrate=0 set to 1 to use injection rate source",
+"" ,
+" FREE SURFACE MOVING IN TIME:",
+"   surf_type=1 ....... type of topology: 1=sinus-wave",
+"                       1: surface = z0 + amp*sin((2*PI/lambda)*x-om*t) + vrate*t",
+"   surf_z0=500 ....... mean surface depth of topology [m]",
+"   surf_amp=50 ....... sinusoidal amplitude of topology [m]",
+"   surf_lambda=800 ... spatial wavelength of sinus topology [rad/s]",
+"   surf_om=0.5 ....... angular frequency of sinus topology [rad/s]",
+"   surf_vrate=80 ..... vertical velocity drift of topology in [m/s]",
+"   surf_hrate=0 ...... horizontal velocity drift of topology in [m/s]",
 "" ,
 " PLANE WAVE SOURCE DEFINITION:",
 "   plane_wave=0 ...... model plane wave with nsrc= sources",
@@ -310,6 +320,7 @@ int main(int argc, char **argv)
 	srcPar src;
 	bndPar bnd;
 	shotPar shot;
+	surfPar surf;
 	float **src_nwav;
 	float *rox, *roz, *l2m, *lam, *mul;
 	float *tss, *tes, *tep, *p, *q, *r;
@@ -347,7 +358,7 @@ int main(int argc, char **argv)
 	requestdoc(0);
 
 	if (!getparint("verbose",&verbose)) verbose=0;
-	getParameters(&mod, &rec, &sna, &wav, &src, &shot, &bnd, verbose);
+	getParameters(&mod, &rec, &sna, &wav, &src, &shot, &bnd, &surf, verbose);
 
 	/* allocate arrays for model parameters: the different schemes use different arrays */
 
@@ -646,8 +657,8 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 					break;
 				case -2 : /* ALE coordinate-transform acoustic with moving free surface */
                     if (it==it0) {
-					acousticALE4(mod, src, wav, bnd, 0, ixsrc, izsrc, src_nwav,
-						vx, vz, tzz, rox, roz, l2m, verbose);
+					    acousticALE4(mod, src, wav, bnd, rec, surf, 0, src_nwav,
+						    rec_vx, rec_vz, rec_p, vx, vz, tzz, rox, roz, l2m, verbose);
                     it=it1;
                     }
 					break;
@@ -657,7 +668,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 
 #pragma omp master
 {
-			if ( (((it-rec.delay) % rec.skipdt)==0) && (it >= rec.delay) ) {
+			if ( (((it-rec.delay) % rec.skipdt)==0) && (it >= rec.delay) && (mod.ischeme!=-2) ) {
 				int writeToFile, itwritten;
 
 				if ((((it-rec.delay+NINT(mod.t0/mod.dt))/rec.skipdt)+1)!=0) {
@@ -743,6 +754,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 				}
 			}
 		}
+        if (mod.ischeme==-2) isam = rec.nt;
 		writeRec(rec, mod, bnd, wav, ixsrc, izsrc, isam+1, ishot, shot.n, fileno,
 			rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
 			rec_p, rec_pp, rec_ss, rec_q, rec_udp, rec_udvz, rec_dxvx, rec_dzvz, verbose);

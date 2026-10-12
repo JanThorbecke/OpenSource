@@ -195,8 +195,17 @@ typedef struct _boundPar { /* Boundary Parameters */
     float *pml_nzVz;
     float *pml_nxP;
     float *pml_nzP;
-
 } bndPar;
+
+typedef struct _surfPar { /* Surface Topology Parameters */
+    int type;
+    float z0;
+    float amp;
+    float lambda;
+    float om;
+    float vrate;
+    float hrate;
+} surfPar;
 
 
 #if __STDC_VERSION__ >= 199901L
