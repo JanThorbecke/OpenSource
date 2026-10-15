@@ -37,7 +37,7 @@ set -x
     xsrc=1000 \
     zsrc=900 \
     tsnap1=0 tsnap2=2.0 dtsnap=0.010 snapwithbnd=0 sna_type_p=1 sna_type_vz=0 \
-    zrcv1=700 zrcv2=700 xrcv1=0 xrcv2=2000 dxrcv=5 \
+    zrcv1=900 zrcv2=900 xrcv1=0 xrcv2=2000 dxrcv=5 \
     verbose=3 \
     tmod=2.000 \
     npml=$ntap \
