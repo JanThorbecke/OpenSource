@@ -330,8 +330,10 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
             const float H_f      = Z_MAX - zs_f;
             const float inv_H_f  = 1.0f / H_f;
             const float ale_f    = 0.5f*(dzsdt_col[i-1] + dzsdt_col[i]) * inv_H_f * dt;
-            const float shear_f  = (surf_z[i] - surf_z[i-1]) * inv_dx * inv_H_f;
             const int   has4x    = (i >= 2 && i <= nx-2);
+            const float dzsdx_f  = has4x
+                ? (surf_z[i-2] - 27.0f*surf_z[i-1] + 27.0f*surf_z[i] - surf_z[i+1]) * inv24dx
+                : (surf_z[i] - surf_z[i-1]) * inv_dx;
 
             const int idx_R   = i * nz;
             const int idx_L   = (i - 1) * nz;
@@ -381,7 +383,8 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
                 // 3. Only now take the average at the cell centre
                 float dvx_dj = 0.5f * (dvx_dj_left + dvx_dj_right);
 
-                vx[idx_vx_base + j] = vx[idx_vx_base + j] - dx * rox[i * n1 + j] * (dpx - shear_f * nj * dpdj) + ale_f * nj * dvx_dj;
+                const float one_minus_eta = (nz - j - 0.5f) / (float)nz;
+                vx[idx_vx_base + j] = vx[idx_vx_base + j] - dx * rox[i * n1 + j] * (dpx - dzsdx_f * one_minus_eta * dpdj) + ale_f * nj * dvx_dj;
             }
         }
 
@@ -468,19 +471,13 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
             const float inv24dze = 1.0f / (24.0f * dz_eff_col[i]);
             const float inv_dze = 1.0f / dz_eff_col[i];
             const float ale_i = dzsdt_col[i] * inv_H_i * dt;
-           // const float dzsdx_c = (i == 0) ? (surf_z[1] - surf_z[0]) * inv_dx : (i == nx-1) ? (surf_z[nx-1] - surf_z[nx-2]) * inv_dx : (surf_z[i+1] - surf_z[i-1]) * (0.5f * inv_dx);
-
-           /* ====================================================================
-               DEFINITIVE STAGGERED METRIC FIX (ELIMINATES THE 3 DISPERSION BANDS)
-               ==================================================================== */
-            /* Instead of a central difference over 2 cells (which decouples
-               the columns), we use a compact two-point derivative centred
-               on the staggered face positions. */
-            const float dzsdx_c = (i < nx - 1)
-                                  ? (surf_z[i+1] - surf_z[i]) * inv_dx
-                                  : (surf_z[nx-1] - surf_z[nx-2]) * inv_dx;
-
-            const float shear_c = dzsdx_c * inv_H_i;
+            const float dzsdx_c = (i >= 2 && i <= nx-3)
+                                  ? (surf_z[i-2] - 8.0f*surf_z[i-1] + 8.0f*surf_z[i+1] - surf_z[i+2]) * (1.0f / (12.0f*dx))
+                                  : (i == 0)
+                                  ? (surf_z[1] - surf_z[0]) * inv_dx
+                                  : (i == nx-1)
+                                  ? (surf_z[nx-1] - surf_z[nx-2]) * inv_dx
+                                  : (surf_z[i+1] - surf_z[i-1]) * (0.5f * inv_dx);
             const int has4xi = (i >= 1 && i <= nx-2);
             const int idx_vx = i * nz;
             const int idx_vx1 = (i + 1) * nz;
@@ -514,7 +511,8 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
                  * as dpdj (vx update) and dvx_dj (above). */
                 float dp_dj = sbp42_dj(&p[idx_p_base], j, nz, dz_effective);
 
-                p_new[idx_p_base + j] = p[idx_p_base + j] - dx * l2m[i * n1 + j] * (dvx_dx - shear_c * nj * dvx_dj + dvz_dz) + ale_i * nj * dp_dj;
+                const float one_minus_eta = (nz - j - 0.5f) / (float)nz;
+                p_new[idx_p_base + j] = p[idx_p_base + j] - dx * l2m[i * n1 + j] * (dvx_dx - dzsdx_c * one_minus_eta * dvx_dj + dvz_dz) + ale_i * nj * dp_dj;
             }
         }
 
@@ -757,14 +755,25 @@ int map_to_cartesian(float *p, float *cart, float *surf_z, float *dz_eff_col, in
         float z_c = (j_c + 0.5f) * dz;
         if (z_c < zs) {
             pc[j_c] = 0.0f;
+        } else if (z_c < zs + 0.5f * dz_eff_col[ix]) {
+            pc[j_c] = pi[0] * (2.0f * (z_c - zs) * inv_dze);
         } else {
             float jf = (z_c - zs) * inv_dze - 0.5f;
             if (jf >= nz-1) {
                 pc[j_c] = pi[nz-1];
             } else {
                 int j0 = (int)jf;
-                float fr = jf - (float)j0;
-                pc[j_c] = pi[j0] * (1.0f - fr) + pi[j0+1] * fr;
+                int first = (j0 == 0) ? 0 : j0 - 1;
+                if (first > nz - 4) first = nz - 4;
+                float t = jf - first;
+                float t2 = t * t;
+                float t3 = t2 * t;
+                float w0 = -(t3 - 6.0f*t2 + 11.0f*t - 6.0f) * (1.0f / 6.0f);
+                float w1 =  (t3 - 5.0f*t2 +  6.0f*t) * 0.5f;
+                float w2 = -(t3 - 4.0f*t2 +  3.0f*t) * 0.5f;
+                float w3 =  (t3 - 3.0f*t2 +  2.0f*t) * (1.0f / 6.0f);
+                pc[j_c] = w0*pi[first] + w1*pi[first+1]
+                        + w2*pi[first+2] + w3*pi[first+3];
             }
         }
     }
