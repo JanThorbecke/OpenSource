@@ -27,6 +27,7 @@ set -x
     file_rcv=$file_rcv \
     file_src=G2.su \
     dtrcv=0.004 \
+    rec_delay=0.15 \
     src_type=1 \
     src_orient=1 \
     src_injectionrate=1 \
@@ -35,13 +36,9 @@ set -x
     rec_type_p=1 \
     xsrc=1000 \
     zsrc=666 \
-    zrcv1=500 zrcv2=500 xrcv1=0 xrcv2=2000 dxrcv=5 \
+    zrcv1=700 zrcv2=700 xrcv1=0 xrcv2=2000 dxrcv=5 \
     verbose=3 \
     tmod=2.000 \
-    rec_int_vx=2 \
-    rec_int_vz=2 \
-    rec_int_tzz=1 \
-    rec_int_txz=1 \
     npml=$ntap \
     left=2 right=2 top=1 bottom=2
 
