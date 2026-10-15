@@ -160,7 +160,7 @@ static inline float sbp42_dj_avg(const float *colL, const float *colR, int j, in
 
 /* Free-surface height z_s(i,t) [m] for column i at physical time t, for the
  * sinusoidal-plus-drift surface shape used by this solver (see the
- * surf_z0/surf_amp/surf_lambda/surf_om/surf_vrate parameters documented in
+ * surf_z0/surf_amp/surf_lambda/surf_om/surf_vrate/surf_hrate parameters documented in
  * the file header). Kept as a single function of (i,t) so that the ALE
  * mesh velocity dz_s/dt can be obtained by numerical differentiation in
  * time (see below) instead of a hand-derived analytic derivative: this
@@ -169,7 +169,8 @@ static inline float sbp42_dj_avg(const float *colL, const float *colR, int j, in
  * a matching analytic dz_s/dt expression whenever the shape changes. */
 static inline float surf_height(int i, float t, float dx, float two_pi_lam, surfPar surf) 
 {
-    float phi = two_pi_lam * ((i + 0.5f) * dx) - surf.om * t;
+    float x = (i + 0.5f) * dx - surf.hrate * t;
+    float phi = two_pi_lam * x - surf.om * t;
     return surf.z0 + surf.amp * sinf(phi) + surf.vrate * t;
 }
 
@@ -746,4 +747,3 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
 
     return 0;
 }
-

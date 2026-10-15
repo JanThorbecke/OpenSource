@@ -340,7 +340,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
      * ALE formulation adds a mesh-advection term to the vx/vz/p updates that
      * transports data along the (stretching) z-grid at the local mesh
      * velocity
-     *   w(i,j) = dzsdt_col[i] * (nz-j)/nz ,  dzsdt_col = surf_vrate - surf_amp*surf_om*cos(phi)
+     *   w(i,j) = dzsdt_col[i] * (nz-j)/nz
+     * where dzsdt_col = surf_vrate - surf_amp*(surf_om + 2*pi*surf_hrate/surf_lambda)*cos(phi)
      * which is largest at the free surface (j=0) and zero at the fixed
      * bottom. Because this advective term shares the same z-stencils as the
      * physical wave term, the two characteristic speeds add up and the
@@ -367,7 +368,8 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         if (!getparfloat("surf_hrate",&surf->hrate)) surf->hrate=0.0;
 
         /* worst-case mesh (surface) velocity magnitude over the whole run */
-        w_max = fabsf(surf->vrate) + fabsf(surf->amp*surf->om);
+        w_max = fabsf(surf->vrate) + fabsf(surf->amp)
+              * fabsf(surf->om + (2.0f * (float)M_PI * surf->hrate / surf->lambda));
 
         /* worst-case (highest) elevation the free surface reaches during
          * the run, hence the smallest column height / effective dz */
@@ -402,7 +404,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
                 vwarn("This does not necessarily blow up (Kreiss-Oliger filtering");
                 vwarn("adds margin), but grid-scale noise near the free surface");
                 vwarn("becomes more likely as this number grows (inspect snapshots!).");
-                vwarn("Hence, consider lowering surf_vrate/surf_amp*surf_om below %.3f m/s,",
+                vwarn("Hence, consider lowering the surface mesh velocity below %.3f m/s,",
                       MAX(0.0f, stabfactor*dz_eff_min/dt - cp_max));
                 vwarn("    or adjust dt <= %e,", stabfactor*dz_eff_min/(cp_max+w_max));
                 vwarn("    or use a finer grid (smaller dz, larger nz) so dz_eff >= %.5f m.",
@@ -1385,4 +1387,3 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 
     return 0;
 }
-

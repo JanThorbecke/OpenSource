@@ -168,7 +168,7 @@ char *sdoc[] = {
 "" ,
 " FREE SURFACE MOVING IN TIME:",
 "   surf_type=1 ....... type of topology: 1=sinus-wave",
-"                       1: surface = z0 + amp*sin((2*PI/lambda)*x-om*t) + vrate*t",
+"                       1: surface = z0 + amp*sin((2*PI/lambda)*(x-hrate*t)-om*t) + vrate*t",
 "   surf_z0=500 ....... mean surface depth of topology [m]",
 "   surf_amp=50 ....... sinusoidal amplitude of topology [m]",
 "   surf_lambda=800 ... spatial wavelength of sinus topology [rad/s]",
