@@ -239,7 +239,7 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
     if (!getparfloat("zsrc",&zsrc)) zsrc=dz*nz/3;
     /* Pressure nodes are at cell centres: x_i = mod.x0 + (i + 0.5) * dx. */
     //double x_grid = (xsrc-mod.x0+mod.ioPx*dx) * inv_dx - 0.5;
-    double x_grid = (xsrc-mod.x0) * inv_dx - 0.5;
+    double x_grid = (xsrc-mod.x0+mod.ioPx*dx) * inv_dx - 0.5;
     int ixs = (int)ceil(x_grid);
     double u = x_grid - (ixs - 1);
     u = (u < 0.0) ? 0.0 : ((u > 1.0) ? 1.0 : u);
@@ -647,12 +647,13 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
 
             if (rec.type.p){
                 for (int irec = 0; irec < rec.n; irec++) {
-
                     ix = rec.x[irec]+mod.ioPx;
                     iz = rec.z[irec]+mod.ioPz;
-                    float z_rec = (iz+0.5)*dz;
+                    //float z_rec = (iz+0.5)*dz;
+                    float z_rec = ((iz+0.5)*dz - surf_z[ix]);
+                    //fprintf(stderr,"z_rec[%d]=%f surf_z=%f\n", iz, z_rec, surf_z[ix]);
                     float val;
-                    if (z_rec < surf_z[ix]) {
+                    if (z_rec < 0) {
                         val = 0.0f;
                     } else {
                         const float *pi = p + ix*nz;
@@ -669,12 +670,11 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
             }
             if (rec.type.vz){
                 for (int irec = 0; irec < rec.n; irec++) {
-
-                    ix = rec.x[irec]+mod.ioPx;
-                    iz = rec.z[irec]+mod.ioPz;
-                    float z_rec = (iz)*dz;
+                    ix = rec.x[irec]+mod.ioZx;
+                    iz = rec.z[irec]+mod.ioZz;
+                    float z_rec = ((iz)*dz - surf_z[ix]);
                     float val;
-                    if (z_rec < surf_z[ix]) {
+                    if (z_rec < 0) {
                         val = 0.0f;
                     } else {
                         const float *vzi = vz + ix*(nz+1);
@@ -692,13 +692,12 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
 
                     ix = rec.x[irec]+mod.ioXx;
                     iz = rec.z[irec]+mod.ioXz;
-                    float z_rec = (iz+0.5)*dz;
+                    float z_rec = ((iz+0.5)*dz - surf_z[ix]);
                     float val;
-                    if (z_rec < surf_z[ix]) {
+                    if (z_rec < 0) {
                         val = 0.0f;
                     } else {
                         const float *vxi = vx + ix*nz;
-                        //float jf = (z_rec - surf_z[ix]) / dz_eff_col[ix];
                         float jf = z_rec / dz_eff_col[ix];
                         int   j0 = (int)jf;
                         //fprintf(stderr,"z_rec=%f j0=%d depth=%f\n", z_rec, j0, j0*dz_eff_col[ix]);
