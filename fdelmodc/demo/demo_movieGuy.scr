@@ -48,6 +48,8 @@ fdelmodc \
 #propagating waves and head-wave.
 
 python3 "$(dirname "$0")/make_snapshot_movies.py" \
+    --svz snap_svz.su \
+    --sp snap_sp.su \
     --svz-clip 1e-5 \
     --sp-clip 100 \
     --duration 20

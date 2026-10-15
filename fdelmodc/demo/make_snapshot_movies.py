@@ -16,6 +16,7 @@ import numpy as np
 from matplotlib.animation import FFMpegWriter
 
 TRACE_HEADER_BYTES = 240
+FIGURE_DECORATION_WIDTH = 2
 NS_OFFSET = 114
 DT_OFFSET = 116
 FLDR_OFFSET = 8
@@ -109,6 +110,9 @@ def read_frame(stream, info, frame_index):
 def write_movie(source, output, clip, duration, title):
     info = snapshot_info(source)
     fps = info["frames"] / duration
+    figure_height = 4.5
+    snapshot_aspect = (info["x1"] - info["x0"]) / (info["z1"] - info["z0"])
+    figure_width = figure_height * snapshot_aspect + FIGURE_DECORATION_WIDTH
     writer = FFMpegWriter(
         fps=fps,
         codec="h264",
@@ -116,7 +120,7 @@ def write_movie(source, output, clip, duration, title):
         metadata={"title": title},
     )
 
-    fig, ax = plt.subplots(figsize=(12, 4.5), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(figure_width, figure_height), constrained_layout=True)
     extent = (info["x0"], info["x1"], info["z1"], info["z0"])
     image = ax.imshow(
         np.zeros((info["nz"], info["nx"]), dtype=np.float32),
@@ -159,8 +163,8 @@ def main():
     parser = argparse.ArgumentParser(
         description="Convert fdelmodc SU snapshots into fixed-duration MP4 movies."
     )
-    parser.add_argument("--svz", default="snap_svz.su", help="vertical-velocity SU file")
-    parser.add_argument("--sp", default="snap_sp.su", help="pressure SU file")
+    parser.add_argument("--svz", help="vertical-velocity SU file (omit to skip this movie)")
+    parser.add_argument("--sp", help="pressure SU file (omit to skip this movie)")
     parser.add_argument("--svz-output", default="snap_svz.mp4", help="vertical-velocity MP4")
     parser.add_argument("--sp-output", default="snap_sp.mp4", help="pressure MP4")
     parser.add_argument("--svz-clip", type=positive_float, default=1e-5, help="Vz color limit")
@@ -168,19 +172,23 @@ def main():
     parser.add_argument("--duration", type=positive_float, default=20, help="movie length in seconds")
     args = parser.parse_args()
 
-    for source in (args.svz, args.sp):
+    movies = []
+    if args.svz:
+        movies.append((args.svz, args.svz_output, args.svz_clip, "Vertical velocity (Vz)"))
+    if args.sp:
+        movies.append((args.sp, args.sp_output, args.sp_clip, "Pressure (P)"))
+
+    for source, _, _, _ in movies:
         if not os.path.isfile(source):
             parser.error(f"input file not found: {source}")
-    if not FFMpegWriter.isAvailable():
+    if movies and not FFMpegWriter.isAvailable():
         parser.error(
             "ffmpeg is required to write MP4 files; install ffmpeg and make it available on PATH"
         )
 
     try:
-        write_movie(
-            args.svz, args.svz_output, args.svz_clip, args.duration, "Vertical velocity (Vz)"
-        )
-        write_movie(args.sp, args.sp_output, args.sp_clip, args.duration, "Pressure (P)")
+        for source, output, clip, title in movies:
+            write_movie(source, output, clip, args.duration, title)
     except (OSError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
