@@ -190,7 +190,7 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
 {
     int  nx, nz, nt, n1;
     float xsrc, zsrc;
-    int ix, iz, ibndx, ibndz;
+    int ix, ibndx, ibndz;
 
     nz = mod.naz;
     n1 = mod.naz;
@@ -641,29 +641,23 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
             printf("Time step: %d | Model pressure centre: %g\n", it, p[(nx/2)*nz + J_SRC]);
             fflush(stdout);
         }
-/* --- receiver gather: sample p at Cartesian depth z_rec for all x --- */
+/* --- receiver gather: sample fields at the configured Cartesian coordinates --- */
         if ( (((it-rec.delay) % rec.skipdt)==0) && (it >= rec.delay) ) {
             int isam = (it-rec.delay+NINT(mod.t0/mod.dt))/rec.skipdt+1;
 
             if (rec.type.p){
                 for (int irec = 0; irec < rec.n; irec++) {
                     ix = rec.x[irec]+mod.ioPx;
-                    iz = rec.z[irec]+mod.ioPz;
-                    //float z_rec = (iz+0.5)*dz;
-                    float z_rec = ((iz+0.5)*dz - surf_z[ix]);
-                    //fprintf(stderr,"z_rec[%d]=%f surf_z=%f\n", iz, z_rec, surf_z[ix]);
+                    float z_rec = mod.z0 + rec.zr[irec];
                     float val;
-                    if (z_rec < 0) {
+                    if (z_rec < surf_z[ix]) {
                         val = 0.0f;
                     } else {
                         const float *pi = p + ix*nz;
-                        //float jf = (z_rec - surf_z[ix]) / dz_eff_col[ix];
-                        float jf = z_rec / dz_eff_col[ix];
+                        float jf = (z_rec - surf_z[ix]) / dz_eff_col[ix] - 0.5f;
                         int   j0 = (int)jf;
-                        //fprintf(stderr,"z_rec=%f j0=%d depth=%f\n", z_rec, j0, j0*dz_eff_col[ix]);
                         float fr = jf - (float)j0;
-                        val = (j0   < nz ? pi[j0]   : 0.0f) * (1.0f - fr)
-                            + (j0+1 < nz ? pi[j0+1] : 0.0f) * fr;
+                        val = pi[j0] * (1.0f - fr) + pi[j0+1] * fr;
                     }
                     rec_p[irec*rec.nt + isam] = val;
                 }
@@ -671,18 +665,16 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
             if (rec.type.vz){
                 for (int irec = 0; irec < rec.n; irec++) {
                     ix = rec.x[irec]+mod.ioZx;
-                    iz = rec.z[irec]+mod.ioZz;
-                    float z_rec = ((iz)*dz - surf_z[ix]);
+                    float z_rec = mod.z0 + rec.zr[irec];
                     float val;
-                    if (z_rec < 0) {
+                    if (z_rec < surf_z[ix]) {
                         val = 0.0f;
                     } else {
                         const float *vzi = vz + ix*(nz+1);
-                        float jf = z_rec / dz_eff_col[ix];
+                        float jf = (z_rec - surf_z[ix]) / dz_eff_col[ix];
                         int   j0 = (int)jf;
                         float fr = jf - (float)j0;
-                        val = (j0   < nz ? vzi[j0]   : 0.0f) * (1.0f - fr)
-                            + (j0+1 < nz ? vzi[j0+1] : 0.0f) * fr;
+                        val = vzi[j0] * (1.0f - fr) + vzi[j0+1] * fr;
                     }
                     rec_vz[irec*rec.nt + isam] = val;
                 }
@@ -691,19 +683,16 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
                 for (int irec = 0; irec < rec.n; irec++) {
 
                     ix = rec.x[irec]+mod.ioXx;
-                    iz = rec.z[irec]+mod.ioXz;
-                    float z_rec = ((iz+0.5)*dz - surf_z[ix]);
+                    float z_rec = mod.z0 + rec.zr[irec];
                     float val;
-                    if (z_rec < 0) {
+                    if (z_rec < surf_z[ix]) {
                         val = 0.0f;
                     } else {
                         const float *vxi = vx + ix*nz;
-                        float jf = z_rec / dz_eff_col[ix];
+                        float jf = (z_rec - surf_z[ix]) / dz_eff_col[ix] - 0.5f;
                         int   j0 = (int)jf;
-                        //fprintf(stderr,"z_rec=%f j0=%d depth=%f\n", z_rec, j0, j0*dz_eff_col[ix]);
                         float fr = jf - (float)j0;
-                        val = (j0   < nz ? vxi[j0]   : 0.0f) * (1.0f - fr)
-                            + (j0+1 < nz ? vxi[j0+1] : 0.0f) * fr;
+                        val = vxi[j0] * (1.0f - fr) + vxi[j0+1] * fr;
                     }
                     rec_vx[irec*rec.nt + isam] = val;
                 }
@@ -957,4 +946,3 @@ int writeSnapALE(modPar mod, snaPar sna, bndPar bnd, wavPar wav, float xsrc, flo
 
 	return 0;
 }
-
