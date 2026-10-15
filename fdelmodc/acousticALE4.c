@@ -714,24 +714,8 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
 
         /* --- snapshot: remap computational → Cartesian, write binary --- */
         if (it % 10 == 0) {
-            for (int i = 0; i < nx; i++) {
-                const float zs      = surf_z[i];
-                const float inv_dze = 1.0f / dz_eff_col[i];
-                const float *pi     = p + i*nz;
-                float       *pc     = p_cart + i*nz;
-                for (int j_c = 0; j_c < nz; j_c++) {
-                    float z_c = (j_c + 0.5f) * dz;
-                    if (z_c < zs) {
-                        pc[j_c] = 0.0f;
-                    } else {
-                        float jf = (z_c - zs) * inv_dze;
-                        int   j0 = (int)jf;
-                        float fr = jf - (float)j0;
-                        pc[j_c] = (j0   < nz ? pi[j0]   : 0.0f) * (1.0f - fr)
-                                + (j0+1 < nz ? pi[j0+1] : 0.0f) * fr;
-                    }
-                }
-            }
+            for (int i = 0; i < nx; i++)
+                map_to_cartesian(p, p_cart, surf_z, dz_eff_col, i, nz, dz);
             char fname[64];
             snprintf(fname, sizeof(fname), "snapshot_%06d.bin", it);
             if (write_snapshot(fname, p_cart, pcnt) != 0)
@@ -774,11 +758,14 @@ int map_to_cartesian(float *p, float *cart, float *surf_z, float *dz_eff_col, in
         if (z_c < zs) {
             pc[j_c] = 0.0f;
         } else {
-            float jf = (z_c - zs) * inv_dze;
-            int   j0 = (int)jf;
-            float fr = jf - (float)j0;
-            pc[j_c] = (j0   < nz ? pi[j0]   : 0.0f) * (1.0f - fr)
-                + (j0+1 < nz ? pi[j0+1] : 0.0f) * fr;
+            float jf = (z_c - zs) * inv_dze - 0.5f;
+            if (jf >= nz-1) {
+                pc[j_c] = pi[nz-1];
+            } else {
+                int j0 = (int)jf;
+                float fr = jf - (float)j0;
+                pc[j_c] = pi[j0] * (1.0f - fr) + pi[j0+1] * fr;
+            }
         }
     }
     return 0;
