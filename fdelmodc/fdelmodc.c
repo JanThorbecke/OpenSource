@@ -42,7 +42,7 @@ int acoustic2(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 int acoustic4Block(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx,
 float *vz, float *p, float *rox, float *roz, float *l2m, int verbose);
 
-int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, surfPar surf, int itime, float **src_nwav, float *rec_vx, float *rec_vz, float *rec_p, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, int verbose);
+int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, surfPar surf, snaPar sna, int itime, float **src_nwav, float *rec_vx, float *rec_vz, float *rec_p, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, int verbose);
 
 int viscoacoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, float *tss, float *tep, float *q, int verbose);
 
@@ -220,27 +220,6 @@ char *sdoc[] = {
 "   sna_type_ss=0 ..... S (curl) registration _sS",
 "   sna_type_dzvz=0 ... dzVz registration _sdzvz",
 "   sna_type_dxvx=0 ... dxVx registration _sdxvx",
-"   rec_type_pp=0 ..... P (divergence) registration _rP",
-"   rec_type_ss=0 ..... S (curl) registration _rS",
-"   rec_type_q=0 ...... memory-variable of visco-acoustic modeling",
-"   rec_type_ud=0 ..... 1:pressure normalized decomposition in up and downgoing waves _ru, _rd",
-"   ................... 2:particle velocity normalized decomposition in up and downgoing waves _ru, _rd",
-"   ................... 3:flux normalized decomposition in up and downgoing waves _flup, _flip",
-"   kangle= ........... maximum wavenumber angle for decomposition",
-"   rec_int_vx=0  ..... interpolation of Vx receivers",
-"                     - 0=Vx->Vx (no interpolation)",
-"                     - 1=Vx->Vz",
-"                     - 2=Vx->Txx/Tzz(P)",
-"                     - 3=Vx->receiver position",
-"   rec_int_vz=0 ...... interpolation of Vz receivers",
-"                     - 0=Vz->Vz (no interpolation)",
-"                     - 1=Vz->Vx",
-"                     - 2=Vz->Txx/Tzz(P)",
-"                     - 3=Vz->receiver position",
-"   rec_int_p=0  ...... interpolation of P/Tzz receivers",
-"                     - 0=P->P (no interpolation)",
-"                     - 1=P->Vz",
-"                     - 2=P->Vx",
 "   sna_vxvztime=0 .... registration of vx/vx times",
 "                       The fd scheme is also staggered in time.",
 "                       Time at which vx/vz snapshots are written:",
@@ -657,7 +636,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 					break;
 				case -2 : /* ALE coordinate-transform acoustic with moving free surface */
                     if (it==it0) {
-					    acousticALE4(mod, src, wav, bnd, rec, surf, 0, src_nwav,
+					    acousticALE4(mod, src, wav, bnd, rec, surf, sna, 0, src_nwav,
 						    rec_vx, rec_vz, rec_p, vx, vz, tzz, rox, roz, l2m, verbose);
                     it=it1;
                     }

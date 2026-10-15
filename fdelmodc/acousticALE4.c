@@ -65,6 +65,8 @@
 #include <math.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
+#include "segy.h"
 #include "fdelmodc.h"
 #include "par.h"
 
@@ -73,12 +75,18 @@
 #endif
 
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
+#define ISODD(n) ((n) & 01)
 
 /* ---------- CFS-CPML absorbing boundary (left, right, bottom) ----------
  * Profile: σ(ξ) = σ_max·ξ^m,  κ(ξ) = 1+(κ_max−1)·ξ^m,  α(ξ) = α_max·(1−ξ)
  * ξ ∈ [0,1]: normalised distance from the interior (0) to the wall (1).
  * Memory variables: ψ^{n+1} = b·ψ^n + c·D,  modified derivative = (1/κ)·D + ψ
  * b = exp(−(σ/κ+α)·dt),  c = σ/(κ·(σ/κ+α))·(b−1)                          */
+
+FILE *fileOpen(char *file, char *ext, int append);
+int traceWrite(segy *hdr, float *data, int n, long long offset, FILE *fp);
+int map_to_cartesian(float *p, float *cart, float *surf_z, float *dz_eff_col, int ix, int nz, float dz);
+int writeSnapALE(modPar mod, snaPar sna, bndPar bnd, wavPar wav, float xsrc, float zsrc, int itime, float *vx, float *vz, float *p, float *surf_z, float *dz_eff_col, int verbose);
 
 static int write_snapshot(const char *fname, const float *data, size_t n) {
     FILE *f = fopen(fname, "wb");
@@ -175,7 +183,7 @@ static inline float surf_height(int i, float t, float dx, float two_pi_lam, surf
 }
 
 int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, surfPar surf, 
-                 int itime, float **src_nwav,
+                 snaPar sna, int itime, float **src_nwav,
                  float *rec_vx, float *rec_vz, float *rec_p,
                  float *vx, float *vz, float *p,
                  float *rox, float *roz, float *l2m, int verbose)
@@ -229,7 +237,9 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
 
     if (!getparfloat("xsrc",&xsrc)) xsrc=((nx-1)*dx)/2.0;
     if (!getparfloat("zsrc",&zsrc)) zsrc=dz*nz/3;
-    double x_grid = xsrc * inv_dx;
+    /* Pressure nodes are at cell centres: x_i = mod.x0 + (i + 0.5) * dx. */
+    //double x_grid = (xsrc-mod.x0+mod.ioPx*dx) * inv_dx - 0.5;
+    double x_grid = (xsrc-mod.x0) * inv_dx - 0.5;
     int ixs = (int)ceil(x_grid);
     double u = x_grid - (ixs - 1);
     u = (u < 0.0) ? 0.0 : ((u > 1.0) ? 1.0 : u);
@@ -537,12 +547,7 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
             p_new[idx_p_base + 0] = (10.0f * p_new[idx_p_base + 1] - 3.0f * p_new[idx_p_base + 2]) * (1.0f / 15.0f);
         }
 
-        /* --- Dynamic source injection via bilinear weights --- */
-        /* BUGFIX: use zsrc as a fixed absolute depth 
-         * (the computational column row) is allowed to move with
-         * dz_eff_col[ixs] -- that is the legitimate ALE mesh rescaling --
-         * as long as the interpolated physical target position (via
-         * v_frac below) stays exactly at zsrc. */
+        /*
         int izs = (int)ceil(zsrc / dz_eff_col[ixs]);
 
         double z4 = (izs - 1) * dz_eff_col[ixs-1];
@@ -552,30 +557,43 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
 
         double z_bot = u_one_minus * z4 + u * z3;
         double z_top = u_one_minus * z2 + u * z1;
-        double cell_height = z_top - z_bot;
-        double v_frac = 0.0;
+        */
 
-        if (cell_height > 0.1*dz) {
-            v_frac = (zsrc - z_bot) / cell_height;
-            v_frac = (v_frac < 0.0) ? 0.0 : ((v_frac > 1.0) ? 1.0 : v_frac);
+       /* --- Inject at the fixed physical source position using bilinear weights. ---
+        * Each pressure node is half a local cell below the free surface:
+        * z(i,j) = surf_z[i] + (j + 0.5) * dz_eff_col[i]. Interpolate that
+        * mapping across x before finding the two pressure rows around zsrc. */
+        const double surf_x = u_one_minus * surf_z[ixs-1] + u * surf_z[ixs];
+        if (zsrc >= surf_x) { // only inject when surface is above source 
+            const double dz_x = u_one_minus * dz_eff_col[ixs-1] + u * dz_eff_col[ixs];
+            int izs = (int)ceil((zsrc - surf_x) / dz_x - 0.5);
+            double z_bot = surf_x + (izs - 0.5) * dz_x;
+            double z_top = surf_x + (izs + 0.5) * dz_x;
+            double cell_height = z_top - z_bot;
+            double v_frac = 0.0;
+
+            if (cell_height > 0.1*dz) {
+                v_frac = (zsrc - z_bot) / cell_height;
+                v_frac = (v_frac < 0.0) ? 0.0 : ((v_frac > 1.0) ? 1.0 : v_frac);
+            }
+            double v_one_minus = 1.0 - v_frac;
+            double W1 = u * v_frac;
+            double W2 = u_one_minus * v_frac;
+            double W3 = u * v_one_minus;
+            double W4 = u_one_minus * v_one_minus;
+
+            const float src_amp = src_nwav[0][it];
+
+            /* Bilinear injection onto the four surrounding grid points. W1..W4
+            * sum to 1 by construction, so the total source energy remains
+            * constant regardless of the local ALE cell geometry (do not
+            * apply a Jacobian scaling -- that breaks the weight sum and does
+            * not solve the artefacts, see the izs/v_frac fix above). */
+            p_new[(ixs )*nz + izs] += W1 * src_amp;
+            p_new[(ixs-1)*nz + izs] += W2 * src_amp;
+            p_new[(ixs )*nz + izs-1] += W3 * src_amp;
+            p_new[(ixs-1)*nz + izs-1] += W4 * src_amp;
         }
-        double v_one_minus = 1.0 - v_frac;
-        double W1 = u * v_frac;
-        double W2 = u_one_minus * v_frac;
-        double W3 = u * v_one_minus;
-        double W4 = u_one_minus * v_one_minus;
-
-        const float src_amp = src_nwav[0][it];
-
-        /* Bilinear injection onto the four surrounding grid points. W1..W4
-         * sum to 1 by construction, so the total source energy remains
-         * constant regardless of the local ALE cell geometry (do not
-         * apply a Jacobian scaling -- that breaks the weight sum and does
-         * not solve the artefacts, see the izs/v_frac fix above). */
-        p_new[(ixs )*nz + izs] += W1 * src_amp;
-        p_new[(ixs-1)*nz + izs] += W2 * src_amp;
-        p_new[(ixs )*nz + izs-1] += W3 * src_amp;
-        p_new[(ixs-1)*nz + izs-1] += W4 * src_amp;
 
 
        /* ====================================================================
@@ -696,15 +714,15 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
         /* ====================================================================
          * DIAGNOSTIC SNAPSHOT: write the raw computational grid without interpolation
          * ==================================================================== */
+        if (sna.nsnap) {
+            writeSnapALE(mod, sna, bnd, wav, xsrc, zsrc, it, vx, vz, p, surf_z, dz_eff_col, verbose);
+        }
+
         if (it % 10 == 0) {
             char fname_snap[64];
             snprintf(fname_snap, sizeof(fname_snap), "snapshot_raw_%06d.bin", it);
-
-            /* Write the pressure matrix p directly to disk.
-               This completely bypasses the linear interpolation error. */
             write_snapshot(fname_snap, p, pcnt);
         }
-
 
         /* --- snapshot: remap computational → Cartesian, write binary --- */
         if (it % 10 == 0) {
@@ -747,3 +765,197 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
 
     return 0;
 }
+
+
+/**
+*  Writes gridded wavefield(s) at a desired time to output file(s) 
+*
+*   AUTHOR:
+*           Jan Thorbecke (janth@xs4all.nl)
+*           The Netherlands 
+**/
+
+int map_to_cartesian(float *p, float *cart, float *surf_z, float *dz_eff_col, int ix, int nz, float dz)
+{
+    const float zs      = surf_z[ix];
+    const float inv_dze = 1.0f / dz_eff_col[ix];
+    const float *pi     = p + ix*nz;
+    float       *pc     = cart + ix*nz;
+    for (int j_c = 0; j_c < nz; j_c++) {
+        float z_c = (j_c + 0.5f) * dz;
+        if (z_c < zs) {
+            pc[j_c] = 0.0f;
+        } else {
+            float jf = (z_c - zs) * inv_dze;
+            int   j0 = (int)jf;
+            float fr = jf - (float)j0;
+            pc[j_c] = (j0   < nz ? pi[j0]   : 0.0f) * (1.0f - fr)
+                + (j0+1 < nz ? pi[j0+1] : 0.0f) * fr;
+        }
+    }
+    return 0;
+}
+
+int writeSnapALE(modPar mod, snaPar sna, bndPar bnd, wavPar wav, float xsrc, float zsrc, int itime, float *vx, float *vz, float *p, float *surf_z, float *dz_eff_col, int verbose)
+{
+	FILE *fpvx, *fpvz, *fpp, *fpdxvx, *fpdzvz;
+	int append, isnap, nz;
+	static int first=1;
+	int n1, ibndx, ibndz, ixs, izs, ize, i, j;
+    long long offset;
+	int ix, iz, ix2;
+	float *snap, sdx, stime, dz, c1, c2;
+	segy hdr;
+
+    c1 = 9.0/8.0;
+    c2 = -1.0/24.0;
+    nz = mod.naz;
+    dz = mod.dz;
+
+	if (sna.nsnap==0) return 0;
+
+    ibndx = mod.ioXx;
+    ibndz = mod.ioXz;
+	n1    = mod.naz;
+	sdx   = 1.0/mod.dx;
+
+	if (sna.withbnd) {
+		sna.nz=mod.naz;
+		sna.z1=0;
+		sna.z2=mod.naz-1;
+		sna.skipdz=1;
+
+		sna.nx=mod.nax;
+		sna.x1=0;
+		sna.x2=mod.nax-1;
+		sna.skipdx=1;
+	}
+
+	/* check if this itime is a desired snapshot time */
+	if ( (((itime-sna.delay) % sna.skipdt)==0) && 
+		  (itime >= sna.delay) &&
+		  (itime <= sna.delay+(sna.nsnap-1)*sna.skipdt) ) {
+
+		isnap = NINT((itime-sna.delay)/sna.skipdt);
+
+        if (mod.grid_dir) stime = (-wav.nt+1+itime+1)*mod.dt;  /* reverse time modeling */
+        else  stime = itime*mod.dt;
+		if (verbose>1) vmess("Writing snapshot(%d) at time=%.4f", isnap+1, stime+sna.t0);
+	
+		if (first) {
+			append=0;
+			first=0;
+		}
+		else {
+			append=1;
+		}
+
+		if (sna.type.vx)  fpvx  = fileOpen(sna.file_snap, "_svx", append);
+		if (sna.type.vz)  fpvz  = fileOpen(sna.file_snap, "_svz", append);
+		if (sna.type.p)   fpp   = fileOpen(sna.file_snap, "_sp", append);
+		if (sna.type.dxvx)fpdxvx  = fileOpen(sna.file_snap, "_sdxvx", append);
+		if (sna.type.dzvz)fpdzvz  = fileOpen(sna.file_snap, "_sdzvz", append);
+	
+		memset(&hdr,0,TRCBYTES);
+		hdr.dt     = 1000000*(sna.skipdt*mod.dt);
+		hdr.ungpow  = (sna.delay*mod.dt);
+		hdr.scalco = -1000;
+		hdr.scalel = -1000;
+		hdr.sx     = 1000*(mod.x0+xsrc);
+		hdr.sdepth = 1000*(mod.z0+zsrc);
+		hdr.fldr   = isnap+1;
+		hdr.trid   = 1;
+		hdr.ns     = sna.nz;
+		hdr.trwf   = sna.nx;
+		hdr.ntr    = (isnap+1)*sna.nx;
+		hdr.f1     = sna.z1*mod.dz+mod.z0;
+		hdr.f2     = sna.x1*mod.dx+mod.x0;
+		hdr.d1     = mod.dz*sna.skipdz;
+		hdr.d2     = mod.dx*sna.skipdx;
+		if (sna.withbnd) {
+        	if ( !ISODD(bnd.top)) hdr.f1 = mod.z0 - bnd.npml*mod.dz;
+        	if ( !ISODD(bnd.lef)) hdr.f2 = mod.x0 - bnd.npml*mod.dx;
+		}
+
+/***********************************************************************
+* vx velocities have one sample less in x-direction
+* vz velocities have one sample less in z-direction
+***********************************************************************/
+
+		snap = (float *)malloc((sna.nz+1)*sizeof(float));
+        const size_t pcnt  = (size_t)(mod.nax+1) * (mod.naz+1);
+        float *cart = malloc(pcnt * sizeof(float));
+
+		/* Decimate, with skipdx and skipdz, the number of gridpoints written to file 
+		   and write to file. */
+		for (ixs=sna.x1, i=0; ixs<=sna.x2; ixs+=sna.skipdx, i++) {
+			hdr.tracf  = i+1;
+			hdr.tracl  = isnap*sna.nx+i+1;
+			hdr.gx     = 1000*(mod.x0+ixs*mod.dx);
+			ix = ixs+ibndx;
+			ix2 = ix+1;
+
+			izs = sna.z1+ibndz;
+			ize = sna.z2+ibndz;
+
+			if (sna.withbnd) {
+				izs = 0;
+				ize = sna.z2;
+				ix = ixs;
+				ix2 = ix;
+				if (sna.type.vz || sna.type.txz) izs = -1;
+                else izs = 0;
+        		if ( !ISODD(bnd.lef)) hdr.gx = 1000*(mod.x0 - bnd.npml*mod.dx);
+			}
+
+			if (sna.type.vx) {
+				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
+					snap[j] = vx[ix2*n1+iz];
+				}
+				traceWrite(&hdr, snap, sna.nz, offset, fpvx);
+			}
+			if (sna.type.vz) {
+			    if (sna.withbnd) izs = -1;
+				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
+					snap[j] = vz[ix*n1+iz+1];
+				}
+				traceWrite(&hdr, snap, sna.nz, offset, fpvz);
+			    if (sna.withbnd) izs = 0;
+			}
+			if (sna.type.p) {
+                map_to_cartesian(p, cart, surf_z, dz_eff_col, ix, nz, dz);
+				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
+					snap[j] = cart[ix*n1+iz];
+				}
+				traceWrite(&hdr, snap, sna.nz, offset, fpp);
+			}
+            if (sna.type.dxvx) {
+				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
+                    snap[j] = sdx*(c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
+                       c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]));
+                }
+				traceWrite(&hdr, snap, sna.nz, offset, fpdxvx);
+            }
+            if (sna.type.dzvz) {
+				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
+                    snap[j] = sdx*(c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
+                       c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]));
+                }
+				traceWrite(&hdr, snap, sna.nz, offset, fpdzvz);
+            }
+
+		}
+
+		if (sna.type.vx) fclose(fpvx);
+		if (sna.type.vz) fclose(fpvz);
+		if (sna.type.p) fclose(fpp);
+		if (sna.type.dxvx) fclose(fpdxvx);
+		if (sna.type.dzvz) fclose(fpdzvz);
+
+		free(snap);
+        free(cart);
+	}
+
+	return 0;
+}
+
