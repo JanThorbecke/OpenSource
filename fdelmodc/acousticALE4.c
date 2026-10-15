@@ -191,6 +191,7 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
     int  nx, nz, nt, n1;
     float xsrc, zsrc;
     int ix, ibndx, ibndz;
+    FILE *fs;
 
     nz = mod.naz;
     n1 = mod.naz;
@@ -319,6 +320,12 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
             H_col[i]          = Z_MAX - surf_z[i];
             dz_eff_col[i]     = H_col[i] * (1.0f / (float)nz);
         }
+            if (it ==0) {
+                    fs = fopen("surface.bin", "a");
+                    fprintf(stderr,"surface.bin contains %d samples and %d traces", nx, nt); 
+            }
+            fwrite(surf_z, sizeof(float), nx, fs);
+            if (it==nt-1) fclose(fs);
 
         /* ----------------------------------------------------------------
          * vx update (Inclusief Staggered Mimetische Kruis-Metriek)
@@ -704,13 +711,16 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
             writeSnapALE(mod, sna, bnd, wav, xsrc, zsrc, it, vx, vz, p, surf_z, dz_eff_col, verbose);
         }
 
+        /*
         if (it % 10 == 0) {
             char fname_snap[64];
             snprintf(fname_snap, sizeof(fname_snap), "snapshot_raw_%06d.bin", it);
             write_snapshot(fname_snap, p, pcnt);
         }
+        */
 
         /* --- snapshot: remap computational → Cartesian, write binary --- */
+        /*
         if (it % 10 == 0) {
             for (int i = 0; i < nx; i++)
                 map_to_cartesian(p, p_cart, surf_z, dz_eff_col, i, nz, dz);
@@ -719,6 +729,7 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
             if (write_snapshot(fname, p_cart, pcnt) != 0)
                 fprintf(stderr, "write failed: %s\n", fname);
         }
+        */
 
 /* --- finalise and write out --- */
     }
@@ -776,6 +787,9 @@ int map_to_cartesian(float *p, float *cart, float *surf_z, float *dz_eff_col, in
                         + w2*pi[first+2] + w3*pi[first+3];
             }
         }
+        /* optional plot surface on top of snapshot */
+        int jz = (int)((zs) / dz - 0.5f);
+        pc[jz] = 1.0;
     }
     return 0;
 }
