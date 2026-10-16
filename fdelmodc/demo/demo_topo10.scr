@@ -21,7 +21,7 @@ set -x
 ../fdelmodc \
     ischeme=-2 \
     npml=20 R=1e-8 m=2 \
-    surf_z0=500 surf_amp=50 surf_lambda=800 surf_omega=0.5 surf_hrate=540 surf_vrate=0 \
+    surf_z0=500 surf_amp=50 surf_lambda=800 surf_omega=0.5 surf_hrate=500 surf_vrate=0 \
     file_cp=topo_cp.su \
     file_den=topo_ro.su \
     file_rcv=$file_rcv \
