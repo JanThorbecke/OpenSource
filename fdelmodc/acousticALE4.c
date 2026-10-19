@@ -182,6 +182,41 @@ static inline float surf_height(int i, float t, float dx, float two_pi_lam, surf
     return surf.z0 + surf.amp * sinf(phi) + surf.vrate * t;
 }
 
+/* Resample a stationary Cartesian material field onto one ALE field.
+ * x_face selects the face-averaged ALE geometry used by rox;
+ * reference_z_offset is 0 for pressure/Vx-centered coefficients and 0.5
+ * for the vertically staggered Vz density coefficient. */
+static void remap_ale_material(const float *reference, float *material,
+                               const float *surf_z, const float *dz_eff_col,
+                               int nx, int nz, int z_offset, int x_face,
+                               float reference_z_offset, float ale_z_offset,
+                               float dz, float z0)
+{
+    for (int i = 0; i < nx; i++) {
+        const float *src = reference + i*nz;
+        float *dst = material + i*nz;
+        float zs = surf_z[i];
+        float dz_eff = dz_eff_col[i];
+        if (x_face && i > 0) {
+            zs = 0.5f * (surf_z[i-1] + surf_z[i]);
+            dz_eff = 0.5f * (dz_eff_col[i-1] + dz_eff_col[i]);
+        }
+        for (int j = 0; j < nz; j++) {
+            const float z = zs + (j + ale_z_offset) * dz_eff;
+            float jf = (z - z0) / dz - reference_z_offset + z_offset;
+            if (jf <= 0.0f) {
+                dst[j] = src[0];
+            } else if (jf >= nz-1) {
+                dst[j] = src[nz-1];
+            } else {
+                int j0 = (int)jf;
+                float fr = jf - (float)j0;
+                dst[j] = src[j0] * (1.0f - fr) + src[j0+1] * fr;
+            }
+        }
+    }
+}
+
 int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, surfPar surf, 
                  snaPar sna, int itime, float **src_nwav,
                  float *rec_vx, float *rec_vz, float *rec_p,
@@ -293,11 +328,18 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
     float *dzsdt_col  = malloc(nx * sizeof(float));
     float *H_col      = malloc(nx * sizeof(float));
     float *dz_eff_col = malloc(nx * sizeof(float));
+    float *rox_reference = malloc(pcnt * sizeof(float));
+    float *roz_reference = malloc(pcnt * sizeof(float));
+    float *l2m_reference = malloc(pcnt * sizeof(float));
 
     if (!p_new || !psi_vx_x || !psi_vz_z || !psi_p_x || !psi_p_z ||
-        !p_cart || !surf_z || !dzsdt_col || !H_col || !dz_eff_col) {
+        !p_cart || !surf_z || !dzsdt_col || !H_col || !dz_eff_col ||
+        !rox_reference || !roz_reference || !l2m_reference) {
         fprintf(stderr, "allocation failed\n"); return 1;
     }
+    memcpy(rox_reference, rox, pcnt * sizeof(float));
+    memcpy(roz_reference, roz, pcnt * sizeof(float));
+    memcpy(l2m_reference, l2m, pcnt * sizeof(float));
 
     /* ================================================================
      * MAIN TIME LOOP
@@ -320,6 +362,11 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
             H_col[i]          = Z_MAX - surf_z[i];
             dz_eff_col[i]     = H_col[i] * (1.0f / (float)nz);
         }
+        /* Keep the model fixed in physical depth while the ALE mesh moves. */
+        remap_ale_material(rox_reference, rox, surf_z, dz_eff_col, nx, nz,
+                           mod.ioXz, 1, 0.0f, 0.5f, dz, mod.z0);
+        remap_ale_material(roz_reference, roz, surf_z, dz_eff_col, nx, nz,
+                           mod.ioZz, 0, 0.5f, 0.0f, dz, mod.z0);
             if (it ==0) {
                     fs = fopen("surface.bin", "a");
                     fprintf(stderr,"surface.bin contains %d samples and %d traces", nx, nt); 
@@ -472,6 +519,8 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
             H_col[i]          = Z_MAX - surf_z[i];
             dz_eff_col[i]     = H_col[i] * (1.0f / (float)nz);
         }
+        remap_ale_material(l2m_reference, l2m, surf_z, dz_eff_col, nx, nz,
+                           mod.ioPz, 0, 0.0f, 0.5f, dz, mod.z0);
 
         for (int i = mod.ioPx - bnd.npml; i < mod.iePx + bnd.npml; i++) {
             const float inv_H_i = 1.0f / H_col[i];
@@ -738,6 +787,7 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, sur
     free(psi_vx_x); free(psi_vz_z); free(psi_p_x); free(psi_p_z);
     free(p_cart);
     free(surf_z); free(dzsdt_col); free(H_col); free(dz_eff_col);
+    free(rox_reference); free(roz_reference); free(l2m_reference);
 
     free(b_xf); free(c_xf); free(ik_xf);
     free(b_xc); free(c_xc); free(ik_xc);

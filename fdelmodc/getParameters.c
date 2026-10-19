@@ -259,6 +259,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         if (mod->ischeme == 3) vmess("Elastic staggered grid, stress/velocity");
         if (mod->ischeme == 4) vmess("Visco-Elastic staggered grid, stress/velocity");
         if (mod->ischeme == 5) vmess("Acoustic staggered grid, Txx/Tzz/velocity");
+        if (mod->ischeme == -2) vmess("Acoustic ALE grid with moving free surface");
         if (mod->grid_dir) vmess("Time reversed modelling");
         else vmess("Forward modelling");
         vmess("*******************************************");
@@ -335,19 +336,18 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         if (!disable_check) verr("********* leaving program *********");
     }
 
-    /* Extra (heuristic) stability check for the moving-free-surface ALE scheme
-     * (ischeme=-2). Besides the normal wave-propagation Courant number, the
-     * ALE formulation adds a mesh-advection term to the vx/vz/p updates that
-     * transports data along the (stretching) z-grid at the local mesh
-     * velocity
-     *   w(i,j) = dzsdt_col[i] * (nz-j)/nz
-     * where dzsdt_col = surf_vrate - surf_amp*(surf_om + 2*pi*surf_hrate/surf_lambda)*cos(phi)
-     * which is largest at the free surface (j=0) and zero at the fixed
-     * bottom. Because this advective term shares the same z-stencils as the
-     * physical wave term, the two characteristic speeds add up and the
-     * effective Courant number is estimated with (cp_max + max|mesh
-     * velocity|) over the smallest effective grid spacing reached anywhere
-     * during the run (the ALE mesh compresses as the free surface rises).
+    /* Extra (heuristic) stability check for the moving-surface schemes
+     * (ischeme=-2/-3). Besides the wave Courant number, mesh motion adds an
+     * advection term. The full ALE scheme tapers mesh velocity linearly to
+     * zero at the bottom; the hybrid scheme uses its smooth depth taper and
+     * estimates the minimum spacing from the maximum surface displacement.
+     * The combined Courant estimate uses (cp_max + max|mesh velocity|).
+     * Extra (heuristic) stability check for the moving-surface schemes
+     * (ischeme=-2/-3). Besides the wave Courant number, mesh motion adds an
+     * advection term. The full ALE scheme tapers mesh velocity linearly to
+     * zero at the bottom; the hybrid scheme uses its smooth depth taper and
+     * estimates the minimum spacing from the maximum surface displacement.
+     * The combined Courant estimate uses (cp_max + max|mesh velocity|).
      * NOTE: this bound is a heuristic (sum-of-characteristic-speeds)
      * estimate, not an exact analytic limit for this scheme: the
      * Kreiss-Oliger dissipation filter provides some extra margin, so a
@@ -373,7 +373,7 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 
         /* worst-case (highest) elevation the free surface reaches during
          * the run, hence the smallest column height / effective dz */
-        z_top_worst = surf->z0 + fabsf(surf->amp) + MAX(surf->vrate,0.0) * mod->tmod;
+        z_top_worst = surf->z0 + fabsf(surf->amp) + MAX(surf->vrate,0.0f) * mod->tmod;
         H_min = ((float)nz * dz) - z_top_worst;
 
         if (H_min <= 0.0) {
