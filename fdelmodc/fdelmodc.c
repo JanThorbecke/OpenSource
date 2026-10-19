@@ -103,7 +103,7 @@ char *sdoc[] = {
 "   dt= ............... read from file_src: if dt is set it will interpolate file_src to dt sampling",
 "" ,
 " OPTIONAL PARAMETERS:",
-"   ischeme=3 ......... 1=acoustic, 2=visco-acoustic 3=elastic, 4=visco-elastic, 5=double-couple, -2=ALE-moving-free-surface",
+"   ischeme=3 ......... 1=acoustic, 2=visco-acoustic 3=elastic, 4=visco-elastic, 5=double-couple, -2=ALE",
 "   tmod=(nt-1)*dt .... total modeling time (nt from file_src)",
 "   ntaper=0 .......... length of taper in points at edges of model (old: use npml)",
 "   npml=20 ........... length of PML layer in points at edges of model",
