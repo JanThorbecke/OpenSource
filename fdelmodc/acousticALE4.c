@@ -393,9 +393,12 @@ static void ale_snapshot(const aleGrid *g, const aleField *q, snaPar sna,
             double x = x0+i*hdr.d2;
             for (int j = 0; j < sna.nz; j++) {
                 aleField value = ale_sample(g,q,x,z0+j*hdr.d1);
-                max = MAX(max, field == 0 ? value.p : field == 1 ? value.x : value.z);
+                float v = field == 0 ? value.p : field == 1 ? value.x : value.z;
+                max = MAX(max, fabsf(v));
+                //max = MAX(max, field == 0 ? value.p : field == 1 ? value.x : value.z);
             }
         }
+        if (max == 0.0f) max = 1.0f;
         for (int i = 0; i < sna.nx; i++) {
             double x = x0+i*hdr.d2;
             hdr.tracf = i+1; hdr.tracl = number*sna.nx+i+1;
