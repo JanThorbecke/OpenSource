@@ -44,6 +44,10 @@ float *vz, float *p, float *rox, float *roz, float *l2m, int verbose);
 
 int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, surfPar surf, snaPar sna, int itime, float **src_nwav, float *rec_vx, float *rec_vz, float *rec_p, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, int verbose);
 
+int acousticALE4_intp(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, surfPar surf, snaPar sna, int itime, float **src_nwav, float *rec_vx, float *rec_vz, float *rec_p, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, int verbose);
+
+int acousticALE4_alt3(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, surfPar surf, snaPar sna, int itime, float **src_nwav, float *rec_vx, float *rec_vz, float *rec_p, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, int verbose);
+
 int viscoacoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx, float *vz, float *p, float *rox, float *roz, float *l2m, float *tss, float *tep, float *q, int verbose);
 
 int elastic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixsrc, int izsrc, float **src_nwav, float *vx, float *vz, float *tzz, float *txx, float *txz, float *rox, float *roz, float *l2m, float *lam, float *mul, int verbose);
@@ -103,7 +107,12 @@ char *sdoc[] = {
 "   dt= ............... read from file_src: if dt is set it will interpolate file_src to dt sampling",
 "" ,
 " OPTIONAL PARAMETERS:",
-"   ischeme=3 ......... 1=acoustic, 2=visco-acoustic 3=elastic, 4=visco-elastic, 5=double-couple, -2=ALE",
+"   ischeme=1 ......... 1=acoustic, 2=visco-acoustic 3=elastic, 4=visco-elastic, 5=double-couple, -2=moving-surface FV, -3=RK4-ALE -4=intp-ALE",
+"                     -2: collocated FV, impedance Riemann fluxes, SSPRK3, radiation/sponge boundaries",
+"   ale_order=2 ....... -2: limited second-order reconstruction; 1=first-order Godunov",
+"   ale_cfl=0.45 ...... -2: internal CFL substeps (0 < ale_cfl <= 0.45); output dt unchanged",
+"                     -2: one monopole source, full-gather rec_ntsam; see demo/moving_surface_fv.txt",
+"                     -3: coupled pressure/velocity/CPML RK4; one monopole source; P/Vx/Vz output",
 "   tmod=(nt-1)*dt .... total modeling time (nt from file_src)",
 "   ntaper=0 .......... length of taper in points at edges of model (old: use npml)",
 "   npml=20 ........... length of PML layer in points at edges of model",
@@ -314,7 +323,7 @@ int main(int argc, char **argv)
 	float *beam_pp, *beam_ss;	
 	float sinkvel, npeshot;
 	double t0, t1, t2, t3, tt, tinit;
-	size_t size, sizem, nsamp, perc, sizew;
+	size_t size, sizem, nsamp, perc, sizew, wave_size;
 	int n1, ix, iz, ir, ishot, i;
 	int ioPx, ioPz;
 	int it0, it1, its, it, fileno, isam;
@@ -338,11 +347,14 @@ int main(int argc, char **argv)
 
 	if (!getparint("verbose",&verbose)) verbose=0;
 	getParameters(&mod, &rec, &sna, &wav, &src, &shot, &bnd, &surf, verbose);
+	if ((mod.ischeme<=-2) && shot.n!=1)
+		verr("ischeme=-2/-3/-4 currently supports a single shot");
 
 	/* allocate arrays for model parameters: the different schemes use different arrays */
 
 	n1 = mod.naz;
 	sizem=mod.nax*mod.naz;
+	wave_size = (mod.ischeme<=-2) ? (size_t)(mod.nax+1)*(mod.naz+1) : sizem;
 
 	rox = (float *)calloc(sizem,sizeof(float));
 	roz = (float *)calloc(sizem,sizeof(float));
@@ -401,9 +413,9 @@ int main(int argc, char **argv)
 
 	/* allocate arrays for wavefield and receiver arrays */
 
-	vx  = (float *)calloc(sizem,sizeof(float));
-	vz  = (float *)calloc(sizem,sizeof(float));
-	tzz = (float *)calloc(sizem,sizeof(float)); /* =P field for acoustic */
+	vx  = (float *)calloc(wave_size,sizeof(float));
+	vz  = (float *)calloc(wave_size,sizeof(float));
+	tzz = (float *)calloc(wave_size,sizeof(float)); /* =P field for acoustic */
 	if (mod.ischeme>2) {
 		txz = (float *)calloc(sizem,sizeof(float));
 		txx = (float *)calloc(sizem,sizeof(float));
@@ -426,9 +438,10 @@ int main(int argc, char **argv)
 		rec_udp   = (float *)calloc(mod.nax*rec.nt,sizeof(float));
 	}
 	/* get velcity and density at first receiver location */
-	ir = mod.ioZz + rec.z[0]+(rec.x[0]+mod.ioZx)*n1;
-	rec.rho = mod.dt/(mod.dx*roz[ir]);
-	rec.cp  = sqrt(l2m[ir]*(roz[ir]))*mod.dx/mod.dt;
+	ir = mod.ischeme==-2 ? mod.ioPz+rec.z[0]+(rec.x[0]+mod.ioPx)*n1
+	                    : mod.ioZz+rec.z[0]+(rec.x[0]+mod.ioZx)*n1;
+	rec.rho = (mod.ischeme==-2 || mod.ischeme==-3 ? 1.0f : mod.dt/mod.dx)/roz[ir];
+	rec.cp  = sqrt(l2m[ir]*roz[ir])*(mod.ischeme==-2 || mod.ischeme==-3 ? 1.0f : mod.dx/mod.dt);
 	
 	if(sna.beam) {
 		size = sna.nz*sna.nx;
@@ -517,9 +530,9 @@ int main(int argc, char **argv)
 		ixsrc = shot.x[ishot];
 		fileno= 0;
 
-		memset(vx,0,sizem*sizeof(float));
-		memset(vz,0,sizem*sizeof(float));
-		memset(tzz,0,sizem*sizeof(float));
+		memset(vx,0,wave_size*sizeof(float));
+		memset(vz,0,wave_size*sizeof(float));
+		memset(tzz,0,wave_size*sizeof(float));
 		if (mod.ischeme==2) {
 			memset(q,0,sizem*sizeof(float));
 		}
@@ -634,20 +647,43 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
                      elastic4dc(mod, src, wav, bnd, it, ixsrc, izsrc, src_nwav, 
                             vx, vz, tzz, txx, txz, rox, roz, l2m, lam, mul, verbose);
 					break;
-				case -2 : /* ALE coordinate-transform acoustic with moving free surface */
+				case -2 : /* Moving-surface finite-volume acoustics */
+#pragma omp single
+                {
                     if (it==it0) {
 					    acousticALE4(mod, src, wav, bnd, rec, surf, sna, 0, src_nwav,
 						    rec_vx, rec_vz, rec_p, vx, vz, tzz, rox, roz, l2m, verbose);
                     it=it1;
                     }
+                }
 					break;
+				case -3 : /* Full-depth ALE with coupled RK4 time integration */
+#pragma omp single
+                {
+                    if (it==it0) {
+                        acousticALE4_alt3(mod, src, wav, bnd, rec, surf, sna, 0, src_nwav,
+                            rec_vx, rec_vz, rec_p, vx, vz, tzz, rox, roz, l2m, verbose);
+                        it=it1;
+                    }
+                }
+                    break;
+				case -4 : /* ALE with interpolation of Cartesian grid to ALE */
+#pragma omp single
+                {
+                    if (it==it0) {
+                        acousticALE4_intp(mod, src, wav, bnd, rec, surf, sna, 0, src_nwav,
+                            rec_vx, rec_vz, rec_p, vx, vz, tzz, rox, roz, l2m, verbose);
+                        it=it1;
+                    }
+                }
+                    break;
 			}
 
 			/* write samples to file if rec.nt samples are calculated */
 
 #pragma omp master
 {
-			if ( (((it-rec.delay) % rec.skipdt)==0) && (it >= rec.delay) && (mod.ischeme!=-2) ) {
+			if ( (((it-rec.delay) % rec.skipdt)==0) && (it >= rec.delay) && (mod.ischeme>-2) ) {
 				int writeToFile, itwritten;
 
 				if ((((it-rec.delay+NINT(mod.t0/mod.dt))/rec.skipdt)+1)!=0) {
@@ -677,7 +713,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 			}
 
 			/* write snapshots to output file(s) */
-			if (sna.nsnap) {
+			if (sna.nsnap && mod.ischeme>-2) {
 				writeSnapTimes(mod, sna, bnd, src, wav, ixsrc, izsrc, it, vx, vz, tzz, txx, txz, verbose);
 			}
 
@@ -733,7 +769,7 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
 				}
 			}
 		}
-        if (mod.ischeme==-2) isam = rec.nt;
+        if (mod.ischeme<=-2) isam = rec.nt-1;
 		writeRec(rec, mod, bnd, wav, ixsrc, izsrc, isam+1, ishot, shot.n, fileno,
 			rec_vx, rec_vz, rec_txx, rec_tzz, rec_txz, 
 			rec_p, rec_pp, rec_ss, rec_q, rec_udp, rec_udvz, rec_dxvx, rec_dzvz, verbose);

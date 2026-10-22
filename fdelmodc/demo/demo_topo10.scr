@@ -1,12 +1,16 @@
 #!/bin/bash
+set -e
 
-dt=0.001
-ntap=20
+# Moving-surface finite volumes; see moving_surface_fv.txt.
+# Keep the physical absorbing extension at 100 m for this 2.5 m grid.
+
+dt=0.0010
+ntap=40
 fmax=40
 h=5
 
 makemod sizex=2000 sizez=2000 dx=$h dz=$h cp0=2000 ro0=2000 file_base=topo.su \
-    intt=def x=0,2000 z=1000,1000 cp=2000 ro=2500 \
+    intt=def x=0,2000 z=1400,1400 cp=2000 ro=3500 \
     orig=0,0 gradunit=0 verbose=1 
 
 makewave w=g2 fmax=25 t0=0.15 dt=$dt nt=4096 db=-40 file_out=G2.su verbose=1
@@ -20,8 +24,8 @@ file_rcv=shot_top0.su
 set -x
 ../fdelmodc \
     ischeme=-2 \
-    npml=20 R=1e-8 m=2 \
-    surf_z0=500 surf_amp=50 surf_lambda=800 surf_omega=0.5 surf_hrate=500 surf_vrate=0 \
+    R=1e-8 m=2 \
+    surf_z0=500 surf_amp=50 surf_lambda=800 surf_om=0.5 surf_hrate=900 surf_vrate=0 \
     file_cp=topo_cp.su \
     file_den=topo_ro.su \
     file_rcv=$file_rcv \
@@ -36,10 +40,9 @@ set -x
     rec_type_p=1 \
     xsrc=1000 \
     zsrc=900 \
-    tsnap1=0 tsnap2=2.0 dtsnap=0.010 snapwithbnd=0 sna_type_p=1 sna_type_vz=0 \
+    tsnap1=0 tsnap2=2.0 dtsnap=0.010 snapwithbnd=0 sna_type_p=1 sna_type_vz=1 \
     zrcv1=900 zrcv2=900 xrcv1=0 xrcv2=2000 dxrcv=5 \
     verbose=3 \
     tmod=2.000 \
     npml=$ntap \
     left=2 right=2 top=1 bottom=2
-
