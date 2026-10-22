@@ -48,7 +48,7 @@ int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float 
 	nz = mod.nz;
 	nx = mod.nx;
 	n1 = mod.naz;
-	fac = mod.dt/mod.dx;
+	fac = (mod.ischeme == -2 || mod.ischeme == -3) ? 1.0f : mod.dt/mod.dx;
     sizem = mod.nax*mod.naz;
     nfw  = mod.nfw;
 
@@ -641,6 +641,23 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
 
     }
  
+    /* The finite-volume solver integrates the original Cartesian cells.
+     * Do not pre-average density onto staggered faces for this scheme. */
+    if (mod.ischeme == -2) {
+        for (ix=0; ix<mod.nax; ix++) {
+            int mx = MAX(0,MIN(nx-1,ix-mod.ioPx));
+            for (iz=0; iz<mod.naz; iz++) {
+                int mz = MAX(0,MIN(nz-1,iz-mod.ioPz));
+                float density = ro[mx*nz+mz];
+                float velocity = cp[mx*nz+mz];
+                if (!(density > 0 && velocity > 0))
+                    verr("ischeme=-2 requires positive rho/cp; surface is defined by surf_*");
+                rox[ix*n1+iz] = roz[ix*n1+iz] = 1.0f/density;
+                l2m[ix*n1+iz] = density*velocity*velocity;
+            }
+        }
+    }
+
 //writesufile("read_rox.su", rox, mod.naz, mod.nax, 0.0, 0.0, mod.dz, mod.dx);
 //writesufile("read_l2m.su", l2m, mod.naz, mod.nax, 0.0, 0.0, mod.dz, mod.dx);
 
@@ -669,5 +686,3 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
 
     return 0;
 }
-
-

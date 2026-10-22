@@ -1,1008 +1,572 @@
-/* acousticALE4.c — ischeme=10: 2D acoustic ALE coordinate-transform solver
+/* Body-fitted finite-volume acoustics on a vertically moving grid (ischeme=-2).
  *
- * Leapfrog velocity-pressure, 4th-order staggered FD in space (2nd-order in time).
- * Moving free surface via per-column ALE coordinate transform: physical
- *   z ∈ [z_s(x,t), Z_MAX] → computational iz ∈ [0, naz-2]
- * Free surface enforced as p=0 at the true moving surface location, via a
- * 2nd-order extrapolated one-sided reset of p[iz=0] (which itself sits
- * half a cell below the surface on this staggered grid -- see the
- * dedicated comment near that reset for details). CFS-CPML absorbing
- * boundaries on left, right and bottom. Heterogeneous medium (rox, roz,
- * l2m from fdelmodc).
+ * Primitive fields p, vx, vz are collocated cell averages. Acoustic interface
+ * states use the heterogeneous-impedance Riemann solution; mesh transport is
+ * upwinded. SSPRK3 advances all three fields from immutable stage states.
+ * Cartesian density and compressibility are integrated over physical cells,
+ * never advected with the mesh. This replaces the former staggered ALE/SBP
+ * implementation, including its CPML and per-step pressure filter.
  *
- * Surface shape (command-line parameters):
- *   surf_z0    = mean surface depth [m]          (default 0.1*naz*dz)
- *   surf_amp   = sinusoidal amplitude [m]         (default 0)
- *   surf_lambda= spatial wavelength [m]           (default nax*dx)
- *   surf_omega = angular frequency [rad/s]        (default 0)
- *   movingspeed= uniform surface drift rate [m/s] (default 0, bnd.speed)
- *
- * CPML parameters (shared with standard fdelmodc PML parameters):
- *   npml   = PML thickness in cells               (default: auto from frequency)
- *   R      = target reflection coefficient        (default 1e-5)
- *   m      = polynomial scaling order             (default 2)
- *   cpml_kmax = real stretching κ_max             (default 5)
- *
- * FULL VERSION: Includes mimetic Castillo-Grone boundary stencils and the
- * exact mimetic metric corrections for the staggered cross-derivatives.
- *
- * MIMETIC / SBP BOUNDARY CLOSURE (dpdj, dvx_dj, dvz_dj, dp_dj):
- * The vertical cross-derivatives use the standard 4th-order (interior) /
- * 2nd-order (boundary) diagonal-norm Summation-By-Parts operator, as
- * constructed by Castillo & Grone (mimetic derivation) and known in the
- * SBP literature as the "traditional" SBP-42 operator (Mattsson &
- * Nordström, JCP 2004; Strand 1994). This is not an ad-hoc one-sided
- * stencil but the canonical stencil that belongs to the diagonal
- * quadrature norm (dz times)
- *   diag(17/48, 59/48, 43/48, 49/48, 1, 1, ..., 1, 49/48, 43/48, 59/48, 17/48)
- * and that satisfies the discrete "summation-by-parts" property
- * Q + Q^T = diag(-1,0,...,0,1)  (with  D = P^{-1} Q ), which enables a
- * discrete energy estimate analogous to the continuous derivation.
- * The stencils (for node j, with f0..f_{nz-1} the column values and dz the
- * local effective grid spacing) are:
- *   j=0      : (-24/17 f0 + 59/34 f1 -  4/17 f2 -  3/34 f3                      )/dz   (2nd order)
- *   j=1      : (        -1/2 f0            +  1/2 f2                          )/dz   (2nd order)
- *   j=2      : (  4/43 f0 - 59/86 f1        + 59/86 f3 -  4/43 f4              )/dz   (2nd order)
- *   j=3      : (  3/98 f0        - 59/98 f2         + 32/49 f4 -  4/49 f5       )/dz   (2nd order)
- *   4<=j<=nz-5: (f_{j-2} - 8 f_{j-1} + 8 f_{j+1} - f_{j+2}) / (12 dz)                  (4th order, standard mimetic central)
- *   j=nz-4 .. j=nz-1: mirror image (with sign change, since the 1st derivative
- *                      is odd under reflection) of j=3..j=0 above, respectively.
- * This operator was verified symbolically (Q+Q^T=diag(-1,0,...,0,1)) during
- * the construction of this code. NOTE: the diagonal norm above is NOT
- * explicitly used here in an energy-weighted time step (this remains a
- * standard explicit leap-frog update, not an SAT-penalty formulation for
- * the boundary conditions); the SBP property therefore guarantees
- * consistency and the canonical boundary stencil validated in the
- * mimetic/SBP literature, but does not by itself provide proven energy
- * stability for this specific ALE scheme with strongly (Dirichlet) imposed
- * p=0 free-surface boundary condition.
- *
- * AUTHOR: Jan Thorbecke — ALE free-surface extension
+ * The top boundary imposes homogeneous acoustic pressure, not a prescribed
+ * fluid velocity: changing surface geometry alone does not emit sound.
+ * Side/bottom radiation boundaries are backed by a dissipative sponge.
  */
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
+#include <float.h>
+#include <limits.h>
 #include <string.h>
-#include <assert.h>
-#include <errno.h>
-#include "segy.h"
 #include "fdelmodc.h"
 #include "par.h"
+#include "segy.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
-
 #define NINT(x) ((int)((x)>0.0?(x)+0.5:(x)-0.5))
-#define ISODD(n) ((n) & 01)
+#define MAX(x,y) ((x) > (y) ? (x) : (y))
 
-/* ---------- CFS-CPML absorbing boundary (left, right, bottom) ----------
- * Profile: σ(ξ) = σ_max·ξ^m,  κ(ξ) = 1+(κ_max−1)·ξ^m,  α(ξ) = α_max·(1−ξ)
- * ξ ∈ [0,1]: normalised distance from the interior (0) to the wall (1).
- * Memory variables: ψ^{n+1} = b·ψ^n + c·D,  modified derivative = (1/κ)·D + ψ
- * b = exp(−(σ/κ+α)·dt),  c = σ/(κ·(σ/κ+α))·(b−1)                          */
+FILE *fileOpen(char *, char *, int);
+int traceWrite(segy *, float *, int, long long, FILE *);
 
-FILE *fileOpen(char *file, char *ext, int append);
-int traceWrite(segy *hdr, float *data, int n, long long offset, FILE *fp);
-int map_to_cartesian(float *p, float *cart, float *surf_z, float *dz_eff_col, int ix, int nz, float dz);
-int writeSnapALE(modPar mod, snaPar sna, bndPar bnd, wavPar wav, float xsrc, float zsrc, int itime, float *vx, float *vz, float *p, float *surf_z, float *dz_eff_col, int verbose);
+typedef struct { float p, x, z; } aleField;
+typedef struct {
+    float volume, bulk, buoyancy, impedance;
+} aleCell;
+typedef struct {
+    modPar mod;
+    surfPar surf;
+    bndPar bnd;
+    int nx, nz, order, source_samples;
+    size_t count;
+    double bottom, xmin, source_x, source_z, source_start, source_end;
+    float *surface, *speed, *damping;
+    const float *density, *compliance;
+    const float *source;
+    aleCell *cell;
+    aleField *sx, *sz;
+} aleGrid;
 
-static int write_snapshot(const char *fname, const float *data, size_t n) {
-    FILE *f = fopen(fname, "wb");
-    if (!f) return -1;
-    fwrite(data, sizeof(float), n, f);
-    fclose(f);
-    return 0;
-}
-
-/* Fill one CFS-CPML coefficient triple for normalised depth xi in [0,1].
- * xi=0: inner boundary (no attenuation); xi=1: PML wall (max attenuation). */
-static void cpml_coeff(float xi, float sigma_max, float dt, float *b, float *c, float *inv_k, bndPar bnd) {
-    float sig = sigma_max  * powf(xi, bnd.m);
-    float kap = 1.0f + (bnd.kmax - 1.0f) * powf(xi, bnd.m);
-    float alp = bnd.amax  * (1.0f - xi);         
-    float dk  = sig / kap + alp;
-    float sak = sig + kap * alp;                   
-    *b     = expf(-dk * dt);
-    *c     = (sak > 0.0f) ? sig / (kap * sak) * (*b - 1.0f) : 0.0f;
-    *inv_k = 1.0f / kap;
-}
-
-/* Exact Castillo-Grone / SBP-42 (Mattsson-Nordström) vertical derivative
- * d f/dj at node j of a column of length nz with effective grid spacing
- * dz, with the canonical 4th-order interior / 2nd-order boundary
- * diagonal-norm boundary closure (see the header of this file for the
- * full derivation and the associated quadrature norm). col[k] must return
- * the value at row k of the column; nz must be >= 9 (enforced elsewhere
- * in this file). */
-static inline float sbp42_dj(const float *col, int j, int nz, float dz) {
-    if (j == 0) {
-        return (-24.0f/17.0f*col[0] + 59.0f/34.0f*col[1] - 4.0f/17.0f*col[2] - 3.0f/34.0f*col[3]) / dz;
-    } else if (j == 1) {
-        return (-0.5f*col[0] + 0.5f*col[2]) / dz;
-    } else if (j == 2) {
-        return (4.0f/43.0f*col[0] - 59.0f/86.0f*col[1] + 59.0f/86.0f*col[3] - 4.0f/43.0f*col[4]) / dz;
-    } else if (j == 3) {
-        return (3.0f/98.0f*col[0] - 59.0f/98.0f*col[2] + 32.0f/49.0f*col[4] - 4.0f/49.0f*col[5]) / dz;
-    } else if (j == nz - 1) {
-        return (24.0f/17.0f*col[nz-1] - 59.0f/34.0f*col[nz-2] + 4.0f/17.0f*col[nz-3] + 3.0f/34.0f*col[nz-4]) / dz;
-    } else if (j == nz - 2) {
-        return (0.5f*col[nz-1] - 0.5f*col[nz-3]) / dz;
-    } else if (j == nz - 3) {
-        return (4.0f/43.0f*col[nz-5] - 59.0f/86.0f*col[nz-4] + 59.0f/86.0f*col[nz-2] - 4.0f/43.0f*col[nz-1]) / dz;
-    } else if (j == nz - 4) {
-        return (4.0f/49.0f*col[nz-6] - 32.0f/49.0f*col[nz-5] + 59.0f/98.0f*col[nz-3] - 3.0f/98.0f*col[nz-1]) / dz;
-    } else {
-        return (col[j-2] - 8.0f*col[j-1] + 8.0f*col[j+1] - col[j+2]) * (1.0f/12.0f) / dz;
-    }
-}
-
-/* Same SBP-42 operator as sbp42_dj, but applied to a face-averaged column
- * (0.5*(colL[k]+colR[k])), used where the cross-derivative is first
- * determined on two adjacent cell faces and then averaged
- * (dpdj in the vx update, dvx_dj in the p update). */
-static inline float sbp42_dj_avg(const float *colL, const float *colR, int j, int nz, float dz) {
-#define A(k) (0.5f*(colL[k]+colR[k]))
-    if (j == 0) {
-        return (-24.0f/17.0f*A(0) + 59.0f/34.0f*A(1) - 4.0f/17.0f*A(2) - 3.0f/34.0f*A(3)) / dz;
-    } else if (j == 1) {
-        return (-0.5f*A(0) + 0.5f*A(2)) / dz;
-    } else if (j == 2) {
-        return (4.0f/43.0f*A(0) - 59.0f/86.0f*A(1) + 59.0f/86.0f*A(3) - 4.0f/43.0f*A(4)) / dz;
-    } else if (j == 3) {
-        return (3.0f/98.0f*A(0) - 59.0f/98.0f*A(2) + 32.0f/49.0f*A(4) - 4.0f/49.0f*A(5)) / dz;
-    } else if (j == nz - 1) {
-        return (24.0f/17.0f*A(nz-1) - 59.0f/34.0f*A(nz-2) + 4.0f/17.0f*A(nz-3) + 3.0f/34.0f*A(nz-4)) / dz;
-    } else if (j == nz - 2) {
-        return (0.5f*A(nz-1) - 0.5f*A(nz-3)) / dz;
-    } else if (j == nz - 3) {
-        return (4.0f/43.0f*A(nz-5) - 59.0f/86.0f*A(nz-4) + 59.0f/86.0f*A(nz-2) - 4.0f/43.0f*A(nz-1)) / dz;
-    } else if (j == nz - 4) {
-        return (4.0f/49.0f*A(nz-6) - 32.0f/49.0f*A(nz-5) + 59.0f/98.0f*A(nz-3) - 3.0f/98.0f*A(nz-1)) / dz;
-    } else {
-        return (A(j-2) - 8.0f*A(j-1) + 8.0f*A(j+1) - A(j+2)) * (1.0f/12.0f) / dz;
-    }
-#undef A
-}
-
-/* Free-surface height z_s(i,t) [m] for column i at physical time t, for the
- * sinusoidal-plus-drift surface shape used by this solver (see the
- * surf_z0/surf_amp/surf_lambda/surf_om/surf_vrate/surf_hrate parameters documented in
- * the file header). Kept as a single function of (i,t) so that the ALE
- * mesh velocity dz_s/dt can be obtained by numerical differentiation in
- * time (see below) instead of a hand-derived analytic derivative: this
- * keeps the mesh-velocity computation correct for any sufficiently smooth
- * surface shape defined here, without having to also re-derive and update
- * a matching analytic dz_s/dt expression whenever the shape changes. */
-static inline float surf_height(int i, float t, float dx, float two_pi_lam, surfPar surf) 
+static void *ale_alloc(size_t count, size_t size)
 {
-    float x = (i + 0.5f) * dx - surf.hrate * t;
-    float phi = two_pi_lam * x - surf.om * t;
-    return surf.z0 + surf.amp * sinf(phi) + surf.vrate * t;
+    void *p = calloc(count,size);
+    if (!p) verr("acousticALE4: allocation failed (%zu elements)",count);
+    return p;
 }
 
-/* Resample a stationary Cartesian material field onto one ALE field.
- * x_face selects the face-averaged ALE geometry used by rox;
- * reference_z_offset is 0 for pressure/Vx-centered coefficients and 0.5
- * for the vertically staggered Vz density coefficient. */
-static void remap_ale_material(const float *reference, float *material,
-                               const float *surf_z, const float *dz_eff_col,
-                               int nx, int nz, int z_offset, int x_face,
-                               float reference_z_offset, float ale_z_offset,
-                               float dz, float z0)
+static double ale_surface(const aleGrid *g, double x, double t)
 {
-    for (int i = 0; i < nx; i++) {
-        const float *src = reference + i*nz;
-        float *dst = material + i*nz;
-        float zs = surf_z[i];
-        float dz_eff = dz_eff_col[i];
-        if (x_face && i > 0) {
-            zs = 0.5f * (surf_z[i-1] + surf_z[i]);
-            dz_eff = 0.5f * (dz_eff_col[i-1] + dz_eff_col[i]);
+    double k = 2*M_PI/g->surf.lambda;
+    return g->surf.z0+g->surf.amp*sin(k*(x-g->surf.hrate*t)-g->surf.om*t)
+         + g->surf.vrate*t;
+}
+
+static double ale_speed(const aleGrid *g, double x, double t)
+{
+    double k = 2*M_PI/g->surf.lambda;
+    return g->surf.vrate-g->surf.amp*(k*g->surf.hrate+g->surf.om)
+         * cos(k*(x-g->surf.hrate*t)-g->surf.om*t);
+}
+
+/* Integral over u in [0,1] of max(level - lerp(a,b,u),0). */
+static double ale_ramp(double level, double a, double b)
+{
+    double low = fmin(a,b), high = fmax(a,b);
+    if (level <= low) return 0;
+    if (level >= high) return level-0.5*(a+b);
+    double height = level-low;
+    return height*height/(2*(high-low));
+}
+
+/* Area in the quadrilateral above a horizontal physical depth level. */
+static double ale_area(double level, double tl, double tr,
+                       double bl, double br, double dx)
+{
+    return dx*(ale_ramp(level,tl,tr)-ale_ramp(level,bl,br));
+}
+
+static void ale_geometry(aleGrid *g, double t)
+{
+    for (int i = 0; i <= g->nx; i++) {
+        double x = g->xmin+i*g->mod.dx;
+        g->surface[i] = ale_surface(g,x,t);
+        g->speed[i] = ale_speed(g,x,t);
+        if (!(g->bottom > g->surface[i]))
+            verr("acousticALE4: surface reaches fixed bottom at x=%g t=%g",x,t);
+    }
+    for (int i = 0; i < g->nx; i++) {
+        double sl = g->surface[i], sr = g->surface[i+1];
+        double hl = g->bottom-sl, hr = g->bottom-sr;
+        for (int j = 0; j < g->nz; j++) {
+            double eta = (double)j/g->nz;
+            double tl = sl+eta*hl, tr = sr+eta*hr;
+            double bl = sl+(eta+1.0/g->nz)*hl, br = sr+(eta+1.0/g->nz)*hr;
+            double volume = g->mod.dx*(hl+hr)/(2*g->nz);
+            double density = 0, compliance = 0, previous = 0;
+            double minz = fmin(tl,tr), maxz = fmax(bl,br);
+            int first = (int)floor((minz-g->mod.z0)/g->mod.dz+0.5);
+            int last = (int)floor((maxz-g->mod.z0)/g->mod.dz+0.5);
+            for (int layer = first; layer <= last; layer++) {
+                double level = g->mod.z0+(layer+0.5)*g->mod.dz;
+                double area = layer == last ? volume
+                    : ale_area(level,tl,tr,bl,br,g->mod.dx);
+                double fraction = fmax(0,area-previous);
+                int row = layer;
+                if (row < 0) row = 0;
+                if (row >= g->mod.nz) row = g->mod.nz-1;
+                size_t reference = (size_t)i*g->mod.naz+g->mod.ioPz+row;
+                density += fraction*g->density[reference];
+                compliance += fraction*g->compliance[reference];
+                previous = area;
+            }
+            aleCell *cell = g->cell+(size_t)i*g->nz+j;
+            cell->volume = volume;
+            cell->bulk = volume/compliance;
+            cell->buoyancy = volume/density;
+            cell->impedance = sqrtf(cell->bulk/cell->buoyancy);
         }
-        for (int j = 0; j < nz; j++) {
-            const float z = zs + (j + ale_z_offset) * dz_eff;
-            float jf = (z - z0) / dz - reference_z_offset + z_offset;
-            if (jf <= 0.0f) {
-                dst[j] = src[0];
-            } else if (jf >= nz-1) {
-                dst[j] = src[nz-1];
+    }
+}
+
+static float ale_minmod(float a, float b)
+{
+    return a*b <= 0 ? 0 : copysignf(fminf(fabsf(a),fabsf(b)),a);
+}
+
+static aleField ale_slope(aleField l, aleField c, aleField r)
+{
+    aleField d = {ale_minmod(c.p-l.p,r.p-c.p),
+                  ale_minmod(c.x-l.x,r.x-c.x),
+                  ale_minmod(c.z-l.z,r.z-c.z)};
+    return d;
+}
+
+static aleField ale_reconstruct(aleField value, aleField slope, float side)
+{
+    value.p += side*slope.p;
+    value.x += side*slope.x;
+    value.z += side*slope.z;
+    return value;
+}
+
+/* Normal points from cell L to R. boundary: 0 interior, 1 free, 2 radiation.
+ * Acoustic pressure/normal velocity fluxes use one shared face state. */
+static void ale_face(aleGrid *g, const aleField *q, aleField *rhs,
+                     size_t left, size_t right, aleField l, aleField r,
+                     float ax, float az, float mesh_flux, int boundary)
+{
+    float area = hypotf(ax,az), nx = ax/area, nz = az/area;
+    float vl = nx*l.x+nz*l.z;
+    float zl = g->cell[left].impedance;
+    float pressure, velocity;
+    if (boundary == 1) {
+        pressure = 0;
+        velocity = vl+l.p/zl;
+        r = l;
+        r.p = 0;
+    } else if (boundary == 2) {
+        pressure = 0.5f*(l.p+zl*vl);
+        velocity = 0.5f*(vl+l.p/zl);
+        r = l;
+    } else {
+        float vr = nx*r.x+nz*r.z, zr = g->cell[right].impedance;
+        pressure = (zr*l.p+zl*r.p+zl*zr*(vl-vr))/(zl+zr);
+        velocity = (zl*vl+zr*vr+l.p-r.p)/(zl+zr);
+    }
+    aleCell a = g->cell[left];
+    rhs[left].p -= a.bulk*velocity*area/a.volume;
+    rhs[left].x -= a.buoyancy*pressure*ax/a.volume;
+    rhs[left].z -= a.buoyancy*pressure*az/a.volume;
+    if (!boundary) {
+        aleCell b = g->cell[right];
+        rhs[right].p += b.bulk*velocity*area/b.volume;
+        rhs[right].x += b.buoyancy*pressure*ax/b.volume;
+        rhs[right].z += b.buoyancy*pressure*az/b.volume;
+    }
+    /* Primitive ALE transport includes the geometric-volume correction:
+     * sum W.n A (q_upwind-q_cell)/V. Constants therefore stay constant. */
+    aleField upwind = mesh_flux > 0 ? r : l;
+    float factor = mesh_flux/a.volume;
+    rhs[left].p += factor*(upwind.p-q[left].p);
+    rhs[left].x += factor*(upwind.x-q[left].x);
+    rhs[left].z += factor*(upwind.z-q[left].z);
+    if (!boundary) {
+        factor = mesh_flux/g->cell[right].volume;
+        rhs[right].p -= factor*(upwind.p-q[right].p);
+        rhs[right].x -= factor*(upwind.x-q[right].x);
+        rhs[right].z -= factor*(upwind.z-q[right].z);
+    }
+}
+
+static void ale_source(aleGrid *g, aleField *rhs, double time)
+{
+    if (time < g->source_start || time >= g->source_end) return;
+    double sample = (time-g->source_start)/g->mod.dt;
+    int lo = (int)floor(sample);
+    if (lo < 0 || lo >= g->source_samples) return;
+    int hi = lo+1 < g->source_samples ? lo+1 : lo;
+    double fraction = sample-lo;
+    /* A monopole is a volume-injection rate, not a pressure increment per
+     * output step. Sum (V/K)*dp/dt equals the prescribed source rate. */
+    double amplitude = (1-fraction)*g->source[lo]+fraction*g->source[hi];
+    double column = (g->source_x-g->xmin)/g->mod.dx-0.5;
+    int i = (int)floor(column);
+    double u = column-i;
+    for (int side = 0; side < 2; side++) {
+        int ix = i+side;
+        double top = 0.5*(g->surface[ix]+g->surface[ix+1]);
+        if (g->source_z < top) continue;
+        double dz = (g->bottom-top)/g->nz;
+        double row = (g->source_z-top)/dz-0.5;
+        if (row < -0.5 || row > g->nz-0.5)
+            verr("acousticALE4: source outside fluid grid at t=%g",time);
+        row = fmax(0,fmin(row,g->nz-1));
+        int j = (int)floor(row);
+        if (j == g->nz-1) j--;
+        double v = row-j, weight = side ? u : 1-u;
+        size_t k = (size_t)ix*g->nz+j;
+        rhs[k].p += amplitude*weight*(1-v)*g->cell[k].bulk/g->cell[k].volume;
+        rhs[k+1].p += amplitude*weight*v*g->cell[k+1].bulk/g->cell[k+1].volume;
+    }
+}
+
+static void ale_rhs(aleGrid *g, const aleField *q, aleField *rhs, double time)
+{
+    ale_geometry(g,time);
+    memset(rhs,0,g->count*sizeof(*rhs));
+    if (g->order == 2) {
+        for (int i = 0; i < g->nx; i++)
+            for (int j = 0; j < g->nz; j++) {
+                size_t k = (size_t)i*g->nz+j;
+                g->sx[k] = i > 0 && i < g->nx-1
+                    ? ale_slope(q[k-g->nz],q[k],q[k+g->nz]) : (aleField){0};
+                g->sz[k] = j > 0 && j < g->nz-1
+                    ? ale_slope(q[k-1],q[k],q[k+1]) : (aleField){0};
+            }
+    }
+    for (int i = 0; i <= g->nx; i++) {
+        float height = (g->bottom-g->surface[i])/g->nz;
+        for (int j = 0; j < g->nz; j++) {
+            if (i == 0 || i == g->nx) {
+                size_t k = (size_t)(i == 0 ? 0 : i-1)*g->nz+j;
+                ale_face(g,q,rhs,k,k,q[k],q[k],i == 0 ? -height : height,0,0,2);
             } else {
-                int j0 = (int)jf;
-                float fr = jf - (float)j0;
-                dst[j] = src[j0] * (1.0f - fr) + src[j0+1] * fr;
+                size_t l = (size_t)(i-1)*g->nz+j, r = (size_t)i*g->nz+j;
+                aleField ql = q[l], qr = q[r];
+                if (g->order == 2) {
+                    ql = ale_reconstruct(ql,g->sx[l],0.5f);
+                    qr = ale_reconstruct(qr,g->sx[r],-0.5f);
+                }
+                ale_face(g,q,rhs,l,r,ql,qr,height,0,0,0);
             }
         }
     }
+    for (int i = 0; i < g->nx; i++) {
+        float difference = g->surface[i+1]-g->surface[i];
+        float speed = 0.5f*(g->speed[i]+g->speed[i+1]);
+        for (int j = 0; j <= g->nz; j++) {
+            float weight = 1-(float)j/g->nz;
+            float ax = -difference*weight, az = g->mod.dx;
+            float mesh = az*speed*weight;
+            if (j == 0 || j == g->nz) {
+                size_t k = (size_t)i*g->nz+(j == 0 ? 0 : j-1);
+                if (j == 0) { ax = -ax; az = -az; mesh = -mesh; }
+                ale_face(g,q,rhs,k,k,q[k],q[k],ax,az,mesh,j == 0 ? 1 : 2);
+            } else {
+                size_t l = (size_t)i*g->nz+j-1, r = l+1;
+                aleField ql = q[l], qr = q[r];
+                if (g->order == 2) {
+                    ql = ale_reconstruct(ql,g->sz[l],0.5f);
+                    qr = ale_reconstruct(qr,g->sz[r],-0.5f);
+                }
+                ale_face(g,q,rhs,l,r,ql,qr,ax,az,mesh,0);
+            }
+        }
+    }
+    if (g->source_samples) ale_source(g,rhs,time);
 }
 
-int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec, surfPar surf, 
-                 snaPar sna, int itime, float **src_nwav,
+static void ale_step(aleGrid *g, aleField *q, aleField *stage, aleField *rhs,
+                     double time, float dt)
+{
+    /* Strang-split exact scalar damping cannot impose a sponge CFL limit. */
+    for (size_t k = 0; k < g->count; k++) {
+        float factor = g->damping[k] > 0 ? expf(-0.5f*dt*g->damping[k]) : 1;
+        q[k].p *= factor; q[k].x *= factor; q[k].z *= factor;
+    }
+    ale_rhs(g,q,rhs,time);
+    for (size_t k = 0; k < g->count; k++) {
+        stage[k].p = q[k].p+dt*rhs[k].p;
+        stage[k].x = q[k].x+dt*rhs[k].x;
+        stage[k].z = q[k].z+dt*rhs[k].z;
+    }
+    ale_rhs(g,stage,rhs,time+dt);
+    for (size_t k = 0; k < g->count; k++) {
+        stage[k].p = 0.75f*q[k].p+0.25f*(stage[k].p+dt*rhs[k].p);
+        stage[k].x = 0.75f*q[k].x+0.25f*(stage[k].x+dt*rhs[k].x);
+        stage[k].z = 0.75f*q[k].z+0.25f*(stage[k].z+dt*rhs[k].z);
+    }
+    ale_rhs(g,stage,rhs,time+0.5*dt);
+    for (size_t k = 0; k < g->count; k++) {
+        float factor = g->damping[k] > 0 ? expf(-0.5f*dt*g->damping[k]) : 1;
+        q[k].p = factor*(q[k].p/3+2*(stage[k].p+dt*rhs[k].p)/3);
+        q[k].x = factor*(q[k].x/3+2*(stage[k].x+dt*rhs[k].x)/3);
+        q[k].z = factor*(q[k].z/3+2*(stage[k].z+dt*rhs[k].z)/3);
+    }
+}
+
+static aleField ale_sample(const aleGrid *g, const aleField *q, double x, double z)
+{
+    aleField result = {0};
+    double column = (x-g->xmin)/g->mod.dx-0.5;
+    if (column < -0.5 || column > g->nx-0.5 ||
+        z > g->bottom+1e-5*g->mod.dz)
+        verr("acousticALE4: output coordinate (%g,%g) outside grid",x,z);
+    column = fmax(0,fmin(column,g->nx-1));
+    int i = (int)floor(column);
+    if (i == g->nx-1) i--;
+    double u = column-i;
+    double face = (x-g->xmin)/g->mod.dx;
+    int face_i = (int)floor(face);
+    if (face_i < 0) face_i = 0;
+    if (face_i >= g->nx) face_i = g->nx-1;
+    double surface = g->surface[face_i]+(face-face_i)*
+        (g->surface[face_i+1]-g->surface[face_i]);
+    if (z < surface) return result;
+    for (int side = 0; side < 2; side++) {
+        int ix = i+side;
+        double top = 0.5*(g->surface[ix]+g->surface[ix+1]);
+        double dz = (g->bottom-top)/g->nz;
+        double row = (z-top)/dz-0.5;
+        double weight = side ? u : 1-u;
+        const aleField *col = q+(size_t)ix*g->nz;
+        aleField value;
+        if (row < 0) {
+            value = col[0];
+            value.p *= fmax(0,2*(z-top)/dz);
+        } else if (row >= g->nz-1) value = col[g->nz-1];
+        else {
+            int j = (int)floor(row);
+            double v = row-j;
+            value.p = (1-v)*col[j].p+v*col[j+1].p;
+            value.x = (1-v)*col[j].x+v*col[j+1].x;
+            value.z = (1-v)*col[j].z+v*col[j+1].z;
+        }
+        result.p += weight*value.p;
+        result.x += weight*value.x;
+        result.z += weight*value.z;
+    }
+    return result;
+}
+
+static void ale_snapshot(const aleGrid *g, const aleField *q, snaPar sna,
+                         int it, int *first, int verbose)
+{
+    if (!sna.nsnap || it < sna.delay || (it-sna.delay)%sna.skipdt ||
+        (it-sna.delay)/sna.skipdt >= sna.nsnap) return;
+    int number = (it-sna.delay)/sna.skipdt;
+    double x0 = g->mod.x0+sna.x1*g->mod.dx;
+    double z0 = g->mod.z0+sna.z1*g->mod.dz;
+    if (sna.withbnd) {
+        x0 = g->xmin+0.5*g->mod.dx;
+        z0 = g->mod.z0-g->mod.ioPz*g->mod.dz;
+        sna.nx = g->nx; sna.nz = g->mod.naz;
+        sna.skipdx = sna.skipdz = 1;
+    }
+    float *trace = ale_alloc(sna.nz,sizeof(float));
+    int enabled[3] = {sna.type.p,sna.type.vx,sna.type.vz};
+    char *extension[3] = {"_sp","_svx","_svz"};
+    for (int field = 0; field < 3; field++) {
+        if (!enabled[field]) continue;
+        FILE *fp = fileOpen(sna.file_snap,extension[field],!*first);
+        segy hdr;
+        memset(&hdr,0,sizeof(hdr));
+        hdr.dt = lround(1e6*sna.skipdt*g->mod.dt);
+        hdr.ungpow = sna.delay*g->mod.dt;
+        hdr.scalco = hdr.scalel = -1000;
+        hdr.sx = lround(1000*g->source_x); hdr.sdepth = lround(1000*g->source_z);
+        hdr.fldr = number+1; hdr.trid = 1; hdr.ns = sna.nz;
+        hdr.trwf = sna.nx; hdr.ntr = (number+1)*sna.nx;
+        hdr.f1 = z0; hdr.f2 = x0;
+        hdr.d1 = g->mod.dz*sna.skipdz; hdr.d2 = g->mod.dx*sna.skipdx;
+        /* find max in field */
+        float max = 0.0;
+        for (int i = 0; i < sna.nx; i++) {
+            double x = x0+i*hdr.d2;
+            for (int j = 0; j < sna.nz; j++) {
+                aleField value = ale_sample(g,q,x,z0+j*hdr.d1);
+                max = MAX(max, field == 0 ? value.p : field == 1 ? value.x : value.z);
+            }
+        }
+        for (int i = 0; i < sna.nx; i++) {
+            double x = x0+i*hdr.d2;
+            hdr.tracf = i+1; hdr.tracl = number*sna.nx+i+1;
+            hdr.gx = lround(1000*x);
+            for (int j = 0; j < sna.nz; j++) {
+                aleField value = ale_sample(g,q,x,z0+j*hdr.d1);
+                trace[j] = field == 0 ? value.p : field == 1 ? value.x : value.z;
+            }
+            /* optional plot surface on top of snapshot */
+            double face = (x-g->xmin)/g->mod.dx;      /* fractional vertex index */
+            int ix0 = (int)floor(face);
+            if (ix0 < 0) ix0 = 0;
+            if (ix0 > g->nx-1) ix0 = g->nx-1;
+            double zs = g->surface[ix0]+(face-ix0)*(g->surface[ix0+1]-g->surface[ix0]);
+            int jz = (int)lround((zs-z0)/hdr.d1);
+            if (jz >= 0 && jz < sna.nz) trace[jz] = 2*max;
+            traceWrite(&hdr,trace,sna.nz,0,fp);
+        }
+        if (fclose(fp)) verr("acousticALE4: closing snapshot failed");
+    }
+    free(trace);
+    *first = 0;
+    if (verbose > 1) vmess("Writing FV ALE snapshot %d at t=%.6f",number+1,it*g->mod.dt);
+}
+
+int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec,
+                 surfPar surf, snaPar sna, int itime, float **src_nwav,
                  float *rec_vx, float *rec_vz, float *rec_p,
                  float *vx, float *vz, float *p,
                  float *rox, float *roz, float *l2m, int verbose)
 {
-    int  nx, nz, nt, n1;
-    float xsrc, zsrc;
-    int ix, ibndx, ibndz;
-    FILE *fs;
+#ifdef MPI
+    verr("acousticALE4: finite-volume output currently requires the non-MPI build");
+#endif
+    if (mod.grid_dir || mod.t0 != 0 || mod.nx < 3 || mod.nz < 3)
+        verr("acousticALE4: forward modeling, t0=0 and at least 3x3 input cells required");
+    if (src.n != 1 || src.type != 1 || src.orient != 1 || wav.random ||
+        src.random || src.array || src.plane || src.multiwav)
+        verr("acousticALE4: currently supports a single nonrandom monopole pressure source");
+    if (rec.n && (rec.skipdt < 1 || rec.delay < 0 || rec.nt < 1 ||
+        (rec.delay < mod.nt && rec.nt < 1+(mod.nt-1-rec.delay)/rec.skipdt)))
+        verr("acousticALE4: receiver sampling must hold the full nonnegative-time gather");
+    if (rec.type.txx || rec.type.tzz || rec.type.txz || rec.type.dxvx ||
+        rec.type.dzvz || rec.type.pp || rec.type.ss || rec.type.ud || rec.type.q ||
+        sna.type.dxvx || sna.type.dzvz || sna.type.txx || sna.type.tzz ||
+        sna.type.txz || sna.type.pp || sna.type.ss || sna.beam)
+        verr("acousticALE4: only P/Vx/Vz receivers and snapshots are supported");
+    if (bnd.top != 1 || (bnd.lef != 2 && bnd.lef != 4) ||
+        (bnd.rig != 2 && bnd.rig != 4) || (bnd.bot != 2 && bnd.bot != 4))
+        verr("acousticALE4: requires top=1 and absorbing sides/bottom (2 or 4)");
+    if (surf.type != 1 || !(surf.lambda > 0) ||
+        !(mod.dx > 0 && mod.dz > 0 && mod.dt > 0) ||
+        bnd.npml < 1 || !(bnd.R > 0 && bnd.R < 1) || !(bnd.m > 0))
+        verr("acousticALE4: invalid surface, sampling or absorbing-boundary parameters");
 
-    nz = mod.naz;
-    n1 = mod.naz;
-    nx = mod.nax;
-    nt = mod.nt;
-
-    /* The SBP-42 mimetic boundary closure below needs 4 special stencil
-     * rows at each end plus at least one purely interior row in between
-     * (nz >= 9); in practice nz is always far larger than this. */
-    if (nz < 9) {
-        fprintf(stderr, "acousticALE4: nz=%d too small for the SBP-42 mimetic boundary stencils (need nz>=9)\n", nz);
-        return 1;
+    aleGrid g = {0};
+    g.mod = mod; g.surf = surf; g.bnd = bnd; g.nx = mod.nax;
+    g.xmin = mod.x0-(mod.ioPx+0.5)*mod.dx;
+    g.bottom = mod.z0+(mod.naz-mod.ioPz-0.5)*mod.dz;
+    double height = g.bottom-surf.z0;
+    double minheight = height-fabs(surf.amp)-fmax(0,surf.vrate*mod.tmod);
+    double speed = fabs(surf.vrate)+fabs(surf.amp)*
+        fabs(surf.om+2*M_PI*surf.hrate/surf.lambda);
+    if (!(minheight > mod.dz) || !(height/mod.dz < INT_MAX))
+        verr("acousticALE4: surface would reach fixed bottom during modeling");
+    if (!(speed < mod.cp_min))
+        verr("acousticALE4: surface speed bound %g must be subsonic (cp_min=%g)",speed,mod.cp_min);
+    g.nz = (int)ceil(height/mod.dz);
+    if (g.nz < 3) verr("acousticALE4: too few fluid cells");
+    g.count = (size_t)g.nx*g.nz;
+    g.order = 2;
+    getparint("ale_order",&g.order);
+    float cfl = 0.45f;
+    getparfloat("ale_cfl",&cfl);
+    if ((g.order != 1 && g.order != 2) || !(cfl > 0 && cfl <= 0.45f))
+        verr("acousticALE4: ale_order must be 1 or 2; 0 < ale_cfl <= 0.45");
+    double slope = fabs(surf.amp)*2*M_PI/surf.lambda;
+    double minspacing = minheight/g.nz;
+    double rate = mod.cp_max*(1/mod.dx+hypot(1,slope)/minspacing)+speed/minspacing;
+    double required = ceil(mod.dt*rate/cfl);
+    if (!(required >= 1 && required <= INT_MAX))
+        verr("acousticALE4: invalid CFL substep count");
+    int substeps = (int)required;
+    float dt = mod.dt/substeps;
+    g.source_x = mod.x0+(mod.nx-1)*mod.dx/2;
+    g.source_z = surf.z0+mod.dz;
+    float coordinate;
+    if (getparfloat("xsrc",&coordinate)) g.source_x = coordinate;
+    if (getparfloat("zsrc",&coordinate)) g.source_z = coordinate;
+    double column = (g.source_x-g.xmin)/mod.dx-0.5;
+    if (!(column >= 0 && column < g.nx-1 && g.source_z <= g.bottom &&
+          g.source_z >= -DBL_MAX))
+        verr("acousticALE4: source is outside model");
+    g.source = src_nwav[0];
+    g.source_samples = wav.nt;
+    g.source_start = src.tbeg ? src.tbeg[0] : 0;
+    g.source_end = src.tend ? src.tend[0] : g.source_start+wav.nt*mod.dt;
+    g.surface = ale_alloc(g.nx+1,sizeof(float));
+    g.speed = ale_alloc(g.nx+1,sizeof(float));
+    g.cell = ale_alloc(g.count,sizeof(aleCell));
+    g.damping = ale_alloc(g.count,sizeof(float));
+    g.sx = ale_alloc(g.count,sizeof(aleField));
+    g.sz = ale_alloc(g.count,sizeof(aleField));
+    float *reference = ale_alloc((size_t)2*mod.nax*mod.naz,sizeof(float));
+    g.density = reference; g.compliance = reference+(size_t)mod.nax*mod.naz;
+    for (size_t k = 0; k < (size_t)mod.nax*mod.naz; k++) {
+        if (!(rox[k] > 0) || !(l2m[k] > 0))
+            verr("acousticALE4: positive density and bulk modulus required (cell %zu)",k);
+        reference[k] = 1/rox[k];
+        reference[(size_t)mod.nax*mod.naz+k] = 1/l2m[k];
     }
-
+    float width = bnd.npml*mod.dx;
+    float sigma = -(bnd.m+1)*mod.cp_max*logf(bnd.R)/(2*width);
+    for (int i = 0; i < g.nx; i++) {
+        double x = g.xmin+(i+0.5)*mod.dx;
+        double distance = fmax(mod.x0-x,x-(mod.x0+(mod.nx-1)*mod.dx));
+        float xi = fmax(0,fmin(1,distance/width));
+        for (int j = 0; j < g.nz; j++) {
+            double z = surf.z0+(j+0.5)*height/g.nz;
+            double bottom_distance = z-(g.bottom-bnd.npml*mod.dz);
+            float zi = fmax(0,fmin(1,bottom_distance/(bnd.npml*mod.dz)));
+            g.damping[(size_t)i*g.nz+j] = sigma*(powf(xi,bnd.m)+powf(zi,bnd.m));
+        }
+    }
+    aleField *q = ale_alloc(g.count,sizeof(aleField));
+    aleField *stage = ale_alloc(g.count,sizeof(aleField));
+    aleField *rhs = ale_alloc(g.count,sizeof(aleField));
     if (verbose) {
-        fprintf(stderr,"Mimetische ALE Solver (Volledige Kruisterm Metriek): naz=%d nax=%d\n", mod.naz, mod.nax);
+        vmess("Moving-surface FV acoustics: %dx%d fluid cells, MUSCL order %d, SSPRK3",g.nx,g.nz,g.order);
+        vmess("Output dt=%g; %d CFL substeps of dt=%g; Cartesian material-cell integration",mod.dt,substeps,dt);
+        vmess("Radiation/sponge boundaries (not CPML); pressure-free moving top");
     }
-
-    const float dx = mod.dx, dz = mod.dz, dt = mod.dt;
-    const float Z_MAX    = (float)nz * dz;
-    const float inv24dx  = 1.0f / (24.0f * dx);
-    const float inv_dx   = 1.0f / dx;
-    const int   cpml_n   = bnd.npml;
-
-    const size_t pcnt  = (size_t)nx * nz;
-    const size_t vxcnt = (size_t)(nx + 1) * nz;
-    const size_t vzcnt = (size_t)nx * (nz + 1);
-
-    const float L_pml    = cpml_n * dx;
-    const float sigma_max = (bnd.m + 1.0f) * mod.cp_max / (2.0f * L_pml) * logf(1.0f / bnd.R);
-
-    float *b_xf  = calloc(nx+1,  sizeof(float));
-    float *c_xf  = calloc(nx+1,  sizeof(float));
-    float *ik_xf = calloc(nx+1,  sizeof(float));
-    float *b_xc  = calloc(nx,  sizeof(float));
-    float *c_xc  = calloc(nx,  sizeof(float));
-    float *ik_xc = calloc(nx,  sizeof(float));
-    float *b_zf  = calloc(nz+1,  sizeof(float));
-    float *c_zf  = calloc(nz+1,  sizeof(float));
-    float *ik_zf = calloc(nz+1,  sizeof(float));
-    float *b_zc  = calloc(nz,  sizeof(float));
-    float *c_zc  = calloc(nz,  sizeof(float));
-    float *ik_zc = calloc(nz,  sizeof(float));
-
-    if (!getparfloat("xsrc",&xsrc)) xsrc=((nx-1)*dx)/2.0;
-    if (!getparfloat("zsrc",&zsrc)) zsrc=dz*nz/3;
-    /* Pressure nodes are at cell centres: x_i = mod.x0 + (i + 0.5) * dx. */
-    //double x_grid = (xsrc-mod.x0+mod.ioPx*dx) * inv_dx - 0.5;
-    double x_grid = (xsrc-mod.x0+mod.ioPx*dx) * inv_dx - 0.5;
-    int ixs = (int)ceil(x_grid);
-    double u = x_grid - (ixs - 1);
-    u = (u < 0.0) ? 0.0 : ((u > 1.0) ? 1.0 : u);
-    double u_one_minus = 1.0 - u;
-
-    //if (!getparfloat("surf_z0",&surf_z0)) surf_z0=500.0;
-    //if (!getparfloat("surf_amp",&surf_amp)) surf_amp=50.0;
-    //if (!getparfloat("surf_lambda",&surf_lambda)) surf_lambda=800.0;
-    //if (!getparfloat("surf_om",&surf_om)) surf_om=0.5;
-    //if (!getparfloat("surf_vrate",&surf_vrate)) surf_vrate=80.0;
-    const float two_pi_lam = 2.0f * M_PI / surf.lambda;
-
-    const int   J_SRC    = nz / 3;
-
-    for (int i = 0; i <= nx; i++) {
-        float xi;
-        if      (i <  cpml_n)        xi = (float)(cpml_n - i)        / cpml_n;
-        else if (i >  nx - cpml_n)   xi = (float)(i - (nx - cpml_n)) / cpml_n;
-        else                          xi = 0.0f;
-        cpml_coeff(xi, sigma_max, dt, &b_xf[i], &c_xf[i], &ik_xf[i], bnd);
+    int first_snapshot = 1;
+    for (int it = 0; it < mod.nt; it++) {
+        double time = (double)it*mod.dt;
+        ale_geometry(&g,time);
+        float maximum = 0;
+        for (size_t k = 0; k < g.count; k++) {
+            if (!(fabsf(q[k].p) <= FLT_MAX && fabsf(q[k].x) <= FLT_MAX &&
+                  fabsf(q[k].z) <= FLT_MAX))
+                verr("acousticALE4: nonfinite wavefield at output step %d cell %zu",it,k);
+            maximum = fmaxf(maximum,fabsf(q[k].p));
+        }
+        if (verbose && it%100 == 0) vmess("FV step %d t=%.6f max|p|=%g",it,time,maximum);
+        if (rec.n && it >= rec.delay && (it-rec.delay)%rec.skipdt == 0) {
+            int sample = (it-rec.delay)/rec.skipdt;
+            if (sample >= rec.nt)
+                verr("acousticALE4: rec_ntsam must hold the complete gather");
+            for (int r = 0; r < rec.n; r++) {
+                aleField value = ale_sample(&g,q,mod.x0+rec.xr[r],mod.z0+rec.zr[r]);
+                size_t k = (size_t)r*rec.nt+sample;
+                if (rec.type.p) rec_p[k] = value.p;
+                if (rec.type.vx) rec_vx[k] = value.x;
+                if (rec.type.vz) rec_vz[k] = value.z;
+            }
+        }
+        ale_snapshot(&g,q,sna,it,&first_snapshot,verbose);
+        if (it == mod.nt-1) break;
+        for (int sub = 0; sub < substeps; sub++)
+            ale_step(&g,q,stage,rhs,time+(double)sub*mod.dt/substeps,dt);
     }
-    for (int i = 0; i < nx; i++) {
-        float xi;
-        if      (i < cpml_n)         xi = ((float)(cpml_n - 1 - i) + 0.5f) / cpml_n;
-        else if (i >= nx - cpml_n)   xi = ((float)(i - (nx - cpml_n))+ 0.5f) / cpml_n;
-        else                          xi = 0.0f;
-        if (xi > 1.0f) xi = 1.0f;
-        cpml_coeff(xi, sigma_max, dt, &b_xc[i], &c_xc[i], &ik_xc[i], bnd);
-    }
-    for (int j = 0; j <= nz; j++) {
-        float xi = (j > nz - cpml_n) ? (float)(j - (nz - cpml_n)) / cpml_n : 0.0f;
-        cpml_coeff(xi, sigma_max, dt, &b_zf[j], &c_zf[j], &ik_zf[j], bnd);
-    }
-    for (int j = 0; j < nz; j++) {
-        float xi = (j >= nz - cpml_n) ? ((float)(j - (nz - cpml_n)) + 0.5f) / cpml_n : 0.0f;
-        if (xi > 1.0f) xi = 1.0f;
-        cpml_coeff(xi, sigma_max, dt, &b_zc[j], &c_zc[j], &ik_zc[j], bnd);
-    }
-
-    float *p_new = calloc(pcnt,  sizeof(float));
-    float *psi_vx_x = calloc(vxcnt, sizeof(float)); 
-    float *psi_vz_z = calloc(vzcnt, sizeof(float)); 
-    float *psi_p_x  = calloc(pcnt,  sizeof(float)); 
-    float *psi_p_z  = calloc(pcnt,  sizeof(float)); 
-    float *p_cart = malloc(pcnt * sizeof(float));
-    //float *rec_vx     = malloc((size_t)nx * nt * sizeof(float));
-    //float *rec_vz     = malloc((size_t)nx * nt * sizeof(float));
-    //float *rec_p      = malloc((size_t)nx * nt * sizeof(float));
-    float *surf_z     = malloc(nx * sizeof(float));
-    float *dzsdt_col  = malloc(nx * sizeof(float));
-    float *H_col      = malloc(nx * sizeof(float));
-    float *dz_eff_col = malloc(nx * sizeof(float));
-    float *rox_reference = malloc(pcnt * sizeof(float));
-    float *roz_reference = malloc(pcnt * sizeof(float));
-    float *l2m_reference = malloc(pcnt * sizeof(float));
-
-    if (!p_new || !psi_vx_x || !psi_vz_z || !psi_p_x || !psi_p_z ||
-        !p_cart || !surf_z || !dzsdt_col || !H_col || !dz_eff_col ||
-        !rox_reference || !roz_reference || !l2m_reference) {
-        fprintf(stderr, "allocation failed\n"); return 1;
-    }
-    memcpy(rox_reference, rox, pcnt * sizeof(float));
-    memcpy(roz_reference, roz, pcnt * sizeof(float));
-    memcpy(l2m_reference, l2m, pcnt * sizeof(float));
-
-    /* ================================================================
-     * MAIN TIME LOOP
-     * ================================================================ */
-    /* Half-timestep used for the central-difference numerical time
-     * derivative of the surface height below (see surf_height() above). */
-    const float dt_half = 0.5f * dt;
-
-    for (int it = 0; it < nt; it++) {
-        const float t_half = ((float)it + 0.5f) * dt;
-
-        for (int i = 0; i < nx; i++) {
-            surf_z[i]         = surf_height(i, t_half, dx, two_pi_lam, surf);
-            /* Numerical (central-difference) time derivative of the surface
-             * height, valid for any smooth surf_height() definition;
-             * replaces the previous hand-derived analytic expression
-             * "surf_vrate - surf_amp*surf_om*cos(phi)". */
-            dzsdt_col[i]      = (surf_height(i, t_half + dt_half, dx, two_pi_lam, surf)
-                                - surf_height(i, t_half - dt_half, dx, two_pi_lam, surf)) / dt;
-            H_col[i]          = Z_MAX - surf_z[i];
-            dz_eff_col[i]     = H_col[i] * (1.0f / (float)nz);
+    /* Caller-facing fields are Cartesian and collocated for this scheme. */
+    for (int i = 0; i < mod.nax; i++)
+        for (int j = 0; j < mod.naz; j++) {
+            aleField value = ale_sample(&g,q,mod.x0+(i-mod.ioPx)*mod.dx,
+                                       mod.z0+(j-mod.ioPz)*mod.dz);
+            size_t k = (size_t)i*mod.naz+j;
+            p[k] = value.p; vx[k] = value.x; vz[k] = value.z;
         }
-        /* Keep the model fixed in physical depth while the ALE mesh moves. */
-        remap_ale_material(rox_reference, rox, surf_z, dz_eff_col, nx, nz,
-                           mod.ioXz, 1, 0.0f, 0.5f, dz, mod.z0);
-        remap_ale_material(roz_reference, roz, surf_z, dz_eff_col, nx, nz,
-                           mod.ioZz, 0, 0.5f, 0.0f, dz, mod.z0);
-            if (it ==0) {
-                    fs = fopen("surface.bin", "a");
-                    fprintf(stderr,"surface.bin contains %d samples and %d traces", nx, nt); 
-            }
-            fwrite(surf_z, sizeof(float), nx, fs);
-            if (it==nt-1) fclose(fs);
-
-        /* ----------------------------------------------------------------
-         * vx update (Inclusief Staggered Mimetische Kruis-Metriek)
-         * ---------------------------------------------------------------- */
-        for (int i = mod.ioXx - bnd.npml; i < mod.ieXx + bnd.npml; i++) {
-            if (i < 1 || i >= nx) continue;
-
-            const float zs_f     = 0.5f*(surf_z[i-1]    + surf_z[i]);
-            const float H_f      = Z_MAX - zs_f;
-            const float inv_H_f  = 1.0f / H_f;
-            const float ale_f    = 0.5f*(dzsdt_col[i-1] + dzsdt_col[i]) * inv_H_f * dt;
-            const int   has4x    = (i >= 2 && i <= nx-2);
-            const float dzsdx_f  = has4x
-                ? (surf_z[i-2] - 27.0f*surf_z[i-1] + 27.0f*surf_z[i] - surf_z[i+1]) * inv24dx
-                : (surf_z[i] - surf_z[i-1]) * inv_dx;
-
-            const int idx_R   = i * nz;
-            const int idx_L   = (i - 1) * nz;
-            const int idx_RR  = has4x ? (i + 1) * nz : idx_R;
-            const int idx_LL  = has4x ? (i - 2) * nz : idx_L;
-            
-            const int idx_vx_base = i * nz;
-            const float bx = b_xf[i], cx = c_xf[i], ikx = ik_xf[i];
-            /* Face-averaged effective dz, consistent with zs_f/H_f above
-             * (H_f = 0.5*(H_col[i-1]+H_col[i]) since Z_MAX cancels). Using
-             * dz_eff_col[i] alone here would evaluate the vertical mimetic
-             * derivatives at this x-face with the wrong (single-column)
-             * grid spacing whenever the surface is sloped between i-1,i. */
-            const float dz_effective = 0.5f * (dz_eff_col[i-1] + dz_eff_col[i]);
-
-            for (int j = 0; j < nz; j++) {
-                const float nj = (float)(nz - j);
-
-                float dpx_raw = has4x
-                    ? (-p[idx_RR + j] + 27.0f * p[idx_R + j] - 27.0f * p[idx_L + j] + p[idx_LL + j]) * inv24dx
-                    : (p[idx_R + j] - p[idx_L + j]) * inv_dx;
-                    
-                psi_vx_x[idx_vx_base + j] = bx * psi_vx_x[idx_vx_base + j] + cx * dpx_raw;
-                float dpx = ikx * dpx_raw + psi_vx_x[idx_vx_base + j];
-
-                /* MIMETIC METRIC CORRECTION: exact Castillo-Grone/SBP-42
-                 * (Mattsson-Nordström) diagonal-norm boundary closure for
-                 * the cross-derivative dp/dj on the face, normalised with
-                 * the (face-averaged) effective dz -- see the extensive
-                 * explanation/derivation in the header of this file. */
-                float dpdj = sbp42_dj_avg(&p[idx_L], &p[idx_R], j, nz, dz_effective);
-
-                /* Mimetic vertical advection term for ALE: dvx/dj.
-                 * Computed first on the left and right cell face itself
-                 * and then averaged at the cell centre, so that mimetic
-                 * commutativity is preserved and odd-even grid noise is
-                 * suppressed (same dz_effective normalisation as dpdj
-                 * above and as dvx_dj in the pressure update further on).
-                 * Exact Castillo-Grone/SBP-42 boundary closure, see dpdj
-                 * above and the header of this file. */
-                const int idx_vx  = i * nz;       /* left cell face (column i)   */
-                const int idx_vx1 = (i + 1) * nz; /* right cell face (column i+1)*/
-
-                float dvx_dj_left  = sbp42_dj(&vx[idx_vx],  j, nz, dz_effective);
-                float dvx_dj_right = sbp42_dj(&vx[idx_vx1], j, nz, dz_effective);
-
-                // 3. Only now take the average at the cell centre
-                float dvx_dj = 0.5f * (dvx_dj_left + dvx_dj_right);
-
-                const float one_minus_eta = (nz - j - 0.5f) / (float)nz;
-                vx[idx_vx_base + j] = vx[idx_vx_base + j] - dx * rox[i * n1 + j] * (dpx - dzsdx_f * one_minus_eta * dpdj) + ale_f * nj * dvx_dj;
-            }
-        }
-
-        for (int j = 0; j < nz; j++) { vx[j] = 0.0f; vx[nx * nz + j] = 0.0f; }
-
-        /* ----------------------------------------------------------------
-         * vz update
-         * ---------------------------------------------------------------- */
-            for (int i = mod.ioZx - bnd.npml; i < mod.ieZx + bnd.npml; i++) {
-                const float inv_H_i = 1.0f / H_col[i];
-                const float inv24dze = 1.0f / (24.0f * dz_eff_col[i]);
-                const float inv_dze = 1.0f / dz_eff_col[i];
-                const float ale_i = dzsdt_col[i] * inv_H_i * dt;
-                const int idx_p_base = i * nz;
-                const int idx_vz_base = i * (nz + 1);
-                for (int j = 0; j < nz; j++) {
-                    const float nj = (float)(nz - j);
-                    float pB = p[idx_p_base + j];
-                    float pT = (j >= 1) ? p[idx_p_base + j - 1] : -pB;
-                    float pTT = (j >= 2) ? p[idx_p_base + j - 2] : (j == 1) ? -pB : -p[idx_p_base + j];
-                    float pBB = (j <= nz-2) ? p[idx_p_base + j + 1] : pB;
-                    /* At j=0 the vz node sits exactly on the (moving) free
-                     * surface, one half cell above the first pressure node
-                     * p[0]. The interior/near-boundary dp/dz stencils above
-                     * are only used for j>=1; for j=0 we instead use a
-                     * genuine one-sided, 2nd-order accurate EXTRAPOLATED
-                     * derivative estimate at the true surface location,
-                     * built purely from the free (unconstrained) pressure
-                     * values p0,p1,p2 -- i.e. it does NOT assume p=0 at the
-                     * boundary. This replaces the previous antisymmetric
-                     * "mirror" ghost-point construction (pT=pTT=-p0), which
-                     * silently hard-baked the p=0 condition into this
-                     * stencil, decoupling it from the actual (extrapolated)
-                     * enforcement point used below. See the file header/
-                     * derivation notes near sbp42_dj() for the coefficients:
-                     *   p'(0) = (-2 p0 + 3 p1 - p2)/dz + O(dz^2)          */
-                    float dpdz_raw;
-                    if (j == 0) {
-                        dpdz_raw = (-2.0f*p[idx_p_base+0] + 3.0f*p[idx_p_base+1] - p[idx_p_base+2]) * inv_dze;
-                    } else {
-                        dpdz_raw = (j <= nz-2) ? (-pBB + 27.0f * pB - 27.0f * pT + pTT) * inv24dze : (pB - pT) * inv_dze;
-                    }
-
-                    psi_vz_z[idx_vz_base + j] = b_zf[j] * psi_vz_z[idx_vz_base + j] + c_zf[j] * dpdz_raw;
-
-                    float dpdz = ik_zf[j] * dpdz_raw + psi_vz_z[idx_vz_base + j];
-
-                    /* Mimetic vertical advection term for ALE: dvz/dj.
-                     * Exact Castillo-Grone/SBP-42 boundary closure (see
-                     * dpdj in the vx update above and the header of this
-                     * file), normalised with dz_eff_col[i] -- consistent
-                     * with dpdj (vx update) and dvx_dj (p update).
-                     * The vz column has nz+1 valid nodes (vz[idx_vz_base+nz]
-                     * is the fixed rigid bottom boundary, always 0), so the
-                     * domain for the SBP closure here is nz+1 instead of nz:
-                     * the boundary rows j=nz-1..nz-3 "see" this fixed zero
-                     * value as the lowest domain point, just as the
-                     * free-surface boundary at j=0 sees the p=0 condition. */
-                    float dvz_dj = sbp42_dj(&vz[idx_vz_base], j, nz + 1, dz_eff_col[i]);
-
-                    vz[idx_vz_base + j] = vz[idx_vz_base + j] - dx * roz[i * n1 + j] * dpdz + ale_i * nj * dvz_dj;
-
-                }
-                vz[idx_vz_base + nz] = 0.0f;
-            }
-
-        /* ----------------------------------------------------------------
-         * pressure update (Full Mimetic Staggered Cross-Term Metric)
-         * ---------------------------------------------------------------- */
-        const float t_whole = (float)it * dt;
-
-        for (int i = 0; i < nx; i++) {
-            surf_z[i]         = surf_height(i, t_whole, dx, two_pi_lam, surf);
-            /* Numerical (central-difference) time derivative, see the
-             * t_half loop above for the rationale. */
-            dzsdt_col[i]      = (surf_height(i, t_whole + dt_half, dx, two_pi_lam, surf)
-                                - surf_height(i, t_whole - dt_half, dx, two_pi_lam, surf)) / dt;
-            H_col[i]          = Z_MAX - surf_z[i];
-            dz_eff_col[i]     = H_col[i] * (1.0f / (float)nz);
-        }
-        remap_ale_material(l2m_reference, l2m, surf_z, dz_eff_col, nx, nz,
-                           mod.ioPz, 0, 0.0f, 0.5f, dz, mod.z0);
-
-        for (int i = mod.ioPx - bnd.npml; i < mod.iePx + bnd.npml; i++) {
-            const float inv_H_i = 1.0f / H_col[i];
-            const float inv24dze = 1.0f / (24.0f * dz_eff_col[i]);
-            const float inv_dze = 1.0f / dz_eff_col[i];
-            const float ale_i = dzsdt_col[i] * inv_H_i * dt;
-            const float dzsdx_c = (i >= 2 && i <= nx-3)
-                                  ? (surf_z[i-2] - 8.0f*surf_z[i-1] + 8.0f*surf_z[i+1] - surf_z[i+2]) * (1.0f / (12.0f*dx))
-                                  : (i == 0)
-                                  ? (surf_z[1] - surf_z[0]) * inv_dx
-                                  : (i == nx-1)
-                                  ? (surf_z[nx-1] - surf_z[nx-2]) * inv_dx
-                                  : (surf_z[i+1] - surf_z[i-1]) * (0.5f * inv_dx);
-            const int has4xi = (i >= 1 && i <= nx-2);
-            const int idx_vx = i * nz;
-            const int idx_vx1 = (i + 1) * nz;
-            const int idx_vx_m = has4xi ? (i - 1) * nz : idx_vx;
-            const int idx_vx2 = has4xi ? (i + 2) * nz : idx_vx1;
-            const int idx_vz = i * (nz + 1);
-            const int idx_p_base = i * nz;
-            const float bxc = b_xc[i], cxc = c_xc[i], ikxc = ik_xc[i];
-            const float dz_effective = dz_eff_col[i];
-
-            for (int j = 0; j < nz; j++) {
-                const float nj = (float)(nz - j);
-                float dvx_dx_raw = has4xi ? (-vx[idx_vx2 + j] + 27.0f * vx[idx_vx1 + j] - 27.0f * vx[idx_vx + j] + vx[idx_vx_m + j]) * inv24dx : (vx[idx_vx1 + j] - vx[idx_vx + j]) * inv_dx;
-                psi_p_x[idx_p_base + j] = bxc * psi_p_x[idx_p_base + j] + cxc * dvx_dx_raw;
-                float dvx_dx = ikxc * dvx_dx_raw + psi_p_x[idx_p_base + j];
-                float vzT = vz[idx_vz + j], vzB = vz[idx_vz + j + 1];
-                float vzTT = (j >= 1) ? vz[idx_vz + j - 1] : vzT;
-                float vzBB = (j <= nz-2) ? vz[idx_vz + j + 2] : vzB;
-                float dvz_dz_raw = (j >= 1 && j <= nz-2) ? (-vzBB + 27.0f * vzB - 27.0f * vzT + vzTT) * inv24dze : (vzB - vzT) * inv_dze; psi_p_z[idx_p_base + j] = b_zc[j] * psi_p_z[idx_p_base + j] + c_zc[j] * dvz_dz_raw;
-                float dvz_dz = ik_zc[j] * dvz_dz_raw + psi_p_z[idx_p_base + j];
-
-                /* EXACT STAGGERED CROSS-TERM METRIC: dvx/dj, exact
-                 * Castillo-Grone/SBP-42 boundary closure (see dpdj in the
-                 * vx update for the derivation), averaged between the left
-                 * (idx_vx) and right (idx_vx1) x-face, normalised with
-                 * dz_effective. */
-                float dvx_dj = sbp42_dj_avg(&vx[idx_vx], &vx[idx_vx1], j, nz, dz_effective);
-
-                /* Mimetic vertical pressure gradient for advection: dp/dj.
-                 * Same exact SBP-42 stencils + dz_effective normalisation
-                 * as dpdj (vx update) and dvx_dj (above). */
-                float dp_dj = sbp42_dj(&p[idx_p_base], j, nz, dz_effective);
-
-                const float one_minus_eta = (nz - j - 0.5f) / (float)nz;
-                p_new[idx_p_base + j] = p[idx_p_base + j] - dx * l2m[i * n1 + j] * (dvx_dx - dzsdx_c * one_minus_eta * dvx_dj + dvz_dz) + ale_i * nj * dp_dj;
-            }
-        }
-
-        /* Free-surface boundary condition, applied at the true (moving)
-         * surface location. p[0] itself sits half a cell BELOW the actual
-         * free surface (the vz[i*(nz+1)] node is exactly on it -- see the
-         * staggering discussion in the vz update above), so simply setting
-         * p[0]=0 (as older, naive strong-BC schemes do) enforces p=0 at the
-         * wrong point. Instead, enforce p=0 at the true surface using the
-         * 2nd-order accurate one-sided EXTRAPOLATED estimate
-         *   p_face = (15 p0 - 10 p1 + 3 p2) / 8 ,
-         * solved for p0 that makes p_face vanish exactly:
-         *   p0 = (10 p1 - 3 p2) / 15 .
-         * This keeps the same unconditionally-stable strong-reset character
-         * as the original scheme (no extra CFL-type restriction is
-         * introduced), while correcting the systematic geometric error of
-         * clamping the wrong node. An earlier attempt at a genuine SAT-type
-         * weak/penalty enforcement of this same p_face=0 condition was
-         * tried and rejected: at full (characteristic-speed) penalty
-         * strength it destabilised the surf_vrate=140 case (blow-up before
-         * completion), and at a reduced, empirically-stabilised strength it
-         * reproduced results statistically indistinguishable from this
-         * strong reset -- i.e. it added complexity and a tuning parameter
-         * without measurable benefit, so the simpler strong, geometrically
-         * corrected reset is used here instead. p1, p2 use the values
-         * already updated above (this loop runs after the full spatial
-         * update), so this is applied once per column, after all j. */
-        for (int i = 0; i < nx; i++) {
-            const int idx_p_base = i * nz;
-            p_new[idx_p_base + 0] = (10.0f * p_new[idx_p_base + 1] - 3.0f * p_new[idx_p_base + 2]) * (1.0f / 15.0f);
-        }
-
-        /*
-        int izs = (int)ceil(zsrc / dz_eff_col[ixs]);
-
-        double z4 = (izs - 1) * dz_eff_col[ixs-1];
-        double z3 = (izs - 1) * dz_eff_col[ixs];
-        double z2 = izs * dz_eff_col[ixs-1];
-        double z1 = izs * dz_eff_col[ixs];
-
-        double z_bot = u_one_minus * z4 + u * z3;
-        double z_top = u_one_minus * z2 + u * z1;
-        */
-
-       /* --- Inject at the fixed physical source position using bilinear weights. ---
-        * Each pressure node is half a local cell below the free surface:
-        * z(i,j) = surf_z[i] + (j + 0.5) * dz_eff_col[i]. Interpolate that
-        * mapping across x before finding the two pressure rows around zsrc. */
-        const double surf_x = u_one_minus * surf_z[ixs-1] + u * surf_z[ixs];
-        if (zsrc >= surf_x) { // only inject when surface is above source 
-            const double dz_x = u_one_minus * dz_eff_col[ixs-1] + u * dz_eff_col[ixs];
-            int izs = (int)ceil((zsrc - surf_x) / dz_x - 0.5);
-            double z_bot = surf_x + (izs - 0.5) * dz_x;
-            double z_top = surf_x + (izs + 0.5) * dz_x;
-            double cell_height = z_top - z_bot;
-            double v_frac = 0.0;
-
-            if (cell_height > 0.1*dz) {
-                v_frac = (zsrc - z_bot) / cell_height;
-                v_frac = (v_frac < 0.0) ? 0.0 : ((v_frac > 1.0) ? 1.0 : v_frac);
-            }
-            double v_one_minus = 1.0 - v_frac;
-            double W1 = u * v_frac;
-            double W2 = u_one_minus * v_frac;
-            double W3 = u * v_one_minus;
-            double W4 = u_one_minus * v_one_minus;
-
-            const float src_amp = src_nwav[0][it];
-
-            /* Bilinear injection onto the four surrounding grid points. W1..W4
-            * sum to 1 by construction, so the total source energy remains
-            * constant regardless of the local ALE cell geometry (do not
-            * apply a Jacobian scaling -- that breaks the weight sum and does
-            * not solve the artefacts, see the izs/v_frac fix above). */
-            p_new[(ixs )*nz + izs] += W1 * src_amp;
-            p_new[(ixs-1)*nz + izs] += W2 * src_amp;
-            p_new[(ixs )*nz + izs-1] += W3 * src_amp;
-            p_new[(ixs-1)*nz + izs-1] += W4 * src_amp;
-        }
-
-
-       /* ====================================================================
-         * 3. MIMETIC KREISS-OLIGER DISSIPATION (DISPERSION FILTER)
-         * ==================================================================== */
-        /* This filter only damps the numerical 2*dz grid decoupling
-         * just below the moving surface (j = 2 to j = 7). */
-        for (int i = mod.ioPx - bnd.npml; i < mod.iePx + bnd.npml; i++) {
-            if (i < 0 || i >= nx) continue;
-
-            const int idx_p_base = i * nz;
-            const float epsilon = 0.025f; // Filter strength (1.5% damping of pure grid noise)
-            //const float epsilon = 0.005f; // Filter strength (0.5% damping of pure grid noise)
-
-            for (int j = 2; j < 8; j++) {
-                if (j + 2 >= nz) continue;
-
-                // Compute the discrete 4th-order vertical derivative (d4p/dj4)
-                float p_jm2 = p[idx_p_base + j - 2];
-                float p_jm1 = p[idx_p_base + j - 1];
-                float p_jc  = p[idx_p_base + j];
-                float p_jp1 = p[idx_p_base + j + 1];
-                float p_jp2 = p[idx_p_base + j + 2];
-
-                float d4p_dj4 = p_jp2 - 4.0f * p_jp1 + 6.0f * p_jc - 4.0f * p_jm1 + p_jm2;
-
-                // Subtract the harmful high-frequency component from the new pressure.
-                //   The factor (-1)^(r/2 + 1) for r=4 is negative, so we subtract it.
-                p_new[idx_p_base + j] -= epsilon * d4p_dj4;
-            }
-        }
-/* Free-surface boundary condition now enforced as a strong (Dirichlet)
-         * reset at the geometrically correct extrapolated surface location;
-         * see the comment block right after the p-update loop above for
-         * the derivation and the rationale for preferring it over a weak
-         * SAT-type penalty (which was tried and found to either
-         * destabilise the fast-moving-surface case or, once detuned for
-         * stability, add nothing measurable). */
-
-        /* --- swap pressure buffers --- */
-        { float *tmp = p; p = p_new; p_new = tmp; }
-
-        /* --- diagnostics --- */
-        if (it % 100 == 0 && verbose) {
-            printf("Time step: %d | Model pressure centre: %g\n", it, p[(nx/2)*nz + J_SRC]);
-            fflush(stdout);
-        }
-/* --- receiver gather: sample fields at the configured Cartesian coordinates --- */
-        if ( (((it-rec.delay) % rec.skipdt)==0) && (it >= rec.delay) ) {
-            int isam = (it-rec.delay+NINT(mod.t0/mod.dt))/rec.skipdt+1;
-
-            if (rec.type.p){
-                for (int irec = 0; irec < rec.n; irec++) {
-                    ix = rec.x[irec]+mod.ioPx;
-                    float z_rec = mod.z0 + rec.zr[irec];
-                    float val;
-                    if (z_rec < surf_z[ix]) {
-                        val = 0.0f;
-                    } else {
-                        const float *pi = p + ix*nz;
-                        float jf = (z_rec - surf_z[ix]) / dz_eff_col[ix] - 0.5f;
-                        int   j0 = (int)jf;
-                        float fr = jf - (float)j0;
-                        val = pi[j0] * (1.0f - fr) + pi[j0+1] * fr;
-                    }
-                    rec_p[irec*rec.nt + isam] = val;
-                }
-            }
-            if (rec.type.vz){
-                for (int irec = 0; irec < rec.n; irec++) {
-                    ix = rec.x[irec]+mod.ioZx;
-                    float z_rec = mod.z0 + rec.zr[irec];
-                    float val;
-                    if (z_rec < surf_z[ix]) {
-                        val = 0.0f;
-                    } else {
-                        const float *vzi = vz + ix*(nz+1);
-                        float jf = (z_rec - surf_z[ix]) / dz_eff_col[ix];
-                        int   j0 = (int)jf;
-                        float fr = jf - (float)j0;
-                        val = vzi[j0] * (1.0f - fr) + vzi[j0+1] * fr;
-                    }
-                    rec_vz[irec*rec.nt + isam] = val;
-                }
-            }
-            if (rec.type.vx){
-                for (int irec = 0; irec < rec.n; irec++) {
-
-                    ix = rec.x[irec]+mod.ioXx;
-                    float z_rec = mod.z0 + rec.zr[irec];
-                    float val;
-                    if (z_rec < surf_z[ix]) {
-                        val = 0.0f;
-                    } else {
-                        const float *vxi = vx + ix*nz;
-                        float jf = (z_rec - surf_z[ix]) / dz_eff_col[ix] - 0.5f;
-                        int   j0 = (int)jf;
-                        float fr = jf - (float)j0;
-                        val = vxi[j0] * (1.0f - fr) + vxi[j0+1] * fr;
-                    }
-                    rec_vx[irec*rec.nt + isam] = val;
-                }
-            }
-        }
-
-        /* ====================================================================
-         * DIAGNOSTIC SNAPSHOT: write the raw computational grid without interpolation
-         * ==================================================================== */
-        if (sna.nsnap) {
-            writeSnapALE(mod, sna, bnd, wav, xsrc, zsrc, it, vx, vz, p, surf_z, dz_eff_col, verbose);
-        }
-
-        /*
-        if (it % 10 == 0) {
-            char fname_snap[64];
-            snprintf(fname_snap, sizeof(fname_snap), "snapshot_raw_%06d.bin", it);
-            write_snapshot(fname_snap, p, pcnt);
-        }
-        */
-
-        /* --- snapshot: remap computational → Cartesian, write binary --- */
-        /*
-        if (it % 10 == 0) {
-            for (int i = 0; i < nx; i++)
-                map_to_cartesian(p, p_cart, surf_z, dz_eff_col, i, nz, dz);
-            char fname[64];
-            snprintf(fname, sizeof(fname), "snapshot_%06d.bin", it);
-            if (write_snapshot(fname, p_cart, pcnt) != 0)
-                fprintf(stderr, "write failed: %s\n", fname);
-        }
-        */
-
-/* --- finalise and write out --- */
-    }
-
-    free(p_new);
-    free(psi_vx_x); free(psi_vz_z); free(psi_p_x); free(psi_p_z);
-    free(p_cart);
-    free(surf_z); free(dzsdt_col); free(H_col); free(dz_eff_col);
-    free(rox_reference); free(roz_reference); free(l2m_reference);
-
-    free(b_xf); free(c_xf); free(ik_xf);
-    free(b_xc); free(c_xc); free(ik_xc);
-    free(b_zf); free(c_zf); free(ik_zf);
-    free(b_zc); free(c_zc); free(ik_zc);
-
+    free(reference); free(g.surface); free(g.speed); free(g.cell);
+    free(g.damping); free(g.sx); free(g.sz); free(q); free(stage); free(rhs);
+    (void)roz; (void)itime;
     return 0;
-}
-
-
-/**
-*  Writes gridded wavefield(s) at a desired time to output file(s) 
-*
-*   AUTHOR:
-*           Jan Thorbecke (janth@xs4all.nl)
-*           The Netherlands 
-**/
-
-int map_to_cartesian(float *p, float *cart, float *surf_z, float *dz_eff_col, int ix, int nz, float dz)
-{
-    const float zs      = surf_z[ix];
-    const float inv_dze = 1.0f / dz_eff_col[ix];
-    const float *pi     = p + ix*nz;
-    float       *pc     = cart + ix*nz;
-    for (int j_c = 0; j_c < nz; j_c++) {
-        float z_c = (j_c + 0.5f) * dz;
-        if (z_c < zs) {
-            pc[j_c] = 0.0f;
-        } else if (z_c < zs + 0.5f * dz_eff_col[ix]) {
-            pc[j_c] = pi[0] * (2.0f * (z_c - zs) * inv_dze);
-        } else {
-            float jf = (z_c - zs) * inv_dze - 0.5f;
-            if (jf >= nz-1) {
-                pc[j_c] = pi[nz-1];
-            } else {
-                int j0 = (int)jf;
-                int first = (j0 == 0) ? 0 : j0 - 1;
-                if (first > nz - 4) first = nz - 4;
-                float t = jf - first;
-                float t2 = t * t;
-                float t3 = t2 * t;
-                float w0 = -(t3 - 6.0f*t2 + 11.0f*t - 6.0f) * (1.0f / 6.0f);
-                float w1 =  (t3 - 5.0f*t2 +  6.0f*t) * 0.5f;
-                float w2 = -(t3 - 4.0f*t2 +  3.0f*t) * 0.5f;
-                float w3 =  (t3 - 3.0f*t2 +  2.0f*t) * (1.0f / 6.0f);
-                pc[j_c] = w0*pi[first] + w1*pi[first+1]
-                        + w2*pi[first+2] + w3*pi[first+3];
-            }
-        }
-        /* optional plot surface on top of snapshot */
-        int jz = (int)((zs) / dz - 0.5f);
-        pc[jz] = 1.0;
-    }
-    return 0;
-}
-
-int writeSnapALE(modPar mod, snaPar sna, bndPar bnd, wavPar wav, float xsrc, float zsrc, int itime, float *vx, float *vz, float *p, float *surf_z, float *dz_eff_col, int verbose)
-{
-	FILE *fpvx, *fpvz, *fpp, *fpdxvx, *fpdzvz;
-	int append, isnap, nz;
-	static int first=1;
-	int n1, ibndx, ibndz, ixs, izs, ize, i, j;
-    long long offset;
-	int ix, iz, ix2;
-	float *snap, sdx, stime, dz, c1, c2;
-	segy hdr;
-
-    c1 = 9.0/8.0;
-    c2 = -1.0/24.0;
-    nz = mod.naz;
-    dz = mod.dz;
-
-	if (sna.nsnap==0) return 0;
-
-    ibndx = mod.ioXx;
-    ibndz = mod.ioXz;
-	n1    = mod.naz;
-	sdx   = 1.0/mod.dx;
-
-	if (sna.withbnd) {
-		sna.nz=mod.naz;
-		sna.z1=0;
-		sna.z2=mod.naz-1;
-		sna.skipdz=1;
-
-		sna.nx=mod.nax;
-		sna.x1=0;
-		sna.x2=mod.nax-1;
-		sna.skipdx=1;
-	}
-
-	/* check if this itime is a desired snapshot time */
-	if ( (((itime-sna.delay) % sna.skipdt)==0) && 
-		  (itime >= sna.delay) &&
-		  (itime <= sna.delay+(sna.nsnap-1)*sna.skipdt) ) {
-
-		isnap = NINT((itime-sna.delay)/sna.skipdt);
-
-        if (mod.grid_dir) stime = (-wav.nt+1+itime+1)*mod.dt;  /* reverse time modeling */
-        else  stime = itime*mod.dt;
-		if (verbose>1) vmess("Writing snapshot(%d) at time=%.4f", isnap+1, stime+sna.t0);
-	
-		if (first) {
-			append=0;
-			first=0;
-		}
-		else {
-			append=1;
-		}
-
-		if (sna.type.vx)  fpvx  = fileOpen(sna.file_snap, "_svx", append);
-		if (sna.type.vz)  fpvz  = fileOpen(sna.file_snap, "_svz", append);
-		if (sna.type.p)   fpp   = fileOpen(sna.file_snap, "_sp", append);
-		if (sna.type.dxvx)fpdxvx  = fileOpen(sna.file_snap, "_sdxvx", append);
-		if (sna.type.dzvz)fpdzvz  = fileOpen(sna.file_snap, "_sdzvz", append);
-	
-		memset(&hdr,0,TRCBYTES);
-		hdr.dt     = 1000000*(sna.skipdt*mod.dt);
-		hdr.ungpow  = (sna.delay*mod.dt);
-		hdr.scalco = -1000;
-		hdr.scalel = -1000;
-		hdr.sx     = 1000*(mod.x0+xsrc);
-		hdr.sdepth = 1000*(mod.z0+zsrc);
-		hdr.fldr   = isnap+1;
-		hdr.trid   = 1;
-		hdr.ns     = sna.nz;
-		hdr.trwf   = sna.nx;
-		hdr.ntr    = (isnap+1)*sna.nx;
-		hdr.f1     = sna.z1*mod.dz+mod.z0;
-		hdr.f2     = sna.x1*mod.dx+mod.x0;
-		hdr.d1     = mod.dz*sna.skipdz;
-		hdr.d2     = mod.dx*sna.skipdx;
-		if (sna.withbnd) {
-        	if ( !ISODD(bnd.top)) hdr.f1 = mod.z0 - bnd.npml*mod.dz;
-        	if ( !ISODD(bnd.lef)) hdr.f2 = mod.x0 - bnd.npml*mod.dx;
-		}
-
-/***********************************************************************
-* vx velocities have one sample less in x-direction
-* vz velocities have one sample less in z-direction
-***********************************************************************/
-
-		snap = (float *)malloc((sna.nz+1)*sizeof(float));
-        const size_t pcnt  = (size_t)(mod.nax+1) * (mod.naz+1);
-        float *cart = malloc(pcnt * sizeof(float));
-
-		/* Decimate, with skipdx and skipdz, the number of gridpoints written to file 
-		   and write to file. */
-		for (ixs=sna.x1, i=0; ixs<=sna.x2; ixs+=sna.skipdx, i++) {
-			hdr.tracf  = i+1;
-			hdr.tracl  = isnap*sna.nx+i+1;
-			hdr.gx     = 1000*(mod.x0+ixs*mod.dx);
-			ix = ixs+ibndx;
-			ix2 = ix+1;
-
-			izs = sna.z1+ibndz;
-			ize = sna.z2+ibndz;
-
-			if (sna.withbnd) {
-				izs = 0;
-				ize = sna.z2;
-				ix = ixs;
-				ix2 = ix;
-				if (sna.type.vz || sna.type.txz) izs = -1;
-                else izs = 0;
-        		if ( !ISODD(bnd.lef)) hdr.gx = 1000*(mod.x0 - bnd.npml*mod.dx);
-			}
-
-			if (sna.type.vx) {
-				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
-					snap[j] = vx[ix2*n1+iz];
-				}
-				traceWrite(&hdr, snap, sna.nz, offset, fpvx);
-			}
-			if (sna.type.vz) {
-			    if (sna.withbnd) izs = -1;
-				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
-					snap[j] = vz[ix*n1+iz+1];
-				}
-				traceWrite(&hdr, snap, sna.nz, offset, fpvz);
-			    if (sna.withbnd) izs = 0;
-			}
-			if (sna.type.p) {
-                map_to_cartesian(p, cart, surf_z, dz_eff_col, ix, nz, dz);
-				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
-					snap[j] = cart[ix*n1+iz];
-				}
-				traceWrite(&hdr, snap, sna.nz, offset, fpp);
-			}
-            if (sna.type.dxvx) {
-				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
-                    snap[j] = sdx*(c1*(vx[(ix+1)*n1+iz] - vx[ix*n1+iz]) +
-                       c2*(vx[(ix+2)*n1+iz] - vx[(ix-1)*n1+iz]));
-                }
-				traceWrite(&hdr, snap, sna.nz, offset, fpdxvx);
-            }
-            if (sna.type.dzvz) {
-				for (iz=izs, j=0; iz<=ize; iz+=sna.skipdz, j++) {
-                    snap[j] = sdx*(c1*(vz[ix*n1+iz+1]   - vz[ix*n1+iz]) +
-                       c2*(vz[ix*n1+iz+2]   - vz[ix*n1+iz-1]));
-                }
-				traceWrite(&hdr, snap, sna.nz, offset, fpdzvz);
-            }
-
-		}
-
-		if (sna.type.vx) fclose(fpvx);
-		if (sna.type.vz) fclose(fpvz);
-		if (sna.type.p) fclose(fpp);
-		if (sna.type.dxvx) fclose(fpdxvx);
-		if (sna.type.dzvz) fclose(fpdzvz);
-
-		free(snap);
-        free(cart);
-	}
-
-	return 0;
 }

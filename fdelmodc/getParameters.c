@@ -259,7 +259,9 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         if (mod->ischeme == 3) vmess("Elastic staggered grid, stress/velocity");
         if (mod->ischeme == 4) vmess("Visco-Elastic staggered grid, stress/velocity");
         if (mod->ischeme == 5) vmess("Acoustic staggered grid, Txx/Tzz/velocity");
-        if (mod->ischeme == -2) vmess("Acoustic ALE grid with moving free surface");
+        if (mod->ischeme == -2) vmess("Moving-surface finite-volume acoustics (SSPRK3)");
+        if (mod->ischeme == -3) vmess("Acoustic full-depth ALE with coupled RK4");
+        if (mod->ischeme == -4) vmess("Acoustic ALE with interpolation");
         if (mod->grid_dir) vmess("Time reversed modelling");
         else vmess("Forward modelling");
         vmess("*******************************************");
@@ -304,18 +306,25 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
 //        vmess("Hence, for acceptable grid-dispersion the maximum");
         vmess("The maximum frequency in source wavelet must be:");
         vmess(" ====> frequency < %f Hz. [Cmin/dx*disp]", cmin/(dx*dispfactor));
-        vmess("Stability criterion for current settings: ");
-        vmess(" ====> Cp < %f m/s [dx*disp/dt]", dx*stabfactor/dt);
+        if (mod->ischeme == -2) {
+            vmess("FV stability uses internal multidimensional CFL substeps, not output dt.");
+            vmess("The FD dispersion estimate above is only indicative for limited finite volumes;");
+            vmess("use spatial refinement to assess finite-volume numerical diffusion.");
+        } else {
+            vmess("Stability criterion for current settings: ");
+            vmess(" ====> Cp < %f m/s [dx*disp/dt]", dx*stabfactor/dt);
+        }
 //        vmess("With dt = %f  maximum velocity = %f",dt, dx*stabfactor/dt);
         if (wav->file_src != NULL) vmess(" For wavelet(s) in file_src fmax = %f", fmax);
         vmess("Optimal discretisation for current model:");
-        vmess(" With maximum velocity  = %f dt <= %e", cp_max,(double)dx*stabfactor/cp_max);
+        if (mod->ischeme != -2)
+            vmess(" With maximum velocity  = %f dt <= %e", cp_max,(double)dx*stabfactor/cp_max);
         vmess(" With maximum frequency = %f dx <= %e", wav->fmax, (double)cmin/(wav->fmax*dispfactor));
     }
 
     /* Check stability and dispersion setting */
 
-    if (cp_max > (dx*stabfactor)/dt) {
+    if (mod->ischeme != -2 && cp_max > (dx*stabfactor)/dt) {
         vwarn("************ ! Stability ! ****************");
         vwarn("From the input file maximum P-wave velocity");
         vwarn("in the current model is %f !!", cp_max);
@@ -336,38 +345,22 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
         if (!disable_check) verr("********* leaving program *********");
     }
 
-    /* Extra (heuristic) stability check for the moving-surface schemes
-     * (ischeme=-2/-3). Besides the wave Courant number, mesh motion adds an
-     * advection term. The full ALE scheme tapers mesh velocity linearly to
-     * zero at the bottom; the hybrid scheme uses its smooth depth taper and
-     * estimates the minimum spacing from the maximum surface displacement.
-     * The combined Courant estimate uses (cp_max + max|mesh velocity|).
-     * Extra (heuristic) stability check for the moving-surface schemes
-     * (ischeme=-2/-3). Besides the wave Courant number, mesh motion adds an
-     * advection term. The full ALE scheme tapers mesh velocity linearly to
-     * zero at the bottom; the hybrid scheme uses its smooth depth taper and
-     * estimates the minimum spacing from the maximum surface displacement.
-     * The combined Courant estimate uses (cp_max + max|mesh velocity|).
-     * NOTE: this bound is a heuristic (sum-of-characteristic-speeds)
-     * estimate, not an exact analytic limit for this scheme: the
-     * Kreiss-Oliger dissipation filter provides some extra margin, so a
-     * mild excess above the classic stabfactor may still run without
-     * visible artefacts, but growing excess increases the risk of grid-scale
-     * noise near the free surface (as observed empirically for large
-     * surf_vrate). This check therefore only warns; it never aborts the run. */
-    if (mod->ischeme == -2) {
-        //float surf_z0, surf_amp, surf_om, surf_vrate;
-        float w_max, z_top_worst, H_min, dz_eff_min, courant_ale;
- 
+    /* Surface parameters are shared; the FV solver (-2) enforces its own
+     * multidimensional CFL bound with internal substeps. */
+    if (mod->ischeme <= -2) {
         if (!getparint("surf_type",&surf->type)) surf->type=1;
         if (!getparfloat("surf_z0",&surf->z0))     surf->z0=500.0;
         if (!getparfloat("surf_amp",&surf->amp))   surf->amp=50.0;
         if (!getparfloat("surf_lambda",&surf->lambda)) surf->lambda=800.0;
-        if (!getparfloat("surf_om",&surf->om))     surf->om=0.5;
+        if (!getparfloat("surf_om",&surf->om) &&
+            !getparfloat("surf_omega",&surf->om)) surf->om=0.5;
         if (!getparfloat("surf_vrate",&surf->vrate)) surf->vrate=80.0;
         if (!getparfloat("surf_hrate",&surf->hrate)) surf->hrate=0.0;
+    }
 
-        /* worst-case mesh (surface) velocity magnitude over the whole run */
+    if (mod->ischeme <= -3) {
+        /* Legacy RK4 heuristic, not an exact stability bound. */
+        float w_max, z_top_worst, H_min, dz_eff_min, courant_ale;
         w_max = fabsf(surf->vrate) + fabsf(surf->amp)
               * fabsf(surf->om + (2.0f * (float)M_PI * surf->hrate / surf->lambda));
 
@@ -401,13 +394,12 @@ int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *sr
                 vwarn("*********** ! ALE Stability (heuristic) ! **");
                 vwarn("Moving free-surface mesh-advection term combined with");
                 vwarn("wave propagation gives Courant number %.4f > indicative limit %.4f.", courant_ale, stabfactor);
-                vwarn("This does not necessarily blow up (Kreiss-Oliger filtering");
-                vwarn("adds margin), but grid-scale noise near the free surface");
-                vwarn("becomes more likely as this number grows (inspect snapshots!).");
+                vwarn("This estimate is not a stability guarantee for the complete");
+                vwarn("ALE operator. Inspect wavefield amplitudes and snapshots.");
                 vwarn("Hence, consider lowering the surface mesh velocity below %.3f m/s,",
                       MAX(0.0f, stabfactor*dz_eff_min/dt - cp_max));
                 vwarn("    or adjust dt <= %e,", stabfactor*dz_eff_min/(cp_max+w_max));
-                vwarn("    or use a finer grid (smaller dz, larger nz) so dz_eff >= %.5f m.",
+                vwarn("    or increase the minimum physical spacing so dz_eff >= %.5f m.",
                       dt*(cp_max+w_max)/stabfactor);
                 vwarn("***************** !!! *********************");
             }

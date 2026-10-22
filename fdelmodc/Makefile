@@ -35,6 +35,8 @@ SRCC	= $(PRG).c \
 		acoustic6.c \
 		acoustic16.c \
 		acousticALE4.c \
+		acousticALE4_alt3.c \
+		acousticALE4_intp.c \
 		viscoacoustic4.c \
 		elastic4.c \
 		elastic4dc.c \
@@ -107,6 +109,5 @@ count:
 
 tar:
 	@tar cf $(PRG).tar Makefile $(SRC) && compress $(PRG).tar
-
 
 
