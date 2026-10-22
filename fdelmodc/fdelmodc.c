@@ -110,6 +110,7 @@ char *sdoc[] = {
 "   ischeme=1 ......... 1=acoustic, 2=visco-acoustic 3=elastic, 4=visco-elastic, 5=double-couple, -2=moving-surface FV, -3=RK4-ALE -4=intp-ALE",
 "                     -2: collocated FV, impedance Riemann fluxes, SSPRK3, radiation/sponge boundaries",
 "   ale_order=2 ....... -2: limited second-order reconstruction; 1=first-order Godunov",
+"   ale_limiter=0 ..... -2, ale_order=2: 0=minmod, 1=MC, 2=van Leer (less diffusion)",
 "   ale_cfl=0.45 ...... -2: internal CFL substeps (0 < ale_cfl <= 0.45); output dt unchanged",
 "                     -2: one monopole source, full-gather rec_ntsam; see demo/moving_surface_fv.txt",
 "                     -3: coupled pressure/velocity/CPML RK4; one monopole source; P/Vx/Vz output",
