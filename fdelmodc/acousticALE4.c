@@ -35,7 +35,7 @@ typedef struct {
     modPar mod;
     surfPar surf;
     bndPar bnd;
-    int nx, nz, order, source_samples;
+    int nx, nz, order, limiter, source_samples;
     size_t count;
     double bottom, xmin, source_x, source_z, source_start, source_end;
     float *surface, *speed, *damping;
@@ -131,11 +131,23 @@ static float ale_minmod(float a, float b)
     return a*b <= 0 ? 0 : copysignf(fminf(fabsf(a),fabsf(b)),a);
 }
 
-static aleField ale_slope(aleField l, aleField c, aleField r)
+static float ale_limit(float a, float b, int limiter)
 {
-    aleField d = {ale_minmod(c.p-l.p,r.p-c.p),
-                  ale_minmod(c.x-l.x,r.x-c.x),
-                  ale_minmod(c.z-l.z,r.z-c.z)};
+    if (limiter == 0) return ale_minmod(a,b);
+    if ((a <= 0 && b >= 0) || (a >= 0 && b <= 0)) return 0;
+    float low = fminf(fabsf(a),fabsf(b));
+    float high = fmaxf(fabsf(a),fabsf(b));
+    float magnitude = limiter == 1
+        ? fminf(0.5f*low+0.5f*high,2*low)
+        : low/(0.5f+0.5f*(low/high));
+    return copysignf(magnitude,a);
+}
+
+static aleField ale_slope(aleField l, aleField c, aleField r, int limiter)
+{
+    aleField d = {ale_limit(c.p-l.p,r.p-c.p,limiter),
+                  ale_limit(c.x-l.x,r.x-c.x,limiter),
+                  ale_limit(c.z-l.z,r.z-c.z,limiter)};
     return d;
 }
 
@@ -237,9 +249,9 @@ static void ale_rhs(aleGrid *g, const aleField *q, aleField *rhs, double time)
             for (int j = 0; j < g->nz; j++) {
                 size_t k = (size_t)i*g->nz+j;
                 g->sx[k] = i > 0 && i < g->nx-1
-                    ? ale_slope(q[k-g->nz],q[k],q[k+g->nz]) : (aleField){0};
+                    ? ale_slope(q[k-g->nz],q[k],q[k+g->nz],g->limiter) : (aleField){0};
                 g->sz[k] = j > 0 && j < g->nz-1
-                    ? ale_slope(q[k-1],q[k],q[k+1]) : (aleField){0};
+                    ? ale_slope(q[k-1],q[k],q[k+1],g->limiter) : (aleField){0};
             }
     }
     for (int i = 0; i <= g->nx; i++) {
@@ -471,6 +483,9 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec,
     g.count = (size_t)g.nx*g.nz;
     g.order = 2;
     getparint("ale_order",&g.order);
+    getparint("ale_limiter",&g.limiter);
+    if (g.limiter < 0 || g.limiter > 2)
+        verr("acousticALE4: ale_limiter must be 0 (minmod), 1 (MC), or 2 (van Leer)");
     float cfl = 0.45f;
     getparfloat("ale_cfl",&cfl);
     if ((g.order != 1 && g.order != 2) || !(cfl > 0 && cfl <= 0.45f))
@@ -528,6 +543,8 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec,
     aleField *rhs = ale_alloc(g.count,sizeof(aleField));
     if (verbose) {
         vmess("Moving-surface FV acoustics: %dx%d fluid cells, MUSCL order %d, SSPRK3",g.nx,g.nz,g.order);
+        if (g.order == 2)
+            vmess("Slope limiter: %s",g.limiter == 0 ? "minmod" : g.limiter == 1 ? "MC" : "van Leer");
         vmess("Output dt=%g; %d CFL substeps of dt=%g; Cartesian material-cell integration",mod.dt,substeps,dt);
         vmess("Radiation/sponge boundaries (not CPML); pressure-free moving top");
     }
