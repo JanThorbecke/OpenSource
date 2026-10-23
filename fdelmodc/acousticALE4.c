@@ -61,9 +61,64 @@ static double ale_surface(const aleGrid *g, double x, double t)
 
 static double ale_speed(const aleGrid *g, double x, double t)
 {
-    double k = 2*M_PI/g->surf.lambda;
-    return g->surf.vrate-g->surf.amp*(k*g->surf.hrate+g->surf.om)
-         * cos(k*(x-g->surf.hrate*t)-g->surf.om*t);
+    double h = 0.5*(double)g->mod.dt;
+    if (g->mod.tmod > 0) h = fmin(h,0.5*(double)g->mod.tmod);
+    if (!(h > 0)) verr("acousticALE4: positive timestep required for surface velocity");
+    if (t < h)
+        return (-3*ale_surface(g,x,t)+4*ale_surface(g,x,t+h)
+                -ale_surface(g,x,t+2*h))/(2*h);
+    if (g->mod.tmod > 0 && t+h > g->mod.tmod)
+        return (3*ale_surface(g,x,t)-4*ale_surface(g,x,t-h)
+                +ale_surface(g,x,t-2*h))/(2*h);
+    return (ale_surface(g,x,t+h)-ale_surface(g,x,t-h))/(2*h);
+}
+
+typedef struct {
+    double minheight, maxheight, slope, speed;
+} aleBounds;
+
+static aleBounds ale_surface_bounds(const aleGrid *g, double t)
+{
+    aleBounds bounds = {DBL_MAX,0,0,0};
+    double previous = 0;
+    for (int i = 0; i <= g->nx; i++) {
+        double x = g->xmin+i*g->mod.dx;
+        double top = ale_surface(g,x,t);
+        double velocity = ale_speed(g,x,t);
+        double height = g->bottom-top;
+        if (!(height > g->mod.dz && height <= FLT_MAX &&
+              fabs(velocity) < g->mod.cp_min))
+            verr("acousticALE4: invalid surface height or non-subsonic speed at x=%g t=%g",x,t);
+        bounds.minheight = fmin(bounds.minheight,height);
+        bounds.maxheight = fmax(bounds.maxheight,height);
+        bounds.speed = fmax(bounds.speed,fabs(velocity));
+        if (i) bounds.slope = fmax(bounds.slope,fabs(top-previous)/g->mod.dx);
+        previous = top;
+    }
+    return bounds;
+}
+
+static int ale_substeps(const aleGrid *g, double time, float cfl)
+{
+    int steps = 1;
+    for (;;) {
+        double rate = 0;
+        /* Endpoints and midpoints are exactly the SSPRK3 stage times. */
+        for (int sub = 0; sub < steps; sub++)
+            for (int stage = 0; stage < 3; stage++) {
+                double t = time+(sub+0.5*stage)*(double)g->mod.dt/steps;
+                aleBounds bounds = ale_surface_bounds(g,t);
+                double spacing = bounds.minheight/g->nz;
+                double stage_rate = g->mod.cp_max*
+                    (1/g->mod.dx+hypot(1,bounds.slope)/spacing)+bounds.speed/spacing;
+                rate = fmax(rate,stage_rate);
+            }
+        double required = ceil(g->mod.dt*rate/cfl);
+        if (!(required >= 1 && required <= INT_MAX))
+            verr("acousticALE4: invalid CFL substep count at t=%g",time);
+        if (required <= steps) return steps;
+        steps = (int)required;
+    }
 }
 
 /* Integral over u in [0,1] of max(level - lerp(a,b,u),0). */
@@ -470,34 +525,21 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec,
     g.mod = mod; g.surf = surf; g.bnd = bnd; g.nx = mod.nax;
     g.xmin = mod.x0-(mod.ioPx+0.5)*mod.dx;
     g.bottom = mod.z0+(mod.naz-mod.ioPz-0.5)*mod.dz;
-    double height = g.bottom-surf.z0;
-    double minheight = height-fabs(surf.amp)-fmax(0,surf.vrate*mod.tmod);
-    double speed = fabs(surf.vrate)+fabs(surf.amp)*
-        fabs(surf.om+2*M_PI*surf.hrate/surf.lambda);
-    if (!(minheight > mod.dz) || !(height/mod.dz < INT_MAX))
-        verr("acousticALE4: surface would reach fixed bottom during modeling");
-    if (!(speed < mod.cp_min))
-        verr("acousticALE4: surface speed bound %g must be subsonic (cp_min=%g)",speed,mod.cp_min);
-    g.nz = (int)ceil(height/mod.dz);
+    aleBounds initial = ale_surface_bounds(&g,0);
+    if (!(ceil(initial.maxheight/mod.dz) < INT_MAX))
+        verr("acousticALE4: too many fluid rows");
+    g.nz = (int)ceil(initial.maxheight/mod.dz);
     if (g.nz < 3) verr("acousticALE4: too few fluid cells");
     g.count = (size_t)g.nx*g.nz;
     g.order = 2;
     getparint("ale_order",&g.order);
-    getparint("ale_limiter",&g.limiter);
+    if (!getparint("ale_limiter",&g.limiter)) g.limiter=1;
     if (g.limiter < 0 || g.limiter > 2)
         verr("acousticALE4: ale_limiter must be 0 (minmod), 1 (MC), or 2 (van Leer)");
     float cfl = 0.45f;
     getparfloat("ale_cfl",&cfl);
     if ((g.order != 1 && g.order != 2) || !(cfl > 0 && cfl <= 0.45f))
         verr("acousticALE4: ale_order must be 1 or 2; 0 < ale_cfl <= 0.45");
-    double slope = fabs(surf.amp)*2*M_PI/surf.lambda;
-    double minspacing = minheight/g.nz;
-    double rate = mod.cp_max*(1/mod.dx+hypot(1,slope)/minspacing)+speed/minspacing;
-    double required = ceil(mod.dt*rate/cfl);
-    if (!(required >= 1 && required <= INT_MAX))
-        verr("acousticALE4: invalid CFL substep count");
-    int substeps = (int)required;
-    float dt = mod.dt/substeps;
     g.source_x = mod.x0+(mod.nx-1)*mod.dx/2;
     g.source_z = surf.z0+mod.dz;
     float coordinate;
@@ -531,8 +573,10 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec,
         double x = g.xmin+(i+0.5)*mod.dx;
         double distance = fmax(mod.x0-x,x-(mod.x0+(mod.nx-1)*mod.dx));
         float xi = fmax(0,fmin(1,distance/width));
+        double top = 0.5*(ale_surface(&g,x-0.5*mod.dx,0)+
+                          ale_surface(&g,x+0.5*mod.dx,0));
         for (int j = 0; j < g.nz; j++) {
-            double z = surf.z0+(j+0.5)*height/g.nz;
+            double z = top+(j+0.5)*(g.bottom-top)/g.nz;
             double bottom_distance = z-(g.bottom-bnd.npml*mod.dz);
             float zi = fmax(0,fmin(1,bottom_distance/(bnd.npml*mod.dz)));
             g.damping[(size_t)i*g.nz+j] = sigma*(powf(xi,bnd.m)+powf(zi,bnd.m));
@@ -545,7 +589,7 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec,
         vmess("Moving-surface FV acoustics: %dx%d fluid cells, MUSCL order %d, SSPRK3",g.nx,g.nz,g.order);
         if (g.order == 2)
             vmess("Slope limiter: %s",g.limiter == 0 ? "minmod" : g.limiter == 1 ? "MC" : "van Leer");
-        vmess("Output dt=%g; %d CFL substeps of dt=%g; Cartesian material-cell integration",mod.dt,substeps,dt);
+        vmess("Output dt=%g; adaptive CFL substeps from sampled surface geometry; Cartesian material-cell integration",mod.dt);
         vmess("Radiation/sponge boundaries (not CPML); pressure-free moving top");
     }
     int first_snapshot = 1;
@@ -560,10 +604,10 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec,
             maximum = fmaxf(maximum,fabsf(q[k].p));
         }
         if (verbose && it%100 == 0) vmess("FV step %d t=%.6f max|p|=%g",it,time,maximum);
-        if (rec.n && it >= rec.delay && (it-rec.delay)%rec.skipdt == 0) {
-            int sample = (it-rec.delay)/rec.skipdt;
-            if (sample >= rec.nt)
-                verr("acousticALE4: rec_ntsam must hold the complete gather");
+        if (rec.n && (it >= rec.delay) && (((it-rec.delay)%rec.skipdt) == 0) ) {
+            int sample = (it-rec.delay)/rec.skipdt+1;
+            if (sample >= rec.nt) continue;
+                //verr("acousticALE4: rec_ntsam must hold the complete gather");
             for (int r = 0; r < rec.n; r++) {
                 aleField value = ale_sample(&g,q,mod.x0+rec.xr[r],mod.z0+rec.zr[r]);
                 size_t k = (size_t)r*rec.nt+sample;
@@ -574,6 +618,10 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec,
         }
         ale_snapshot(&g,q,sna,it,&first_snapshot,verbose);
         if (it == mod.nt-1) break;
+        int substeps = ale_substeps(&g,time,cfl);
+        float dt = mod.dt/substeps;
+        if (verbose > 1 && it%100 == 0)
+            vmess("FV CFL: %d substeps of dt=%g at t=%g",substeps,dt,time);
         for (int sub = 0; sub < substeps; sub++)
             ale_step(&g,q,stage,rhs,time+(double)sub*mod.dt/substeps,dt);
     }
