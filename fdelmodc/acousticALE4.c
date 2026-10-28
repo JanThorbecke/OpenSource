@@ -28,9 +28,11 @@ FILE *fileOpen(char *, char *, int);
 int traceWrite(segy *, float *, int, long long, FILE *);
 
 typedef struct { float p, x, z; } aleField;
+
 typedef struct {
     float volume, bulk, buoyancy, impedance;
 } aleCell;
+
 typedef struct {
     modPar mod;
     surfPar surf;
