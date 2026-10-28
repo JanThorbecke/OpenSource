@@ -28,7 +28,7 @@ int writesufile(char *filename, float *data, size_t n1, size_t n2, float f1, flo
 **/
 
 
-int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float *lam, float *muu, float *tss, float *tes, float *tep)
+int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float *lam, float *muu, float *tss, float *tes, float *tep, int verbose)
 {
     FILE    *fpcp, *fpcs, *fpro;
 	FILE    *fpqp=NULL, *fpqs=NULL;
@@ -661,6 +661,7 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
 //writesufile("read_rox.su", rox, mod.naz, mod.nax, 0.0, 0.0, mod.dz, mod.dx);
 //writesufile("read_l2m.su", l2m, mod.naz, mod.nax, 0.0, 0.0, mod.dz, mod.dx);
 
+    if (verbose > 4) {
         for (ix=0; ix<mod.nax; ix++) {
             for (iz=0; iz<mod.naz; iz++) {
                 if (rox[(ix)*mod.naz+iz] == 0.0) {
@@ -672,16 +673,17 @@ Robbert van Vossen, Johan O. A. Robertsson, and Chris H. Chapman
                 if (l2m[(ix)*mod.naz+iz] == 0.0) {
                     fprintf(stderr,"ix=%d iz=%d l2m=%e \n",ix, iz,l2m[ix*mod.naz+iz]);
                 }
-    if (mod.ischeme>2) { /* Elastic Scheme */
-                if (muu[(ix)*mod.naz+iz] == 0.0) {
-                    fprintf(stderr,"ix=%d iz=%d muu=%e \n",ix, iz,muu[ix*mod.naz+iz]);
+                if (mod.ischeme>2) { /* Elastic Scheme */
+                    if (muu[(ix)*mod.naz+iz] == 0.0) {
+                        fprintf(stderr,"ix=%d iz=%d muu=%e \n",ix, iz,muu[ix*mod.naz+iz]);
+                    }
+                    if (lam[(ix)*mod.naz+iz] == 0.0) {
+                        fprintf(stderr,"ix=%d iz=%d lam=%e \n",ix, iz,lam[ix*mod.naz+iz]);
+                    }
                 }
-                if (lam[(ix)*mod.naz+iz] == 0.0) {
-                    fprintf(stderr,"ix=%d iz=%d lam=%e \n",ix, iz,lam[ix*mod.naz+iz]);
-                }
-    }
             }
         }
+    }
 
 
     return 0;

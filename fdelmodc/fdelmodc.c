@@ -19,7 +19,7 @@ void threadAffinity(void);
 
 int getParameters(modPar *mod, recPar *rec, snaPar *sna, wavPar *wav, srcPar *src, shotPar *shot, bndPar *bnd, surfPar *surf, int verbose);
 
-int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float *lam, float *muu, float *tss, float *tes, float *tep);
+int readModel(modPar mod, bndPar bnd, float *rox, float *roz, float *l2m, float *lam, float *muu, float *tss, float *tes, float *tep, int verbose);
 
 int defineSource(wavPar wav, srcPar src, modPar mod, recPar rec, shotPar shot, float **src_nwav, int reverse, int verbose);
 
@@ -381,7 +381,7 @@ int main(int argc, char **argv)
 
 	/* read velocity and density files */
 
-	readModel(mod, bnd, rox, roz, l2m, lam, mul, tss, tes, tep);
+	readModel(mod, bnd, rox, roz, l2m, lam, mul, tss, tes, tep, verbose);
 
 	/* read and/or define source wavelet(s) */
 
