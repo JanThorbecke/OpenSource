@@ -302,48 +302,72 @@ static void ale_source(aleGrid *g, aleField *rhs, double time)
 
 static void ale_rhs(aleGrid *g, const aleField *q, aleField *rhs, double time)
 {
+    float height, ax, az, mesh;
+    size_t k;
+    int i, j;
+
     ale_geometry(g,time);
     memset(rhs,0,g->count*sizeof(*rhs));
     if (g->order == 2) {
        #pragma omp parallel for collapse(2) schedule(static)
-        for (int i = 0; i < g->nx; i++)
-            for (int j = 0; j < g->nz; j++) {
-                size_t k = (size_t)i*g->nz+j;
+        for (i = 0; i < g->nx; i++)
+            for (j = 0; j < g->nz; j++) {
+                k = (size_t)i*g->nz+j;
                 g->sx[k] = i > 0 && i < g->nx-1
                     ? ale_slope(q[k-g->nz],q[k],q[k+g->nz],g->limiter) : (aleField){0};
                 g->sz[k] = j > 0 && j < g->nz-1
                     ? ale_slope(q[k-1],q[k],q[k+1],g->limiter) : (aleField){0};
             }
     }
-    for (int i = 0; i <= g->nx; i++) {
-        float height = (g->bottom-g->surface[i])/g->nz;
-        for (int j = 0; j < g->nz; j++) {
-            if (i == 0 || i == g->nx) {
-                size_t k = (size_t)(i == 0 ? 0 : i-1)*g->nz+j;
-                ale_face(g,q,rhs,k,k,q[k],q[k],i == 0 ? -height : height,0,0,2);
-            } else {
+    i=0;
+    k = (size_t)0;
+    height = (g->bottom-g->surface[i])/g->nz;
+    for (int j = 0; j < g->nz; j++) {
+        ale_face(g,q,rhs,k,k,q[k],q[k],-height,0,0,2);
+    }
+    i=g->nx;
+    height = (g->bottom-g->surface[i])/g->nz;
+    for (j = 0; j < g->nz; j++) {
+        k = (size_t)(i-1)*g->nz+j;
+        ale_face(g,q,rhs,k,k,q[k],q[k],height,0,0,2);
+    }
+    for (i = 1; i < g->nx; i++) {
+        height = (g->bottom-g->surface[i])/g->nz;
+        for (j = 0; j < g->nz; j++) {
+//            if (i == 0 || i == g->nx) {
+//                size_t k = (size_t)(i == 0 ? 0 : i-1)*g->nz+j;
+//                ale_face(g,q,rhs,k,k,q[k],q[k],i == 0 ? -height : height,0,0,2);
+//            } else {
                 size_t l = (size_t)(i-1)*g->nz+j, r = (size_t)i*g->nz+j;
                 aleField ql = q[l], qr = q[r];
                 if (g->order == 2) {
                     ql = ale_reconstruct(ql,g->sx[l],0.5f);
                     qr = ale_reconstruct(qr,g->sx[r],-0.5f);
-                }
+//                }
                 ale_face(g,q,rhs,l,r,ql,qr,height,0,0,0);
             }
         }
     }
-    for (int i = 0; i < g->nx; i++) {
+    for (i = 0; i < g->nx; i++) {
         float difference = g->surface[i+1]-g->surface[i];
         float speed = 0.5f*(g->speed[i]+g->speed[i+1]);
-        for (int j = 0; j <= g->nz; j++) {
+        j=0;
+        k = (size_t)i*g->nz;
+        ax = -ax; az = -az; mesh = -mesh;
+        ale_face(g,q,rhs,k,k,q[k],q[k],ax,az,mesh,1);
+        j= g->nz;
+        k = (size_t)i*g->nz+j-1;
+        ale_face(g,q,rhs,k,k,q[k],q[k],ax,az,mesh,2);
+        for (j = 1; j < g->nz; j++) {
             float weight = 1-(float)j/g->nz;
-            float ax = -difference*weight, az = g->mod.dx;
-            float mesh = az*speed*weight;
-            if (j == 0 || j == g->nz) {
-                size_t k = (size_t)i*g->nz+(j == 0 ? 0 : j-1);
-                if (j == 0) { ax = -ax; az = -az; mesh = -mesh; }
-                ale_face(g,q,rhs,k,k,q[k],q[k],ax,az,mesh,j == 0 ? 1 : 2);
-            } else {
+            ax = -difference*weight;
+            az = g->mod.dx;
+            mesh = az*speed*weight;
+//            if (j == 0 || j == g->nz) {
+//                k = (size_t)i*g->nz+(j == 0 ? 0 : j-1);
+//                if (j == 0) { ax = -ax; az = -az; mesh = -mesh; }
+//                ale_face(g,q,rhs,k,k,q[k],q[k],ax,az,mesh,j == 0 ? 1 : 2);
+//            } else {
                 size_t l = (size_t)i*g->nz+j-1, r = l+1;
                 aleField ql = q[l], qr = q[r];
                 if (g->order == 2) {
@@ -351,7 +375,7 @@ static void ale_rhs(aleGrid *g, const aleField *q, aleField *rhs, double time)
                     qr = ale_reconstruct(qr,g->sz[r],-0.5f);
                 }
                 ale_face(g,q,rhs,l,r,ql,qr,ax,az,mesh,0);
-            }
+//            }
         }
     }
     if (g->source_samples) ale_source(g,rhs,time);
