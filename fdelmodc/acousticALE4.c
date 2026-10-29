@@ -30,7 +30,7 @@ int traceWrite(segy *, float *, int, long long, FILE *);
 typedef struct { float p, x, z; } aleField;
 
 typedef struct {
-    float volume, bulk, buoyancy, impedance;
+    float volume, bulk, buoyancy, impedance, density, compliance;
 } aleCell;
 
 typedef struct {
@@ -39,7 +39,7 @@ typedef struct {
     bndPar bnd;
     int nx, nz, order, limiter, source_samples;
     size_t count;
-    double bottom, xmin, source_x, source_z, source_start, source_end;
+    double bottom, xmin, source_x, source_z, source_start, source_end, invnz;
     float *surface, *speed, *damping;
     const float *density, *compliance;
     const float *source;
@@ -110,7 +110,7 @@ static int ale_substeps(const aleGrid *g, double time, float cfl)
             for (int stage = 0; stage < 3; stage++) {
                 double t = time+(sub+0.5*stage)*(double)g->mod.dt/steps;
                 aleBounds bounds = ale_surface_bounds(g,t);
-                double spacing = bounds.minheight/g->nz;
+                double spacing = bounds.minheight*g->invnz;
                 double stage_rate = g->mod.cp_max*
                     (1/g->mod.dx+hypot(1,bounds.slope)/spacing)+bounds.speed/spacing;
                 rate = fmax(rate,stage_rate);
@@ -149,13 +149,14 @@ static void ale_geometry(aleGrid *g, double t)
         if (!(g->bottom > g->surface[i]))
             verr("acousticALE4: surface reaches fixed bottom at x=%g t=%g",x,t);
     }
+    #pragma omp parallel for schedule(static)
     for (int i = 0; i < g->nx; i++) {
         double sl = g->surface[i], sr = g->surface[i+1];
         double hl = g->bottom-sl, hr = g->bottom-sr;
         for (int j = 0; j < g->nz; j++) {
-            double eta = (double)j/g->nz;
+            double eta = (double)j*g->invnz;
             double tl = sl+eta*hl, tr = sr+eta*hr;
-            double bl = sl+(eta+1.0/g->nz)*hl, br = sr+(eta+1.0/g->nz)*hr;
+            double bl = sl+(eta+g->invnz)*hl, br = sr+(eta+g->invnz)*hr;
             double volume = g->mod.dx*(hl+hr)/(2*g->nz);
             double density = 0, compliance = 0, previous = 0;
             double minz = fmin(tl,tr), maxz = fmax(bl,br);
@@ -176,9 +177,11 @@ static void ale_geometry(aleGrid *g, double t)
             }
             aleCell *cell = g->cell+(size_t)i*g->nz+j;
             cell->volume = volume;
+            cell->density = density;
+            cell->compliance = compliance;
             cell->bulk = volume/compliance;
             cell->buoyancy = volume/density;
-            cell->impedance = sqrtf(cell->bulk/cell->buoyancy);
+            cell->impedance = sqrtf(density/compliance);
         }
     }
 }
@@ -302,6 +305,7 @@ static void ale_rhs(aleGrid *g, const aleField *q, aleField *rhs, double time)
     ale_geometry(g,time);
     memset(rhs,0,g->count*sizeof(*rhs));
     if (g->order == 2) {
+       #pragma omp parallel for collapse(2) schedule(static)
         for (int i = 0; i < g->nx; i++)
             for (int j = 0; j < g->nz; j++) {
                 size_t k = (size_t)i*g->nz+j;
@@ -362,18 +366,21 @@ static void ale_step(aleGrid *g, aleField *q, aleField *stage, aleField *rhs,
         q[k].p *= factor; q[k].x *= factor; q[k].z *= factor;
     }
     ale_rhs(g,q,rhs,time);
+    #pragma omp parallel for simd schedule(static)
     for (size_t k = 0; k < g->count; k++) {
         stage[k].p = q[k].p+dt*rhs[k].p;
         stage[k].x = q[k].x+dt*rhs[k].x;
         stage[k].z = q[k].z+dt*rhs[k].z;
     }
     ale_rhs(g,stage,rhs,time+dt);
+    #pragma omp parallel for simd schedule(static)
     for (size_t k = 0; k < g->count; k++) {
         stage[k].p = 0.75f*q[k].p+0.25f*(stage[k].p+dt*rhs[k].p);
         stage[k].x = 0.75f*q[k].x+0.25f*(stage[k].x+dt*rhs[k].x);
         stage[k].z = 0.75f*q[k].z+0.25f*(stage[k].z+dt*rhs[k].z);
     }
     ale_rhs(g,stage,rhs,time+0.5*dt);
+    #pragma omp parallel for simd schedule(static)
     for (size_t k = 0; k < g->count; k++) {
         float factor = g->damping[k] > 0 ? expf(-0.5f*dt*g->damping[k]) : 1;
         q[k].p = factor*(q[k].p/3+2*(stage[k].p+dt*rhs[k].p)/3);
@@ -531,6 +538,7 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec,
     if (!(ceil(initial.maxheight/mod.dz) < INT_MAX))
         verr("acousticALE4: too many fluid rows");
     g.nz = (int)ceil(initial.maxheight/mod.dz);
+    g.invnz = (double)1.0/g.nz;
     if (g.nz < 3) verr("acousticALE4: too few fluid cells");
     g.count = (size_t)g.nx*g.nz;
     g.order = 2;
