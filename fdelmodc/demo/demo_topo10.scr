@@ -4,6 +4,8 @@ set -e
 # Moving-surface finite volumes; see moving_surface_fv.txt.
 # Keep the physical absorbing extension at 100 m for this 2.5 m grid.
 
+export PATH=/palmyra/data/jthorbecke/OpenSource/bin:$PATH
+
 dt=0.0010
 ntap=40
 fmax=40
@@ -21,8 +23,14 @@ makewave w=g2 fmax=25 t0=0.15 dt=$dt nt=4096 db=-40 file_out=G2.su verbose=1
 
 file_rcv=shot_top0.su
 
+export OMP_NUM_THREADS=1
+
+
 set -x
-../fdelmodc \
+intercept="perf record -g"
+intercept="valgrind --tool=cachegrind "
+intercept=""
+$intercept ../fdelmodc \
     ischeme=-2 \
     R=1e-8 m=2 \
     surf_z0=500 surf_amp=50 surf_lambda=800 surf_om=0.5 surf_hrate=900 surf_vrate=0 \
