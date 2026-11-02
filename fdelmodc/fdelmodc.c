@@ -736,21 +736,12 @@ shared (shot, bnd, mod, src, wav, rec, ixsrc, izsrc, it, src_nwav, verbose)
                     t3=(wallclock_time()-t3)*((it1-it0)/400.0);
                     fprintf(stderr,"\r    %s: Estimated total compute time for this shot = %.2fs.\n    %s: Progress: %3d%%",xargv[0],t3,xargv[0],it/((it1-it0)/100));
                 }
-
-/*
-				if (it==(it0+100*its)) t2=wallclock_time();
-				if (it==(it0+500*its)) {
-					t3=wallclock_time();
-					tt=(t3-t2)*(((it1-it0)*its)/400.0);
-					vmess("Estimated compute time = %.2f s. per shot.",tt);
-					vmess("Estimated total compute time = %.2f s.",tinit+shot.n*tt);
-				}
-*/
 			}
 }
+#pragma omp barrier
 } /* end of OpenMP parallel section */
 
-		} /* end of loop over time steps it */
+	} /* end of loop over time steps it */
 
 		/* write output files: receivers and or beams */
 		if (fileno) fileno++;

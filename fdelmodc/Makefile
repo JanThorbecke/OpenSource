@@ -7,11 +7,11 @@ include ../Make_include
 ALLINC  = -I.
 #LIBS    += -L$L -lgenfft $(LIBSM)
 #OPTC = -g -Wall -fsignaling-nans -O0 -fopenmp
-#OPTC += -fopenmp -Waddress
+#OPTC += -fopenmp -Waddress 
 #OPTC += -g -finstrument-functions 
 #OPTC +=  -qopt-report -save-temps -g
-#OPTC +=  -O1 -g
-#OPTC +=  -O1 -g -fsanitize=address -fsanitize=bounds-strict -fsanitize=object-size
+#OPTC +=  -g
+#OPTC +=  -O0 -g -fsanitize=address -fsanitize=bounds-strict -fsanitize=object-size -fno-omit-frame-pointer
 #OPTC =  -fp-trap=invalid,overflow -traceback -g -O1 -qopenmp
 #OPTC := $(subst -O3 -ffast-math, -O1 -g ,$(OPTC))
 #PGI options for compiler feedback
@@ -19,6 +19,7 @@ ALLINC  = -I.
 #OPTC += -qopt-report
 #LDFLAGS += -Mprof=lines
 #LDFLAGS += -Wl,-z,muldefs
+LDFLAGS += -fopenmp
 
 ifdef MPICC
 all: fdelmodc  fdelmodc_mpi
