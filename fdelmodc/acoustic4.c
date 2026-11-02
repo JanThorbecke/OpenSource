@@ -106,8 +106,6 @@ int acoustic4(modPar mod, srcPar src, wavPar wav, bndPar bnd, int itime, int ixs
 
 	/* calculate p/tzz for all grid points except on the virtual boundary */
 #pragma omp for private (ix, iz) schedule(guided,1) 
-//#pragma omp for private (ix, iz) schedule(dynamic) 
-#pragma simd
 	for (ix=mod.ioPx; ix<mod.iePx; ix++) {
 #pragma simd
 		for (iz=mod.ioPz; iz<mod.iePz; iz++) {
