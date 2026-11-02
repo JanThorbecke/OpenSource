@@ -19,7 +19,7 @@ ALLINC  = -I.
 #OPTC += -qopt-report
 #LDFLAGS += -Mprof=lines
 #LDFLAGS += -Wl,-z,muldefs
-LDFLAGS += -fopenmp
+#LDFLAGS += -fopenmp
 
 ifdef MPICC
 all: fdelmodc  fdelmodc_mpi
