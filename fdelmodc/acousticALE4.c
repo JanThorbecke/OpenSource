@@ -30,7 +30,7 @@ int traceWrite(segy *, float *, int, long long, FILE *);
 typedef struct { float p, x, z; } aleField;
 
 typedef struct {
-    float volume, bulk, buoyancy, impedance;
+    float volume, invvolume, bulk, buoyancy, impedance;
 } aleCell;
 
 typedef struct {
@@ -142,6 +142,7 @@ static double ale_area(double level, double tl, double tr,
 
 static void ale_geometry(aleGrid *g, double t)
 {
+   float count;
     //fprintf(stderr,"calling ale_geometry for time=%f\n", t);
     for (int i = 0; i <= g->nx; i++) {
         double x = g->xmin+i*g->mod.dx;
@@ -151,18 +152,22 @@ static void ale_geometry(aleGrid *g, double t)
             verr("acousticALE4: surface reaches fixed bottom at x=%g t=%g",x,t);
     }
     //#pragma omp parallel for schedule(static)
+    count = 0.0;
     for (int i = 0; i < g->nx; i++) {
         double sl = g->surface[i], sr = g->surface[i+1];
         double hl = g->bottom-sl, hr = g->bottom-sr;
         for (int j = 0; j < g->nz; j++) {
-            double eta = (double)j/g->nz;
+            double eta = (double)j*g->invnz;
             double tl = sl+eta*hl, tr = sr+eta*hr;
-            double bl = sl+(eta+1.0/g->nz)*hl, br = sr+(eta+1.0/g->nz)*hr;
+            double bl = sl+(eta+1.0*g->invnz)*hl;
+            double br = sr+(eta+1.0*g->invnz)*hr;
             double volume = g->mod.dx*(hl+hr)/(2*g->nz);
             double density = 0, compliance = 0, previous = 0;
             double minz = fmin(tl,tr), maxz = fmax(bl,br);
             int first = (int)floor((minz-g->mod.z0)/g->mod.dz+0.5);
             int last = (int)floor((maxz-g->mod.z0)/g->mod.dz+0.5);
+            size_t base = (size_t)i*g->mod.naz+g->mod.ioPz;
+            //count += (float)(last-first+1);
             for (int layer = first; layer <= last; layer++) {
                 double level = g->mod.z0+(layer+0.5)*g->mod.dz;
                 double area = layer == last ? volume
@@ -171,38 +176,85 @@ static void ale_geometry(aleGrid *g, double t)
                 int row = layer;
                 if (row < 0) row = 0;
                 if (row >= g->mod.nz) row = g->mod.nz-1;
-                size_t reference = (size_t)i*g->mod.naz+g->mod.ioPz+row;
+                size_t reference = base+row;
                 density += fraction*g->density[reference];
                 compliance += fraction*g->compliance[reference];
                 previous = area;
             }
             aleCell *cell = g->cell+(size_t)i*g->nz+j;
             cell->volume = volume;
+            cell->invvolume = 1.0f/volume;
             cell->bulk = volume/compliance;
             cell->buoyancy = volume/density;
             cell->impedance = sqrtf(cell->bulk/cell->buoyancy);
         }
     }
+    //fprintf(stderr,"count = %f\n", (count/(g->nx*g->nz)));
 }
 
 static float ale_minmod(float a, float b)
 {
-    return a*b <= 0 ? 0 : copysignf(fminf(fabsf(a),fabsf(b)),a);
+    if (a*b <= 0.0f) return 0.0f;
+    return copysignf(fminf(fabsf(a),fabsf(b)),a);
 }
 
-static float ale_limit(float a, float b, int limiter)
+static inline float ale_limit_mc(float a, float b)
 {
-    if (limiter == 0) return ale_minmod(a,b);
-    if ((a <= 0 && b >= 0) || (a >= 0 && b <= 0)) return 0;
+    if (a*b <= 0.0f) return 0.0f;
+
+    float aa = fabsf(a);
+    float bb = fabsf(b);
+
+    float low = fminf(aa, bb);
+    float high = fmaxf(aa, bb);
+
+    return copysignf( fminf(0.5f*(low + high), 2.0f*low), a);
+}
+
+static inline float ale_limit_vleer(float a, float b)
+{
+    if (a*b <= 0.0f) return 0.0f;
+
+    float low = fminf(fabsf(a),fabsf(b));
+    float high = fmaxf(fabsf(a),fabsf(b));
+
+    float magnitude = low/(0.5f+0.5f*(low/high));
+
+    return copysignf(magnitude,a);
+/*
+float aa = fabsf(a);
+float bb = fabsf(b);
+ 
+float low = fminf(aa, bb);
+float high = fmaxf(aa, bb);
+*/
+}
+
+static inline float ale_limit(float a, float b, int limiter)
+{
+
+    if (a*b <= 0.0f) return 0.0f;
+    if (limiter == 0){
+            return ale_minmod(a,b);
+    }
+    else if (limiter == 1) {
+            return ale_limit_mc(a, b);
+    }
+    else if (limiter == 2) {
+            return ale_limit_vleer(a, b);
+    }
+
+    /*
     float low = fminf(fabsf(a),fabsf(b));
     float high = fmaxf(fabsf(a),fabsf(b));
     float magnitude = limiter == 1
         ? fminf(0.5f*low+0.5f*high,2*low)
         : low/(0.5f+0.5f*(low/high));
     return copysignf(magnitude,a);
+    */
 }
 
-static aleField ale_slope(aleField l, aleField c, aleField r, int limiter)
+static inline aleField ale_slope(aleField l, aleField c, aleField r, int limiter)
 {
     aleField d = {ale_limit(c.p-l.p,r.p-c.p,limiter),
                   ale_limit(c.x-l.x,r.x-c.x,limiter),
@@ -210,7 +262,7 @@ static aleField ale_slope(aleField l, aleField c, aleField r, int limiter)
     return d;
 }
 
-static aleField ale_reconstruct(aleField value, aleField slope, float side)
+static inline aleField ale_reconstruct(aleField value, aleField slope, float side)
 {
     value.p += side*slope.p;
     value.x += side*slope.x;
@@ -243,24 +295,24 @@ static void ale_face(aleGrid *g, const aleField *q, aleField *rhs,
         velocity = (zl*vl+zr*vr+l.p-r.p)/(zl+zr);
     }
     aleCell a = g->cell[left];
-    rhs[left].p -= a.bulk*velocity*area/a.volume;
-    rhs[left].x -= a.buoyancy*pressure*ax/a.volume;
-    rhs[left].z -= a.buoyancy*pressure*az/a.volume;
+    rhs[left].p -= a.bulk*velocity*area*a.invvolume;
+    rhs[left].x -= a.buoyancy*pressure*ax*a.invvolume;
+    rhs[left].z -= a.buoyancy*pressure*az*a.invvolume;
     if (!boundary) {
         aleCell b = g->cell[right];
-        rhs[right].p += b.bulk*velocity*area/b.volume;
-        rhs[right].x += b.buoyancy*pressure*ax/b.volume;
-        rhs[right].z += b.buoyancy*pressure*az/b.volume;
+        rhs[right].p += b.bulk*velocity*area*b.invvolume;
+        rhs[right].x += b.buoyancy*pressure*ax*b.invvolume;
+        rhs[right].z += b.buoyancy*pressure*az*b.invvolume;
     }
     /* Primitive ALE transport includes the geometric-volume correction:
      * sum W.n A (q_upwind-q_cell)/V. Constants therefore stay constant. */
     aleField upwind = mesh_flux > 0 ? r : l;
-    float factor = mesh_flux/a.volume;
+    float factor = mesh_flux*a.invvolume;
     rhs[left].p += factor*(upwind.p-q[left].p);
     rhs[left].x += factor*(upwind.x-q[left].x);
     rhs[left].z += factor*(upwind.z-q[left].z);
     if (!boundary) {
-        factor = mesh_flux/g->cell[right].volume;
+        factor = mesh_flux*g->cell[right].invvolume;
         rhs[right].p -= factor*(upwind.p-q[right].p);
         rhs[right].x -= factor*(upwind.x-q[right].x);
         rhs[right].z -= factor*(upwind.z-q[right].z);
@@ -301,8 +353,8 @@ static void ale_source(aleGrid *g, aleField *rhs, double time)
 
 static void ale_rhs(aleGrid *g, const aleField *q, aleField *rhs, double time)
 {
-    float height, ax, az, mesh, weight;
-    size_t k, l, r;
+    float height, mesh, weight, az, ax;
+    size_t k, l, r, base;
     int i, j;
 
     ale_geometry(g,time);
@@ -356,9 +408,10 @@ static void ale_rhs(aleGrid *g, const aleField *q, aleField *rhs, double time)
     }
     for (i = 1; i < g->nx; i++) {
         height = (g->bottom-g->surface[i])/g->nz;
+        base=i*g->nz;
         for (j = 0; j < g->nz; j++) {
-            size_t l = (size_t)(i-1)*g->nz+j;
-            size_t r = (size_t)i*g->nz+j;
+            size_t l = (size_t)base-g->nz+j;
+            size_t r = (size_t)base+j;
             aleField ql = q[l], qr = q[r];
             ql = ale_reconstruct(ql,g->sx[l],0.5f);
             qr = ale_reconstruct(qr,g->sx[r],-0.5f);
@@ -373,30 +426,44 @@ static void ale_rhs(aleGrid *g, const aleField *q, aleField *rhs, double time)
     }
 
 
+    az = g->mod.dx;
     for (i = 0; i < g->nx; i++) {
+        const float difference = g->surface[i+1]-g->surface[i];
+        const float speed = 0.5f*(g->speed[i]+g->speed[i+1]);
+        const float meshScale = az*speed;
+        base=i*g->nz;
+        k = base;
+        ale_face(g,q,rhs,k,k,q[k],q[k],difference,-az,-meshScale,1);
+        for (j = 1; j < g->nz; j++) {
+            weight = 1-(float)j/g->nz;
+            ax = -difference*weight; 
+            mesh = meshScale*weight;
+            l = (size_t)base+j-1;
+            r = l+1;
+            aleField ql = ale_reconstruct(q[l],g->sz[l],0.5f);
+            aleField qr = ale_reconstruct(q[r],g->sz[r],-0.5f);
+            ale_face(g,q,rhs,l,r,ql,qr,ax,az,mesh,0);
+        }
+        k = (size_t)base+g->nz-1;
+        ale_face(g,q,rhs,k,k,q[k],q[k],0.0f,az,0.0f,2);
+    }
+
+    /*
+        for (i = 0; i < g->nx; i++) {
         float difference = g->surface[i+1]-g->surface[i];
         float speed = 0.5f*(g->speed[i]+g->speed[i+1]);
-        /*
-            j=0;
-            weight = 1-(float)j/g->nz;
-            ax = -difference*weight; 
-            az = g->mod.dx;
-            mesh = az*speed*weight;
-            k = (size_t)i*g->nz+(j == 0 ? 0 : j-1);
-            if (j == 0) { ax = -ax; az = -az; mesh = -mesh; }
-            ale_face(g,q,rhs,k,k,q[k],q[k],ax,az,mesh,j == 0 ? 1 : 2);
-        */
+        base=i*g->nz;
         for (j = 0; j <= g->nz; j++) {
             weight = 1-(float)j/g->nz;
-            ax = -difference*weight; 
+            ax = -difference*weight;
             az = g->mod.dx;
             mesh = az*speed*weight;
             if (j == 0 || j == g->nz) {
-                k = (size_t)i*g->nz+(j == 0 ? 0 : j-1);
+                k = (size_t)base+(j == 0 ? 0 : j-1);
                 if (j == 0) { ax = -ax; az = -az; mesh = -mesh; }
                 ale_face(g,q,rhs,k,k,q[k],q[k],ax,az,mesh,j == 0 ? 1 : 2);
             } else {
-                l = (size_t)i*g->nz+j-1;
+                l = (size_t)base+j-1;
                 r = l+1;
                 aleField ql = q[l];
                 aleField qr = q[r];
@@ -405,17 +472,8 @@ static void ale_rhs(aleGrid *g, const aleField *q, aleField *rhs, double time)
                 ale_face(g,q,rhs,l,r,ql,qr,ax,az,mesh,0);
             }
         }
-        /*
-        j=g->nz;
-            weight = 1-(float)j/g->nz;
-            ax = -difference*weight; 
-            az = g->mod.dx;
-            mesh = az*speed*weight;
-            k = (size_t)i*g->nz+(j == 0 ? 0 : j-1);
-            if (j == 0) { ax = -ax; az = -az; mesh = -mesh; }
-            ale_face(g,q,rhs,k,k,q[k],q[k],ax,az,mesh,j == 0 ? 1 : 2);
-        */
     }
+    */
 
     if (g->source_samples) ale_source(g,rhs,time);
 }
@@ -450,6 +508,7 @@ static void ale_step(aleGrid *g, aleField *q, aleField *stage, aleField *rhs,
         q[k].x = factor*(q[k].x/3+2*(stage[k].x+dt*rhs[k].x)/3);
         q[k].z = factor*(q[k].z/3+2*(stage[k].z+dt*rhs[k].z)/3);
     }
+    //for (int i=0; i<20; i++) printf("rhs=%e\n", rhs[i].p);
 }
 
 static aleField ale_sample(const aleGrid *g, const aleField *q, double x, double z)
@@ -601,7 +660,7 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec,
     if (!(ceil(initial.maxheight/mod.dz) < INT_MAX))
         verr("acousticALE4: too many fluid rows");
     g.nz = (int)ceil(initial.maxheight/mod.dz);
-    g.invnz = (double)(1.0/g.nz);
+    g.invnz = (double)(1.0f/(double)g.nz);
     if (g.nz < 3) verr("acousticALE4: too few fluid cells");
     g.count = (size_t)g.nx*g.nz;
     if (!getparint("ale_limiter",&g.limiter)) g.limiter=1;
