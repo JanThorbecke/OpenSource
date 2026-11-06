@@ -110,9 +110,10 @@ static int ale_substeps(const aleGrid *g, double time, float cfl)
             for (int stage = 0; stage < 3; stage++) {
                 double t = time+(sub+0.5*stage)*(double)g->mod.dt/steps;
                 aleBounds bounds = ale_surface_bounds(g,t);
-                double spacing = bounds.minheight/g->nz;
+                double invspacing = g->nz/bounds.minheight;
+                double area = sqrt(1+bounds.slope*bounds.slope);
                 double stage_rate = g->mod.cp_max*
-                    (1/g->mod.dx+hypot(1,bounds.slope)/spacing)+bounds.speed/spacing;
+                    (1/g->mod.dx+area*invspacing)+bounds.speed*invspacing;
                 rate = fmax(rate,stage_rate);
             }
         double required = ceil(g->mod.dt*rate/cfl);
@@ -142,7 +143,6 @@ static double ale_area(double level, double tl, double tr,
 
 static void ale_geometry(aleGrid *g, double t)
 {
-   float count;
     //fprintf(stderr,"calling ale_geometry for time=%f\n", t);
     for (int i = 0; i <= g->nx; i++) {
         double x = g->xmin+i*g->mod.dx;
@@ -152,7 +152,7 @@ static void ale_geometry(aleGrid *g, double t)
             verr("acousticALE4: surface reaches fixed bottom at x=%g t=%g",x,t);
     }
     //#pragma omp parallel for schedule(static)
-    count = 0.0;
+    double invdz = 1.0/g->mod.dz;
     for (int i = 0; i < g->nx; i++) {
         double sl = g->surface[i], sr = g->surface[i+1];
         double hl = g->bottom-sl, hr = g->bottom-sr;
@@ -161,11 +161,11 @@ static void ale_geometry(aleGrid *g, double t)
             double tl = sl+eta*hl, tr = sr+eta*hr;
             double bl = sl+(eta+1.0*g->invnz)*hl;
             double br = sr+(eta+1.0*g->invnz)*hr;
-            double volume = g->mod.dx*(hl+hr)/(2*g->nz);
+            double volume = g->mod.dx*(hl+hr)*(0.5*g->invnz);
             double density = 0, compliance = 0, previous = 0;
             double minz = fmin(tl,tr), maxz = fmax(bl,br);
-            int first = (int)floor((minz-g->mod.z0)/g->mod.dz+0.5);
-            int last = (int)floor((maxz-g->mod.z0)/g->mod.dz+0.5);
+            int first = (int)floor((minz-g->mod.z0)*invdz+0.5);
+            int last = (int)floor((maxz-g->mod.z0)*invdz+0.5);
             size_t base = (size_t)i*g->mod.naz+g->mod.ioPz;
             //count += (float)(last-first+1);
             for (int layer = first; layer <= last; layer++) {
@@ -194,13 +194,13 @@ static void ale_geometry(aleGrid *g, double t)
 
 static float ale_minmod(float a, float b)
 {
-    if (a*b <= 0.0f) return 0.0f;
+//    if (a*b <= 0.0f) return 0.0f;
     return copysignf(fminf(fabsf(a),fabsf(b)),a);
 }
 
 static inline float ale_limit_mc(float a, float b)
 {
-    if (a*b <= 0.0f) return 0.0f;
+//    if (a*b <= 0.0f) return 0.0f;
 
     float aa = fabsf(a);
     float bb = fabsf(b);
@@ -213,7 +213,7 @@ static inline float ale_limit_mc(float a, float b)
 
 static inline float ale_limit_vleer(float a, float b)
 {
-    if (a*b <= 0.0f) return 0.0f;
+//    if (a*b <= 0.0f) return 0.0f;
 
     float low = fminf(fabsf(a),fabsf(b));
     float high = fmaxf(fabsf(a),fabsf(b));
@@ -276,7 +276,11 @@ static void ale_face(aleGrid *g, const aleField *q, aleField *rhs,
                      size_t left, size_t right, aleField l, aleField r,
                      float ax, float az, float mesh_flux, int boundary)
 {
-    float area = hypotf(ax,az), nx = ax/area, nz = az/area;
+//    float area = hypotf(ax,az), nx = ax/area, nz = az/area;
+    float area = sqrtf(ax*ax+az*az);
+    float nx = ax/area;
+    float nz = az/area;
+
     float vl = nx*l.x+nz*l.z;
     float zl = g->cell[left].impedance;
     float pressure, velocity;
@@ -337,7 +341,7 @@ static void ale_source(aleGrid *g, aleField *rhs, double time)
         int ix = i+side;
         double top = 0.5*(g->surface[ix]+g->surface[ix+1]);
         if (g->source_z < top) continue;
-        double dz = (g->bottom-top)/g->nz;
+        double dz = (g->bottom-top)*g->invnz;
         double row = (g->source_z-top)/dz-0.5;
         if (row < -0.5 || row > g->nz-0.5)
             verr("acousticALE4: source outside fluid grid at t=%g",time);
@@ -435,7 +439,7 @@ static void ale_rhs(aleGrid *g, const aleField *q, aleField *rhs, double time)
         k = base;
         ale_face(g,q,rhs,k,k,q[k],q[k],difference,-az,-meshScale,1);
         for (j = 1; j < g->nz; j++) {
-            weight = 1-(float)j/g->nz;
+            weight = 1.0f-(float)j/g->nz;
             ax = -difference*weight; 
             mesh = meshScale*weight;
             l = (size_t)base+j-1;
@@ -534,7 +538,7 @@ static aleField ale_sample(const aleGrid *g, const aleField *q, double x, double
         double top = 0.5*(g->surface[ix]+g->surface[ix+1]);
         double dz = (g->bottom-top)/g->nz;
         double row = (z-top)/dz-0.5;
-        double weight = side ? u : 1-u;
+        double weight = side ? u : 1.0-u;
         const aleField *col = q+(size_t)ix*g->nz;
         aleField value;
         if (row < 0) {
