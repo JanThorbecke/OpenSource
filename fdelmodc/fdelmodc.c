@@ -314,7 +314,7 @@ int main(int argc, char **argv)
 	float *rox, *roz, *l2m, *lam, *mul;
 	float *tss, *tes, *tep, *p, *q, *r;
 	float *vx, *vz, *tzz, *txz, *txx;
-	float *rec_vx, *rec_vz, *rec_p;
+	float *rec_vx=NULL, *rec_vz=NULL, *rec_p=NULL;
 	float *rec_txx, *rec_tzz, *rec_txz;
 	float *rec_pp, *rec_ss, *rec_q;
 	float *rec_udp, *rec_udvz;
