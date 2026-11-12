@@ -11,6 +11,7 @@ ALLINC  = -I.
 #OPTC += -g -finstrument-functions 
 #OPTC +=  -qopt-report -save-temps -g
 #OPTC +=  -g
+#OPTC += -Rpass=loop-vectorize -Rpass-missed=loop-vectorize 
 #OPTC +=  -fno-fast-math
 #OPTC +=  -O0 -g -fsanitize=address -fsanitize=bounds-strict -fsanitize=object-size -fno-omit-frame-pointer
 #OPTC =  -fp-trap=invalid,overflow -traceback -g -O1 -qopenmp

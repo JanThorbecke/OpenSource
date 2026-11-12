@@ -45,6 +45,9 @@ typedef struct {
     const float *source;
     aleCell *cell;
     aleField *sx, *sz;
+    float *p;
+    float *x; 
+    float *z;
 } aleGrid;
 
 static void *ale_alloc(size_t count, size_t size)
@@ -234,31 +237,30 @@ static inline float ale_limit(float a, float b, int limiter)
 {
 
     if (a*b <= 0.0f) return 0.0f;
-    if (limiter == 0){
-            return ale_minmod(a,b);
-    }
-    else if (limiter == 1) {
-            return ale_limit_mc(a, b);
-    }
-    else if (limiter == 2) {
-            return ale_limit_vleer(a, b);
-    }
+    float aa = fabsf(a);
+    float bb = fabsf(b);
 
-    /*
-    float low = fminf(fabsf(a),fabsf(b));
-    float high = fmaxf(fabsf(a),fabsf(b));
-    float magnitude = limiter == 1
-        ? fminf(0.5f*low+0.5f*high,2*low)
-        : low/(0.5f+0.5f*(low/high));
-    return copysignf(magnitude,a);
-    */
+    if (limiter == 0){// minmod
+        return copysignf(fminf(aa,bb),a);
+    }
+    else if (limiter == 1) {// MC
+        float low = fminf(aa, bb);
+        float high = fmaxf(aa, bb);
+        return copysignf( fminf(0.5f*(low + high), 2.0f*low), a);
+    }
+    else if (limiter == 2) { // van Leer
+        float low = fminf(aa, bb);
+        float high = fmaxf(aa, bb);
+        return copysignf(low/(0.5f+0.5f*(low/high)),a);
+    }
 }
 
 static inline aleField ale_slope(aleField l, aleField c, aleField r, int limiter)
 {
-    aleField d = {ale_limit(c.p-l.p,r.p-c.p,limiter),
-                  ale_limit(c.x-l.x,r.x-c.x,limiter),
-                  ale_limit(c.z-l.z,r.z-c.z,limiter)};
+    aleField d;
+    d.p = ale_limit(c.p-l.p,r.p-c.p,limiter);
+    d.x = ale_limit(c.x-l.x,r.x-c.x,limiter);
+    d.z = ale_limit(c.z-l.z,r.z-c.z,limiter);
     return d;
 }
 
@@ -429,6 +431,104 @@ static void ale_rhs(aleGrid *g, const aleField *q, aleField *rhs, double time)
         ale_face(g,q,rhs,k,k,q[k],q[k],height,0,0,2);
     }
 
+    az = g->mod.dx;
+    for (i = 0; i < g->nx; i++) {
+        const float difference = g->surface[i+1]-g->surface[i];
+        const float speed = 0.5f*(g->speed[i]+g->speed[i+1]);
+        const float meshScale = az*speed;
+        base=i*g->nz;
+        k = base;
+        ale_face(g,q,rhs,k,k,q[k],q[k],difference,-az,-meshScale,1);
+        for (j = 1; j < g->nz; j++) {
+            weight = 1.0f-(float)j/g->nz;
+            ax = -difference*weight; 
+            mesh = meshScale*weight;
+            l = (size_t)base+j-1;
+            r = l+1;
+            aleField ql = ale_reconstruct(q[l],g->sz[l],0.5f);
+            aleField qr = ale_reconstruct(q[r],g->sz[r],-0.5f);
+            ale_face(g,q,rhs,l,r,ql,qr,ax,az,mesh,0);
+        }
+        k = (size_t)base+g->nz-1;
+        ale_face(g,q,rhs,k,k,q[k],q[k],0.0f,az,0.0f,2);
+    }
+
+    if (g->source_samples) ale_source(g,rhs,time);
+}
+
+static void ale_rhs_q(aleGrid *g, const aleField *q, aleField *rhs, double time)
+{
+    float height, mesh, weight, az, ax;
+    size_t k, l, r, base;
+    int i, j;
+
+    ale_geometry(g,time);
+    memset(rhs,0,g->count*sizeof(*rhs));
+
+    g->sx[0] = (aleField){0};
+    g->sz[0] = (aleField){0};
+    #pragma omp simd
+    for (int j = 1; j < g->nz-1; j++) {
+        g->sx[j] = (aleField){0};
+        g->sz[j] = ale_slope(q[j-1],q[j],q[j+1],g->limiter);
+    }
+    g->sx[g->nz-1] = (aleField){0};
+    g->sz[g->nz-1] = (aleField){0};
+    #pragma omp parallel for schedule(dynamic,1)
+    for (int i = 1; i < g->nx-1; i++) {
+        k = (size_t)i*g->nz;
+        g->sx[k] = ale_slope(q[k-g->nz],q[k],q[k+g->nz],g->limiter);
+        g->sz[k] = (aleField){0};
+        for (int j = 1; j < g->nz-1; j++) {
+            k = (size_t)i*g->nz+j;
+            g->sx[k] = ale_slope(q[k-g->nz],q[k],q[k+g->nz],g->limiter);
+            g->sz[k] = ale_slope(q[k-1],q[k],q[k+1],g->limiter);
+        }
+        j=g->nz-1;
+        k = (size_t)i*g->nz+j;
+        g->sx[k] = ale_slope(q[k-g->nz],q[k],q[k+g->nz],g->limiter);
+        g->sz[k] = (aleField){0};
+    }
+    i=g->nx-1;
+    k = (size_t)i*g->nz;
+    g->sx[k] = (aleField){0};
+    g->sz[k] = (aleField){0};
+    #pragma omp simd
+    for (int j = 1; j < g->nz-1; j++) {
+        k = (size_t)i*g->nz+j;
+        g->sx[k] = (aleField){0};
+        g->sz[k] = ale_slope(q[k-1],q[k],q[k+1],g->limiter);
+    }
+    j=g->nz-1;
+    k = (size_t)i*g->nz+j;
+    g->sx[k] = (aleField){0};
+    g->sz[k] = (aleField){0};
+
+
+    i=0;
+    height = (g->bottom-g->surface[i])/g->nz;
+    for (j = 0; j < g->nz; j++) {
+        k = (size_t)j;
+        ale_face(g,q,rhs,k,k,q[k],q[k],-height,0,0,2);
+    }
+    for (i = 1; i < g->nx; i++) {
+        height = (g->bottom-g->surface[i])/g->nz;
+        base=i*g->nz;
+        for (j = 0; j < g->nz; j++) {
+            size_t l = (size_t)base-g->nz+j;
+            size_t r = (size_t)base+j;
+            aleField ql = q[l], qr = q[r];
+            ql = ale_reconstruct(ql,g->sx[l],0.5f);
+            qr = ale_reconstruct(qr,g->sx[r],-0.5f);
+            ale_face(g,q,rhs,l,r,ql,qr,height,0,0,0);
+        }
+    }
+    i=g->nx;
+    height = (g->bottom-g->surface[i])/g->nz;
+    for (j = 0; j < g->nz; j++) {
+        k = (size_t)(i-1)*g->nz+j;
+        ale_face(g,q,rhs,k,k,q[k],q[k],height,0,0,2);
+    }
 
     az = g->mod.dx;
     for (i = 0; i < g->nx; i++) {
@@ -452,35 +552,9 @@ static void ale_rhs(aleGrid *g, const aleField *q, aleField *rhs, double time)
         ale_face(g,q,rhs,k,k,q[k],q[k],0.0f,az,0.0f,2);
     }
 
-    /*
-        for (i = 0; i < g->nx; i++) {
-        float difference = g->surface[i+1]-g->surface[i];
-        float speed = 0.5f*(g->speed[i]+g->speed[i+1]);
-        base=i*g->nz;
-        for (j = 0; j <= g->nz; j++) {
-            weight = 1-(float)j/g->nz;
-            ax = -difference*weight;
-            az = g->mod.dx;
-            mesh = az*speed*weight;
-            if (j == 0 || j == g->nz) {
-                k = (size_t)base+(j == 0 ? 0 : j-1);
-                if (j == 0) { ax = -ax; az = -az; mesh = -mesh; }
-                ale_face(g,q,rhs,k,k,q[k],q[k],ax,az,mesh,j == 0 ? 1 : 2);
-            } else {
-                l = (size_t)base+j-1;
-                r = l+1;
-                aleField ql = q[l];
-                aleField qr = q[r];
-                ql = ale_reconstruct(ql,g->sz[l],0.5f);
-                qr = ale_reconstruct(qr,g->sz[r],-0.5f);
-                ale_face(g,q,rhs,l,r,ql,qr,ax,az,mesh,0);
-            }
-        }
-    }
-    */
-
     if (g->source_samples) ale_source(g,rhs,time);
 }
+
 
 static void ale_step(aleGrid *g, aleField *q, aleField *stage, aleField *rhs,
                      double time, float dt)
@@ -488,7 +562,14 @@ static void ale_step(aleGrid *g, aleField *q, aleField *stage, aleField *rhs,
     /* Strang-split exact scalar damping cannot impose a sponge CFL limit. */
     for (size_t k = 0; k < g->count; k++) {
         float factor = g->damping[k] > 0 ? expf(-0.5f*dt*g->damping[k]) : 1;
-        q[k].p *= factor; q[k].x *= factor; q[k].z *= factor;
+        q[k].p *= factor; 
+        q[k].x *= factor; 
+        q[k].z *= factor;
+        /*
+        g->p[k] *= factor; 
+        g->x[k] *= factor; 
+        g->z[k] *= factor;
+        */
     }
     ale_rhs(g,q,rhs,time);
     //#pragma omp parallel for simd schedule(static)
@@ -515,9 +596,12 @@ static void ale_step(aleGrid *g, aleField *q, aleField *stage, aleField *rhs,
     //for (int i=0; i<20; i++) printf("rhs=%e\n", rhs[i].p);
 }
 
-static aleField ale_sample(const aleGrid *g, const aleField *q, double x, double z)
+void ale_samplef(const aleGrid *g, float *p, float *vx, float *vz,  size_t k, double x, double z)
 {
-    aleField result = {0};
+    float lp, lx, lz;
+    float rp, rx, rz;
+    size_t col;
+    rp = 0.0; rx = 0.0; rz = 0.0;
     double column = (x-g->xmin)/g->mod.dx-0.5;
     if (column < -0.5 || column > g->nx-0.5 ||
         z > g->bottom+1e-5*g->mod.dz)
@@ -532,35 +616,48 @@ static aleField ale_sample(const aleGrid *g, const aleField *q, double x, double
     if (face_i >= g->nx) face_i = g->nx-1;
     double surface = g->surface[face_i]+(face-face_i)*
         (g->surface[face_i+1]-g->surface[face_i]);
-    if (z < surface) return result;
+
+    if (z < surface) {
+        if (p != NULL)   p[k] = 0.0;
+        if (vx != NULL) vx[k] = 0.0;
+        if (vz != NULL) vz[k] = 0.0;
+        return;
+    }
     for (int side = 0; side < 2; side++) {
         int ix = i+side;
         double top = 0.5*(g->surface[ix]+g->surface[ix+1]);
         double dz = (g->bottom-top)/g->nz;
         double row = (z-top)/dz-0.5;
         double weight = side ? u : 1.0-u;
-        const aleField *col = q+(size_t)ix*g->nz;
-        aleField value;
+        col = ix*g->nz;
         if (row < 0) {
-            value = col[0];
-            value.p *= fmax(0,2*(z-top)/dz);
-        } else if (row >= g->nz-1) value = col[g->nz-1];
+            lp = g->p[col+0];
+            lx = g->x[col+0];
+            lz = g->z[col+0];
+            lp *= fmax(0,2*(z-top)/dz);
+        } else if (row >= g->nz-1) {
+            lp = g->p[col+g->nz-1];
+            lx = g->x[col+g->nz-1];
+            lz = g->z[col+g->nz-1];
+        }
         else {
             int j = (int)floor(row);
             double v = row-j;
-            value.p = (1-v)*col[j].p+v*col[j+1].p;
-            value.x = (1-v)*col[j].x+v*col[j+1].x;
-            value.z = (1-v)*col[j].z+v*col[j+1].z;
+            lp = (1-v)*g->p[col+j]+v*g->p[col+j+1];
+            lx = (1-v)*g->x[col+j]+v*g->x[col+j+1];
+            lz = (1-v)*g->z[col+j]+v*g->z[col+j+1];
         }
-        result.p += weight*value.p;
-        result.x += weight*value.x;
-        result.z += weight*value.z;
+        rp += weight*lp;
+        rx += weight*lx;
+        rz += weight*lz;
     }
-    return result;
+    if (p != NULL)   p[k] = rp;
+    if (vx != NULL) vx[k] = rx;
+    if (vz != NULL) vz[k] = rz;
+    return;
 }
 
-static void ale_snapshot(const aleGrid *g, const aleField *q, snaPar sna,
-                         int it, int *first, int verbose)
+static void ale_snapshot(const aleGrid *g, snaPar sna, int it, int *first, int verbose)
 {
     if (!sna.nsnap || it < sna.delay || (it-sna.delay)%sna.skipdt ||
         (it-sna.delay)/sna.skipdt >= sna.nsnap) return;
@@ -594,7 +691,8 @@ static void ale_snapshot(const aleGrid *g, const aleField *q, snaPar sna,
         for (int i = 0; i < sna.nx; i++) {
             double x = x0+i*hdr.d2;
             for (int j = 0; j < sna.nz; j++) {
-                aleField value = ale_sample(g,q,x,z0+j*hdr.d1);
+                aleField value;
+                ale_samplef(g, &value.p, &value.x, &value.z, 0, x,z0+j*hdr.d1);
                 float v = field == 0 ? value.p : field == 1 ? value.x : value.z;
                 max = MAX(max, fabsf(v));
                 //max = MAX(max, field == 0 ? value.p : field == 1 ? value.x : value.z);
@@ -606,7 +704,8 @@ static void ale_snapshot(const aleGrid *g, const aleField *q, snaPar sna,
             hdr.tracf = i+1; hdr.tracl = number*sna.nx+i+1;
             hdr.gx = lround(1000*x);
             for (int j = 0; j < sna.nz; j++) {
-                aleField value = ale_sample(g,q,x,z0+j*hdr.d1);
+                aleField value; 
+                ale_samplef(g, &value.p, &value.x, &value.z, 0, x,z0+j*hdr.d1);
                 trace[j] = field == 0 ? value.p : field == 1 ? value.x : value.z;
             }
             /* optional plot surface on top of snapshot */
@@ -693,6 +792,9 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec,
     g.damping = ale_alloc(g.count,sizeof(float));
     g.sx = ale_alloc(g.count,sizeof(aleField));
     g.sz = ale_alloc(g.count,sizeof(aleField));
+    g.p = ale_alloc(g.count,sizeof(float));
+    g.x = ale_alloc(g.count,sizeof(float));
+    g.z = ale_alloc(g.count,sizeof(float));
     float *reference = ale_alloc((size_t)2*mod.nax*mod.naz,sizeof(float));
     g.density = reference; g.compliance = reference+(size_t)mod.nax*mod.naz;
     for (size_t k = 0; k < (size_t)mod.nax*mod.naz; k++) {
@@ -735,6 +837,9 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec,
                   fabsf(q[k].z) <= FLT_MAX))
                 verr("acousticALE4: nonfinite wavefield at output step %d cell %zu",it,k);
             maximum = fmaxf(maximum,fabsf(q[k].p));
+            g.p[k] = q[k].p;
+            g.x[k] = q[k].x;
+            g.z[k] = q[k].z;
         }
         if (verbose && it%100 == 0) vmess("FV step %d t=%.6f max|p|=%g",it,time,maximum);
         if (rec.n && (it >= rec.delay) && (((it-rec.delay)%rec.skipdt) == 0) ) {
@@ -742,14 +847,11 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec,
             if (sample >= rec.nt) continue;
                 //verr("acousticALE4: rec_ntsam must hold the complete gather");
             for (int r = 0; r < rec.n; r++) {
-                aleField value = ale_sample(&g,q,mod.x0+rec.xr[r],mod.z0+rec.zr[r]);
                 size_t k = (size_t)r*rec.nt+sample;
-                if (rec.type.p) rec_p[k] = value.p;
-                if (rec.type.vx) rec_vx[k] = value.x;
-                if (rec.type.vz) rec_vz[k] = value.z;
+                ale_samplef(&g, rec_p, rec_vx, rec_vz, k, mod.x0+rec.xr[r],mod.z0+rec.zr[r]);
             }
         }
-        ale_snapshot(&g,q,sna,it,&first_snapshot,verbose);
+        ale_snapshot(&g,sna,it,&first_snapshot,verbose);
         if (it == mod.nt-1) break;
         int substeps = ale_substeps(&g,time,cfl);
         float dt = mod.dt/substeps;
@@ -761,10 +863,9 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec,
     /* Caller-facing fields are Cartesian and collocated for this scheme. */
     for (int i = 0; i < mod.nax; i++)
         for (int j = 0; j < mod.naz; j++) {
-            aleField value = ale_sample(&g,q,mod.x0+(i-mod.ioPx)*mod.dx,
-                                       mod.z0+(j-mod.ioPz)*mod.dz);
             size_t k = (size_t)i*mod.naz+j;
-            p[k] = value.p; vx[k] = value.x; vz[k] = value.z;
+            ale_samplef(&g, p, vx, vz, k, mod.x0+(i-mod.ioPx)*mod.dx,
+                                       mod.z0+(j-mod.ioPz)*mod.dz);
         }
     free(reference); free(g.surface); free(g.speed); free(g.cell);
     free(g.damping); free(g.sx); free(g.sz); free(q); free(stage); free(rhs);

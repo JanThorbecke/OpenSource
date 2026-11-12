@@ -28,11 +28,11 @@ export OMP_NUM_THREADS=1
 
 set -x
 intercept="perf record -g"
-intercept=""
 intercept="perf stat"
 intercept="perf stat -e cache-references,cache-misses -e L1-dcache-loads,L1-dcache-load-misses "
 intercept="perf stat -d "
 intercept="valgrind --tool=cachegrind "
+intercept=""
 $intercept ../fdelmodc \
     ischeme=-2 \
     R=1e-8 m=2 \
@@ -54,6 +54,6 @@ $intercept ../fdelmodc \
     tsnap1=0 tsnap2=2.0 dtsnap=0.010 snapwithbnd=0 sna_type_p=1 sna_type_vz=1 \
     zrcv1=900 zrcv2=900 xrcv1=0 xrcv2=2000 dxrcv=5 \
     verbose=3 \
-    tmod=0.200 \
+    tmod=2.000 \
     npml=$ntap \
     left=2 right=2 top=1 bottom=2
