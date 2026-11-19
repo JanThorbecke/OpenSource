@@ -141,27 +141,48 @@ static double ale_ramp(double level, double a, double b)
 static double ale_area(double level, double tl, double tr,
                        double bl, double br, double dx)
 {
-    return dx*(ale_ramp(level,tl,tr)-ale_ramp(level,bl,br));
+    double heightT, heightB, h;
+    double low, high;
+
+    low = fmin(tl, tr);
+    high = fmax(tl, tr);
+    if (level <= low)  heightT = 0;
+    else if (level >= high) heightT = level-0.5*(tl+tr);
+    else {
+        h = level-low;
+        heightT = h*h/(2*(high-low));
+    }
+
+    low = fmin(bl, br);
+    high = fmax(bl, br);
+    if (level <= low)  heightB = 0;
+    else if (level >= high) heightB = level-0.5*(bl+br);
+    else {
+        h = level-low;
+        heightB = h*h/(2*(high-low));
+    }
+
+    return dx*(heightT-heightB);
 }
 
 static void ale_geometry(aleGrid *g, double t)
 {
+    float count=0;
     //fprintf(stderr,"calling ale_geometry for time=%f\n", t);
     for (int i = 0; i <= g->nx; i++) {
         double x = g->xmin+i*g->mod.dx;
         g->surface[i] = ale_surface(g,x,t);
         g->speed[i] = ale_speed(g,x,t);
-        if (!(g->bottom > g->surface[i]))
-            verr("acousticALE4: surface reaches fixed bottom at x=%g t=%g",x,t);
     }
-    //#pragma omp parallel for schedule(static)
     double invdz = 1.0/g->mod.dz;
+    #pragma omp parallel for schedule(static)
     for (int i = 0; i < g->nx; i++) {
         double sl = g->surface[i], sr = g->surface[i+1];
         double hl = g->bottom-sl, hr = g->bottom-sr;
         for (int j = 0; j < g->nz; j++) {
             double eta = (double)j*g->invnz;
-            double tl = sl+eta*hl, tr = sr+eta*hr;
+            double tl = sl+eta*hl;
+            double tr = sr+eta*hr;
             double bl = sl+(eta+1.0*g->invnz)*hl;
             double br = sr+(eta+1.0*g->invnz)*hr;
             double volume = g->mod.dx*(hl+hr)*(0.5*g->invnz);
@@ -171,10 +192,11 @@ static void ale_geometry(aleGrid *g, double t)
             int last = (int)floor((maxz-g->mod.z0)*invdz+0.5);
             size_t base = (size_t)i*g->mod.naz+g->mod.ioPz;
             //count += (float)(last-first+1);
-            for (int layer = first; layer <= last; layer++) {
+            //fprintf(stderr,"i=%d j=%d count=%f\n", i, j, (float)(last-first+1));
+            //loop has 2 or 3 iterations
+            for (int layer = first; layer < last; layer++) {
                 double level = g->mod.z0+(layer+0.5)*g->mod.dz;
-                double area = layer == last ? volume
-                    : ale_area(level,tl,tr,bl,br,g->mod.dx);
+                double area =  ale_area(level,tl,tr,bl,br,g->mod.dx);
                 double fraction = fmax(0,area-previous);
                 int row = layer;
                 if (row < 0) row = 0;
@@ -184,6 +206,15 @@ static void ale_geometry(aleGrid *g, double t)
                 compliance += fraction*g->compliance[reference];
                 previous = area;
             }
+                double area = volume;
+                double fraction = fmax(0,area-previous);
+                int row = last;
+                if (row < 0) row = 0;
+                if (row >= g->mod.nz) row = g->mod.nz-1;
+                size_t reference = base+row;
+                density += fraction*g->density[reference];
+                compliance += fraction*g->compliance[reference];
+
             aleCell *cell = g->cell+(size_t)i*g->nz+j;
             cell->volume = volume;
             cell->invvolume = 1.0f/volume;
@@ -193,44 +224,6 @@ static void ale_geometry(aleGrid *g, double t)
         }
     }
     //fprintf(stderr,"count = %f\n", (count/(g->nx*g->nz)));
-}
-
-static float ale_minmod(float a, float b)
-{
-//    if (a*b <= 0.0f) return 0.0f;
-    return copysignf(fminf(fabsf(a),fabsf(b)),a);
-}
-
-static inline float ale_limit_mc(float a, float b)
-{
-//    if (a*b <= 0.0f) return 0.0f;
-
-    float aa = fabsf(a);
-    float bb = fabsf(b);
-
-    float low = fminf(aa, bb);
-    float high = fmaxf(aa, bb);
-
-    return copysignf( fminf(0.5f*(low + high), 2.0f*low), a);
-}
-
-static inline float ale_limit_vleer(float a, float b)
-{
-//    if (a*b <= 0.0f) return 0.0f;
-
-    float low = fminf(fabsf(a),fabsf(b));
-    float high = fmaxf(fabsf(a),fabsf(b));
-
-    float magnitude = low/(0.5f+0.5f*(low/high));
-
-    return copysignf(magnitude,a);
-/*
-float aa = fabsf(a);
-float bb = fabsf(b);
- 
-float low = fminf(aa, bb);
-float high = fmaxf(aa, bb);
-*/
 }
 
 static inline float ale_limit(float a, float b, int limiter)
@@ -350,7 +343,8 @@ static void ale_source(aleGrid *g, aleField *rhs, double time)
         row = fmax(0,fmin(row,g->nz-1));
         int j = (int)floor(row);
         if (j == g->nz-1) j--;
-        double v = row-j, weight = side ? u : 1-u;
+        double v = row-j;
+        double weight = side ? u : 1-u;
         size_t k = (size_t)ix*g->nz+j;
         rhs[k].p += amplitude*weight*(1-v)*g->cell[k].bulk/g->cell[k].volume;
         rhs[k+1].p += amplitude*weight*v*g->cell[k+1].bulk/g->cell[k+1].volume;
@@ -572,21 +566,21 @@ static void ale_step(aleGrid *g, aleField *q, aleField *stage, aleField *rhs,
         */
     }
     ale_rhs(g,q,rhs,time);
-    //#pragma omp parallel for simd schedule(static)
+    #pragma omp parallel for simd schedule(static)
     for (size_t k = 0; k < g->count; k++) {
         stage[k].p = q[k].p+dt*rhs[k].p;
         stage[k].x = q[k].x+dt*rhs[k].x;
         stage[k].z = q[k].z+dt*rhs[k].z;
     }
     ale_rhs(g,stage,rhs,time+dt);
-    //#pragma omp parallel for simd schedule(static)
+    #pragma omp parallel for simd schedule(static)
     for (size_t k = 0; k < g->count; k++) {
         stage[k].p = 0.75f*q[k].p+0.25f*(stage[k].p+dt*rhs[k].p);
         stage[k].x = 0.75f*q[k].x+0.25f*(stage[k].x+dt*rhs[k].x);
         stage[k].z = 0.75f*q[k].z+0.25f*(stage[k].z+dt*rhs[k].z);
     }
     ale_rhs(g,stage,rhs,time+0.5*dt);
-    //#pragma omp parallel for simd schedule(static)
+    #pragma omp parallel for simd schedule(static)
     for (size_t k = 0; k < g->count; k++) {
         float factor = g->damping[k] > 0 ? expf(-0.5f*dt*g->damping[k]) : 1;
         q[k].p = factor*(q[k].p/3+2*(stage[k].p+dt*rhs[k].p)/3);
@@ -818,6 +812,17 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec,
             g.damping[(size_t)i*g.nz+j] = sigma*(powf(xi,bnd.m)+powf(zi,bnd.m));
         }
     }
+    for (int it = 0; it < mod.nt; it++) {
+        double time = (double)it*mod.dt;
+        for (int i = 0; i <= g.nx; i++) {
+            double x = g.xmin+i*g.mod.dx;
+            g.surface[i] = ale_surface(&g,x,time);
+            //g.speed[i] = ale_speed(&g,x,t);
+            if (!(g.bottom > g.surface[i]))
+                verr("acousticALE4: surface reaches fixed bottom at x=%g t=%g",x,time);
+        }
+    }
+
     aleField *q = ale_alloc(g.count,sizeof(aleField));
     aleField *stage = ale_alloc(g.count,sizeof(aleField));
     aleField *rhs = ale_alloc(g.count,sizeof(aleField));
@@ -827,6 +832,7 @@ int acousticALE4(modPar mod, srcPar src, wavPar wav, bndPar bnd, recPar rec,
         vmess("Output dt=%g; adaptive CFL substeps from sampled surface geometry; Cartesian material-cell integration",mod.dt);
         vmess("Radiation/sponge boundaries (not CPML); pressure-free moving top");
     }
+
     int first_snapshot = 1;
     for (int it = 0; it < mod.nt; it++) {
         double time = (double)it*mod.dt;

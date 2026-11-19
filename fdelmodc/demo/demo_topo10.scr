@@ -32,11 +32,18 @@ intercept="perf stat"
 intercept="perf stat -e cache-references,cache-misses -e L1-dcache-loads,L1-dcache-load-misses "
 intercept="perf stat -d "
 intercept="valgrind --tool=cachegrind "
+# open ale.trace for display
+intercept="xctrace record --template 'Time Profiler' --output ale.trace --launch --"
 intercept=""
+#xctrace record \
+#  --template "Time Profiler" \
+#  --output ale.trace \
+#  --launch -- \
 $intercept ../fdelmodc \
     ischeme=-2 \
     R=1e-8 m=2 \
     surf_z0=500 surf_amp=50 surf_lambda=800 surf_om=0.5 surf_hrate=900 surf_vrate=0 \
+    ale_limiter=1 \
     file_cp=topo_cp.su \
     file_den=topo_ro.su \
     file_rcv=$file_rcv \
